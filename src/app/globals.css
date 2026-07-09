@@ -1,87 +1,445 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&family=Shippori+Mincho:wght@400;600;700&display=swap");
 @import "tailwindcss";
 
+/* ---- Theme tokens（同 itousouta15.tw，[data-theme] 切換）---- */
 :root {
-  --background: #f5f6f8;
-  --foreground: #1a1d23;
+  --bg: #1b1e23;
+  --panel: #24262b;
+  --panel2: #27292e;
+  --panel2-a: rgba(39, 41, 46, 0.82);
+  --inset: #181b20;
+  --bd: rgba(255, 255, 255, 0.07);
+  --bd2: rgba(255, 255, 255, 0.14);
+  --tx: #e8ebf2;
+  --dim: #9aa1ad;
+  --mute: #6a7280;
+  --blue: #b0bdf7;
+  --purple: #a1ade0;
+  --btn: #94a6cc;
+  --btntx: #21252b;
+  --shadow: rgba(0, 0, 0, 0.45);
+
+  background: var(--bg);
+}
+
+:root[data-theme="light"] {
+  --bg: #bfc0c7f1;
+  --panel: #d5d6dd;
+  --panel2: #d5d6dd;
+  --panel2-a: rgba(227, 228, 233, 0.82);
+  --inset: #d2d5db;
+  --bd: rgba(6, 6, 7, 0.08);
+  --bd2: rgba(20, 24, 40, 0.16);
+  --tx: #22262d;
+  --dim: #494f59;
+  --mute: #6b7280;
+  --blue: #364a7c;
+  --purple: #5c7cbf;
+  --btn: #2b2f36;
+  --btntx: #f2f4f9;
+  --shadow: rgba(60, 70, 90, 0.16);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel2);
+  --color-inset: var(--inset);
+  --color-bd: var(--bd);
+  --color-bd2: var(--bd2);
+  --color-tx: var(--tx);
+  --color-dim: var(--dim);
+  --color-mute: var(--mute);
+  --color-blue: var(--blue);
+  --color-purple: var(--purple);
+  --font-sans: "Noto Sans TC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  color: var(--tx);
+  font-family: "Noto Sans TC", system-ui, sans-serif;
+  background:
+    radial-gradient(1100px 560px at 72% -12%, rgba(141, 181, 200, 0.11), transparent 60%),
+    var(--bg);
+  transition: background 0.35s ease, color 0.35s ease;
+}
+
+.serif {
+  font-family: "Shippori Mincho", "Noto Serif TC", serif;
+}
+.mono {
+  font-family: "JetBrains Mono", monospace;
+}
+
+@keyframes itFade {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-transition {
+  animation: itFade 0.45s ease both;
+}
+
+/* ---- Header ---- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: var(--panel2-a);
+  border-bottom: 1px solid var(--bd2);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.logo {
+  font-family: "Shippori Mincho", "Noto Serif TC", serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--tx);
+  white-space: nowrap;
+}
+.nav-link {
+  position: relative;
+  color: var(--dim);
+  font-size: 14.5px;
+  font-weight: 500;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--blue);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s ease;
+}
+.nav-link:hover {
+  color: var(--tx);
+}
+.nav-link:hover::after {
+  transform: scaleX(1);
+}
+.nav-link.active {
+  color: var(--tx);
+  font-weight: 700;
+}
+.nav-link.active::after {
+  background: var(--purple);
+  transform: scaleX(1);
+}
+.theme-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--bd2);
+  background: var(--inset);
+  color: var(--tx);
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+  flex: none;
+}
+.theme-btn:hover {
+  transform: rotate(35deg);
+}
+.theme-btn:active {
+  transform: rotate(35deg) scale(0.85);
 }
 
 @layer components {
   .card {
-    @apply rounded-lg border border-zinc-200 bg-white shadow-sm;
+    background: var(--panel);
+    border: 1px solid var(--bd);
+  }
+  .page-kicker {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mute);
+  }
+  .page-title {
+    font-family: "Shippori Mincho", "Noto Serif TC", serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--tx);
+  }
+  .section-title {
+    font-family: "Shippori Mincho", "Noto Serif TC", serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--tx);
   }
   .btn-primary {
-    @apply inline-flex cursor-pointer items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 999px;
+    background: var(--btn);
+    color: var(--btntx);
+    padding: 9px 20px;
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.2s ease, transform 0.15s ease;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.07);
+  }
+  .btn-primary:active {
+    transform: scale(0.96);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
   .btn-secondary {
-    @apply inline-flex cursor-pointer items-center justify-center rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--tx);
+    border: 1px solid var(--bd2);
+    padding: 9px 20px;
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  }
+  .btn-secondary:hover {
+    background: var(--inset);
+    border-color: #8f9dc9;
+  }
+  .btn-secondary:active {
+    transform: scale(0.96);
   }
   .btn-danger {
-    @apply inline-flex cursor-pointer items-center justify-center rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 999px;
+    background: transparent;
+    color: #ff6b6b;
+    border: 1px solid rgba(237, 66, 69, 0.4);
+    padding: 9px 20px;
+    font-family: "Noto Sans TC", sans-serif;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+  .btn-danger:hover {
+    background: rgba(237, 66, 69, 0.08);
   }
   .input {
-    @apply w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none;
+    width: 100%;
+    background: var(--inset);
+    border: 1px solid var(--bd);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--tx);
+    transition: border-color 0.2s ease;
+  }
+  .input::placeholder {
+    color: var(--mute);
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--blue);
   }
   .table-head {
-    @apply border-b border-zinc-200 bg-zinc-50 px-4 py-2.5 text-left text-xs font-semibold tracking-wide text-zinc-500 uppercase;
+    padding: 12px 16px;
+    text-align: left;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mute);
+    border-bottom: 1px solid var(--bd2);
   }
   .table-cell {
-    @apply border-b border-zinc-100 px-4 py-2.5 text-sm;
+    padding: 11px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--bd);
+  }
+  .pill {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--dim);
+    background: var(--inset);
+    border: 1px solid var(--bd);
+    border-radius: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  }
+  .pill:hover {
+    border-color: var(--bd2);
+    color: var(--tx);
+  }
+  .pill-active {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: #fff;
+  }
+  .pill-active:hover {
+    color: #fff;
+  }
+  /* 判題結果徽章（樣式同 like-modal-status）*/
+  .vbadge {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    border: 1px solid;
+    border-radius: 2px;
+    padding: 3px 8px;
+  }
+  .vbadge-gray {
+    color: var(--dim);
+    background: var(--inset);
+    border-color: var(--bd2);
+  }
+  .vbadge-green {
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.25);
+  }
+  .vbadge-red {
+    color: #ff6b6b;
+    background: rgba(237, 66, 69, 0.1);
+    border-color: rgba(237, 66, 69, 0.28);
+  }
+  .vbadge-amber {
+    color: #faa81a;
+    background: rgba(250, 168, 26, 0.1);
+    border-color: rgba(250, 168, 26, 0.28);
+  }
+  .vbadge-purple {
+    color: var(--purple);
+    background: rgba(161, 173, 224, 0.12);
+    border-color: rgba(161, 173, 224, 0.3);
+  }
+  .vbadge-blue {
+    color: var(--blue);
+    background: rgba(176, 189, 247, 0.12);
+    border-color: rgba(176, 189, 247, 0.3);
   }
 }
 
-/* 題敘 Markdown 排版 */
+/* ---- 題敘 Markdown 排版 ---- */
 .prose-oj {
-  @apply text-[15px] leading-7 text-zinc-800;
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--tx);
 }
 .prose-oj h1 {
-  @apply mt-6 mb-3 text-2xl font-bold;
+  font-family: "Shippori Mincho", "Noto Serif TC", serif;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 24px 0 12px;
 }
 .prose-oj h2 {
-  @apply mt-6 mb-3 border-b border-zinc-200 pb-1 text-xl font-bold;
+  font-family: "Shippori Mincho", "Noto Serif TC", serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 24px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--bd);
 }
 .prose-oj h3 {
-  @apply mt-5 mb-2 text-lg font-semibold;
+  font-family: "Shippori Mincho", "Noto Serif TC", serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin: 20px 0 8px;
+}
+.prose-oj h1:first-child,
+.prose-oj h2:first-child,
+.prose-oj h3:first-child {
+  margin-top: 0;
 }
 .prose-oj p {
-  @apply my-3;
+  margin: 12px 0;
 }
 .prose-oj ul {
-  @apply my-3 list-disc pl-6;
+  list-style: disc;
+  padding-left: 24px;
+  margin: 12px 0;
 }
 .prose-oj ol {
-  @apply my-3 list-decimal pl-6;
+  list-style: decimal;
+  padding-left: 24px;
+  margin: 12px 0;
 }
 .prose-oj code {
-  @apply rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[13px];
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  background: var(--inset);
+  border: 1px solid var(--bd);
+  border-radius: 4px;
+  padding: 1.5px 6px;
 }
 .prose-oj pre {
-  @apply my-3 overflow-x-auto rounded-md bg-zinc-900 p-4 text-zinc-100;
+  background: var(--inset);
+  border: 1px solid var(--bd);
+  padding: 16px;
+  margin: 12px 0;
+  overflow-x: auto;
 }
 .prose-oj pre code {
-  @apply bg-transparent p-0 text-[13px] text-inherit;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 .prose-oj blockquote {
-  @apply my-3 border-l-4 border-zinc-300 pl-4 text-zinc-600;
+  border-left: 2px solid var(--bd2);
+  padding-left: 16px;
+  color: var(--dim);
+  margin: 12px 0;
 }
 .prose-oj table {
-  @apply my-3 w-auto border-collapse;
+  border-collapse: collapse;
+  margin: 12px 0;
 }
 .prose-oj th,
 .prose-oj td {
-  @apply border border-zinc-300 px-3 py-1.5 text-sm;
+  border: 1px solid var(--bd2);
+  padding: 6px 12px;
+  font-size: 14px;
 }
 .prose-oj a {
-  @apply text-blue-600 underline hover:text-blue-800;
+  color: var(--blue);
+  text-decoration: underline;
+}
+.prose-oj .katex-display {
+  overflow-x: auto;
+  padding: 4px 0;
 }

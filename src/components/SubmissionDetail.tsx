@@ -60,10 +60,10 @@ export default function SubmissionDetail({ id }: { id: number }) {
   }, [id]);
 
   if (notFound) {
-    return <p className="text-zinc-500">找不到這筆提交。</p>;
+    return <p className="text-dim">找不到這筆提交。</p>;
   }
   if (!data) {
-    return <p className="animate-pulse text-zinc-400">載入中…</p>;
+    return <p className="animate-pulse text-mute">載入中…</p>;
   }
 
   const langLabel = isLanguageKey(data.language)
@@ -73,31 +73,31 @@ export default function SubmissionDetail({ id }: { id: number }) {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold">提交 #{data.id}</h1>
+        <h1 className="page-title">提交 #{data.id}</h1>
         <VerdictBadge status={data.status} />
       </div>
 
       <div className="card p-4 text-sm">
         <div className="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
           <p>
-            <span className="text-zinc-500">題目：</span>
+            <span className="text-dim">題目：</span>
             <Link
               href={`/problems/${data.problem.id}`}
-              className="text-blue-700 hover:underline"
+              className="text-blue hover:underline"
             >
               {data.problem.title}
             </Link>
           </p>
           <p>
-            <span className="text-zinc-500">使用者：</span>
+            <span className="text-dim">使用者：</span>
             {data.username}
           </p>
           <p>
-            <span className="text-zinc-500">語言：</span>
+            <span className="text-dim">語言：</span>
             {langLabel}
           </p>
           <p>
-            <span className="text-zinc-500">耗時 / 記憶體：</span>
+            <span className="text-dim">耗時 / 記憶體：</span>
             {data.timeMs != null ? `${data.timeMs} ms` : "—"} /{" "}
             {data.memoryKb != null
               ? `${Math.round(data.memoryKb / 1024)} MB`
@@ -107,11 +107,11 @@ export default function SubmissionDetail({ id }: { id: number }) {
       </div>
 
       {data.compileError && (
-        <div className="card border-red-200 p-4">
-          <p className="mb-2 text-sm font-semibold text-red-600">
+        <div className="card border-[rgba(237,66,69,0.3)] p-4">
+          <p className="mb-2 text-sm font-semibold text-[#ff6b6b]">
             {data.status === "CE" ? "編譯錯誤訊息" : "錯誤訊息"}
           </p>
-          <pre className="overflow-x-auto rounded bg-zinc-900 p-3 font-mono text-xs whitespace-pre-wrap text-red-300">
+          <pre className="overflow-x-auto rounded bg-inset p-3 font-mono text-xs whitespace-pre-wrap text-[#ff8a8a]">
             {data.compileError}
           </pre>
         </div>
@@ -131,14 +131,14 @@ export default function SubmissionDetail({ id }: { id: number }) {
             <tbody>
               {data.results.map((r) => (
                 <tr key={r.order}>
-                  <td className="table-cell text-zinc-500">#{r.order}</td>
+                  <td className="table-cell text-dim">#{r.order}</td>
                   <td className="table-cell">
                     <VerdictBadge status={r.verdict} />
                   </td>
-                  <td className="table-cell text-right text-zinc-500">
+                  <td className="table-cell text-right text-dim">
                     {r.timeMs != null ? `${r.timeMs} ms` : "—"}
                   </td>
-                  <td className="table-cell text-right text-zinc-500">
+                  <td className="table-cell text-right text-dim">
                     {r.memoryKb != null
                       ? `${(r.memoryKb / 1024).toFixed(1)} MB`
                       : "—"}
@@ -152,8 +152,8 @@ export default function SubmissionDetail({ id }: { id: number }) {
 
       {data.code && (
         <div>
-          <h2 className="mb-2 text-lg font-semibold">程式碼</h2>
-          <pre className="overflow-x-auto rounded-lg bg-zinc-900 p-4 font-mono text-[13px] leading-6 text-zinc-100">
+          <h2 className="mb-2 section-title">程式碼</h2>
+          <pre className="overflow-x-auto rounded-lg bg-inset p-4 font-mono text-[13px] leading-6 text-tx">
             {data.code}
           </pre>
         </div>

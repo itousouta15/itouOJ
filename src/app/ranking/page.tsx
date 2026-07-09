@@ -38,7 +38,7 @@ export default async function RankingPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">排行榜</h1>
+      <h1 className="mb-4 page-title">排行榜</h1>
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -54,22 +54,22 @@ export default async function RankingPage() {
               <tr>
                 <td
                   colSpan={4}
-                  className="table-cell py-10 text-center text-zinc-400"
+                  className="table-cell py-10 text-center text-mute"
                 >
                   還沒有人提交過
                 </td>
               </tr>
             )}
             {rows.map((r, i) => (
-              <tr key={r.username} className="hover:bg-zinc-50">
-                <td className="table-cell font-semibold text-zinc-500">
+              <tr key={r.username} className="hover:bg-panel2">
+                <td className="table-cell font-semibold text-dim">
                   {i + 1}
                 </td>
                 <td className="table-cell font-medium">{r.username}</td>
-                <td className="table-cell text-right font-semibold text-green-700">
+                <td className="table-cell text-right font-semibold text-[#4caf50]">
                   {r.solved}
                 </td>
-                <td className="table-cell text-right text-zinc-500">
+                <td className="table-cell text-right text-dim">
                   {r.submissions}
                 </td>
               </tr>

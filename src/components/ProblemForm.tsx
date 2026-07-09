@@ -168,7 +168,7 @@ export default function ProblemForm({
 
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
+          <h2 className="section-title">
             測資（{form.testCases.length} 筆）
           </h2>
           <button
@@ -187,7 +187,7 @@ export default function ProblemForm({
           {form.testCases.map((tc, i) => (
             <div key={i} className="card p-4">
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-semibold text-zinc-600">
+                <p className="text-sm font-semibold text-dim">
                   測資 #{i + 1}
                 </p>
                 <div className="flex items-center gap-4">
@@ -202,7 +202,7 @@ export default function ProblemForm({
                     範例（顯示在題目頁）
                   </label>
                   <button
-                    className="text-sm text-red-500 hover:underline"
+                    className="text-sm text-[#ff6b6b] hover:underline"
                     onClick={() =>
                       set(
                         "testCases",
@@ -217,7 +217,7 @@ export default function ProblemForm({
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs text-zinc-500">
+                  <label className="mb-1 block text-xs text-dim">
                     輸入
                   </label>
                   <textarea
@@ -227,7 +227,7 @@ export default function ProblemForm({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-zinc-500">
+                  <label className="mb-1 block text-xs text-dim">
                     期望輸出
                   </label>
                   <textarea
@@ -242,7 +242,7 @@ export default function ProblemForm({
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-[#ff6b6b]">{error}</p>}
       <div className="flex items-center justify-between">
         <div>
           {editing && (
