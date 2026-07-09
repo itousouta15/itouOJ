@@ -20,7 +20,7 @@ export default async function AdminProblemsPage() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">題目管理</h1>
+        <h1 className="page-title">題目管理</h1>
         <Link href="/admin/problems/new" className="btn-primary">
           ＋ 新增題目
         </Link>
@@ -43,19 +43,19 @@ export default async function AdminProblemsPage() {
               <tr>
                 <td
                   colSpan={7}
-                  className="table-cell py-10 text-center text-zinc-400"
+                  className="table-cell py-10 text-center text-mute"
                 >
                   還沒有題目，點右上角「新增題目」開始出題
                 </td>
               </tr>
             )}
             {problems.map((p) => (
-              <tr key={p.id} className="hover:bg-zinc-50">
-                <td className="table-cell text-zinc-500">{p.id}</td>
+              <tr key={p.id} className="hover:bg-panel2">
+                <td className="table-cell text-dim">{p.id}</td>
                 <td className="table-cell font-medium">
                   <Link
                     href={`/problems/${p.id}`}
-                    className="text-blue-700 hover:underline"
+                    className="text-blue hover:underline"
                   >
                     {p.title}
                   </Link>
@@ -63,19 +63,19 @@ export default async function AdminProblemsPage() {
                 <td className="table-cell">
                   <DifficultyBadge difficulty={p.difficulty} />
                 </td>
-                <td className="table-cell text-right text-zinc-500">
+                <td className="table-cell text-right text-dim">
                   {p._count.testCases}
                 </td>
-                <td className="table-cell text-right text-zinc-500">
+                <td className="table-cell text-right text-dim">
                   {p._count.submissions}
                 </td>
-                <td className="table-cell text-sm text-zinc-500">
+                <td className="table-cell text-sm text-dim">
                   {p.isPublic ? "公開" : "未公開"}
                 </td>
                 <td className="table-cell">
                   <Link
                     href={`/admin/problems/${p.id}/edit`}
-                    className="text-sm text-blue-600 hover:underline"
+                    className="text-sm text-blue hover:underline"
                   >
                     編輯
                   </Link>

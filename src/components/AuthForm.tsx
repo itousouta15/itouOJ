@@ -66,18 +66,18 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
               required
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-[#ff6b6b]">{error}</p>}
           <button className="btn-primary w-full" disabled={loading}>
             {loading ? "處理中…" : isLogin ? "登入" : "註冊"}
           </button>
         </form>
-        <p className="mt-4 text-center text-sm text-zinc-500">
+        <p className="mt-4 text-center text-sm text-dim">
           {isLogin ? (
             <>
               還沒有帳號？
               <Link
                 href="/register"
-                className="ml-1 text-blue-600 hover:underline"
+                className="ml-1 text-blue hover:underline"
               >
                 註冊
               </Link>
@@ -85,7 +85,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           ) : (
             <>
               已經有帳號？
-              <Link href="/login" className="ml-1 text-blue-600 hover:underline">
+              <Link href="/login" className="ml-1 text-blue hover:underline">
                 登入
               </Link>
             </>

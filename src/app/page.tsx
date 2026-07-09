@@ -37,7 +37,7 @@ export default async function ProblemListPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">題目列表</h1>
+      <h1 className="mb-4 page-title">題目列表</h1>
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -54,7 +54,7 @@ export default async function ProblemListPage() {
               <tr>
                 <td
                   colSpan={5}
-                  className="table-cell py-10 text-center text-zinc-400"
+                  className="table-cell py-10 text-center text-mute"
                 >
                   還沒有題目
                   {isAdmin && (
@@ -62,7 +62,7 @@ export default async function ProblemListPage() {
                       ，
                       <Link
                         href="/admin/problems/new"
-                        className="text-blue-600 hover:underline"
+                        className="text-blue hover:underline"
                       >
                         來出第一題
                       </Link>
@@ -72,20 +72,20 @@ export default async function ProblemListPage() {
               </tr>
             )}
             {problems.map((p) => (
-              <tr key={p.id} className="hover:bg-zinc-50">
-                <td className="table-cell text-center text-green-600">
+              <tr key={p.id} className="hover:bg-panel2">
+                <td className="table-cell text-center text-[#4caf50]">
                   {solvedSet.has(p.id) ? "✓" : ""}
                 </td>
-                <td className="table-cell text-zinc-500">{p.id}</td>
+                <td className="table-cell text-dim">{p.id}</td>
                 <td className="table-cell">
                   <Link
                     href={`/problems/${p.id}`}
-                    className="font-medium text-blue-700 hover:underline"
+                    className="font-medium text-blue hover:underline"
                   >
                     {p.title}
                   </Link>
                   {!p.isPublic && (
-                    <span className="ml-2 text-xs text-zinc-400">
+                    <span className="ml-2 text-xs text-mute">
                       （未公開）
                     </span>
                   )}
@@ -93,7 +93,7 @@ export default async function ProblemListPage() {
                 <td className="table-cell">
                   <DifficultyBadge difficulty={p.difficulty} />
                 </td>
-                <td className="table-cell text-right text-zinc-500">
+                <td className="table-cell text-right text-dim">
                   {acMap.get(p.id) ?? 0} / {allMap.get(p.id) ?? 0}
                 </td>
               </tr>

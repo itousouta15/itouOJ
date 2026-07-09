@@ -56,12 +56,23 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
   const [code, setCode] = useState(TEMPLATES.cpp);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [darkTheme, setDarkTheme] = useState(true);
 
   // 記住上次選的語言、以及每題每語言打到一半的程式碼
   useEffect(() => {
     const saved = localStorage.getItem("oj-language") as LanguageKey | null;
     if (saved && saved in LANGUAGES) switchLanguage(saved);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 編輯器跟著網站的亮暗主題（<html data-theme>）切換
+  useEffect(() => {
+    const el = document.documentElement;
+    const update = () => setDarkTheme(el.getAttribute("data-theme") !== "light");
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
   }, []);
 
   function draftKey(lang: LanguageKey) {
@@ -104,7 +115,7 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
   return (
     <div className="card p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">提交</h2>
+        <h2 className="section-title">提交</h2>
         <select
           className="input w-auto"
           value={language}
@@ -117,16 +128,17 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
           ))}
         </select>
       </div>
-      <div className="overflow-hidden rounded-md border border-zinc-200">
+      <div className="overflow-hidden rounded-md border border-bd">
         <CodeMirror
           value={code}
           height="380px"
+          theme={darkTheme ? "dark" : "light"}
           extensions={CM_EXTENSIONS[language]}
           onChange={updateCode}
           basicSetup={{ tabSize: 4 }}
         />
       </div>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-[#ff6b6b]">{error}</p>}
       <div className="mt-3 flex justify-end">
         <button className="btn-primary" onClick={submit} disabled={submitting}>
           {submitting ? "提交中…" : "提交程式碼"}

@@ -11,7 +11,7 @@ export default async function NewProblemPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-2xl font-bold">新增題目</h1>
+      <h1 className="mb-4 page-title">新增題目</h1>
       <ProblemForm />
     </div>
   );
