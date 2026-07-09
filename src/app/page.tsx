@@ -1,65 +1,106 @@
-import Image from "next/image";
+import Link from "next/link";
+import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import DifficultyBadge from "@/components/DifficultyBadge";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function ProblemListPage() {
+  const session = await getSession();
+  const isAdmin = session?.role === "ADMIN";
+
+  const problems = await prisma.problem.findMany({
+    where: isAdmin ? {} : { isPublic: true },
+    orderBy: { id: "asc" },
+  });
+  const acCounts = await prisma.submission.groupBy({
+    by: ["problemId"],
+    where: { status: "AC" },
+    _count: { _all: true },
+  });
+  const allCounts = await prisma.submission.groupBy({
+    by: ["problemId"],
+    _count: { _all: true },
+  });
+  const acMap = new Map(acCounts.map((g) => [g.problemId, g._count._all]));
+  const allMap = new Map(allCounts.map((g) => [g.problemId, g._count._all]));
+
+  const solvedSet = new Set<number>();
+  if (session) {
+    const solved = await prisma.submission.findMany({
+      where: { userId: session.userId, status: "AC" },
+      distinct: ["problemId"],
+      select: { problemId: true },
+    });
+    for (const s of solved) solvedSet.add(s.problemId);
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div>
+      <h1 className="mb-4 text-2xl font-bold">題目列表</h1>
+      <div className="card overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th className="table-head w-12 text-center">狀態</th>
+              <th className="table-head w-16">#</th>
+              <th className="table-head">標題</th>
+              <th className="table-head w-24">難度</th>
+              <th className="table-head w-28 text-right">通過 / 提交</th>
+            </tr>
+          </thead>
+          <tbody>
+            {problems.length === 0 && (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="table-cell py-10 text-center text-zinc-400"
+                >
+                  還沒有題目
+                  {isAdmin && (
+                    <>
+                      ，
+                      <Link
+                        href="/admin/problems/new"
+                        className="text-blue-600 hover:underline"
+                      >
+                        來出第一題
+                      </Link>
+                    </>
+                  )}
+                </td>
+              </tr>
+            )}
+            {problems.map((p) => (
+              <tr key={p.id} className="hover:bg-zinc-50">
+                <td className="table-cell text-center text-green-600">
+                  {solvedSet.has(p.id) ? "✓" : ""}
+                </td>
+                <td className="table-cell text-zinc-500">{p.id}</td>
+                <td className="table-cell">
+                  <Link
+                    href={`/problems/${p.id}`}
+                    className="font-medium text-blue-700 hover:underline"
+                  >
+                    {p.title}
+                  </Link>
+                  {!p.isPublic && (
+                    <span className="ml-2 text-xs text-zinc-400">
+                      （未公開）
+                    </span>
+                  )}
+                </td>
+                <td className="table-cell">
+                  <DifficultyBadge difficulty={p.difficulty} />
+                </td>
+                <td className="table-cell text-right text-zinc-500">
+                  {acMap.get(p.id) ?? 0} / {allMap.get(p.id) ?? 0}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
