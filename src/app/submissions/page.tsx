@@ -30,18 +30,18 @@ export default async function SubmissionsPage({
   return (
     <div>
       <div className="mb-4 flex items-center gap-4">
-        <h1 className="text-2xl font-bold">提交紀錄</h1>
+        <h1 className="page-title">提交紀錄</h1>
         <div className="flex gap-2 text-sm">
           <Link
             href="/submissions"
-            className={`rounded-full px-3 py-1 ${!onlyMine ? "bg-zinc-900 text-white" : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300"}`}
+            className={`pill ${!onlyMine ? "pill-active" : ""}`}
           >
             全部
           </Link>
           {session && (
             <Link
               href="/submissions?mine=1"
-              className={`rounded-full px-3 py-1 ${onlyMine ? "bg-zinc-900 text-white" : "bg-zinc-200 text-zinc-600 hover:bg-zinc-300"}`}
+              className={`pill ${onlyMine ? "pill-active" : ""}`}
             >
               只看我的
             </Link>
@@ -67,18 +67,18 @@ export default async function SubmissionsPage({
               <tr>
                 <td
                   colSpan={8}
-                  className="table-cell py-10 text-center text-zinc-400"
+                  className="table-cell py-10 text-center text-mute"
                 >
                   還沒有提交紀錄
                 </td>
               </tr>
             )}
             {submissions.map((s) => (
-              <tr key={s.id} className="hover:bg-zinc-50">
+              <tr key={s.id} className="hover:bg-panel2">
                 <td className="table-cell">
                   <Link
                     href={`/submissions/${s.id}`}
-                    className="text-blue-700 hover:underline"
+                    className="text-blue hover:underline"
                   >
                     {s.id}
                   </Link>
@@ -86,13 +86,13 @@ export default async function SubmissionsPage({
                 <td className="table-cell">
                   <Link
                     href={`/problems/${s.problem.id}`}
-                    className="text-blue-700 hover:underline"
+                    className="text-blue hover:underline"
                   >
                     {s.problem.title}
                   </Link>
                 </td>
                 <td className="table-cell">{s.user.username}</td>
-                <td className="table-cell text-zinc-500">
+                <td className="table-cell text-dim">
                   {isLanguageKey(s.language)
                     ? LANGUAGES[s.language].label
                     : s.language}
@@ -100,15 +100,15 @@ export default async function SubmissionsPage({
                 <td className="table-cell">
                   <VerdictBadge status={s.status} />
                 </td>
-                <td className="table-cell text-right text-zinc-500">
+                <td className="table-cell text-right text-dim">
                   {s.timeMs != null ? `${s.timeMs} ms` : "—"}
                 </td>
-                <td className="table-cell text-right text-zinc-500">
+                <td className="table-cell text-right text-dim">
                   {s.memoryKb != null
                     ? `${Math.round(s.memoryKb / 1024)} MB`
                     : "—"}
                 </td>
-                <td className="table-cell text-zinc-500">
+                <td className="table-cell text-dim">
                   {s.createdAt.toLocaleString("zh-TW", {
                     timeZone: "Asia/Taipei",
                     hour12: false,
