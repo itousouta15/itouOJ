@@ -68,6 +68,24 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
 
 3. 部署本體：`npm ci && npx prisma migrate deploy && npm run build`，用 systemd 跑 `next start`（範例在 [deploy/online-judge.service](deploy/online-judge.service)），前面掛 nginx 反向代理（[deploy/nginx-oj.conf](deploy/nginx-oj.conf)）。
 
+## 日常更新（改完程式碼後）
+
+```powershell
+# 1. commit 修改（部署腳本打包的是已 commit 的內容，沒 commit 的改動不會上去）
+git add -A
+git commit -m "說明你改了什麼"
+
+# 2. 一鍵部署：打包 → 上傳 → npm ci → migrate → build → 重啟服務
+.\deploy\deploy.ps1
+
+# 3. 同步到 GitHub
+git push
+```
+
+- 想先在本地看效果：`npm run dev` 開 http://localhost:3000
+- 評測功能要先接上伺服器的 Piston：`ssh -N -L 2000:localhost:2000 root@<server>`
+- 改了 `prisma/schema.prisma` 的話，先在本地跑 `npx prisma migrate dev --name <名稱>` 產生 migration 再 commit，部署腳本會自動在伺服器套用
+
 ## 新增語言
 
 1. Piston 裝套件：`POST /api/v2/packages`
