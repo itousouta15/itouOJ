@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f6f8;
+  --foreground: #1a1d23;
 }
 
 @theme inline {
@@ -12,15 +12,76 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-zinc-200 bg-white shadow-sm;
+  }
+  .btn-primary {
+    @apply inline-flex cursor-pointer items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex cursor-pointer items-center justify-center rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50;
+  }
+  .btn-danger {
+    @apply inline-flex cursor-pointer items-center justify-center rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50;
+  }
+  .input {
+    @apply w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 focus:outline-none;
+  }
+  .table-head {
+    @apply border-b border-zinc-200 bg-zinc-50 px-4 py-2.5 text-left text-xs font-semibold tracking-wide text-zinc-500 uppercase;
+  }
+  .table-cell {
+    @apply border-b border-zinc-100 px-4 py-2.5 text-sm;
+  }
+}
+
+/* 題敘 Markdown 排版 */
+.prose-oj {
+  @apply text-[15px] leading-7 text-zinc-800;
+}
+.prose-oj h1 {
+  @apply mt-6 mb-3 text-2xl font-bold;
+}
+.prose-oj h2 {
+  @apply mt-6 mb-3 border-b border-zinc-200 pb-1 text-xl font-bold;
+}
+.prose-oj h3 {
+  @apply mt-5 mb-2 text-lg font-semibold;
+}
+.prose-oj p {
+  @apply my-3;
+}
+.prose-oj ul {
+  @apply my-3 list-disc pl-6;
+}
+.prose-oj ol {
+  @apply my-3 list-decimal pl-6;
+}
+.prose-oj code {
+  @apply rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[13px];
+}
+.prose-oj pre {
+  @apply my-3 overflow-x-auto rounded-md bg-zinc-900 p-4 text-zinc-100;
+}
+.prose-oj pre code {
+  @apply bg-transparent p-0 text-[13px] text-inherit;
+}
+.prose-oj blockquote {
+  @apply my-3 border-l-4 border-zinc-300 pl-4 text-zinc-600;
+}
+.prose-oj table {
+  @apply my-3 w-auto border-collapse;
+}
+.prose-oj th,
+.prose-oj td {
+  @apply border border-zinc-300 px-3 py-1.5 text-sm;
+}
+.prose-oj a {
+  @apply text-blue-600 underline hover:text-blue-800;
 }
