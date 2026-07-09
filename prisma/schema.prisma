@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String       @id @default(cuid())
+  username     String       @unique
+  passwordHash String
+  role         String       @default("USER") // USER | ADMIN
+  createdAt    DateTime     @default(now())
+  submissions  Submission[]
+}
+
+model Problem {
+  id            Int          @id @default(autoincrement())
+  title         String
+  statement     String // Markdown，支援數學式
+  difficulty    String       @default("medium") // easy | medium | hard
+  timeLimitMs   Int          @default(1000)
+  memoryLimitMb Int          @default(256)
+  isPublic      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  testCases     TestCase[]
+  submissions   Submission[]
+}
+
+model TestCase {
+  id        Int     @id @default(autoincrement())
+  problemId Int
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  input     String
+  output    String
+  isSample  Boolean @default(false) // 範例測資會顯示在題目頁
+  order     Int     @default(0)
+}
+
+model Submission {
+  id           Int          @id @default(autoincrement())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId    Int
+  problem      Problem      @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  language     String // cpp | c | python | java | javascript
+  code         String
+  status       String       @default("PENDING") // PENDING JUDGING AC WA TLE MLE RE CE IE
+  compileError String?
+  timeMs       Int? // 所有測資的最大值
+  memoryKb     Int?
+  createdAt    DateTime     @default(now())
+  results      TestResult[]
+}
+
+model TestResult {
+  id           Int        @id @default(autoincrement())
+  submissionId Int
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  order        Int        @default(0)
+  verdict      String // AC WA TLE MLE RE
+  timeMs       Int?
+  memoryKb     Int?
+}
