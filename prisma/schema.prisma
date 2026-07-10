@@ -10,7 +10,9 @@ datasource db {
 model User {
   id           String         @id @default(cuid())
   username     String         @unique
-  passwordHash String
+  passwordHash String? // null = Google 帳號，沒有本地密碼
+  googleId     String?        @unique // Google 帳號的 sub
+  email        String? // 目前只有 Google 登入會帶入
   role         String         @default("USER") // USER | ADMIN
   displayName  String? // 顯示名稱（未設定時顯示 username）
   bio          String? // 自我介紹
