@@ -8,25 +8,63 @@ datasource db {
 }
 
 model User {
-  id           String       @id @default(cuid())
-  username     String       @unique
+  id           String         @id @default(cuid())
+  username     String         @unique
   passwordHash String
-  role         String       @default("USER") // USER | ADMIN
-  createdAt    DateTime     @default(now())
+  role         String         @default("USER") // USER | ADMIN
+  displayName  String? // 顯示名稱（未設定時顯示 username）
+  bio          String? // 自我介紹
+  createdAt    DateTime       @default(now())
   submissions  Submission[]
+  courses      CourseMember[]
 }
 
 model Problem {
-  id            Int          @id @default(autoincrement())
-  title         String
-  statement     String // Markdown，支援數學式
-  difficulty    String       @default("medium") // easy | medium | hard
-  timeLimitMs   Int          @default(1000)
-  memoryLimitMb Int          @default(256)
-  isPublic      Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-  testCases     TestCase[]
-  submissions   Submission[]
+  id             Int             @id @default(autoincrement())
+  title          String
+  statement      String // Markdown，支援數學式
+  difficulty     String          @default("medium") // easy | medium | hard
+  timeLimitMs    Int             @default(1000)
+  memoryLimitMb  Int             @default(256)
+  isPublic       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  testCases      TestCase[]
+  submissions    Submission[]
+  courseProblems CourseProblem[]
+}
+
+// 題單型課程：一組題目 + 說明，使用者加入後追蹤解題進度
+model Course {
+  id          Int             @id @default(autoincrement())
+  title       String
+  description String          @default("")
+  isPublic    Boolean         @default(true)
+  joinCode    String? // 加入代碼；null = 開放任何人加入
+  createdAt   DateTime        @default(now())
+  problems    CourseProblem[]
+  members     CourseMember[]
+}
+
+model CourseProblem {
+  id        Int     @id @default(autoincrement())
+  courseId  Int
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  problemId Int
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  order     Int     @default(0)
+
+  @@unique([courseId, problemId])
+}
+
+model CourseMember {
+  id       Int      @id @default(autoincrement())
+  courseId Int
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([courseId, userId])
 }
 
 model TestCase {

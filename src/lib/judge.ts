@@ -30,13 +30,33 @@ export async function resumePendingSubmissions() {
 }
 
 // 比對輸出：每行去掉行尾空白、忽略結尾空行（一般 OJ 慣例）
-function normalizeOutput(text: string): string {
+export function normalizeOutput(text: string): string {
   return text
     .replace(/\r\n/g, "\n")
     .split("\n")
     .map((line) => line.replace(/[ \t]+$/g, ""))
     .join("\n")
     .replace(/\n+$/g, "");
+}
+
+// 單筆測資的判定（判題與測試執行共用）
+export function runVerdict(
+  run: import("@/lib/piston").PistonPhase,
+  timeLimitMs: number,
+  memoryLimitBytes: number,
+  expected: string
+): string {
+  if (run.signal === "SIGKILL") {
+    // 被沙箱砍掉：看是撞到時間還是記憶體上限
+    if (run.wall_time >= timeLimitMs || run.cpu_time >= timeLimitMs) {
+      return "TLE";
+    }
+    return "MLE"; // OOM killer 常常在數值到頂前就動手
+  }
+  if (run.code !== 0) return "RE";
+  return normalizeOutput(run.stdout) === normalizeOutput(expected)
+    ? "AC"
+    : "WA";
 }
 
 async function judgeSubmission(submissionId: number) {
@@ -116,24 +136,7 @@ async function judgeSubmission(submissionId: number) {
       maxTimeMs = Math.max(maxTimeMs, timeMs);
       maxMemoryKb = Math.max(maxMemoryKb, memoryKb);
 
-      let verdict: string;
-      if (run.signal === "SIGKILL") {
-        // 被沙箱砍掉：看是撞到時間還是記憶體上限
-        if (run.wall_time >= timeLimitMs || run.cpu_time >= timeLimitMs) {
-          verdict = "TLE";
-        } else if (run.memory !== null && run.memory >= memoryLimitBytes) {
-          verdict = "MLE";
-        } else {
-          verdict = "MLE"; // OOM killer 常常在數值到頂前就動手
-        }
-      } else if (run.code !== 0) {
-        verdict = "RE";
-      } else {
-        verdict =
-          normalizeOutput(run.stdout) === normalizeOutput(tc.output)
-            ? "AC"
-            : "WA";
-      }
+      const verdict = runVerdict(run, timeLimitMs, memoryLimitBytes, tc.output);
 
       await prisma.testResult.create({
         data: {

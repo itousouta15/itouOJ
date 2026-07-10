@@ -19,8 +19,16 @@ export default async function AdminProblemsPage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="page-title">題目管理</h1>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-4">
+          <h1 className="page-title">題目管理</h1>
+          <Link
+            href="/admin/courses"
+            className="text-sm text-blue hover:underline"
+          >
+            課程管理 →
+          </Link>
+        </div>
         <Link href="/admin/problems/new" className="btn-primary">
           ＋ 新增題目
         </Link>

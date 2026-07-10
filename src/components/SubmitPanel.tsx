@@ -9,6 +9,27 @@ import { java } from "@codemirror/lang-java";
 import { javascript } from "@codemirror/lang-javascript";
 import type { Extension } from "@codemirror/state";
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
+import VerdictBadge from "@/components/VerdictBadge";
+
+interface SampleRunResult {
+  order: number;
+  verdict: string;
+  timeMs: number;
+  stdout: string;
+  expected: string;
+  stderr: string;
+}
+
+interface RunResponse {
+  mode: "samples" | "custom";
+  compileError?: string;
+  results?: SampleRunResult[];
+  stdout?: string;
+  stderr?: string;
+  exitCode?: number | null;
+  killed?: boolean;
+  timeMs?: number;
+}
 
 const CM_EXTENSIONS: Record<LanguageKey, Extension[]> = {
   cpp: [cpp()],
@@ -57,6 +78,10 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [darkTheme, setDarkTheme] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [runResult, setRunResult] = useState<RunResponse | null>(null);
+  const [showCustom, setShowCustom] = useState(false);
+  const [customInput, setCustomInput] = useState("");
 
   // 記住上次選的語言、以及每題每語言打到一半的程式碼
   useEffect(() => {
@@ -88,6 +113,35 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
   function updateCode(value: string) {
     setCode(value);
     localStorage.setItem(draftKey(language), value);
+  }
+
+  // 測試執行：跑範例測資（或自訂輸入），不留提交紀錄
+  async function runTest() {
+    setRunning(true);
+    setError("");
+    setRunResult(null);
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          problemId,
+          language,
+          code,
+          customInput: showCustom ? customInput : null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "執行失敗");
+        return;
+      }
+      setRunResult(data);
+    } catch {
+      setError("執行失敗，請稍後再試");
+    } finally {
+      setRunning(false);
+    }
   }
 
   async function submit() {
@@ -138,12 +192,127 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
           basicSetup={{ tabSize: 4 }}
         />
       </div>
+      {showCustom && (
+        <div className="mt-3">
+          <label className="mb-1 block text-sm font-medium">
+            自訂輸入（stdin）
+          </label>
+          <textarea
+            className="input mono min-h-24 resize-y text-[13px]"
+            value={customInput}
+            onChange={(e) => setCustomInput(e.target.value)}
+            placeholder="測試執行時會用這裡的內容當輸入"
+          />
+        </div>
+      )}
+
       {error && <p className="mt-2 text-sm text-[#ff6b6b]">{error}</p>}
-      <div className="mt-3 flex justify-end">
-        <button className="btn-primary" onClick={submit} disabled={submitting}>
-          {submitting ? "提交中…" : "提交程式碼"}
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <button
+          className={`pill ${showCustom ? "pill-active" : ""}`}
+          onClick={() => setShowCustom((v) => !v)}
+        >
+          自訂輸入
         </button>
+        <div className="flex gap-3">
+          <button
+            className="btn-secondary"
+            onClick={runTest}
+            disabled={running || submitting}
+          >
+            {running ? "執行中…" : "測試執行"}
+          </button>
+          <button
+            className="btn-primary"
+            onClick={submit}
+            disabled={running || submitting}
+          >
+            {submitting ? "送出中…" : "送出解答"}
+          </button>
+        </div>
       </div>
+
+      {runResult && (
+        <div className="mt-4 space-y-3 border-t border-bd pt-4">
+          {runResult.compileError ? (
+            <div>
+              <p className="mb-1 text-sm font-medium text-[#ff6b6b]">
+                編譯錯誤
+              </p>
+              <pre className="overflow-x-auto rounded bg-inset p-3 font-mono text-xs whitespace-pre-wrap text-[#ff6b6b]">
+                {runResult.compileError}
+              </pre>
+            </div>
+          ) : runResult.mode === "samples" ? (
+            runResult.results!.map((r) => (
+              <div key={r.order} className="rounded-md border border-bd p-3">
+                <div className="flex items-center gap-3">
+                  <span className="mono text-xs text-dim">範例 {r.order}</span>
+                  <VerdictBadge status={r.verdict} short />
+                  <span className="mono text-xs text-mute">{r.timeMs} ms</span>
+                </div>
+                {r.verdict === "WA" && (
+                  <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="mb-1 text-xs font-semibold text-dim">
+                        你的輸出
+                      </p>
+                      <pre className="overflow-x-auto rounded bg-inset p-2 font-mono text-xs whitespace-pre-wrap">
+                        {r.stdout || "（沒有輸出）"}
+                      </pre>
+                    </div>
+                    <div>
+                      <p className="mb-1 text-xs font-semibold text-dim">
+                        預期輸出
+                      </p>
+                      <pre className="overflow-x-auto rounded bg-inset p-2 font-mono text-xs whitespace-pre-wrap">
+                        {r.expected}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+                {r.verdict === "RE" && r.stderr && (
+                  <pre className="mt-2 overflow-x-auto rounded bg-inset p-2 font-mono text-xs whitespace-pre-wrap text-[#ff6b6b]">
+                    {r.stderr}
+                  </pre>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="rounded-md border border-bd p-3">
+              <div className="flex items-center gap-3">
+                <span className="mono text-xs text-dim">自訂輸入執行結果</span>
+                <span className="mono text-xs text-mute">
+                  {runResult.timeMs} ms
+                </span>
+                {runResult.killed && (
+                  <span className="vbadge vbadge-amber">超過時間/記憶體限制</span>
+                )}
+                {!runResult.killed && runResult.exitCode !== 0 && (
+                  <span className="vbadge vbadge-red">
+                    exit code {runResult.exitCode}
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 mb-1 text-xs font-semibold text-dim">輸出</p>
+              <pre className="overflow-x-auto rounded bg-inset p-2 font-mono text-xs whitespace-pre-wrap">
+                {runResult.stdout || "（沒有輸出）"}
+              </pre>
+              {runResult.stderr && (
+                <>
+                  <p className="mt-2 mb-1 text-xs font-semibold text-dim">
+                    stderr
+                  </p>
+                  <pre className="overflow-x-auto rounded bg-inset p-2 font-mono text-xs whitespace-pre-wrap text-[#ff6b6b]">
+                    {runResult.stderr}
+                  </pre>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
