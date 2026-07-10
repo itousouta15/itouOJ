@@ -29,6 +29,12 @@ export async function POST(request: Request) {
   if (!user) {
     return Response.json({ error: "請先登入" }, { status: 401 });
   }
+  if (!user.passwordHash) {
+    return Response.json(
+      { error: "此帳號使用 Google 登入，沒有密碼可以修改" },
+      { status: 400 }
+    );
+  }
 
   const ok = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
   if (!ok) {

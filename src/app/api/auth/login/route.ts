@@ -17,7 +17,17 @@ export async function POST(request: Request) {
   const { username, password } = parsed.data;
 
   const user = await prisma.user.findUnique({ where: { username } });
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+  if (user && !user.passwordHash) {
+    return Response.json(
+      { error: "此帳號使用 Google 登入，請改用 Google 按鈕" },
+      { status: 401 }
+    );
+  }
+  if (
+    !user ||
+    !user.passwordHash ||
+    !(await bcrypt.compare(password, user.passwordHash))
+  ) {
     return Response.json({ error: "帳號或密碼錯誤" }, { status: 401 });
   }
 
