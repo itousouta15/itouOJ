@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&family=Shippori+Mincho:wght@400;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&family=Shippori+Mincho:wght@400;600;700&display=swap");
 @import "tailwindcss";
 
 /* ---- Theme tokens（同 itousouta15.tw，[data-theme] 切換）---- */
@@ -160,6 +160,52 @@ body {
 }
 .theme-btn:active {
   transform: rotate(35deg) scale(0.85);
+}
+
+/* ---- 帳號下拉選單 ---- */
+@keyframes menuPop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 190px;
+  background: var(--panel);
+  border: 1px solid var(--bd2);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px var(--shadow);
+  padding: 6px;
+  animation: menuPop 0.18s ease both;
+}
+.menu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 14px;
+  color: var(--dim);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  text-align: left;
+}
+.menu-item:hover {
+  background: var(--inset);
+  color: var(--tx);
+}
+.menu-sep {
+  height: 1px;
+  background: var(--bd);
+  margin: 6px 4px;
 }
 
 @layer components {
@@ -352,6 +398,242 @@ body {
     color: var(--blue);
     background: rgba(176, 189, 247, 0.12);
     border-color: rgba(176, 189, 247, 0.3);
+  }
+}
+
+/* ---- Footer / 跑馬燈（同 itousouta15.tw）---- */
+@keyframes itMarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.footer {
+  margin-top: 44px;
+  border-top: 1px solid var(--bd);
+  background: var(--panel2);
+  overflow: hidden;
+}
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: itMarquee 28s linear infinite;
+  padding: 14px 0;
+}
+.marquee-group {
+  display: flex;
+  gap: 36px;
+  padding-right: 36px;
+  font-family: "Shippori Mincho", "Noto Serif TC", serif;
+  font-size: 20px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.marquee-group .star {
+  color: var(--mute);
+}
+.footer-inner {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 36px 20px 30px;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 28px;
+}
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 20px;
+}
+.footer-logo {
+  font-family: "ChenYuLuoYan", "Dancing Script", cursive;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--tx);
+}
+.footer-tagline {
+  margin: 0;
+  font-family: "Shippori Mincho", "Noto Serif TC", serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--dim);
+}
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.footer-section-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.footer-link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.footer-link-list--two-col {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: 8px 35px;
+}
+.footer-link-list a {
+  width: fit-content;
+  color: var(--tx);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13.5px;
+  opacity: 0.78;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.footer-link-list a:hover {
+  opacity: 1;
+  transform: translateX(3px);
+}
+.footer-divider {
+  height: 1px;
+  margin: 30px 0 22px;
+  background: var(--bd);
+}
+.footer-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.footer-si {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--bd2);
+  background: var(--inset);
+  color: var(--tx);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
+}
+.footer-si:hover {
+  background: var(--panel);
+  transform: translateY(-3px);
+}
+.footer-si-icon {
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  display: block;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+.si-instagram .footer-si-icon {
+  mask-image: url("https://cdn.simpleicons.org/instagram");
+  -webkit-mask-image: url("https://cdn.simpleicons.org/instagram");
+}
+.si-github .footer-si-icon {
+  mask-image: url("https://cdn.simpleicons.org/github");
+  -webkit-mask-image: url("https://cdn.simpleicons.org/github");
+}
+.si-x .footer-si-icon {
+  mask-image: url("https://cdn.simpleicons.org/x");
+  -webkit-mask-image: url("https://cdn.simpleicons.org/x");
+}
+.si-discord .footer-si-icon {
+  mask-image: url("https://cdn.simpleicons.org/discord");
+  -webkit-mask-image: url("https://cdn.simpleicons.org/discord");
+}
+.si-telegram .footer-si-icon {
+  mask-image: url("https://cdn.simpleicons.org/telegram");
+  -webkit-mask-image: url("https://cdn.simpleicons.org/telegram");
+}
+.icon-copyright::before {
+  content: "©";
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-weight: 700;
+}
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: var(--mute);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+}
+.footer-copyright {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.footer-heart {
+  color: var(--purple);
+}
+@media (max-width: 1024px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 30px 24px;
+  }
+  .footer-brand {
+    grid-column: 1 / -1;
+    padding-right: 0;
+  }
+}
+@media (max-width: 760px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+  .footer-inner {
+    padding: 44px 20px 36px;
+  }
+  .footer-logo {
+    font-size: 38px;
+  }
+  .footer-tagline {
+    font-size: 17px;
+  }
+  .footer-section-label {
+    font-size: 12.5px;
+  }
+  .footer-link-list {
+    gap: 12px;
+  }
+  .footer-link-list a {
+    font-size: 15.5px;
+  }
+  .footer-link-list--two-col {
+    gap: 12px 40px;
+  }
+  .footer-socials {
+    gap: 14px;
+  }
+  .footer-si {
+    width: 48px;
+    height: 48px;
+  }
+  .footer-si-icon {
+    width: 22px;
+    height: 22px;
+  }
+  .footer-divider {
+    margin: 36px 0 26px;
+  }
+  .footer-bottom {
+    font-size: 13.5px;
+  }
+  .marquee-group {
+    font-size: 22px;
   }
 }
 

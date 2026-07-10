@@ -8,8 +8,18 @@ export default function NavLinks({ isAdmin }: { isAdmin: boolean }) {
   const links = [
     {
       href: "/",
+      label: "首頁",
+      isActive: pathname === "/",
+    },
+    {
+      href: "/problems",
       label: "題目",
-      isActive: pathname === "/" || pathname.startsWith("/problems"),
+      isActive: pathname.startsWith("/problems"),
+    },
+    {
+      href: "/courses",
+      label: "課程",
+      isActive: pathname.startsWith("/courses"),
     },
     {
       href: "/submissions",

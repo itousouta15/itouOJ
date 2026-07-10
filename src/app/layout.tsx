@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import PageTransition from "@/components/PageTransition";
 
 export const metadata: Metadata = {
-  title: { default: "Online Judge", template: "%s | Online Judge" },
-  description: "自架的程式解題系統",
+  title: { default: "itouOJ", template: "%s | Online Judge" },
+  description: "itouSouta 的程式解題系統",
 };
 
 // 在 hydration 前套用主題，避免亮→暗閃爍
@@ -21,12 +23,10 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
         <Navbar />
-        <main className="page-transition mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-          {children}
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+          <PageTransition>{children}</PageTransition>
         </main>
-        <footer className="mono py-8 text-center text-[11px] tracking-[0.2em] text-mute uppercase">
-          Powered by Next.js + Piston
-        </footer>
+        <Footer />
       </body>
     </html>
   );

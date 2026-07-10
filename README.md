@@ -1,4 +1,4 @@
-# Online Judge
+# itouOJ
 
 自架的程式解題系統（OJ）。前後端用 Next.js 一體開發，評測引擎用 [Piston](https://github.com/engineer-man/piston) 沙箱執行使用者程式碼。
 
@@ -56,6 +56,18 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
      -e PISTON_COMPILE_TIMEOUT=15000 -e PISTON_RUN_TIMEOUT=20000 \
      -e PISTON_OUTPUT_MAX_SIZE=33554432 \
      --name piston_api ghcr.io/engineer-man/piston
+   ```
+
+   原版 Piston 有兩個問題會弄壞大測資（>100KB），**每次重建容器後都要重新打補丁**（`docker restart` 不會弄丟，`docker rm` + `docker run` 會）：
+
+   ```bash
+   # 1) HTTP API body 上限預設 100KB，判題送不進大測資 → 調成 16MB
+   docker exec piston_api sed -i \
+     "s/body_parser.json()/body_parser.json({ limit: '16mb' })/; s/body_parser.urlencoded({ extended: true })/body_parser.urlencoded({ extended: true, limit: '16mb' })/" \
+     /piston_api/src/index.js
+   # 2) stdin 寫入後立刻 destroy()，緩衝區沒寫完就被丟掉，程式只收得到前 ~200KB → 拿掉那行
+   docker exec piston_api sed -i '/proc.stdin.destroy();/d' /piston_api/src/job.js
+   docker restart piston_api
    ```
 
 2. 安裝語言（照 `src/lib/languages.ts` 的版本）：
