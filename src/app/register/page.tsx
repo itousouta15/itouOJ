@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import AuthForm from "@/components/AuthForm";
+import { googleConfigured } from "@/lib/googleOAuth";
 
 export const metadata: Metadata = { title: "註冊" };
 
 export default function RegisterPage() {
-  return <AuthForm mode="register" />;
+  return <AuthForm mode="register" googleEnabled={googleConfigured()} />;
 }

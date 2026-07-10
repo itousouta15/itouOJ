@@ -1,6 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&family=Shippori+Mincho:wght@400;600;700&display=swap");
 @import "tailwindcss";
 
+/* 辰宇落雁體（ChenYuLuoYan）由 emfont 分塊 subset 動態載入，
+   見 layout.tsx 的 head（同 itousouta15.tw）。字體只有細版，
+   font-weight:700 時由瀏覽器合成粗體。 */
+
 /* ---- Theme tokens（同 itousouta15.tw，[data-theme] 切換）---- */
 :root {
   --bg: #1b1e23;
@@ -86,7 +90,43 @@ body {
   animation: itFade 0.45s ease both;
 }
 
+/* ---- Site loader：window load 前的全頁遮罩（同 itousouta15.tw）---- */
+.site-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel2-a);
+  transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  will-change: backdrop-filter, transform;
+}
+/* backdrop-filter 要等第一個畫面真的畫完後才加上去：瀏覽器算模糊用的是
+   「上一個合成幀」的畫面，網站剛載入的第一幀根本沒有上一幀可以取樣，
+   Chromium 這時候會直接當黑色處理——淺色模式下背景是亮的，就會看到
+   loading 遮罩先閃一下深色才變回正常顏色。用 rAF 延一拍再套用
+   backdrop-filter，確保套用時畫面已經有東西可以模糊。 */
+.site-loader--blurred {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.site-loader--hide {
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+
 /* ---- Header ---- */
+@keyframes itHeaderDrop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 .site-header {
   position: sticky;
   top: 0;
@@ -95,13 +135,36 @@ body {
   border-bottom: 1px solid var(--bd2);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  /* 停在 itHeaderDrop 的 0% 幀（via "both"），等 loader 滑出畫面後
+     才落下進場——見下方 body.site-revealed 規則。 */
+  animation: itHeaderDrop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-play-state: paused;
+}
+body.site-revealed .site-header {
+  animation-play-state: running;
 }
 .logo {
-  font-family: "Shippori Mincho", "Noto Serif TC", serif;
-  font-size: 19px;
+  font-family: "ChenYuLuoYan", "Dancing Script", cursive;
+  font-size: 45px;
   font-weight: 700;
   color: var(--tx);
   white-space: nowrap;
+  transform: translateY(2px);
+  /* ChenYuLuoYan 字面特別小，載入前用 fallback 會先放大再縮小（FOUT）。
+     字體就緒前先隱藏，避免出現「先變大再縮小」的跳動。 */
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.fonts-ready .logo {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-loader {
+    transition: none !important;
+  }
+  .site-header {
+    animation: none !important;
+  }
 }
 .nav-link {
   position: relative;
@@ -441,7 +504,8 @@ body {
 }
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  /* 原站 footer-inner 為 1180px；此站對齊 1024px，重新配比讓社群欄放得下五顆 40px 圖示 */
+  grid-template-columns: 1.25fr 0.95fr 0.95fr 1.25fr;
   gap: 28px;
 }
 .footer-brand {

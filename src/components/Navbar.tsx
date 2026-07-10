@@ -20,7 +20,7 @@ export default async function Navbar() {
     <header className="site-header">
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center gap-4 px-4">
         <Link href="/" className="logo">
-          itouOJ (๑•̀ω•́๑)
+          itouOJ
         </Link>
         <NavLinks isAdmin={session?.role === "ADMIN"} />
         <div className="flex items-center gap-3">
