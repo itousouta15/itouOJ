@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import SubmissionRow from "@/components/SubmissionRow";
 
-export const metadata: Metadata = { title: "提交紀錄" };
+export const metadata: Metadata = { title: "紀錄" };
 export const dynamic = "force-dynamic";
 
 export default async function SubmissionsPage({
@@ -29,7 +29,7 @@ export default async function SubmissionsPage({
   return (
     <div>
       <div className="mb-4 flex items-center gap-4">
-        <h1 className="page-title">提交紀錄</h1>
+        <h1 className="page-title">紀錄</h1>
         <div className="flex gap-2 text-sm">
           <Link
             href="/submissions"
@@ -47,6 +47,9 @@ export default async function SubmissionsPage({
           )}
         </div>
       </div>
+      <p className="mono mb-2 text-[11px] text-mute sm:hidden">
+        ← 左右滑動可看到更多欄位 →
+      </p>
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -68,7 +71,7 @@ export default async function SubmissionsPage({
                   colSpan={8}
                   className="table-cell py-10 text-center text-mute"
                 >
-                  還沒有提交紀錄
+                  還沒有紀錄
                 </td>
               </tr>
             )}

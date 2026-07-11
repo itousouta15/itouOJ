@@ -115,7 +115,7 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
     localStorage.setItem(draftKey(language), value);
   }
 
-  // 測試執行：跑範例測資（或自訂輸入），不留提交紀錄
+  // 測試執行：跑範例測資（或自訂輸入），不留紀錄
   async function runTest() {
     setRunning(true);
     setError("");
