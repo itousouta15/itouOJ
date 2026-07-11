@@ -42,7 +42,14 @@ DATABASE_URL="file:./dev.db"
 AUTH_SECRET="<openssl rand -hex 32>"
 PISTON_URL="http://localhost:2000"   # Piston 位址
 COOKIE_SECURE="0"                    # 上 HTTPS 後改 1
+
+# Google 登入（選用；沒設定就不顯示 Google 按鈕）
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+# APP_URL="https://oj.example.tw"    # 正式環境對外網址（組 OAuth redirect 用）
 ```
+
+Google 登入設定：到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建立「OAuth 用戶端 ID」（類型：網頁應用程式），授權重新導向 URI 填 `http://localhost:3000/api/auth/google/callback`。正式環境要再加一組 `https://<你的網域>/api/auth/google/callback` —— Google 不接受純 IP 或 http 的正式網址，所以正式站要先有網域 + HTTPS 才能開 Google 登入，並在 `.env` 設好 `APP_URL`。第一次用 Google 登入會自動建立帳號（沿用「第一個使用者是管理員」規則）。
 
 Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localhost:2000 user@server`。
 
