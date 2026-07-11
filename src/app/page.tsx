@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import DifficultyBadge from "@/components/DifficultyBadge";
-import VerdictBadge from "@/components/VerdictBadge";
+import HomeSubmissionRow from "@/components/HomeSubmissionRow";
 
 export const dynamic = "force-dynamic";
 
@@ -197,38 +197,23 @@ export default async function HomePage() {
                 </tr>
               )}
               {latestSubmissions.map((s) => (
-                <tr key={s.id} className="hover:bg-panel2">
-                  <td className="table-cell">
-                    <Link
-                      href={`/submissions/${s.id}`}
-                      className="text-blue hover:underline"
-                    >
-                      {s.id}
-                    </Link>
-                  </td>
-                  <td className="table-cell">
-                    <Link
-                      href={`/problems/${s.problem.id}`}
-                      className="text-blue hover:underline"
-                    >
-                      {s.problem.title}
-                    </Link>
-                  </td>
-                  <td className="table-cell">{s.user.username}</td>
-                  <td className="table-cell">
-                    <VerdictBadge status={s.status} short />
-                  </td>
-                  <td className="table-cell text-right text-dim">
-                    {s.createdAt.toLocaleString("zh-TW", {
+                <HomeSubmissionRow
+                  key={s.id}
+                  s={{
+                    id: s.id,
+                    status: s.status,
+                    username: s.user.username,
+                    problem: s.problem,
+                    createdAtLabel: s.createdAt.toLocaleString("zh-TW", {
                       timeZone: "Asia/Taipei",
                       hour12: false,
                       month: "2-digit",
                       day: "2-digit",
                       hour: "2-digit",
                       minute: "2-digit",
-                    })}
-                  </td>
-                </tr>
+                    }),
+                  }}
+                />
               ))}
             </tbody>
           </table>
