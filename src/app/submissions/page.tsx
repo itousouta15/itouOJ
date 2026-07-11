@@ -2,8 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { LANGUAGES, isLanguageKey } from "@/lib/languages";
-import VerdictBadge from "@/components/VerdictBadge";
+import SubmissionRow from "@/components/SubmissionRow";
 
 export const metadata: Metadata = { title: "提交紀錄" };
 export const dynamic = "force-dynamic";
@@ -74,47 +73,22 @@ export default async function SubmissionsPage({
               </tr>
             )}
             {submissions.map((s) => (
-              <tr key={s.id} className="hover:bg-panel2">
-                <td className="table-cell">
-                  <Link
-                    href={`/submissions/${s.id}`}
-                    className="text-blue hover:underline"
-                  >
-                    {s.id}
-                  </Link>
-                </td>
-                <td className="table-cell">
-                  <Link
-                    href={`/problems/${s.problem.id}`}
-                    className="text-blue hover:underline"
-                  >
-                    {s.problem.title}
-                  </Link>
-                </td>
-                <td className="table-cell">{s.user.username}</td>
-                <td className="table-cell text-dim">
-                  {isLanguageKey(s.language)
-                    ? LANGUAGES[s.language].label
-                    : s.language}
-                </td>
-                <td className="table-cell">
-                  <VerdictBadge status={s.status} />
-                </td>
-                <td className="table-cell text-right text-dim">
-                  {s.timeMs != null ? `${s.timeMs} ms` : "—"}
-                </td>
-                <td className="table-cell text-right text-dim">
-                  {s.memoryKb != null
-                    ? `${Math.round(s.memoryKb / 1024)} MB`
-                    : "—"}
-                </td>
-                <td className="table-cell text-dim">
-                  {s.createdAt.toLocaleString("zh-TW", {
+              <SubmissionRow
+                key={s.id}
+                s={{
+                  id: s.id,
+                  status: s.status,
+                  language: s.language,
+                  timeMs: s.timeMs,
+                  memoryKb: s.memoryKb,
+                  username: s.user.username,
+                  problem: s.problem,
+                  createdAtLabel: s.createdAt.toLocaleString("zh-TW", {
                     timeZone: "Asia/Taipei",
                     hour12: false,
-                  })}
-                </td>
-              </tr>
+                  }),
+                }}
+              />
             ))}
           </tbody>
         </table>
