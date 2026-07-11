@@ -62,7 +62,16 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
      -dit --restart=always -p 127.0.0.1:2000:2000 \
      -e PISTON_COMPILE_TIMEOUT=15000 -e PISTON_RUN_TIMEOUT=20000 \
      -e PISTON_OUTPUT_MAX_SIZE=33554432 \
+     --memory=4g --memory-swap=4g --cpus=3 --pids-limit=1024 \
      --name piston_api ghcr.io/engineer-man/piston
+   ```
+
+   `--memory` / `--cpus` / `--pids-limit` 是限制**容器對主機的總資源上限**（跟評測本身的時間/記憶體限制是兩回事——單筆評測的限制是 `judge.ts` 依題目設定傳給 Piston，由內部 isolate/cgroup 逐筆強制執行，SIGKILL 後判 TLE/MLE）。沒有這層的話，Piston 容器預設可以吃光主機全部 CPU/RAM，isolate 出 bug 或題目限制設太大時會拖垮同一台主機上的 nginx / Next.js。數字要照主機規格調（範例是 4 核心 8GB 主機，留 1 核心給系統本身）。
+
+   容器還在跑的話可以不重建直接套用：
+
+   ```bash
+   docker update --memory=4g --memory-swap=4g --cpus=3 --pids-limit=1024 piston_api
    ```
 
    原版 Piston 有三個問題會弄壞大測資（>100KB）甚至讓整個評測服務當掉，**每次重建容器後都要重新打補丁**（`docker restart` 不會弄丟，`docker rm` + `docker run` 會）：
@@ -83,6 +92,15 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
    ```
 
    > `docker cp` 到這個容器的 `/tmp` 常常悄悄失敗（`/tmp` 掛的是 tmpfs），要塞檔案進容器的話改用 `/root` 之類的一般目錄。
+
+   Piston 本身的沙箱只管資源（CPU/記憶體/時間）跟檔案系統範圍，**不管使用者程式碼能不能呼叫子程序**——submission 裡直接 `import subprocess` / `os.system` 就能在容器裡跑任意指令。裝一份 `sitecustomize.py`（[deploy/piston-python-sitecustomize.py](deploy/piston-python-sitecustomize.py)）進 Python 套件的 `site-packages`，用 `sys.addaudithook` 在直譯器層級擋掉 `subprocess` / `os.system` / `os.popen` / `os.fork` / `ctypes` / `socket`（audit hook 裝上去後使用者程式碼無法移除，比字串黑名單擋 `import` 紮實）：
+
+   ```bash
+   scp deploy/piston-python-sitecustomize.py root@<server>:/root/sitecustomize.py
+   ssh root@<server> "docker cp /root/sitecustomize.py piston_api:/piston/packages/python/3.12.0/lib/python3.12/site-packages/sitecustomize.py"
+   ```
+
+   這份檔案放在 `/piston/packages/...`，跟語言套件一樣是掛在 `/opt/piston-data` volume 上，`docker rm` + `docker run` 重建容器也不會弄丟（不像上面 3 個補丁要重打）；只有換 Python 版本或砍掉 `/opt/piston-data` 重裝套件時才需要重新放一次。
 
 2. 安裝語言（照 `src/lib/languages.ts` 的版本）：
 
