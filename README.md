@@ -65,7 +65,7 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
      --name piston_api ghcr.io/engineer-man/piston
    ```
 
-   原版 Piston 有兩個問題會弄壞大測資（>100KB），**每次重建容器後都要重新打補丁**（`docker restart` 不會弄丟，`docker rm` + `docker run` 會）：
+   原版 Piston 有三個問題會弄壞大測資（>100KB）甚至讓整個評測服務當掉，**每次重建容器後都要重新打補丁**（`docker restart` 不會弄丟，`docker rm` + `docker run` 會）：
 
    ```bash
    # 1) HTTP API body 上限預設 100KB，判題送不進大測資 → 調成 16MB
@@ -74,8 +74,15 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
      /piston_api/src/index.js
    # 2) stdin 寫入後立刻 destroy()，緩衝區沒寫完就被丟掉，程式只收得到前 ~200KB → 拿掉那行
    docker exec piston_api sed -i '/proc.stdin.destroy();/d' /piston_api/src/job.js
+   # 3) 使用者程式在 stdin 還沒寫完前就結束（提早 return / RE），父行程繼續寫入已關閉的 pipe
+   #    會噴未捕捉的 EPIPE，整個 Piston process 直接崩潰（影響當下所有人的提交）→ 補一個空的 error handler
+   docker exec piston_api sed -i \
+     "s/proc.stdin.write(this.stdin);/proc.stdin.on('error', () => {}); proc.stdin.write(this.stdin);/" \
+     /piston_api/src/job.js
    docker restart piston_api
    ```
+
+   > `docker cp` 到這個容器的 `/tmp` 常常悄悄失敗（`/tmp` 掛的是 tmpfs），要塞檔案進容器的話改用 `/root` 之類的一般目錄。
 
 2. 安裝語言（照 `src/lib/languages.ts` 的版本）：
 
