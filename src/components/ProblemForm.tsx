@@ -85,7 +85,7 @@ export default function ProblemForm({
   }
 
   async function remove() {
-    if (!confirm("確定要刪除這個題目嗎？相關的提交紀錄也會一併刪除。")) return;
+    if (!confirm("確定要刪除這個題目嗎？相關的紀錄也會一併刪除。")) return;
     await fetch(`/api/admin/problems/${initial!.id}`, { method: "DELETE" });
     router.push("/admin/problems");
     router.refresh();
