@@ -32,6 +32,9 @@ export default async function AdminCoursesPage() {
           ＋ 新增課程
         </Link>
       </div>
+      <p className="mono mb-2 text-[11px] text-mute sm:hidden">
+        ← 左右滑動可看到更多欄位 →
+      </p>
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>

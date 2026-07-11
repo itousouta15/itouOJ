@@ -84,7 +84,7 @@ export default function CourseForm({
   }
 
   async function remove() {
-    if (!confirm("確定要刪除這門課程嗎？成員資料會一併刪除（不影響題目與提交紀錄）。"))
+    if (!confirm("確定要刪除這門課程嗎？成員資料會一併刪除（不影響題目與紀錄）。"))
       return;
     await fetch(`/api/admin/courses/${initial!.id}`, { method: "DELETE" });
     router.push("/admin/courses");

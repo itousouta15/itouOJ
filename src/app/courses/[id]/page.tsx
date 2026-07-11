@@ -61,7 +61,7 @@ export default async function CoursePage({
   const solvedCount = entries.filter((e) => solvedSet.has(e.problemId)).length;
   const pct = total > 0 ? Math.round((solvedCount / total) * 100) : 0;
 
-  // 課程排行榜：成員（或管理員）才看得到，只計課程內題目的解題數
+  // 課程排行：成員（或管理員）才看得到，只計課程內題目的解題數
   let board: { name: string; solved: number; subs: number }[] | null = null;
   if (joined || isAdmin) {
     const members = await prisma.courseMember.findMany({
