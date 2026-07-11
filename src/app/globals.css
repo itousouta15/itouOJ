@@ -27,9 +27,9 @@
 }
 
 :root[data-theme="light"] {
-  --bg: #bfc0c7f1;
-  --panel: #d5d6dd;
-  --panel2: #d5d6dd;
+  --bg: #e9e9eef1;
+  --panel: #ebecf3;
+  --panel2: #ebecf3;
   --panel2-a: rgba(227, 228, 233, 0.82);
   --inset: #d2d5db;
   --bd: rgba(6, 6, 7, 0.08);
