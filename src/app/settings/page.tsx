@@ -79,6 +79,22 @@ export default async function SettingsPage() {
             </dd>
           </div>
           <div className="flex items-center justify-between">
+            <dt className="text-dim">登入方式</dt>
+            <dd>
+              {user.googleId ? (
+                <span className="vbadge vbadge-blue">Google</span>
+              ) : (
+                <span className="vbadge vbadge-gray">帳號密碼</span>
+              )}
+            </dd>
+          </div>
+          {user.email && (
+            <div className="flex items-center justify-between">
+              <dt className="text-dim">Email</dt>
+              <dd className="mono text-dim">{user.email}</dd>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
             <dt className="text-dim">註冊時間</dt>
             <dd className="text-dim">
               {user.createdAt.toLocaleString("zh-TW", {
@@ -131,7 +147,13 @@ export default async function SettingsPage() {
 
       <section className="card p-6">
         <h2 className="section-title mb-4">修改密碼</h2>
-        <ChangePasswordForm />
+        {user.passwordHash ? (
+          <ChangePasswordForm />
+        ) : (
+          <p className="text-sm text-dim">
+            此帳號透過 Google 登入，沒有本地密碼。
+          </p>
+        )}
       </section>
     </div>
   );
