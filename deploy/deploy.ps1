@@ -12,4 +12,4 @@ scp "$env:TEMP\oj.tar.gz" root@23.146.248.51:/tmp/oj.tar.gz
 Write-Host "== 伺服器：解壓 / 安裝 / 遷移 / build / 重啟 =="
 ssh root@23.146.248.51 "cd /opt/online-judge && tar xzf /tmp/oj.tar.gz && npm ci --silent && npx prisma migrate deploy && npm run build && chown -R oj:oj /opt/online-judge && systemctl restart online-judge && sleep 3 && systemctl is-active online-judge"
 
-Write-Host "== 完成 → http://23.146.248.51 =="
+Write-Host "== 完成 → https://oj.itousouta15.tw =="
