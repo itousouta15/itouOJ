@@ -8,7 +8,7 @@
 - 題目列表、Markdown + KaTeX 數學式題敘、範例測資
 - CodeMirror 程式碼編輯器（C++ / C / Python / Java / JavaScript），自動保存草稿
 - 即時判題：AC / WA / TLE / MLE / RE / CE，逐筆測資顯示時間與記憶體
-- 提交紀錄、排行榜
+- 紀錄、排行
 - 管理後台：出題、測資編輯、時間/記憶體限制、公開/隱藏題目
 - 亮暗雙主題切換
 

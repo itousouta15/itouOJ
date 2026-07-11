@@ -17,8 +17,8 @@ const NAV_LINKS = [
   { label: "首頁", href: "/" },
   { label: "題目", href: "/problems" },
   { label: "課程", href: "/courses" },
-  { label: "提交紀錄", href: "/submissions" },
-  { label: "排行榜", href: "/ranking" },
+  { label: "紀錄", href: "/submissions" },
+  { label: "排行", href: "/ranking" },
 ];
 
 const PROJECT_LINKS = [

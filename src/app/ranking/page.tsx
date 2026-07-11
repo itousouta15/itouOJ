@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 
-export const metadata: Metadata = { title: "排行榜" };
+export const metadata: Metadata = { title: "排行" };
 export const dynamic = "force-dynamic";
 
 export default async function RankingPage() {
@@ -38,7 +38,7 @@ export default async function RankingPage() {
 
   return (
     <div>
-      <h1 className="mb-4 page-title">排行榜</h1>
+      <h1 className="mb-4 page-title">排行</h1>
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>

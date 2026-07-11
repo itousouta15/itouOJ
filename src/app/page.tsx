@@ -33,7 +33,7 @@ export default async function HomePage() {
     },
   });
 
-  // 排行榜前 5 名（同 /ranking 的計法：不同題目的 AC 才算解題數）
+  // 排行前 5 名（同 /ranking 的計法：不同題目的 AC 才算解題數）
   const acPairs = await prisma.submission.findMany({
     where: { status: "AC" },
     distinct: ["userId", "problemId"],
@@ -60,7 +60,7 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="pt-4">
         <p className="page-kicker mb-3">Competitive Programming · Online Judge</p>
-        <h1 className="serif text-4xl font-bold leading-tight md:text-5xl">
+        <h1 className="serif text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
           itouOJ (ゝ∀･)⌒☆
         </h1>
         <p className="mt-4 max-w-xl leading-relaxed text-dim">
@@ -93,7 +93,7 @@ export default async function HomePage() {
         ))}
       </section>
 
-      {/* 最新題目 + 排行榜 */}
+      {/* 最新題目 + 排行 */}
       <section className="grid gap-6 md:grid-cols-2">
         <div>
           <div className="mb-3 flex items-baseline justify-between">
@@ -129,7 +129,7 @@ export default async function HomePage() {
 
         <div>
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="section-title">排行榜</h2>
+            <h2 className="section-title">排行</h2>
             <Link
               href="/ranking"
               className="mono text-xs text-blue hover:underline"
@@ -192,7 +192,7 @@ export default async function HomePage() {
                     colSpan={5}
                     className="table-cell py-10 text-center text-mute"
                   >
-                    還沒有提交紀錄
+                    還沒有紀錄
                   </td>
                 </tr>
               )}
