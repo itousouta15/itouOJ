@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = { title: "排行" };
@@ -65,7 +66,14 @@ export default async function RankingPage() {
                 <td className="table-cell font-semibold text-dim">
                   {i + 1}
                 </td>
-                <td className="table-cell font-medium">{r.username}</td>
+                <td className="table-cell font-medium">
+                  <Link
+                    href={`/users/${r.username}`}
+                    className="text-blue hover:underline"
+                  >
+                    {r.username}
+                  </Link>
+                </td>
                 <td className="table-cell text-right font-semibold text-[#4caf50]">
                   {r.solved}
                 </td>

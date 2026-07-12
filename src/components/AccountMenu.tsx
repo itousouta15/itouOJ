@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function AccountMenu({ name }: { name: string }) {
+export default function AccountMenu({
+  name,
+  username,
+}: {
+  name: string;
+  username: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -54,6 +60,14 @@ export default function AccountMenu({ name }: { name: string }) {
 
       {open && (
         <div className="menu-panel" role="menu">
+          <Link
+            href={`/users/${username}`}
+            className="menu-item"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+          >
+            個人頁面
+          </Link>
           <Link
             href="/settings"
             className="menu-item"

@@ -34,7 +34,15 @@ export default function SubmissionRow({ s }: { s: SubmissionRowData }) {
           {s.problem.title}
         </Link>
       </td>
-      <td className="table-cell">{s.username}</td>
+      <td className="table-cell">
+        <Link
+          href={`/users/${s.username}`}
+          className="text-blue hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {s.username}
+        </Link>
+      </td>
       <td className="table-cell text-dim">
         {isLanguageKey(s.language) ? LANGUAGES[s.language].label : s.language}
       </td>
