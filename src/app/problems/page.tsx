@@ -11,10 +11,17 @@ export default async function ProblemListPage() {
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
 
-  const problems = await prisma.problem.findMany({
-    where: isAdmin ? {} : { isPublic: true },
-    orderBy: { id: "asc" },
-  });
+  const difficultyOrder: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
+  const problems = (
+    await prisma.problem.findMany({
+      where: isAdmin ? {} : { isPublic: true },
+      orderBy: { id: "asc" },
+    })
+  ).sort(
+    (a, b) =>
+      (difficultyOrder[a.difficulty] ?? 99) -
+        (difficultyOrder[b.difficulty] ?? 99) || a.id - b.id
+  );
   const acCounts = await prisma.submission.groupBy({
     by: ["problemId"],
     where: { status: "AC" },

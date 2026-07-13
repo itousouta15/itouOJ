@@ -28,7 +28,7 @@ export default async function HomePage() {
     orderBy: { id: "desc" },
     take: 8,
     include: {
-      user: { select: { username: true } },
+      user: { select: { username: true, displayName: true } },
       problem: { select: { id: true, title: true } },
     },
   });
@@ -37,14 +37,20 @@ export default async function HomePage() {
   const acPairs = await prisma.submission.findMany({
     where: { status: "AC" },
     distinct: ["userId", "problemId"],
-    select: { user: { select: { username: true } } },
+    select: { user: { select: { username: true, displayName: true } } },
   });
   const solvedByUser = new Map<string, number>();
+  const nameByUser = new Map<string, string | null>();
   for (const { user } of acPairs) {
     solvedByUser.set(user.username, (solvedByUser.get(user.username) ?? 0) + 1);
+    nameByUser.set(user.username, user.displayName);
   }
   const topUsers = [...solvedByUser.entries()]
-    .map(([username, solved]) => ({ username, solved }))
+    .map(([username, solved]) => ({
+      username,
+      displayName: nameByUser.get(username) ?? null,
+      solved,
+    }))
     .sort((a, b) => b.solved - a.solved || a.username.localeCompare(b.username))
     .slice(0, 5);
 
@@ -152,7 +158,7 @@ export default async function HomePage() {
                   {i + 1}
                 </span>
                 <span className="flex-1 truncate font-medium">
-                  {u.username}
+                  {u.displayName || u.username}
                 </span>
                 <span className="mono text-sm font-semibold text-[#4caf50]">
                   {u.solved} 題
@@ -203,6 +209,7 @@ export default async function HomePage() {
                     id: s.id,
                     status: s.status,
                     username: s.user.username,
+                    displayName: s.user.displayName,
                     problem: s.problem,
                     createdAtLabel: s.createdAt.toLocaleString("zh-TW", {
                       timeZone: "Asia/Taipei",
