@@ -69,6 +69,14 @@ model CourseMember {
   @@unique([courseId, userId])
 }
 
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String // Markdown
+  isPinned  Boolean  @default(false) // 置頂公告固定顯示在最上面
+  createdAt DateTime @default(now())
+}
+
 model TestCase {
   id        Int     @id @default(autoincrement())
   problemId Int
