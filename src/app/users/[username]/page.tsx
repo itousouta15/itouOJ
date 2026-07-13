@@ -175,6 +175,7 @@ export default async function UserProfilePage({
                   timeMs: s.timeMs,
                   memoryKb: s.memoryKb,
                   username: user.username,
+                  displayName: user.displayName,
                   problem: s.problem,
                   createdAtLabel: s.createdAt.toLocaleString("zh-TW", {
                     timeZone: "Asia/Taipei",

@@ -9,6 +9,7 @@ export interface HomeSubmissionRowData {
   status: string;
   createdAtLabel: string;
   username: string;
+  displayName?: string | null;
   problem: { id: number; title: string };
 }
 
@@ -36,7 +37,7 @@ export default function HomeSubmissionRow({ s }: { s: HomeSubmissionRowData }) {
           className="text-blue hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
-          {s.username}
+          {s.displayName || s.username}
         </Link>
       </td>
       <td className="table-cell">
