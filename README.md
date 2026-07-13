@@ -1,4 +1,5 @@
 # itouOJ
+<img width="1595" height="977" alt="image" src="https://github.com/user-attachments/assets/4c0bf0dd-0cb8-46b6-b7eb-fba8fa287655" />
 
 自架的程式解題系統（OJ）。前後端用 Next.js 一體開發，評測引擎用 [Piston](https://github.com/engineer-man/piston) 沙箱執行使用者程式碼。
 
