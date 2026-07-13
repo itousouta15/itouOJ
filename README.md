@@ -14,7 +14,7 @@
 
 ## 技術架構
 
-| 層 | 技術 |
+| 架構 | 技術 |
 |----|------|
 | 前端 + 後端 | Next.js 16（App Router）+ TypeScript + Tailwind CSS v4 |
 | 資料庫 | SQLite + Prisma 7（better-sqlite3 driver adapter） |

@@ -21,7 +21,7 @@ export default async function SubmissionsPage({
     orderBy: { id: "desc" },
     take: 100,
     include: {
-      user: { select: { username: true } },
+      user: { select: { username: true, displayName: true } },
       problem: { select: { id: true, title: true } },
     },
   });
@@ -85,6 +85,7 @@ export default async function SubmissionsPage({
                   timeMs: s.timeMs,
                   memoryKb: s.memoryKb,
                   username: s.user.username,
+                  displayName: s.user.displayName,
                   problem: s.problem,
                   createdAtLabel: s.createdAt.toLocaleString("zh-TW", {
                     timeZone: "Asia/Taipei",
