@@ -27,6 +27,12 @@ export default async function AdminCoursesPage() {
           >
             題目管理 →
           </Link>
+          <Link
+            href="/admin/announcements"
+            className="text-sm text-blue hover:underline"
+          >
+            公告管理 →
+          </Link>
         </div>
         <Link href="/admin/courses/new" className="btn-primary">
           ＋ 新增課程

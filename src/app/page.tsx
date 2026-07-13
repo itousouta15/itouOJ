@@ -18,6 +18,11 @@ export default async function HomePage() {
       prisma.submission.count({ where: { status: "AC" } }),
     ]);
 
+  const announcements = await prisma.announcement.findMany({
+    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+    take: 3,
+  });
+
   const latestProblems = await prisma.problem.findMany({
     where: { isPublic: true },
     orderBy: { id: "desc" },
@@ -66,12 +71,13 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="pt-4">
         <p className="page-kicker mb-3">Competitive Programming · Online Judge</p>
-        <h1 className="serif text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
+        <h1 className="serif text-3xl font-bold leading-tight sm:text-4xl md:text-6xl">
           itouOJ (ゝ∀･)⌒☆
         </h1>
         <p className="mt-4 max-w-xl leading-relaxed text-dim">
-          自架的程式解題系統。挑一題、寫程式、送出，逐筆測資即時回饋
-          —— 從第一個 AC 開始累積實力。
+          挑一題、寫程式、送出，逐筆測資即時回饋
+        <br></br>
+          —— 從第一個 AC 開始累積實力
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/problems" className="btn-primary">
@@ -88,6 +94,40 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      {/* 公告 */}
+      {announcements.length > 0 && (
+        <section>
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="section-title">公告</h2>
+            <Link
+              href="/announcements"
+              className="mono text-xs text-blue hover:underline"
+            >
+              全部公告 →
+            </Link>
+          </div>
+          <div className="card">
+            {announcements.map((a) => (
+              <Link
+                key={a.id}
+                href={`/announcements/${a.id}`}
+                className="flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
+              >
+                {a.isPinned && <span className="vbadge vbadge-green">置頂</span>}
+                <span className="flex-1 truncate font-medium text-blue">
+                  {a.title}
+                </span>
+                <span className="mono text-xs text-mute">
+                  {a.createdAt.toLocaleDateString("zh-TW", {
+                    timeZone: "Asia/Taipei",
+                  })}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 統計數據 */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
