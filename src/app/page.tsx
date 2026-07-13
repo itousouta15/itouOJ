@@ -95,6 +95,16 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* 統計數據 */}
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {stats.map((s) => (
+          <div key={s.label} className="card p-5">
+            <p className="page-kicker">{s.label}</p>
+            <p className="mono mt-2 text-3xl font-bold text-tx">{s.value}</p>
+          </div>
+        ))}
+      </section>
+
       {/* 公告 */}
       {announcements.length > 0 && (
         <section>
@@ -128,16 +138,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      {/* 統計數據 */}
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="card p-5">
-            <p className="page-kicker">{s.label}</p>
-            <p className="mono mt-2 text-3xl font-bold text-tx">{s.value}</p>
-          </div>
-        ))}
-      </section>
 
       {/* 最新題目 + 排行 */}
       <section className="grid gap-6 md:grid-cols-2">
