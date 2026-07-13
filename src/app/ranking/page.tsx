@@ -25,11 +25,12 @@ export default async function RankingPage() {
   );
 
   const users = await prisma.user.findMany({
-    select: { id: true, username: true },
+    select: { id: true, username: true, displayName: true },
   });
   const rows = users
     .map((u) => ({
       username: u.username,
+      displayName: u.displayName,
       solved: solvedByUser.get(u.id) ?? 0,
       submissions: subsByUser.get(u.id) ?? 0,
     }))
@@ -71,7 +72,7 @@ export default async function RankingPage() {
                     href={`/users/${r.username}`}
                     className="text-blue hover:underline"
                   >
-                    {r.username}
+                    {r.displayName || r.username}
                   </Link>
                 </td>
                 <td className="table-cell text-right font-semibold text-[#4caf50]">
