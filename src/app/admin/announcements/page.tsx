@@ -3,95 +3,89 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import DifficultyBadge from "@/components/DifficultyBadge";
 
-export const metadata: Metadata = { title: "題目管理" };
+export const metadata: Metadata = { title: "公告管理" };
 export const dynamic = "force-dynamic";
 
-export default async function AdminProblemsPage() {
+export default async function AdminAnnouncementsPage() {
   const session = await getSession();
   if (session?.role !== "ADMIN") redirect("/");
 
-  const problems = await prisma.problem.findMany({
-    orderBy: { id: "asc" },
-    include: { _count: { select: { testCases: true, submissions: true } } },
+  const announcements = await prisma.announcement.findMany({
+    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
   });
 
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
-          <h1 className="page-title">題目管理</h1>
+          <h1 className="page-title">公告管理</h1>
+          <Link
+            href="/admin/problems"
+            className="text-sm text-blue hover:underline"
+          >
+            題目管理 →
+          </Link>
           <Link
             href="/admin/courses"
             className="text-sm text-blue hover:underline"
           >
             課程管理 →
           </Link>
-          <Link
-            href="/admin/announcements"
-            className="text-sm text-blue hover:underline"
-          >
-            公告管理 →
-          </Link>
         </div>
-        <Link href="/admin/problems/new" className="btn-primary">
-          ＋ 新增題目
+        <Link href="/admin/announcements/new" className="btn-primary">
+          ＋ 新增公告
         </Link>
       </div>
-      <p className="mono mb-2 text-[11px] text-mute sm:hidden">
-        ← 左右滑動可看到更多欄位 →
-      </p>
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr>
               <th className="table-head w-16">#</th>
               <th className="table-head">標題</th>
-              <th className="table-head w-24">難度</th>
-              <th className="table-head w-20 text-right">測資</th>
-              <th className="table-head w-20 text-right">提交</th>
-              <th className="table-head w-24">狀態</th>
+              <th className="table-head w-20">置頂</th>
+              <th className="table-head w-40">發布時間</th>
               <th className="table-head w-20"></th>
             </tr>
           </thead>
           <tbody>
-            {problems.length === 0 && (
+            {announcements.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={5}
                   className="table-cell py-10 text-center text-mute"
                 >
-                  還沒有題目，點右上角「新增題目」開始出題
+                  還沒有公告，點右上角「新增公告」開始發布
                 </td>
               </tr>
             )}
-            {problems.map((p) => (
-              <tr key={p.id} className="hover:bg-panel2">
-                <td className="table-cell text-dim">{p.id}</td>
+            {announcements.map((a) => (
+              <tr key={a.id} className="hover:bg-panel2">
+                <td className="table-cell text-dim">{a.id}</td>
                 <td className="table-cell font-medium">
                   <Link
-                    href={`/problems/${p.id}`}
+                    href={`/announcements/${a.id}`}
                     className="text-blue hover:underline"
                   >
-                    {p.title}
+                    {a.title}
                   </Link>
                 </td>
                 <td className="table-cell">
-                  <DifficultyBadge difficulty={p.difficulty} />
-                </td>
-                <td className="table-cell text-right text-dim">
-                  {p._count.testCases}
-                </td>
-                <td className="table-cell text-right text-dim">
-                  {p._count.submissions}
+                  {a.isPinned ? (
+                    <span className="vbadge vbadge-green">置頂</span>
+                  ) : (
+                    <span className="text-sm text-mute">—</span>
+                  )}
                 </td>
                 <td className="table-cell text-sm text-dim">
-                  {p.isPublic ? "公開" : "未公開"}
+                  {a.createdAt.toLocaleString("zh-TW", {
+                    timeZone: "Asia/Taipei",
+                    hour12: false,
+                  })}
                 </td>
                 <td className="table-cell">
                   <Link
-                    href={`/admin/problems/${p.id}/edit`}
+                    href={`/admin/announcements/${a.id}/edit`}
                     className="text-sm text-blue hover:underline"
                   >
                     編輯
