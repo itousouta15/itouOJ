@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 // 在 hydration 前套用主題，避免亮→暗閃爍
 const themeInit = `(function(){try{if(localStorage.getItem("oj-theme")==="light"){document.documentElement.setAttribute("data-theme","light")}}catch(e){}})();`;
 
-// 辰宇落雁體走 emfont 的分塊 subset CSS（同 itousouta15.tw）。
+// 辰宇落雁體走 emfont 的分塊 subset CSS（同 itousouta.me）。
 // 先 preload、等瀏覽器閒置才真正套用，首繪不會被字體檔擋住；
 // 字體就緒前 logo 由 .fonts-ready 規則隱藏（見 SiteLoader / globals.css）。
 const EMFONT_CSS = "https://font.emtech.cc/css/ChenYuLuoYan";
