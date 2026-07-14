@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// 同 itousouta15.tw 的 SiteLoader：window load 前用全頁模糊遮罩蓋住，
+// 同 itousouta.me 的 SiteLoader：window load 前用全頁模糊遮罩蓋住，
 // 載入完成後往上滑出，再讓 header 播放進場動畫（body.site-revealed）。
 const MAX_WAIT_MS = 4000;
 const SLIDE_MS = 600;

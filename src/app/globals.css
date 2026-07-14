@@ -2,10 +2,10 @@
 @import "tailwindcss";
 
 /* 辰宇落雁體（ChenYuLuoYan）由 emfont 分塊 subset 動態載入，
-   見 layout.tsx 的 head（同 itousouta15.tw）。字體只有細版，
+   見 layout.tsx 的 head（同 itousouta.me）。字體只有細版，
    font-weight:700 時由瀏覽器合成粗體。 */
 
-/* ---- Theme tokens（同 itousouta15.tw，[data-theme] 切換）---- */
+/* ---- Theme tokens（同 itousouta.me，[data-theme] 切換）---- */
 :root {
   --bg: #1b1e23;
   --panel: #24262b;
@@ -90,7 +90,7 @@ body {
   animation: itFade 0.45s ease both;
 }
 
-/* ---- Site loader：window load 前的全頁遮罩（同 itousouta15.tw）---- */
+/* ---- Site loader：window load 前的全頁遮罩（同 itousouta.me）---- */
 .site-loader {
   position: fixed;
   inset: 0;
@@ -225,7 +225,7 @@ body.site-revealed .site-header {
   transform: rotate(35deg) scale(0.85);
 }
 
-/* ---- 手機版導覽：全螢幕展開（同 itousouta15.tw）---- */
+/* ---- 手機版導覽：全螢幕展開（同 itousouta.me）---- */
 @media (max-width: 640px) {
   .logo {
     font-size: 38px;
@@ -694,7 +694,7 @@ body.site-revealed .site-header {
   }
 }
 
-/* ---- Footer / 跑馬燈（同 itousouta15.tw）---- */
+/* ---- Footer / 跑馬燈（同 itousouta.me）---- */
 @keyframes itMarquee {
   from {
     transform: translateX(0);
