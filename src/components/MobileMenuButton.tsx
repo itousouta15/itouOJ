@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navLinksFor, isNavActive } from "@/lib/navLinks";
 
-// 同 itousouta15.tw 手機版選單背景飄浮的顏文字裝飾
+// 同 itousouta.me 手機版選單背景飄浮的顏文字裝飾
 const FACES = ["= ᗜ ω ᗜ.=", "(◕ᗜ◕✿)", "( ˘ω˘ )zzz", "ฅ^•ﻌ•^ฅ", "(´,,•ω•,,)"];
 
 export default function MobileMenuButton({ isAdmin }: { isAdmin: boolean }) {

@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 
-// 同 itousouta15.tw 的 footer（跑馬燈 + 四欄式），連結換成 OJ 的頁面
+// 同 itousouta.me 的 footer（跑馬燈 + 四欄式），連結換成 OJ 的頁面
 const MARQUEE = [
   "ciallo (∠·ω )⌒★",
   "I'm itouSouta",
@@ -22,11 +22,11 @@ const NAV_LINKS = [
 ];
 
 const PROJECT_LINKS = [
-  { label: "itouSouta15.tw", href: "https://itousouta15.tw" },
-  { label: "itouLinks", href: "https://links.itousouta15.tw" },
-  { label: "itouSlides", href: "https://slides.itousouta15.tw/" },
-  { label: "itouCards", href: "https://cards.itousouta15.tw/" },
-  { label: "itouBLoGa", href: "https://blog.itousouta15.tw/" },
+  { label: "itousouta.me", href: "https://itousouta.me" },
+  { label: "itouLinks", href: "https://links.itousouta.me" },
+  { label: "itouSlides", href: "https://slides.itousouta.me/" },
+  { label: "itouCards", href: "https://cards.itousouta.me/" },
+  { label: "itouBLoGa", href: "https://blog.itousouta.me/" },
 ];
 
 const SOCIAL_LINKS = [
@@ -37,7 +37,7 @@ const SOCIAL_LINKS = [
   },
   { icon: "github", label: "GitHub", href: "https://github.com/itousouta15" },
   { icon: "x", label: "X", href: "https://x.com/itou_souta15" },
-  { icon: "discord", label: "Discord", href: "https://DC.itousouta15.tw" },
+  { icon: "discord", label: "Discord", href: "https://dc.itousouta.me" },
   { icon: "telegram", label: "Telegram", href: "https://t.me/itousouta15" },
 ];
 
