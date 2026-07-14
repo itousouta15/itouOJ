@@ -1,16 +1,31 @@
 # itouOJ
+
 <img width="1595" height="977" alt="image" src="https://github.com/user-attachments/assets/4c0bf0dd-0cb8-46b6-b7eb-fba8fa287655" />
 
 自架的程式解題系統（OJ）。前後端用 Next.js 一體開發，評測引擎用 [Piston](https://github.com/engineer-man/piston) 沙箱執行使用者程式碼。
 
+正式站：[oj.itousouta.me](https://oj.itousouta.me)
+
+## 目錄
+
+- [功能](#功能)
+- [技術架構](#技術架構)
+- [專案結構](#專案結構)
+- [本地開發](#本地開發)
+- [部署](#部署)
+- [日常更新（改完程式碼後）](#日常更新改完程式碼後)
+- [新增語言](#新增語言)
+
 ## 功能
 
-- 帳號註冊 / 登入（第一個註冊的使用者自動成為管理員）
+- 帳號註冊 / 登入（第一個註冊的使用者自動成為管理員），支援 Google 登入
 - 題目列表、Markdown + KaTeX 數學式題敘、範例測資
 - CodeMirror 程式碼編輯器（C++ / C / Python / Java / JavaScript），自動保存草稿
 - 即時判題：AC / WA / TLE / MLE / RE / CE，逐筆測資顯示時間與記憶體
-- 紀錄、排行
-- 管理後台：出題、測資編輯、時間/記憶體限制、公開/隱藏題目
+- 提交紀錄、排行榜、個人頁面
+- 課程（題單）：一組題目 + 說明，使用者加入後追蹤解題進度，可設公開加入或加入代碼
+- 公告：置頂公告、Markdown 內容，管理員可新增 / 編輯 / 刪除
+- 管理後台：出題、測資編輯、時間 / 記憶體限制、公開 / 隱藏題目、課程與公告管理
 - 亮暗雙主題切換
 
 ## 技術架構
@@ -26,6 +41,40 @@
 瀏覽器 ──> nginx ──> Next.js (:3000)
                        │  SQLite
                        └──> Piston (127.0.0.1:2000, Docker)
+```
+
+支援語言（版本對應 `src/lib/languages.ts`，時間 / 記憶體倍率是相對題目原始限制的放寬倍數）：
+
+| 語言 | 版本 | 時間倍率 | 記憶體倍率 |
+|----|----|:---:|:---:|
+| C++ | GCC 10.2.0 | 1x | 1x |
+| C | GCC 10.2.0 | 1x | 1x |
+| Python | 3.12.0 | 3x | 1x |
+| Java | 15.0.2 | 2x | 2x |
+| JavaScript | Node 20.11.1 | 3x | 2x |
+
+## 專案結構
+
+```
+src/
+├─ app/               # Next.js App Router 頁面與 API routes
+│  ├─ admin/          # 管理後台（題目、課程、公告）
+│  ├─ api/            # 後端 API（auth、courses、submissions、run...）
+│  ├─ problems/       # 題目列表 / 詳情
+│  ├─ courses/        # 課程列表 / 詳情
+│  ├─ announcements/  # 公告列表 / 詳情
+│  ├─ submissions/    # 提交紀錄
+│  ├─ ranking/        # 排行榜
+│  └─ users/          # 使用者頁面
+├─ components/        # 共用 React 元件
+├─ lib/               # 判題邏輯、語言設定、共用工具（judge.ts、languages.ts...）
+└─ generated/prisma/  # `prisma generate` 產出的 client（不手動編輯）
+
+prisma/
+├─ schema.prisma      # 資料庫 schema
+└─ migrations/        # migration 歷史
+
+deploy/                # 部署腳本與設定（見「部署」章節）
 ```
 
 ## 本地開發
