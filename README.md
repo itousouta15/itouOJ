@@ -18,7 +18,7 @@
 
 ## 功能
 
-- 帳號註冊 / 登入（第一個註冊的使用者自動成為管理員），支援 Google 登入
+- 帳號註冊 / 登入（第一個註冊的使用者自動成為管理員），支援 Google / Discord 登入
 - 題目列表、Markdown + KaTeX 數學式題敘、範例測資
 - CodeMirror 程式碼編輯器（C++ / C / Python / Java / JavaScript），自動保存草稿
 - 即時判題：AC / WA / TLE / MLE / RE / CE，逐筆測資顯示時間與記憶體
@@ -96,10 +96,17 @@ COOKIE_SECURE="0"                    # 上 HTTPS 後改 1
 # Google 登入（選用；沒設定就不顯示 Google 按鈕）
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
+
+# Discord 登入（選用；沒設定就不顯示 Discord 按鈕）
+DISCORD_CLIENT_ID=""
+DISCORD_CLIENT_SECRET=""
+
 # APP_URL="https://oj.example.tw"    # 正式環境對外網址（組 OAuth redirect 用）
 ```
 
 Google 登入設定：到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建立「OAuth 用戶端 ID」（類型：網頁應用程式），授權重新導向 URI 填 `http://localhost:3000/api/auth/google/callback`。正式環境要再加一組 `https://<你的網域>/api/auth/google/callback` —— Google 不接受純 IP 或 http 的正式網址，所以正式站要先有網域 + HTTPS 才能開 Google 登入，並在 `.env` 設好 `APP_URL`。第一次用 Google 登入會自動建立帳號（沿用「第一個使用者是管理員」規則）。
+
+Discord 登入設定：到 [Discord Developer Portal](https://discord.com/developers/applications) 建立 Application，在 OAuth2 頁籤取得 Client ID / Client Secret，並在 Redirects 加上 `http://localhost:3000/api/auth/discord/callback`。正式環境要再加一組 `https://<你的網域>/api/auth/discord/callback`，並在 `.env` 設好 `APP_URL`。第一次用 Discord 登入一樣會自動建立帳號。
 
 Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localhost:2000 user@server`。
 
@@ -162,7 +169,7 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
 
 3. 部署本體：`npm ci && npx prisma migrate deploy && npm run build`，用 systemd 跑 `next start`（範例在 [deploy/online-judge.service](deploy/online-judge.service)），前面掛 nginx 反向代理（[deploy/nginx-oj.conf](deploy/nginx-oj.conf)）。
 
-4. 網域與 HTTPS（正式站 `https://oj.itousouta.me`）：DNS 加 A 記錄指到伺服器（Cloudflare 上選 DNS only），裝 `certbot python3-certbot-nginx` 後跑 `certbot --nginx -d oj.itousouta.me --redirect`（自動續簽由 certbot.timer 處理）。伺服器 `.env` 記得設 `APP_URL="https://oj.itousouta.me"`、`COOKIE_SECURE="1"` 和 Google 憑證。
+4. 網域與 HTTPS（正式站 `https://oj.itousouta.me`）：DNS 加 A 記錄指到伺服器（Cloudflare 上選 DNS only），裝 `certbot python3-certbot-nginx` 後跑 `certbot --nginx -d oj.itousouta.me --redirect`（自動續簽由 certbot.timer 處理）。伺服器 `.env` 記得設 `APP_URL="https://oj.itousouta.me"`、`COOKIE_SECURE="1"` 和 Google / Discord 憑證。
 
 ## 日常更新（改完程式碼後）
 

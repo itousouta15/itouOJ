@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { googleConfigured } from "@/lib/googleOAuth";
+import { discordConfigured } from "@/lib/discordOAuth";
 import ProfileForm from "@/components/ProfileForm";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
+import LinkedAccounts from "@/components/LinkedAccounts";
+import DeleteAccountForm from "@/components/DeleteAccountForm";
 
 export const metadata: Metadata = { title: "帳號設定" };
 export const dynamic = "force-dynamic";
@@ -14,7 +18,12 @@ const DIFFICULTY_META = [
   { key: "hard", label: "困難", color: "#ff6b6b" },
 ] as const;
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ linked?: string; error?: string }>;
+}) {
+  const { linked, error } = await searchParams;
   const session = await getSession();
   if (!session) redirect("/login");
 
@@ -22,6 +31,9 @@ export default async function SettingsPage() {
     where: { id: session.userId },
   });
   if (!user) redirect("/login");
+
+  const authMethodCount =
+    (user.passwordHash ? 1 : 0) + (user.googleId ? 1 : 0) + (user.discordId ? 1 : 0);
 
   // 解題統計
   const [acDistinct, totalSubmissions, acSubmissions, publicTotals] =
@@ -78,16 +90,6 @@ export default async function SettingsPage() {
               )}
             </dd>
           </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-dim">登入方式</dt>
-            <dd>
-              {user.googleId ? (
-                <span className="vbadge vbadge-blue">Google</span>
-              ) : (
-                <span className="vbadge vbadge-gray">帳號密碼</span>
-              )}
-            </dd>
-          </div>
           {user.email && (
             <div className="flex items-center justify-between">
               <dt className="text-dim">Email</dt>
@@ -107,6 +109,19 @@ export default async function SettingsPage() {
         <ProfileForm
           initialDisplayName={user.displayName ?? ""}
           initialBio={user.bio ?? ""}
+        />
+      </section>
+
+      <section className="card p-6">
+        <h2 className="section-title mb-4">連結帳號</h2>
+        <LinkedAccounts
+          googleLinked={Boolean(user.googleId)}
+          discordLinked={Boolean(user.discordId)}
+          googleEnabled={googleConfigured()}
+          discordEnabled={discordConfigured()}
+          canUnlink={authMethodCount > 1}
+          initialLinked={linked}
+          initialError={error}
         />
       </section>
 
@@ -151,9 +166,17 @@ export default async function SettingsPage() {
           <ChangePasswordForm />
         ) : (
           <p className="text-sm text-dim">
-            此帳號透過 Google 登入，沒有本地密碼。
+            此帳號透過 {user.googleId ? "Google" : "Discord"} 登入，沒有本地密碼。
           </p>
         )}
+      </section>
+
+      <section className="card p-6">
+        <h2 className="section-title mb-4">危險區域</h2>
+        <DeleteAccountForm
+          username={user.username}
+          hasPassword={Boolean(user.passwordHash)}
+        />
       </section>
     </div>
   );

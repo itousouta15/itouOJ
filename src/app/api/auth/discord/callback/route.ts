@@ -2,17 +2,19 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
 import {
-  GOOGLE_TOKEN_URL,
+  DISCORD_TOKEN_URL,
+  DISCORD_USER_URL,
   OAUTH_STATE_COOKIE,
   appUrl,
-  googleConfigured,
+  discordConfigured,
   redirectUri,
-} from "@/lib/googleOAuth";
+} from "@/lib/discordOAuth";
 
-interface GoogleIdTokenPayload {
-  sub?: string;
-  email?: string;
-  name?: string;
+interface DiscordUser {
+  id?: string;
+  username?: string;
+  global_name?: string | null;
+  email?: string | null;
 }
 
 // 產生符合站內規則（3-20 字英數底線）且不重複的 username
@@ -52,13 +54,13 @@ export async function GET(request: Request) {
   }
 
   // 連結流程失敗要回設定頁，一般登入/註冊失敗回登入頁
-  const loginError = (error = "google") =>
+  const loginError = (error = "discord") =>
     Response.redirect(
       `${appUrl(request)}/${linkUserId ? "settings" : "login"}?error=${error}`,
       302
     );
 
-  if (!googleConfigured()) return loginError();
+  if (!discordConfigured()) return loginError();
 
   if (!code || !state || !savedState || state !== savedState) {
     return loginError();
@@ -66,54 +68,66 @@ export async function GET(request: Request) {
 
   try {
     // 用授權碼換 token
-    const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
+    const tokenRes = await fetch(DISCORD_TOKEN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        client_id: process.env.DISCORD_CLIENT_ID!,
+        client_secret: process.env.DISCORD_CLIENT_SECRET!,
         redirect_uri: redirectUri(request),
         grant_type: "authorization_code",
       }),
     });
     if (!tokenRes.ok) {
-      console.error("[google-auth] token exchange failed:", await tokenRes.text());
+      console.error("[discord-auth] token exchange failed:", await tokenRes.text());
       return loginError();
     }
-    const { id_token: idToken } = (await tokenRes.json()) as {
-      id_token?: string;
+    const { access_token: accessToken } = (await tokenRes.json()) as {
+      access_token?: string;
     };
-    if (!idToken) return loginError();
+    if (!accessToken) return loginError();
 
-    // id_token 直接來自 Google 的 token endpoint（TLS），取 payload 即可
-    const payload = JSON.parse(
-      Buffer.from(idToken.split(".")[1], "base64url").toString("utf8")
-    ) as GoogleIdTokenPayload;
-    if (!payload.sub) return loginError();
+    // Discord 不像 Google 會給 id_token，要另外打 API 拿使用者資料
+    const userRes = await fetch(DISCORD_USER_URL, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!userRes.ok) {
+      console.error("[discord-auth] fetch user failed:", await userRes.text());
+      return loginError();
+    }
+    const discordUser = (await userRes.json()) as DiscordUser;
+    if (!discordUser.id) return loginError();
 
     const existing = await prisma.user.findUnique({
-      where: { googleId: payload.sub },
+      where: { discordId: discordUser.id },
     });
 
     if (linkUserId) {
-      // 把這個 Google 帳號連結到目前已登入的使用者，而不是登入/建立新帳號
+      // 把這個 Discord 帳號連結到目前已登入的使用者，而不是登入/建立新帳號
       if (existing && existing.id !== linkUserId) {
-        return loginError("google_taken");
+        return loginError("discord_taken");
       }
       if (!existing) {
         await prisma.user.update({
           where: { id: linkUserId },
-          data: { googleId: payload.sub, email: payload.email ?? undefined },
+          data: {
+            discordId: discordUser.id,
+            email: discordUser.email ?? undefined,
+          },
         });
       }
-      return Response.redirect(`${appUrl(request)}/settings?linked=google`, 302);
+      return Response.redirect(`${appUrl(request)}/settings?linked=discord`, 302);
     }
 
     let user = existing;
     if (!user) {
-      // 第一次用這個 Google 帳號登入 → 自動建立帳號（規則同註冊：第一個使用者是管理員）
-      const base = payload.email?.split("@")[0] || payload.name || "user";
+      // 第一次用這個 Discord 帳號登入 → 自動建立帳號（規則同註冊：第一個使用者是管理員）
+      const base =
+        discordUser.email?.split("@")[0] ||
+        discordUser.global_name ||
+        discordUser.username ||
+        "user";
       const [username, userCount] = await Promise.all([
         uniqueUsername(base),
         prisma.user.count(),
@@ -122,9 +136,9 @@ export async function GET(request: Request) {
         data: {
           username,
           passwordHash: null,
-          googleId: payload.sub,
-          email: payload.email ?? null,
-          displayName: payload.name ?? null,
+          discordId: discordUser.id,
+          email: discordUser.email ?? null,
+          displayName: discordUser.global_name ?? discordUser.username ?? null,
           role: userCount === 0 ? "ADMIN" : "USER",
         },
       });
@@ -137,7 +151,7 @@ export async function GET(request: Request) {
     });
     return Response.redirect(`${appUrl(request)}/`, 302);
   } catch (err) {
-    console.error("[google-auth] callback error:", err);
+    console.error("[discord-auth] callback error:", err);
     return loginError();
   }
 }
