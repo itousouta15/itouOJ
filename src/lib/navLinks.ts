@@ -8,6 +8,7 @@ const BASE_NAV_LINKS: NavLinkItem[] = [
   { href: "/announcements", label: "公告" },
   { href: "/problems", label: "題目" },
   { href: "/courses", label: "課程" },
+  { href: "/contests", label: "比賽" },
   { href: "/submissions", label: "紀錄" },
   { href: "/ranking", label: "排行" },
 ];

@@ -3,45 +3,37 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import ContestStatusBadge from "@/components/ContestStatusBadge";
 
-export const metadata: Metadata = { title: "課程管理" };
+export const metadata: Metadata = { title: "比賽管理" };
 export const dynamic = "force-dynamic";
 
-export default async function AdminCoursesPage() {
+export default async function AdminContestsPage() {
   const session = await getSession();
   if (session?.role !== "ADMIN") redirect("/");
 
-  const courses = await prisma.course.findMany({
-    orderBy: { id: "asc" },
-    include: { _count: { select: { problems: true, members: true } } },
+  const contests = await prisma.contest.findMany({
+    orderBy: { id: "desc" },
+    include: { _count: { select: { problems: true, participants: true } } },
   });
 
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
-          <h1 className="page-title">課程管理</h1>
-          <Link
-            href="/admin/problems"
-            className="text-sm text-blue hover:underline"
-          >
+          <h1 className="page-title">比賽管理</h1>
+          <Link href="/admin/problems" className="text-sm text-blue hover:underline">
             題目管理 →
           </Link>
-          <Link
-            href="/admin/announcements"
-            className="text-sm text-blue hover:underline"
-          >
+          <Link href="/admin/courses" className="text-sm text-blue hover:underline">
+            課程管理 →
+          </Link>
+          <Link href="/admin/announcements" className="text-sm text-blue hover:underline">
             公告管理 →
           </Link>
-          <Link
-            href="/admin/contests"
-            className="text-sm text-blue hover:underline"
-          >
-            比賽管理 →
-          </Link>
         </div>
-        <Link href="/admin/courses/new" className="btn-primary">
-          ＋ 新增課程
+        <Link href="/admin/contests/new" className="btn-primary">
+          ＋ 新增比賽
         </Link>
       </div>
       <p className="mono mb-2 text-[11px] text-mute sm:hidden">
@@ -53,60 +45,51 @@ export default async function AdminCoursesPage() {
             <tr>
               <th className="table-head w-16">#</th>
               <th className="table-head">標題</th>
-              <th className="table-head w-24 text-right">題數</th>
-              <th className="table-head w-24 text-right">成員</th>
-              <th className="table-head w-28">加入代碼</th>
               <th className="table-head w-24">狀態</th>
+              <th className="table-head w-24 text-right">題數</th>
+              <th className="table-head w-24 text-right">參賽者</th>
+              <th className="table-head w-28">加入代碼</th>
               <th className="table-head w-24"></th>
             </tr>
           </thead>
           <tbody>
-            {courses.length === 0 && (
+            {contests.length === 0 && (
               <tr>
-                <td
-                  colSpan={7}
-                  className="table-cell py-10 text-center text-mute"
-                >
-                  還沒有課程
+                <td colSpan={7} className="table-cell py-10 text-center text-mute">
+                  還沒有比賽
                 </td>
               </tr>
             )}
-            {courses.map((c) => (
+            {contests.map((c) => (
               <tr key={c.id} className="hover:bg-panel2">
                 <td className="table-cell text-dim">{c.id}</td>
                 <td className="table-cell">
                   <Link
-                    href={`/courses/${c.id}`}
+                    href={`/contests/${c.id}`}
                     className="font-medium text-blue hover:underline"
                   >
                     {c.title}
                   </Link>
                 </td>
+                <td className="table-cell">
+                  <ContestStatusBadge contest={c} />
+                </td>
                 <td className="table-cell text-right text-dim">
                   {c._count.problems}
                 </td>
                 <td className="table-cell text-right text-dim">
-                  {c._count.members}
+                  {c._count.participants}
                 </td>
                 <td className="table-cell">
                   {c.joinCode ? (
-                    <span className="mono text-sm text-purple">
-                      {c.joinCode}
-                    </span>
+                    <span className="mono text-sm text-purple">{c.joinCode}</span>
                   ) : (
-                    <span className="text-sm text-mute">開放加入</span>
-                  )}
-                </td>
-                <td className="table-cell">
-                  {c.isPublic ? (
-                    <span className="vbadge vbadge-green">公開</span>
-                  ) : (
-                    <span className="vbadge vbadge-gray">未公開</span>
+                    <span className="text-sm text-mute">開放報名</span>
                   )}
                 </td>
                 <td className="table-cell">
                   <Link
-                    href={`/admin/courses/${c.id}/edit`}
+                    href={`/admin/contests/${c.id}/edit`}
                     className="text-sm text-blue hover:underline"
                   >
                     編輯
