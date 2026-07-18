@@ -24,10 +24,17 @@ interface SubmissionData {
   compileError: string | null;
 }
 
+interface HiddenSubmission {
+  id: number;
+  contestId: number;
+  hidden: true;
+}
+
 const TERMINAL = ["AC", "WA", "TLE", "MLE", "RE", "CE", "IE"];
 
 export default function SubmissionDetail({ id }: { id: number }) {
   const [data, setData] = useState<SubmissionData | null>(null);
+  const [hidden, setHidden] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -42,8 +49,12 @@ export default function SubmissionDetail({ id }: { id: number }) {
           if (!cancelled) setNotFound(true);
           return;
         }
-        const json: SubmissionData = await res.json();
+        const json: SubmissionData | HiddenSubmission = await res.json();
         if (cancelled) return;
+        if ("hidden" in json) {
+          setHidden(true);
+          return;
+        }
         setData(json);
         if (!TERMINAL.includes(json.status)) {
           timer.current = setTimeout(poll, 1200);
@@ -61,6 +72,13 @@ export default function SubmissionDetail({ id }: { id: number }) {
 
   if (notFound) {
     return <p className="text-dim">找不到這筆提交。</p>;
+  }
+  if (hidden) {
+    return (
+      <p className="text-dim">
+        這筆提交屬於進行中的比賽，結果將於比賽結束公開成績後顯示。
+      </p>
+    );
   }
   if (!data) {
     return <p className="animate-pulse text-mute">載入中…</p>;

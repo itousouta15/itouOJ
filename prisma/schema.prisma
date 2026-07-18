@@ -8,32 +8,34 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(cuid())
-  username     String         @unique
+  id           String               @id @default(cuid())
+  username     String               @unique
   passwordHash String? // null = Google 帳號，沒有本地密碼
-  googleId     String?        @unique // Google 帳號的 sub
-  discordId    String?        @unique // Discord 帳號的 id
+  googleId     String?              @unique // Google 帳號的 sub
+  discordId    String?              @unique // Discord 帳號的 id
   email        String? // 目前只有 Google / Discord 登入會帶入
-  role         String         @default("USER") // USER | ADMIN
+  role         String               @default("USER") // USER | ADMIN
   displayName  String? // 顯示名稱（未設定時顯示 username）
   bio          String? // 自我介紹
-  createdAt    DateTime       @default(now())
+  createdAt    DateTime             @default(now())
   submissions  Submission[]
   courses      CourseMember[]
+  contests     ContestParticipant[]
 }
 
 model Problem {
-  id             Int             @id @default(autoincrement())
-  title          String
-  statement      String // Markdown，支援數學式
-  difficulty     String          @default("medium") // easy | medium | hard
-  timeLimitMs    Int             @default(1000)
-  memoryLimitMb  Int             @default(256)
-  isPublic       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  testCases      TestCase[]
-  submissions    Submission[]
-  courseProblems CourseProblem[]
+  id              Int              @id @default(autoincrement())
+  title           String
+  statement       String // Markdown，支援數學式
+  difficulty      String           @default("medium") // easy | medium | hard
+  timeLimitMs     Int              @default(1000)
+  memoryLimitMb   Int              @default(256)
+  isPublic        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  testCases       TestCase[]
+  submissions     Submission[]
+  courseProblems  CourseProblem[]
+  contestProblems ContestProblem[]
 }
 
 // 題單型課程：一組題目 + 說明，使用者加入後追蹤解題進度
@@ -70,6 +72,47 @@ model CourseMember {
   @@unique([courseId, userId])
 }
 
+// 有起訖時間的小型比賽：只有比賽期間的提交才計分，罰時排名 + 賽末凍結榜
+model Contest {
+  id            Int                  @id @default(autoincrement())
+  title         String
+  description   String               @default("")
+  startTime     DateTime
+  endTime       DateTime
+  freezeMinutes Int                  @default(0) // 0 = 不凍結
+  isPublic      Boolean              @default(true)
+  joinCode      String? // 加入代碼；null = 開放任何人加入
+  revealedAt    DateTime? // 管理員手動「公開最終成績」的時間；null = 尚未公開
+  createdAt     DateTime             @default(now())
+  problems      ContestProblem[]
+  participants  ContestParticipant[]
+  submissions   Submission[]
+}
+
+model ContestProblem {
+  id        Int     @id @default(autoincrement())
+  contestId Int
+  contest   Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problemId Int
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  label     String // "A" "B" "C" ...
+  order     Int     @default(0)
+
+  @@unique([contestId, problemId])
+  @@unique([contestId, label])
+}
+
+model ContestParticipant {
+  id        Int      @id @default(autoincrement())
+  contestId Int
+  contest   Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime @default(now())
+
+  @@unique([contestId, userId])
+}
+
 model Announcement {
   id        Int      @id @default(autoincrement())
   title     String
@@ -94,6 +137,8 @@ model Submission {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   problemId    Int
   problem      Problem      @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  contestId    Int? // 有值 = 這是比賽期間的提交，計入該比賽罰時排名
+  contest      Contest?     @relation(fields: [contestId], references: [id], onDelete: SetNull)
   language     String // cpp | c | python | java | javascript
   code         String
   status       String       @default("PENDING") // PENDING JUDGING AC WA TLE MLE RE CE IE
