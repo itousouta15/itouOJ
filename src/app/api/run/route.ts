@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { LANGUAGES, LANGUAGE_KEYS, isLanguageKey } from "@/lib/languages";
 import { pistonExecute } from "@/lib/piston";
 import { runVerdict } from "@/lib/judge";
+import { assertContestProblemAccess } from "@/lib/contest";
 
 const schema = z.object({
   problemId: z.number().int().positive(),
@@ -11,6 +12,7 @@ const schema = z.object({
   code: z.string().min(1, "程式碼不能是空的").max(65536, "程式碼過長"),
   // null / 不給 = 跑範例測資；給字串 = 用自訂輸入跑一次
   customInput: z.string().max(65536, "自訂輸入過長").nullish(),
+  contestId: z.number().int().positive().optional(),
 });
 
 const MAX_SAMPLES = 5;
@@ -31,9 +33,16 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const { problemId, language, code, customInput } = parsed.data;
+  const { problemId, language, code, customInput, contestId } = parsed.data;
   if (!isLanguageKey(language)) {
     return Response.json({ error: "不支援的語言" }, { status: 400 });
+  }
+
+  if (contestId !== undefined) {
+    const access = await assertContestProblemAccess(session, contestId, problemId);
+    if (!access.ok) {
+      return Response.json({ error: access.error }, { status: access.status });
+    }
   }
 
   const problem = await prisma.problem.findUnique({
@@ -46,7 +55,10 @@ export async function POST(request: Request) {
       },
     },
   });
-  if (!problem || (!problem.isPublic && session.role !== "ADMIN")) {
+  if (
+    !problem ||
+    (contestId === undefined && !problem.isPublic && session.role !== "ADMIN")
+  ) {
     return Response.json({ error: "題目不存在" }, { status: 404 });
   }
 

@@ -71,7 +71,19 @@ public class Main {
 `,
 };
 
-export default function SubmitPanel({ problemId }: { problemId: number }) {
+interface SubmitPanelProps {
+  problemId: number;
+  contestId?: number;
+  // 只有透過比賽內題目頁才會傳這個；ended 時停用送出/測試執行
+  contestPhase?: "running" | "frozen" | "ended";
+}
+
+export default function SubmitPanel({
+  problemId,
+  contestId,
+  contestPhase,
+}: SubmitPanelProps) {
+  const locked = contestPhase === "ended";
   const router = useRouter();
   const [language, setLanguage] = useState<LanguageKey>("cpp");
   const [code, setCode] = useState(TEMPLATES.cpp);
@@ -117,6 +129,7 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
 
   // 測試執行：跑範例測資（或自訂輸入），不留紀錄
   async function runTest() {
+    if (locked) return;
     setRunning(true);
     setError("");
     setRunResult(null);
@@ -129,6 +142,7 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
           language,
           code,
           customInput: showCustom ? customInput : null,
+          contestId,
         }),
       });
       const data = await res.json();
@@ -145,13 +159,14 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
   }
 
   async function submit() {
+    if (locked) return;
     setSubmitting(true);
     setError("");
     try {
       const res = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ problemId, language, code }),
+        body: JSON.stringify({ problemId, language, code, contestId }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -206,6 +221,9 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
         </div>
       )}
 
+      {locked && (
+        <p className="mt-2 text-sm text-[#faa81a]">比賽已結束，無法再測試執行或提交</p>
+      )}
       {error && <p className="mt-2 text-sm text-[#ff6b6b]">{error}</p>}
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -219,14 +237,14 @@ export default function SubmitPanel({ problemId }: { problemId: number }) {
           <button
             className="btn-secondary"
             onClick={runTest}
-            disabled={running || submitting}
+            disabled={running || submitting || locked}
           >
             {running ? "執行中…" : "測試執行"}
           </button>
           <button
             className="btn-primary"
             onClick={submit}
-            disabled={running || submitting}
+            disabled={running || submitting || locked}
           >
             {submitting ? "送出中…" : "送出解答"}
           </button>

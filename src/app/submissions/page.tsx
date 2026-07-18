@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { isContestRevealed } from "@/lib/contest";
 import SubmissionRow from "@/components/SubmissionRow";
 
 export const metadata: Metadata = { title: "紀錄" };
@@ -23,8 +24,10 @@ export default async function SubmissionsPage({
     include: {
       user: { select: { username: true, displayName: true } },
       problem: { select: { id: true, title: true } },
+      contest: true,
     },
   });
+  const isAdmin = session?.role === "ADMIN";
 
   return (
     <div>
@@ -75,25 +78,33 @@ export default async function SubmissionsPage({
                 </td>
               </tr>
             )}
-            {submissions.map((s) => (
-              <SubmissionRow
-                key={s.id}
-                s={{
-                  id: s.id,
-                  status: s.status,
-                  language: s.language,
-                  timeMs: s.timeMs,
-                  memoryKb: s.memoryKb,
-                  username: s.user.username,
-                  displayName: s.user.displayName,
-                  problem: s.problem,
-                  createdAtLabel: s.createdAt.toLocaleString("zh-TW", {
-                    timeZone: "Asia/Taipei",
-                    hour12: false,
-                  }),
-                }}
-              />
-            ))}
+            {submissions.map((s) => {
+              const isOwner = session?.userId === s.userId;
+              const redacted =
+                s.contest &&
+                !isContestRevealed(s.contest) &&
+                !isOwner &&
+                !isAdmin;
+              return (
+                <SubmissionRow
+                  key={s.id}
+                  s={{
+                    id: s.id,
+                    status: redacted ? "CONTEST" : s.status,
+                    language: s.language,
+                    timeMs: redacted ? null : s.timeMs,
+                    memoryKb: redacted ? null : s.memoryKb,
+                    username: s.user.username,
+                    displayName: s.user.displayName,
+                    problem: s.problem,
+                    createdAtLabel: s.createdAt.toLocaleString("zh-TW", {
+                      timeZone: "Asia/Taipei",
+                      hour12: false,
+                    }),
+                  }}
+                />
+              );
+            })}
           </tbody>
         </table>
       </div>

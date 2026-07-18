@@ -8,6 +8,7 @@ const VERDICTS: Record<string, { label: string; className: string }> = {
   RE: { label: "Runtime Error", className: "vbadge-purple" },
   CE: { label: "Compile Error", className: "vbadge-gray" },
   IE: { label: "系統錯誤", className: "vbadge-gray" },
+  CONTEST: { label: "比賽中", className: "vbadge-gray" },
 };
 
 export default function VerdictBadge({

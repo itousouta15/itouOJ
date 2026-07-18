@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { isContestRevealed } from "@/lib/contest";
 
 export async function GET(
   _request: Request,
@@ -16,6 +17,7 @@ export async function GET(
     include: {
       user: { select: { username: true } },
       problem: { select: { id: true, title: true } },
+      contest: true,
       results: { orderBy: { order: "asc" } },
     },
   });
@@ -26,6 +28,15 @@ export async function GET(
   const session = await getSession();
   const isOwner = session?.userId === submission.userId;
   const isAdmin = session?.role === "ADMIN";
+
+  // 比賽期間（或結束後尚未公開）不給非本人/非管理員看到戰績，避免洩漏即時排名
+  if (submission.contest && !isContestRevealed(submission.contest) && !isOwner && !isAdmin) {
+    return Response.json({
+      id: submission.id,
+      contestId: submission.contestId,
+      hidden: true,
+    });
+  }
 
   return Response.json({
     id: submission.id,
