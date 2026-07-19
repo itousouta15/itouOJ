@@ -1,15 +1,15 @@
 CC := cc
 CFLAGS := -Wall -Wextra -O2
-LDLIBS :=
+LDLIBS := -lseccomp
 
 BIN := jail
-SRC := src/jail.c src/cgroup.c src/caps.c
+SRC := src/jail.c src/cgroup.c src/caps.c src/seccomp.c
 
 .PHONY: all clean
 
 all: $(BIN)
 
-$(BIN): $(SRC) src/cgroup.h src/caps.h
+$(BIN): $(SRC) src/cgroup.h src/caps.h src/seccomp.h
 	$(CC) $(CFLAGS) -o $@ $(SRC) $(LDLIBS)
 
 clean:
