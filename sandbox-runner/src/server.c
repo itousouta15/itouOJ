@@ -41,18 +41,26 @@
 #define WORK_ROOT "./work"
 #define DEFAULT_PIDS_MAX "32"
 #define PYTHON_HOME "/opt/piston-data/packages/python/3.12.0"
+#define NODE_HOME "/opt/piston-data/packages/node/20.11.1"
 
 struct lang_info {
   const char *key; // matches src/lib/languages.ts's `lang.piston` value
-  const char *compiler; // NULL if there's no compile step (e.g. Python)
+  const char *compiler; // NULL if there's no compile step (e.g. Python/Node)
   const char *filename;        // source filename inside the workdir
   const char *seccomp_profile; // see src/seccomp.c
+  const char *runtime_home;     // host path bind-mounted at /opt/runtime, or
+                                 // NULL for natively-compiled languages
+  const char *interpreter_path; // path inside the rootfs to execve, or NULL
+                                 // to run the compiled /bin/prog directly
 };
 
 static const struct lang_info LANGS[] = {
-    {"c", "gcc", "main.c", "native"},
-    {"c++", "g++", "main.cpp", "native"},
-    {"python", NULL, "main.py", "python"},
+    {"c", "gcc", "main.c", "native", NULL, NULL},
+    {"c++", "g++", "main.cpp", "native", NULL, NULL},
+    {"python", NULL, "main.py", "python", PYTHON_HOME,
+     "/opt/runtime/bin/python3.12"},
+    {"javascript", NULL, "main.js", "node", NODE_HOME,
+     "/opt/runtime/bin/node"},
 };
 
 static const struct lang_info *find_lang(const char *key) {
@@ -306,12 +314,17 @@ static int bind_mount_ro(const char *src, const char *dst) {
   return 0;
 }
 
-static void setup_python_rootfs(const char *rootfs_dir) {
+// Generic across interpreted languages: mounts the given runtime package
+// (Python's or Node's piston-data tree) at /opt/runtime, plus host /usr for
+// shared libs, replicating the merged-/usr symlinks so the dynamic linker
+// resolves them normally inside the pivot_root'd rootfs.
+static void setup_interpreter_rootfs(const char *rootfs_dir,
+                                      const char *runtime_home) {
   char dst[400];
   snprintf(dst, sizeof(dst), "%s/opt", rootfs_dir);
   mkdir(dst, 0755);
-  snprintf(dst, sizeof(dst), "%s/opt/python", rootfs_dir);
-  bind_mount_ro(PYTHON_HOME, dst);
+  snprintf(dst, sizeof(dst), "%s/opt/runtime", rootfs_dir);
+  bind_mount_ro(runtime_home, dst);
 
   snprintf(dst, sizeof(dst), "%s/usr", rootfs_dir);
   bind_mount_ro("/usr", dst);
@@ -327,11 +340,11 @@ static void setup_python_rootfs(const char *rootfs_dir) {
   }
 }
 
-static void teardown_python_rootfs(const char *rootfs_dir) {
+static void teardown_interpreter_rootfs(const char *rootfs_dir) {
   char dst[400];
   snprintf(dst, sizeof(dst), "%s/usr", rootfs_dir);
   umount2(dst, MNT_DETACH);
-  snprintf(dst, sizeof(dst), "%s/opt/python", rootfs_dir);
+  snprintf(dst, sizeof(dst), "%s/opt/runtime", rootfs_dir);
   umount2(dst, MNT_DETACH);
 }
 
@@ -419,7 +432,8 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
   if (!lang) {
     cJSON_Delete(req);
     return send_text_response(
-        conn, 400, "unsupported language (c, c++, python only so far)\n");
+        conn, 400,
+        "unsupported language (c, c++, python, javascript only so far)\n");
   }
 
   cJSON *file0 = cJSON_GetArrayItem(j_files, 0);
@@ -451,7 +465,8 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
            rand());
   mkdir(workdir, 0755);
   char rootfs_dir[300], bin_dir[320], src_path[340], bin_path[360];
-  char work_dir_in_rootfs[340], py_src_path[380];
+  char work_dir_in_rootfs[340], interp_src_path[380];
+  char script_path_in_rootfs[64];
   snprintf(rootfs_dir, sizeof(rootfs_dir), "%s/rootfs", workdir);
   mkdir(rootfs_dir, 0755);
 
@@ -462,16 +477,18 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
     snprintf(work_dir_in_rootfs, sizeof(work_dir_in_rootfs), "%s/work",
              rootfs_dir);
     mkdir(work_dir_in_rootfs, 0755);
-    snprintf(py_src_path, sizeof(py_src_path), "%s/%s", work_dir_in_rootfs,
-             lang->filename);
-    FILE *sf = fopen(py_src_path, "w");
+    snprintf(interp_src_path, sizeof(interp_src_path), "%s/%s",
+             work_dir_in_rootfs, lang->filename);
+    FILE *sf = fopen(interp_src_path, "w");
     if (sf) {
       fwrite(j_content->valuestring, 1, strlen(j_content->valuestring), sf);
       fclose(sf);
     }
-    setup_python_rootfs(rootfs_dir);
-    run_program_argv[run_program_argc++] = "/opt/python/bin/python3.12";
-    run_program_argv[run_program_argc++] = "/work/main.py";
+    setup_interpreter_rootfs(rootfs_dir, lang->runtime_home);
+    snprintf(script_path_in_rootfs, sizeof(script_path_in_rootfs),
+             "/work/%s", lang->filename);
+    run_program_argv[run_program_argc++] = (char *)lang->interpreter_path;
+    run_program_argv[run_program_argc++] = script_path_in_rootfs;
   } else {
     snprintf(bin_dir, sizeof(bin_dir), "%s/bin", rootfs_dir);
     mkdir(bin_dir, 0755);
@@ -563,7 +580,7 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
   }
 
   if (is_interpreted) {
-    teardown_python_rootfs(rootfs_dir);
+    teardown_interpreter_rootfs(rootfs_dir);
   }
   cJSON_Delete(req);
   cleanup_workdir(workdir);
