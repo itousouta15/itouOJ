@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
-import { pistonExecute } from "@/lib/piston";
+import { execute } from "@/lib/execute";
 
 // 單機用的循序判題佇列：用 promise chain 串起來，
 // 同一時間只有一筆提交在跑，避免把 4 核心的機器壓垮。
@@ -107,7 +107,7 @@ async function judgeSubmission(submissionId: number) {
   try {
     for (let i = 0; i < problem.testCases.length; i++) {
       const tc = problem.testCases[i];
-      const result = await pistonExecute({
+      const result = await execute(submission.language, {
         language: lang.piston,
         version: lang.version,
         filename: lang.filename,
