@@ -25,13 +25,15 @@ PISTON_URL = "http://127.0.0.1:2000/api/v2/execute"
 SANDBOX_URL = "http://127.0.0.1:8090/api/v2/execute"
 LOG_PATH = "shadow-log.jsonl"
 
-# Mirrors src/lib/languages.ts -- sandbox-server (M5) only supports c/cpp so
-# far, matching what's been hardened through M4.
+# Mirrors src/lib/languages.ts -- sandbox-server supports c/cpp (M5) and
+# python (M7) so far.
 LANG_MAP = {
     "cpp": {"piston": "c++", "version": "10.2.0", "filename": "main.cpp",
             "time_mult": 1, "mem_mult": 1},
     "c": {"piston": "c", "version": "10.2.0", "filename": "main.c",
           "time_mult": 1, "mem_mult": 1},
+    "python": {"piston": "python", "version": "3.12.0", "filename": "main.py",
+               "time_mult": 3, "mem_mult": 1},
 }
 
 
@@ -103,7 +105,7 @@ def main():
     conn.row_factory = sqlite3.Row
     subs = conn.execute(
         "SELECT id, problemId, language, code, status FROM Submission "
-        "WHERE language IN ('c','cpp') ORDER BY id"
+        "WHERE language IN ('c','cpp','python') ORDER BY id"
     ).fetchall()
 
     total, mismatches = 0, 0
