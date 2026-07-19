@@ -44,6 +44,7 @@
 struct child_args {
   const char *rootfs;
   const char *cgroup_path;
+  const char *seccomp_profile;
   int sync_read_fd;
   char *const *argv;
 };
@@ -190,7 +191,7 @@ static int child_main(void *arg) {
 
   // Last line of defense, installed immediately before exec: from this
   // point on, any syscall not on the allowlist kills the process outright.
-  if (seccomp_install_run_filter() == -1) {
+  if (seccomp_install_run_filter(a->seccomp_profile) == -1) {
     _exit(125);
   }
 
@@ -257,10 +258,10 @@ static int write_id_map(pid_t pid, const char *map_name) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 6) {
+  if (argc < 7) {
     fprintf(stderr,
             "usage: %s <rootfs-dir> <mem-limit-mb> <pids-max> <timeout-ms> "
-            "<program-path-in-rootfs> [args...]\n",
+            "<seccomp-profile> <program-path-in-rootfs> [args...]\n",
             argv[0]);
     return 2;
   }
@@ -269,6 +270,7 @@ int main(int argc, char *argv[]) {
   long mem_limit_bytes = atol(argv[2]) * 1024 * 1024;
   long pids_max = atol(argv[3]);
   long timeout_ms = atol(argv[4]);
+  const char *seccomp_profile = argv[5];
 
   if (cg_ensure_parent() == -1) {
     return 1;
@@ -290,8 +292,9 @@ int main(int argc, char *argv[]) {
   struct child_args cargs = {
       .rootfs = rootfs,
       .cgroup_path = cgroup_path,
+      .seccomp_profile = seccomp_profile,
       .sync_read_fd = sync_pipe[0],
-      .argv = &argv[5],
+      .argv = &argv[6],
   };
 
   char *stack = malloc(STACK_SIZE);

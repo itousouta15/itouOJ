@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <time.h>
@@ -39,16 +40,19 @@
 #define JAIL_BIN "./jail"
 #define WORK_ROOT "./work"
 #define DEFAULT_PIDS_MAX "32"
+#define PYTHON_HOME "/opt/piston-data/packages/python/3.12.0"
 
 struct lang_info {
-  const char *key;      // matches src/lib/languages.ts's `lang.piston` value
-  const char *compiler;
-  const char *filename; // source filename inside the workdir
+  const char *key; // matches src/lib/languages.ts's `lang.piston` value
+  const char *compiler; // NULL if there's no compile step (e.g. Python)
+  const char *filename;        // source filename inside the workdir
+  const char *seccomp_profile; // see src/seccomp.c
 };
 
 static const struct lang_info LANGS[] = {
-    {"c", "gcc", "main.c"},
-    {"c++", "g++", "main.cpp"},
+    {"c", "gcc", "main.c", "native"},
+    {"c++", "g++", "main.cpp", "native"},
+    {"python", NULL, "main.py", "python"},
 };
 
 static const struct lang_info *find_lang(const char *key) {
@@ -281,6 +285,56 @@ static void cleanup_workdir(const char *workdir) {
   free_captured(&discard);
 }
 
+// ---- interpreter rootfs bind mounts (Python, unlike statically-linked
+// C/C++, needs its own package tree + host shared libs present at runtime)
+//
+// Host is a merged-/usr layout (/lib -> usr/lib, /lib64 -> usr/lib64), so
+// bind-mounting /usr and replicating those two symlinks is enough to
+// satisfy the dynamic linker -- no need to separately mount /lib, /lib64,
+// and /usr/lib/x86_64-linux-gnu as three different bind mounts.
+
+static int bind_mount_ro(const char *src, const char *dst) {
+  if (mkdir(dst, 0755) == -1 && errno != EEXIST) {
+    fprintf(stderr, "[server] mkdir %s: %s\n", dst, strerror(errno));
+    return -1;
+  }
+  if (mount(src, dst, NULL, MS_BIND | MS_REC, NULL) == -1) {
+    fprintf(stderr, "[server] bind mount %s -> %s: %s\n", src, dst,
+            strerror(errno));
+    return -1;
+  }
+  return 0;
+}
+
+static void setup_python_rootfs(const char *rootfs_dir) {
+  char dst[400];
+  snprintf(dst, sizeof(dst), "%s/opt", rootfs_dir);
+  mkdir(dst, 0755);
+  snprintf(dst, sizeof(dst), "%s/opt/python", rootfs_dir);
+  bind_mount_ro(PYTHON_HOME, dst);
+
+  snprintf(dst, sizeof(dst), "%s/usr", rootfs_dir);
+  bind_mount_ro("/usr", dst);
+
+  char link[400];
+  snprintf(link, sizeof(link), "%s/lib", rootfs_dir);
+  if (symlink("usr/lib", link) == -1 && errno != EEXIST) {
+    fprintf(stderr, "[server] symlink %s: %s\n", link, strerror(errno));
+  }
+  snprintf(link, sizeof(link), "%s/lib64", rootfs_dir);
+  if (symlink("usr/lib64", link) == -1 && errno != EEXIST) {
+    fprintf(stderr, "[server] symlink %s: %s\n", link, strerror(errno));
+  }
+}
+
+static void teardown_python_rootfs(const char *rootfs_dir) {
+  char dst[400];
+  snprintf(dst, sizeof(dst), "%s/usr", rootfs_dir);
+  umount2(dst, MNT_DETACH);
+  snprintf(dst, sizeof(dst), "%s/opt/python", rootfs_dir);
+  umount2(dst, MNT_DETACH);
+}
+
 // ---- HTTP layer ----
 
 static enum MHD_Result send_text_response(struct MHD_Connection *conn,
@@ -365,7 +419,7 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
   if (!lang) {
     cJSON_Delete(req);
     return send_text_response(
-        conn, 400, "unsupported language (M5 supports c, c++ only)\n");
+        conn, 400, "unsupported language (c, c++, python only so far)\n");
   }
 
   cJSON *file0 = cJSON_GetArrayItem(j_files, 0);
@@ -388,6 +442,8 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
                                  ? (long)j_compile_timeout->valuedouble
                                  : 15000;
 
+  int is_interpreted = lang->compiler == NULL;
+
   // --- per-request scratch workdir ---
   mkdir(WORK_ROOT, 0755);
   char workdir[256];
@@ -395,35 +451,65 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
            rand());
   mkdir(workdir, 0755);
   char rootfs_dir[300], bin_dir[320], src_path[340], bin_path[360];
+  char work_dir_in_rootfs[340], py_src_path[380];
   snprintf(rootfs_dir, sizeof(rootfs_dir), "%s/rootfs", workdir);
-  snprintf(bin_dir, sizeof(bin_dir), "%s/bin", rootfs_dir);
   mkdir(rootfs_dir, 0755);
-  mkdir(bin_dir, 0755);
-  snprintf(src_path, sizeof(src_path), "%s/%s", workdir, lang->filename);
-  snprintf(bin_path, sizeof(bin_path), "%s/prog", bin_dir);
 
-  FILE *sf = fopen(src_path, "w");
-  if (sf) {
-    fwrite(j_content->valuestring, 1, strlen(j_content->valuestring), sf);
-    fclose(sf);
+  char *run_program_argv[3]; // up to: interpreter, script -- or just binary
+  int run_program_argc = 0;
+
+  if (is_interpreted) {
+    snprintf(work_dir_in_rootfs, sizeof(work_dir_in_rootfs), "%s/work",
+             rootfs_dir);
+    mkdir(work_dir_in_rootfs, 0755);
+    snprintf(py_src_path, sizeof(py_src_path), "%s/%s", work_dir_in_rootfs,
+             lang->filename);
+    FILE *sf = fopen(py_src_path, "w");
+    if (sf) {
+      fwrite(j_content->valuestring, 1, strlen(j_content->valuestring), sf);
+      fclose(sf);
+    }
+    setup_python_rootfs(rootfs_dir);
+    run_program_argv[run_program_argc++] = "/opt/python/bin/python3.12";
+    run_program_argv[run_program_argc++] = "/work/main.py";
+  } else {
+    snprintf(bin_dir, sizeof(bin_dir), "%s/bin", rootfs_dir);
+    mkdir(bin_dir, 0755);
+    snprintf(src_path, sizeof(src_path), "%s/%s", workdir, lang->filename);
+    snprintf(bin_path, sizeof(bin_path), "%s/prog", bin_dir);
+    FILE *sf = fopen(src_path, "w");
+    if (sf) {
+      fwrite(j_content->valuestring, 1, strlen(j_content->valuestring), sf);
+      fclose(sf);
+    }
+    run_program_argv[run_program_argc++] = "/bin/prog";
   }
-
-  // --- compile (host-side, not sandboxed -- see file header) ---
-  struct captured_output compile_out = {0};
-  int compile_exit = 0, compile_sig = -1;
-  char *compile_argv[] = {(char *)lang->compiler, "-O2", "-static",
-                           "-o",  bin_path,        src_path, NULL};
-  run_child(compile_argv, NULL, 0, 0, compile_timeout_ms, &compile_out,
-            &compile_exit, &compile_sig);
 
   cJSON *resp = cJSON_CreateObject();
   cJSON_AddStringToObject(resp, "language", j_language->valuestring);
-  cJSON_AddStringToObject(resp, "version", "sandbox-runner-m5");
-  cJSON_AddItemToObject(
-      resp, "compile",
-      build_phase_json(&compile_out, compile_exit, compile_sig, 0, 0));
+  cJSON_AddStringToObject(resp, "version", "sandbox-runner-m7");
 
-  int compile_failed = compile_sig >= 0 || compile_exit != 0;
+  int compile_failed = 0;
+  if (is_interpreted) {
+    // No compile phase for interpreted languages -- report a trivial
+    // success so the response shape stays identical to Piston's.
+    struct captured_output empty = {0};
+    cJSON_AddItemToObject(resp, "compile",
+                           build_phase_json(&empty, 0, -1, 0, 0));
+  } else {
+    // --- compile (host-side, not sandboxed -- see file header) ---
+    struct captured_output compile_out = {0};
+    int compile_exit = 0, compile_sig = -1;
+    char *compile_argv[] = {(char *)lang->compiler, "-O2", "-static",
+                             "-o",  bin_path,        src_path, NULL};
+    run_child(compile_argv, NULL, 0, 0, compile_timeout_ms, &compile_out,
+              &compile_exit, &compile_sig);
+    cJSON_AddItemToObject(
+        resp, "compile",
+        build_phase_json(&compile_out, compile_exit, compile_sig, 0, 0));
+    compile_failed = compile_sig >= 0 || compile_exit != 0;
+    free_captured(&compile_out);
+  }
 
   if (compile_failed) {
     struct captured_output empty = {0};
@@ -434,8 +520,18 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
     char mem_s[16], to_s[16];
     snprintf(mem_s, sizeof(mem_s), "%ld", run_mem_mb);
     snprintf(to_s, sizeof(to_s), "%ld", run_timeout_ms);
-    char *jail_argv[] = {JAIL_BIN,  rootfs_dir, mem_s, (char *)DEFAULT_PIDS_MAX,
-                          to_s,      "/bin/prog", NULL};
+
+    char *jail_argv[10];
+    int n = 0;
+    jail_argv[n++] = JAIL_BIN;
+    jail_argv[n++] = rootfs_dir;
+    jail_argv[n++] = mem_s;
+    jail_argv[n++] = (char *)DEFAULT_PIDS_MAX;
+    jail_argv[n++] = to_s;
+    jail_argv[n++] = (char *)lang->seccomp_profile;
+    for (int i = 0; i < run_program_argc; i++) jail_argv[n++] = run_program_argv[i];
+    jail_argv[n] = NULL;
+
     // Outer timeout is generous relative to run_timeout_ms -- jail enforces
     // the real limit itself via cgroup.kill; this is just a backstop in
     // case jail itself somehow wedges.
@@ -466,7 +562,9 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
     free_captured(&run_out);
   }
 
-  free_captured(&compile_out);
+  if (is_interpreted) {
+    teardown_python_rootfs(rootfs_dir);
+  }
   cJSON_Delete(req);
   cleanup_workdir(workdir);
 
