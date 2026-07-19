@@ -1,8 +1,7 @@
-// M1: minimal namespace sandbox driver.
-// Isolation only (PID/mount/UTS namespaces via a single clone() call +
-// pivot_root into a caller-supplied rootfs). No cgroups, no seccomp, no
-// user namespace yet -- those come in later milestones. Must be run as
-// root (mount/pivot_root require privilege at this stage).
+// M2: namespace isolation (M1) + cgroup v2 resource limits and wall-clock
+// timeout. Still one language, still no seccomp -- those come later.
+// Must be run as root (mount/pivot_root/cgroup setup require privilege at
+// this stage; user namespace + capability drop land in M3).
 #define _GNU_SOURCE
 #include <sched.h>
 #include <stdio.h>
@@ -11,15 +10,20 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <time.h>
 #include <sys/wait.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 
+#include "cgroup.h"
+
 #define STACK_SIZE (1024 * 1024)
+#define POLL_INTERVAL_US 5000 // 5ms -- see NOTE in wait_with_timeout()
 
 struct child_args {
   const char *rootfs;
+  const char *cgroup_path;
   char *const *argv;
 };
 
@@ -85,6 +89,12 @@ static int pivot_into_rootfs(const char *rootfs) {
 static int child_main(void *arg) {
   struct child_args *a = (struct child_args *)arg;
 
+  // Join the cgroup as the very first action, before anything else runs,
+  // so there's no window where this process executes unaccounted.
+  if (cg_join_self(a->cgroup_path) == -1) {
+    _exit(126);
+  }
+
   if (sethostname("jail", 4) == -1) {
     perror("sethostname");
   }
@@ -99,21 +109,88 @@ static int child_main(void *arg) {
   _exit(127);
 }
 
+static long elapsed_ms(const struct timespec *start) {
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  return (now.tv_sec - start->tv_sec) * 1000 +
+         (now.tv_nsec - start->tv_nsec) / 1000000;
+}
+
+// Polls the child with WNOHANG until it exits or the wall-clock timeout is
+// hit. On timeout, kills the whole cgroup atomically via cgroup.kill (safe
+// against the child having forked -- no need to enumerate descendants).
+//
+// NOTE: this is a plain poll loop (5ms granularity), not a timerfd/signalfd
+// wait -- simplest thing that works for M2's demo. Tightening this to
+// sub-ms precision with timerfd is M9 hardening material, not required for
+// correctness here.
+static int wait_with_timeout(pid_t pid, const char *cgroup_path,
+                              long timeout_ms, int *out_status,
+                              int *out_timed_out, long *out_elapsed_ms) {
+  struct timespec start;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  *out_timed_out = 0;
+
+  for (;;) {
+    pid_t wp = waitpid(pid, out_status, WNOHANG);
+    if (wp == pid) {
+      *out_elapsed_ms = elapsed_ms(&start);
+      return 0;
+    }
+    if (wp == -1) {
+      perror("waitpid");
+      return -1;
+    }
+
+    if (elapsed_ms(&start) >= timeout_ms) {
+      *out_timed_out = 1;
+      cg_kill(cgroup_path);
+      if (waitpid(pid, out_status, 0) == -1) {
+        perror("waitpid after cgroup.kill");
+        return -1;
+      }
+      *out_elapsed_ms = elapsed_ms(&start);
+      return 0;
+    }
+
+    usleep(POLL_INTERVAL_US);
+  }
+}
+
 int main(int argc, char *argv[]) {
-  if (argc < 3) {
-    fprintf(stderr, "usage: %s <rootfs-dir> <program-path-in-rootfs> [args...]\n",
+  if (argc < 6) {
+    fprintf(stderr,
+            "usage: %s <rootfs-dir> <mem-limit-mb> <pids-max> <timeout-ms> "
+            "<program-path-in-rootfs> [args...]\n",
             argv[0]);
     return 2;
   }
 
+  const char *rootfs = argv[1];
+  long mem_limit_bytes = atol(argv[2]) * 1024 * 1024;
+  long pids_max = atol(argv[3]);
+  long timeout_ms = atol(argv[4]);
+
+  if (cg_ensure_parent() == -1) {
+    return 1;
+  }
+
+  char cgroup_path[CGROUP_PATH_MAX];
+  if (cg_create_run(cgroup_path, sizeof(cgroup_path), mem_limit_bytes,
+                     pids_max) == -1) {
+    return 1;
+  }
+
   struct child_args cargs = {
-      .rootfs = argv[1],
-      .argv = &argv[2],
+      .rootfs = rootfs,
+      .cgroup_path = cgroup_path,
+      .argv = &argv[5],
   };
 
   char *stack = malloc(STACK_SIZE);
   if (!stack) {
     perror("malloc");
+    cg_destroy(cgroup_path);
     return 1;
   }
   char *stack_top = stack + STACK_SIZE;
@@ -124,17 +201,31 @@ int main(int argc, char *argv[]) {
   if (pid == -1) {
     perror("clone");
     free(stack);
+    cg_destroy(cgroup_path);
     return 1;
   }
 
-  int status;
-  if (waitpid(pid, &status, 0) == -1) {
-    perror("waitpid");
-    free(stack);
-    return 1;
-  }
+  int status = 0, timed_out = 0;
+  long wall_ms = 0;
+  int rc = wait_with_timeout(pid, cgroup_path, timeout_ms, &status,
+                              &timed_out, &wall_ms);
   free(stack);
+  if (rc == -1) {
+    cg_destroy(cgroup_path);
+    return 1;
+  }
 
+  long mem_peak = cg_read_memory_peak(cgroup_path);
+  cg_destroy(cgroup_path);
+
+  fprintf(stderr, "[jail] wall_time_ms=%ld memory_peak_bytes=%ld\n", wall_ms,
+          mem_peak);
+
+  if (timed_out) {
+    fprintf(stderr, "[jail] TIMEOUT: killed via cgroup.kill after %ldms\n",
+            timeout_ms);
+    return 124; // conventional timeout exit code
+  }
   if (WIFEXITED(status)) {
     int code = WEXITSTATUS(status);
     fprintf(stderr, "[jail] child exited with code %d\n", code);
@@ -142,7 +233,13 @@ int main(int argc, char *argv[]) {
   }
   if (WIFSIGNALED(status)) {
     int sig = WTERMSIG(status);
-    fprintf(stderr, "[jail] child killed by signal %d\n", sig);
+    // A SIGKILL that wasn't our own timeout kill, before the timeout
+    // elapsed, is the cgroup memory controller's OOM kill.
+    if (sig == SIGKILL) {
+      fprintf(stderr, "[jail] child killed by signal SIGKILL (likely cgroup OOM)\n");
+    } else {
+      fprintf(stderr, "[jail] child killed by signal %d\n", sig);
+    }
     return 128 + sig;
   }
   fprintf(stderr, "[jail] child ended in unknown state\n");
