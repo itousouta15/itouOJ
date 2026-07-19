@@ -8,6 +8,8 @@ itouOJ 的自架評測沙箱：從零用 Linux namespaces、cgroup v2、seccomp-
 
 Piston 本身的沙箱只管 CPU / 記憶體 / 時間跟檔案系統範圍，**不管使用者程式碼能不能呼叫子程序**——`import subprocess` 或 `os.system` 在容器裡就能跑任意指令。itouOJ 原本靠一份 [`piston-python-sitecustomize.py`](../deploy/piston-python-sitecustomize.py) 在直譯器層級擋掉常見的逃逸手法，但這**只保護 Python**，C/C++/Java/JavaScript 完全沒有這層防護。
 
+> 這個缺口現在只剩 **Java** 還沒補上。C/C++/Python/JavaScript 已經換成這個專案的核心層級沙箱（見下方〈架構〉），語言無關、不用像 `sitecustomize.py` 那樣每種語言各自在應用層擋一次。Java 因為 JVM 的 syscall 面最複雜，還沒做，暫時繼續走 Piston，也就是繼續只有 Piston 原本的資源限制、沒有子程序防護。
+
 這個專案的目標：用作業系統本身的機制（namespace 隔離、cgroup 資源上限、seccomp syscall 白名單）做出語言無關、核心層級的防護，而不是每種語言各自在應用層擋一次。
 
 ## 架構：三層防護，缺一不可
