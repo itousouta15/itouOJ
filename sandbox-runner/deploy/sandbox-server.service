@@ -1,0 +1,20 @@
+# M5 dev/scratch unit -- NOT yet wired into deploy.ps1 or /opt/online-judge.
+# Lives in /root/sandbox-runner-dev on the VPS for now, deliberately outside
+# the production app's deploy tree until M8's cutover. Runs as root: jail
+# itself needs CAP_SYS_ADMIN-class privilege to create namespaces/cgroups
+# (see sandbox-runner/src/jail.c and the plan's privilege-model section) --
+# sandbox-server just fork/execs jail as a subprocess per request, so it
+# needs to already have that privilege to hand down.
+[Unit]
+Description=Sandbox judge HTTP service (M5 dev build)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/sandbox-runner-dev
+ExecStart=/root/sandbox-runner-dev/sandbox-server
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
