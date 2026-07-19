@@ -21,6 +21,7 @@ model User {
   submissions  Submission[]
   courses      CourseMember[]
   contests     ContestParticipant[]
+  problemProposals ProblemProposal[]
 }
 
 model Problem {
@@ -119,6 +120,34 @@ model Announcement {
   content   String // Markdown
   isPinned  Boolean  @default(false) // 置頂公告固定顯示在最上面
   createdAt DateTime @default(now())
+}
+
+// 使用者投稿的出題申請；審核通過後才會建立成正式的 Problem
+model ProblemProposal {
+  id                Int                @id @default(autoincrement())
+  title             String
+  statement         String
+  difficulty        String             @default("medium")
+  timeLimitMs       Int                @default(1000)
+  memoryLimitMb     Int                @default(256)
+  status            String             @default("PENDING") // PENDING | APPROVED | REJECTED
+  reviewNote        String? // 管理員退回原因；核准後清空
+  authorId          String
+  author            User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  approvedProblemId Int? // 核准後建立的正式 Problem id
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  testCases         ProposalTestCase[]
+}
+
+model ProposalTestCase {
+  id         Int             @id @default(autoincrement())
+  proposalId Int
+  proposal   ProblemProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  input      String
+  output     String
+  isSample   Boolean         @default(false)
+  order      Int             @default(0)
 }
 
 model TestCase {
