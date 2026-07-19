@@ -46,7 +46,22 @@ export default async function ProblemListPage() {
 
   return (
     <div>
-      <h1 className="mb-4 page-title">題目列表</h1>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="page-title">題目列表</h1>
+        {session && (
+          <div className="flex items-center gap-4">
+            <Link
+              href="/problems/proposals"
+              className="text-sm text-blue hover:underline"
+            >
+              我的申請
+            </Link>
+            <Link href="/problems/propose" className="btn-secondary">
+              ＋ 申請出題
+            </Link>
+          </div>
+        )}
+      </div>
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
