@@ -26,6 +26,7 @@
 
 #include "caps.h"
 #include "cgroup.h"
+#include "seccomp.h"
 
 #define STACK_SIZE (1024 * 1024)
 #define POLL_INTERVAL_US 5000 // 5ms -- see NOTE in wait_with_timeout()
@@ -184,6 +185,12 @@ static int child_main(void *arg) {
   }
   if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == -1) {
     perror("prctl PR_SET_NO_NEW_PRIVS");
+    _exit(125);
+  }
+
+  // Last line of defense, installed immediately before exec: from this
+  // point on, any syscall not on the allowlist kills the process outright.
+  if (seccomp_install_run_filter() == -1) {
     _exit(125);
   }
 
