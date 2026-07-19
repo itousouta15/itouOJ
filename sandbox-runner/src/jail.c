@@ -351,30 +351,52 @@ int main(int argc, char *argv[]) {
   long mem_peak = cg_read_memory_peak(cgroup_path);
   cg_destroy(cgroup_path);
 
-  fprintf(stderr, "[jail] wall_time_ms=%ld memory_peak_bytes=%ld\n", wall_ms,
-          mem_peak);
+  // When jail is spawned by sandbox-server (M5), fd 3 is an inherited pipe
+  // dedicated to structured results -- fd 2 is left completely clean as a
+  // passthrough for the SUBMISSION's own stderr (the child inherited it
+  // directly via execve, so anything we print to fd 2 here would otherwise
+  // land mixed into the submission's captured stderr). Falls back to a
+  // human-readable stderr summary for plain CLI/manual use, where fd 3 was
+  // never opened by the caller.
+  int have_meta_fd = (fcntl(3, F_GETFD) != -1);
+  if (have_meta_fd) {
+    dprintf(3, "wall_time_ms=%ld\nmemory_peak_bytes=%ld\ntimed_out=%d\n",
+            wall_ms, mem_peak, timed_out);
+  } else {
+    fprintf(stderr, "[jail] wall_time_ms=%ld memory_peak_bytes=%ld\n",
+            wall_ms, mem_peak);
+  }
 
   if (timed_out) {
-    fprintf(stderr, "[jail] TIMEOUT: killed via cgroup.kill after %ldms\n",
-            timeout_ms);
+    if (!have_meta_fd) {
+      fprintf(stderr, "[jail] TIMEOUT: killed via cgroup.kill after %ldms\n",
+              timeout_ms);
+    }
     return 124; // conventional timeout exit code
   }
   if (WIFEXITED(status)) {
     int code = WEXITSTATUS(status);
-    fprintf(stderr, "[jail] child exited with code %d\n", code);
+    if (!have_meta_fd) {
+      fprintf(stderr, "[jail] child exited with code %d\n", code);
+    }
     return code;
   }
   if (WIFSIGNALED(status)) {
     int sig = WTERMSIG(status);
-    // A SIGKILL that wasn't our own timeout kill, before the timeout
-    // elapsed, is the cgroup memory controller's OOM kill.
-    if (sig == SIGKILL) {
-      fprintf(stderr, "[jail] child killed by signal SIGKILL (likely cgroup OOM)\n");
-    } else {
-      fprintf(stderr, "[jail] child killed by signal %d\n", sig);
+    if (!have_meta_fd) {
+      // A SIGKILL that wasn't our own timeout kill, before the timeout
+      // elapsed, is the cgroup memory controller's OOM kill.
+      if (sig == SIGKILL) {
+        fprintf(stderr,
+                "[jail] child killed by signal SIGKILL (likely cgroup OOM)\n");
+      } else {
+        fprintf(stderr, "[jail] child killed by signal %d\n", sig);
+      }
     }
     return 128 + sig;
   }
-  fprintf(stderr, "[jail] child ended in unknown state\n");
+  if (!have_meta_fd) {
+    fprintf(stderr, "[jail] child ended in unknown state\n");
+  }
   return 1;
 }
