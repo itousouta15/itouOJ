@@ -2,7 +2,7 @@
 
 <img width="1595" height="977" alt="image" src="https://github.com/user-attachments/assets/4c0bf0dd-0cb8-46b6-b7eb-fba8fa287655" />
 
-自架的程式解題系統（OJ）。前後端用 Next.js 一體開發，評測引擎用 [Piston](https://github.com/engineer-man/piston) 沙箱執行使用者程式碼。
+自架的程式解題系統（OJ）。前後端用 Next.js 一體開發，評測引擎依語言分兩條路：C/C++/Python/JavaScript 走自架的 [sandbox-runner](sandbox-runner/README.md)（Linux namespaces + cgroup v2 + seccomp-bpf 從零刻的沙箱），Java 暫時繼續走 [Piston](https://github.com/engineer-man/piston)。
 
 正式站：[oj.itousouta.me](https://oj.itousouta.me)
 
@@ -34,24 +34,27 @@
 |----|------|
 | 前端 + 後端 | Next.js 16（App Router）+ TypeScript + Tailwind CSS v4 |
 | 資料庫 | SQLite + Prisma 7（better-sqlite3 driver adapter） |
-| 評測引擎 | Piston（Docker，cgroup v2 沙箱） |
+| 評測引擎 | [sandbox-runner](sandbox-runner/README.md)（自架，C/C++/Python/JavaScript）+ Piston（Docker，Java） |
 | 判題佇列 | in-process promise chain（`src/lib/judge.ts`），伺服器重啟自動恢復未完成的提交 |
 
 ```
-瀏覽器 ──> nginx ──> Next.js (:3000)
-                       │  SQLite
-                       └──> Piston (127.0.0.1:2000, Docker)
+                                  ┌──> sandbox-server (127.0.0.1:8090)
+瀏覽器 ──> nginx ──> Next.js (:3000)─┤     C/C++/Python/JavaScript
+                       │  SQLite   └──> Piston (127.0.0.1:2000, Docker)
+                       │                 Java
 ```
+
+`src/lib/execute.ts` 依語言分流，兩條路徑互相獨立（其中一邊掛掉不影響另一邊）。sandbox-runner 是這個專案自己刻的沙箱（namespace 隔離 + cgroup 資源限制 + seccomp syscall 白名單），細節、動機、架構圖見 [sandbox-runner/README.md](sandbox-runner/README.md)。
 
 支援語言（版本對應 `src/lib/languages.ts`，時間 / 記憶體倍率是相對題目原始限制的放寬倍數）：
 
-| 語言 | 版本 | 時間倍率 | 記憶體倍率 |
-|----|----|:---:|:---:|
-| C++ | GCC 10.2.0 | 1x | 1x |
-| C | GCC 10.2.0 | 1x | 1x |
-| Python | 3.12.0 | 3x | 1x |
-| Java | 15.0.2 | 2x | 2x |
-| JavaScript | Node 20.11.1 | 3x | 2x |
+| 語言 | 版本 | 時間倍率 | 記憶體倍率 | 評測引擎 |
+|----|----|:---:|:---:|----|
+| C++ | GCC 10.2.0 | 1x | 1x | sandbox-runner |
+| C | GCC 10.2.0 | 1x | 1x | sandbox-runner |
+| Python | 3.12.0 | 3x | 1x | sandbox-runner |
+| JavaScript | Node 20.11.1 | 3x | 2x | sandbox-runner |
+| Java | 15.0.2 | 2x | 2x | Piston |
 
 ## 專案結構
 
@@ -75,6 +78,8 @@ prisma/
 └─ migrations/        # migration 歷史
 
 deploy/                # 部署腳本與設定（見「部署」章節）
+
+sandbox-runner/         # 自架評測沙箱（C/C++/Python/JavaScript 用），詳見其 README
 ```
 
 ## 本地開發
@@ -90,7 +95,8 @@ npm run dev
 ```env
 DATABASE_URL="file:./dev.db"
 AUTH_SECRET="<openssl rand -hex 32>"
-PISTON_URL="http://localhost:2000"   # Piston 位址
+PISTON_URL="http://localhost:2000"   # Piston 位址（Java 用）
+SANDBOX_URL="http://localhost:8090"  # sandbox-runner 位址（C/C++/Python/JavaScript 用，不設也是這個預設值）
 COOKIE_SECURE="0"                    # 上 HTTPS 後改 1
 
 # Google 登入（選用；沒設定就不顯示 Google 按鈕）
@@ -150,7 +156,7 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
 
    > `docker cp` 到這個容器的 `/tmp` 常常悄悄失敗（`/tmp` 掛的是 tmpfs），要塞檔案進容器的話改用 `/root` 之類的一般目錄。
 
-   Piston 本身的沙箱只管資源（CPU/記憶體/時間）跟檔案系統範圍，**不管使用者程式碼能不能呼叫子程序**——submission 裡直接 `import subprocess` / `os.system` 就能在容器裡跑任意指令。裝一份 `sitecustomize.py`（[deploy/piston-python-sitecustomize.py](deploy/piston-python-sitecustomize.py)）進 Python 套件的 `site-packages`，用 `sys.addaudithook` 在直譯器層級擋掉 `subprocess` / `os.system` / `os.popen` / `os.fork` / `ctypes` / `socket`（audit hook 裝上去後使用者程式碼無法移除，比字串黑名單擋 `import` 紮實）：
+   Piston 本身的沙箱只管資源（CPU/記憶體/時間）跟檔案系統範圍，**不管使用者程式碼能不能呼叫子程序**——submission 裡直接 `import subprocess` / `os.system` 就能在容器裡跑任意指令。**現在只有 Java 走這條路**（C/C++/Python/JavaScript 已經換成 [sandbox-runner](sandbox-runner/README.md) 的核心層級防護，不依賴這裡的補丁）。以下這份 `sitecustomize.py` 補丁仍然需要裝，因為 Piston 內建的 Python 套件在新增語言步驟時還是會被安裝出來，即使正式判題已經不走它：裝一份 `sitecustomize.py`（[deploy/piston-python-sitecustomize.py](deploy/piston-python-sitecustomize.py)）進 Python 套件的 `site-packages`，用 `sys.addaudithook` 在直譯器層級擋掉 `subprocess` / `os.system` / `os.popen` / `os.fork` / `ctypes` / `socket`（audit hook 裝上去後使用者程式碼無法移除，比字串黑名單擋 `import` 紮實）：
 
    ```bash
    scp deploy/piston-python-sitecustomize.py root@<server>:/root/sitecustomize.py
@@ -167,9 +173,20 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
    # gcc 10.2.0 / java 15.0.2 / node 20.11.1 同理
    ```
 
-3. 部署本體：`npm ci && npx prisma migrate deploy && npm run build`，用 systemd 跑 `next start`（範例在 [deploy/online-judge.service](deploy/online-judge.service)），前面掛 nginx 反向代理（[deploy/nginx-oj.conf](deploy/nginx-oj.conf)）。
+3. 啟動 sandbox-runner（C/C++/Python/JavaScript 的評測引擎，取代 Piston）：
 
-4. 網域與 HTTPS（正式站 `https://oj.itousouta.me`）：DNS 加 A 記錄指到伺服器（Cloudflare 上選 DNS only），裝 `certbot python3-certbot-nginx` 後跑 `certbot --nginx -d oj.itousouta.me --redirect`（自動續簽由 certbot.timer 處理）。伺服器 `.env` 記得設 `APP_URL="https://oj.itousouta.me"`、`COOKIE_SECURE="1"` 和 Google / Discord 憑證。
+   ```bash
+   apt install libseccomp-dev libmicrohttpd-dev libcjson-dev build-essential
+   cd sandbox-runner && make
+   cp deploy/sandbox-server.service /etc/systemd/system/
+   systemctl daemon-reload && systemctl enable --now sandbox-server
+   ```
+
+   必須用 root 執行（建立 namespace/cgroup 需要的權限沒辦法給非特權使用者），只綁 `127.0.0.1:8090`。詳細架構、安全模型見 [sandbox-runner/README.md](sandbox-runner/README.md)。伺服器 `.env` 記得設 `SANDBOX_URL="http://127.0.0.1:8090"`（不設也會用這個預設值）。
+
+4. 部署本體：`npm ci && npx prisma migrate deploy && npm run build`，用 systemd 跑 `next start`（範例在 [deploy/online-judge.service](deploy/online-judge.service)），前面掛 nginx 反向代理（[deploy/nginx-oj.conf](deploy/nginx-oj.conf)）。
+
+5. 網域與 HTTPS（正式站 `https://oj.itousouta.me`）：DNS 加 A 記錄指到伺服器（Cloudflare 上選 DNS only），裝 `certbot python3-certbot-nginx` 後跑 `certbot --nginx -d oj.itousouta.me --redirect`（自動續簽由 certbot.timer 處理）。伺服器 `.env` 記得設 `APP_URL="https://oj.itousouta.me"`、`COOKIE_SECURE="1"` 和 Google / Discord 憑證。
 
 ## 日常更新（改完程式碼後）
 
@@ -186,10 +203,12 @@ git push
 ```
 
 - 想先在本地看效果：`npm run dev` 開 http://localhost:3000
-- 評測功能要先接上伺服器的 Piston：`ssh -N -L 2000:localhost:2000 root@<server>`
+- 評測功能要先接上伺服器：`ssh -N -L 2000:localhost:2000 -L 8090:localhost:8090 root@<server>`（2000 是 Piston、Java 用；8090 是 sandbox-runner，其他語言用）
 - 改了 `prisma/schema.prisma` 的話，先在本地跑 `npx prisma migrate dev --name <名稱>` 產生 migration 再 commit，部署腳本會自動在伺服器套用
 
 ## 新增語言
 
-1. Piston 裝套件：`POST /api/v2/packages`
-2. 在 `src/lib/languages.ts` 加一筆對應（檔名、版本、時間/記憶體倍率）
+依要不要走 sandbox-runner 分兩種：
+
+- **走 Piston**（目前只有 Java）：Piston 裝套件（`POST /api/v2/packages`），在 `src/lib/languages.ts` 加一筆對應（檔名、版本、時間/記憶體倍率）。
+- **走 sandbox-runner**：先在 `sandbox-runner/src/seccomp.c` 建立/擴充該語言的 seccomp 白名單（方法論見 [sandbox-runner/README.md](sandbox-runner/README.md#seccomp-白名單怎麼建的)），`sandbox-runner/src/server.c` 的 `LANGS` 表加一筆，再到 `src/lib/languages.ts` 加對應、`src/lib/execute.ts` 的 `SANDBOX_LANGUAGES` 集合加進去。
