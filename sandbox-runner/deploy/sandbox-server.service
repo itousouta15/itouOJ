@@ -1,18 +1,19 @@
-# M5 dev/scratch unit -- NOT yet wired into deploy.ps1 or /opt/online-judge.
-# Lives in /root/sandbox-runner-dev on the VPS for now, deliberately outside
-# the production app's deploy tree until M8's cutover. Runs as root: jail
-# itself needs CAP_SYS_ADMIN-class privilege to create namespaces/cgroups
-# (see sandbox-runner/src/jail.c and the plan's privilege-model section) --
-# sandbox-server just fork/execs jail as a subprocess per request, so it
-# needs to already have that privilege to hand down.
+# M8: production judge sandbox, wired into judge.ts/route.ts via
+# src/lib/execute.ts (see itouOJ's own repo) for c/c++/python/javascript.
+# Java still goes through Piston until sandbox-runner grows a Java profile.
+# Runs as root: jail itself needs CAP_SYS_ADMIN-class privilege to create
+# namespaces/cgroups (see sandbox-runner/src/jail.c and the plan's
+# privilege-model notes) -- sandbox-server just fork/execs jail as a
+# subprocess per request, so it needs to already have that privilege to
+# hand down.
 [Unit]
-Description=Sandbox judge HTTP service (M5 dev build)
+Description=Sandbox judge HTTP service
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/root/sandbox-runner-dev
-ExecStart=/root/sandbox-runner-dev/sandbox-server
+WorkingDirectory=/opt/sandbox-runner
+ExecStart=/opt/sandbox-runner/sandbox-server
 Restart=on-failure
 RestartSec=3
 

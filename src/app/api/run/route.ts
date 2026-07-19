@@ -2,7 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { LANGUAGES, LANGUAGE_KEYS, isLanguageKey } from "@/lib/languages";
-import { pistonExecute } from "@/lib/piston";
+import { execute } from "@/lib/execute";
 import { runVerdict } from "@/lib/judge";
 import { assertContestProblemAccess } from "@/lib/contest";
 
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     problem.memoryLimitMb * lang.memoryMultiplier * 1024 * 1024;
 
   const exec = (stdin: string) =>
-    pistonExecute({
+    execute(language, {
       language: lang.piston,
       version: lang.version,
       filename: lang.filename,
