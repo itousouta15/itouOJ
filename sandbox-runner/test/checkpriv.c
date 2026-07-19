@@ -8,6 +8,7 @@
 int main(void) {
   printf("[checkpriv] uid=%d gid=%d euid=%d egid=%d\n", getuid(), getgid(),
          geteuid(), getegid());
+  fflush(stdout); // in case a later step here dies by signal, not exit()
 
   if (setuid(0) == -1) {
     printf("[checkpriv] setuid(0) failed as expected: %s\n", strerror(errno));
