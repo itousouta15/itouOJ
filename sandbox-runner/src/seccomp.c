@@ -1,37 +1,32 @@
-// M4: run-phase seccomp-bpf policy for C/C++ submissions, built from two
-// sources -- see sandbox-runner/harvest/:
-//   1. A documented baseline of syscalls every dynamically-or-statically
-//      linked glibc/libstdc++ program needs for process startup/teardown,
-//      memory management, and basic I/O.
-//   2. An empirical pass: every AC C++ submission in the production DB
-//      (18 of them) was recompiled and run under `strace -f`, and every
+// M4/M7: run-phase seccomp-bpf policies, one per language runtime, built
+// from two sources each -- see sandbox-runner/harvest/ (C++) and
+// sandbox-runner/harvest-py/ (Python):
+//   1. A documented baseline of syscalls every glibc-based program needs
+//      for process startup/teardown, memory management, and basic I/O.
+//   2. An empirical pass: every real submission for that language in the
+//      production DB was recompiled/rerun under `strace -f`, and every
 //      syscall actually observed was folded into the baseline below.
-//      (`ioctl`, `readlinkat`, and `rseq` were not anticipated up front and
-//      only turned up this way -- glibc's stdio isatty() check, /proc/self
-//      resolution, and restartable-sequence TLS setup respectively.)
 #define _GNU_SOURCE
 #include "seccomp.h"
 
 #include <seccomp.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/ioctl.h>
 
 #define ALLOW(name)                                                    \
   do {                                                                  \
     if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(name), 0) < 0) { \
       fprintf(stderr, "[seccomp] failed to allow " #name "\n");         \
-      goto fail;                                                        \
+      return -1;                                                        \
     }                                                                   \
   } while (0)
 
-int seccomp_install_run_filter(void) {
-  scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL_PROCESS);
-  if (!ctx) {
-    fprintf(stderr, "[seccomp] seccomp_init failed\n");
-    return -1;
-  }
-
-  // Process startup/teardown, memory management, signals, basic I/O.
+// Shared by every language: process startup/teardown, memory management,
+// signals, basic I/O, thread/TLS primitives, and jail's own bootstrap
+// execve() of the submission (see the M4 note on why execve is safe to
+// allow here -- it's a mount-namespace/rootfs concern, not a seccomp one).
+static int add_common_rules(scmp_filter_ctx ctx) {
   ALLOW(read);
   ALLOW(write);
   ALLOW(close);
@@ -67,49 +62,88 @@ int seccomp_install_run_filter(void) {
   ALLOW(getgid);
   ALLOW(getegid);
   // Deliberately NOT allowed: setuid/setgid/setresuid/... -- no legitimate
-  // judged submission needs to change its own identity, and by the time a
-  // submission runs it's already unprivileged (capabilities dropped, see
-  // caps.c) so these calls could only ever be an attempted no-op or an
-  // attack; seccomp kills the process outright rather than letting it even
-  // observe an EPERM.
-
-  // Not seen in the AC corpus itself, but needed by test/probe.c (this
-  // repo's own verification tooling, which enumerates /proc and reads
-  // uname() to prove namespace isolation) -- harmless to allow generally.
+  // judged submission needs to change its own identity (see caps.c).
   ALLOW(getdents64);
   ALLOW(uname);
-
-  // Needed for jail's OWN bootstrap exec of the submission binary -- this
-  // filter is installed and then immediately execve()'d over. NOT a hole
-  // for spawning a shell afterwards: seccomp can only see raw syscall
-  // arguments (integers/pointers), never the string content a pointer
-  // refers to, so it structurally cannot tell "our bootstrap execve" apart
-  // from "the submission execve'ing /bin/sh" by argument filtering. That
-  // access control has to -- and does -- live one layer down, in the mount
-  // namespace: the run-phase rootfs simply contains no shell/interpreter
-  // for such an execve to target (see test/escape.c). The two layers are
-  // complementary, not redundant.
   ALLOW(execve);
 
   // ioctl is needed for isatty()-style stdio buffering checks (TCGETS),
   // and nothing else -- restrict by argument instead of blanket-allowing
-  // every ioctl request code (e.g. TIOCSTI, which can inject terminal
-  // input, or the various block/char-device ioctls).
+  // every ioctl request code.
   if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 1,
                         SCMP_A1(SCMP_CMP_EQ, TCGETS)) < 0) {
     fprintf(stderr, "[seccomp] failed to allow ioctl(TCGETS)\n");
-    goto fail;
+    return -1;
   }
-
-  if (seccomp_load(ctx) < 0) {
-    fprintf(stderr, "[seccomp] seccomp_load failed\n");
-    goto fail;
-  }
-
-  seccomp_release(ctx);
   return 0;
+}
 
-fail:
+// M4: statically-linked C/C++ binaries. Materially narrower than the
+// python profile below -- no dynamic import machinery, no interpreter.
+static int add_native_rules(scmp_filter_ctx ctx) {
+  (void)ctx;
+  return 0; // common baseline already covers everything M4's corpus needed
+}
+
+// M7: CPython 3.12 interpreter. Broader than native -- module import
+// machinery walks sys.path doing access()/stat() on many candidate paths
+// (most ENOENT), reads bytecode via pread64, resolves argv0/cwd, etc.
+static int add_python_rules(scmp_filter_ctx ctx) {
+  ALLOW(access);
+  ALLOW(stat);
+  ALLOW(newfstatat);
+  ALLOW(fcntl);
+  ALLOW(getcwd);
+  ALLOW(pread64);
+  ALLOW(readlink);
+  // Only shows up with large inputs (found via a real ~590KB stdin test
+  // case, not the small hand-run samples): CPython's buffer/object growth
+  // resizes an existing mapping via mremap() instead of a fresh mmap once
+  // it's big enough. Small-input testing alone would have missed this --
+  // exactly why the harvest corpus needs to include realistic input sizes,
+  // not just "does it run at all."
+  ALLOW(mremap);
+  // CPython sets close-on-exec on file descriptors it opens (module
+  // search, stdio wrapping) via ioctl(fd, FIOCLEX) as an alternative to
+  // fcntl(F_SETFD) -- same argument-filtering approach as TCGETS in the
+  // common rules, not a blanket ioctl allow.
+  if (seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 1,
+                        SCMP_A1(SCMP_CMP_EQ, FIOCLEX)) < 0) {
+    fprintf(stderr, "[seccomp] failed to allow ioctl(FIOCLEX)\n");
+    return -1;
+  }
+  // Deliberately NOT allowed: clone/clone3/fork -- none of the 8 harvested
+  // real Python submissions used threading or multiprocessing. This means
+  // `threading`/`multiprocessing` will not work under this profile; not
+  // needed for competitive-programming-style submissions, and tightening
+  // this is straightforward later if a real use case needs it.
+  return 0;
+}
+
+int seccomp_install_run_filter(const char *profile) {
+  scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_KILL_PROCESS);
+  if (!ctx) {
+    fprintf(stderr, "[seccomp] seccomp_init failed\n");
+    return -1;
+  }
+
+  int rc = add_common_rules(ctx);
+  if (rc == 0) {
+    if (strcmp(profile, "python") == 0) {
+      rc = add_python_rules(ctx);
+    } else if (strcmp(profile, "native") == 0) {
+      rc = add_native_rules(ctx);
+    } else {
+      fprintf(stderr, "[seccomp] unknown profile: %s\n", profile);
+      rc = -1;
+    }
+  }
+
+  if (rc == 0 && seccomp_load(ctx) < 0) {
+    fprintf(stderr, "[seccomp] seccomp_load failed\n");
+    rc = -1;
+  }
+
   seccomp_release(ctx);
-  return -1;
+  return rc;
 }
