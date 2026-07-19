@@ -284,9 +284,10 @@ export default async function HomePage() {
           )}
         </div>
         <p className="mt-4 text-sm leading-relaxed text-dim">
-          程式碼在 Piston 沙箱中編譯執行，逐筆測資回報時間與記憶體用量。
-          判題結果：AC / WA / TLE / MLE / RE / CE。
-          直譯式語言與 JVM 語言的時間、記憶體限制依慣例放寬。
+          C++ / C / Python / JavaScript 在自架沙箱中編譯執行（Linux namespace
+          隔離 + cgroup 資源限制 + seccomp 系統呼叫白名單），Java 使用 Piston
+          沙箱。逐筆測資回報時間與記憶體用量，判題結果：AC / WA / TLE / MLE /
+          RE / CE。直譯式語言與 JVM 語言的時間、記憶體限制依慣例放寬。
         </p>
       </section>
     </div>
