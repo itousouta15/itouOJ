@@ -110,9 +110,11 @@ DISCORD_CLIENT_SECRET=""
 # APP_URL="https://oj.example.tw"    # 正式環境對外網址（組 OAuth redirect 用）
 ```
 
-Google 登入設定：到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建立「OAuth 用戶端 ID」（類型：網頁應用程式），授權重新導向 URI 填 `http://localhost:3000/api/auth/google/callback`。正式環境要再加一組 `https://<你的網域>/api/auth/google/callback` —— Google 不接受純 IP 或 http 的正式網址，所以正式站要先有網域 + HTTPS 才能開 Google 登入，並在 `.env` 設好 `APP_URL`。第一次用 Google 登入會自動建立帳號（沿用「第一個使用者是管理員」規則）。
+### Google 登入設定
+到 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 建立「OAuth 用戶端 ID」（類型：網頁應用程式），授權重新導向 URI 填 `http://localhost:3000/api/auth/google/callback`。正式環境要再加一組 `https://<你的網域>/api/auth/google/callback` —— Google 不接受純 IP 或 http 的正式網址，所以正式站要先有網域 + HTTPS 才能開 Google 登入，並在 `.env` 設好 `APP_URL`。第一次用 Google 登入會自動建立帳號（沿用「第一個使用者是管理員」規則）。
 
-Discord 登入設定：到 [Discord Developer Portal](https://discord.com/developers/applications) 建立 Application，在 OAuth2 頁籤取得 Client ID / Client Secret，並在 Redirects 加上 `http://localhost:3000/api/auth/discord/callback`。正式環境要再加一組 `https://<你的網域>/api/auth/discord/callback`，並在 `.env` 設好 `APP_URL`。第一次用 Discord 登入一樣會自動建立帳號。
+### Discord 登入設定
+到 [Discord Developer Portal](https://discord.com/developers/applications) 建立 Application，在 OAuth2 頁籤取得 Client ID / Client Secret，並在 Redirects 加上 `http://localhost:3000/api/auth/discord/callback`。正式環境要再加一組 `https://<你的網域>/api/auth/discord/callback`，並在 `.env` 設好 `APP_URL`。第一次用 Discord 登入一樣會自動建立帳號。
 
 Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localhost:2000 user@server`。
 
@@ -141,13 +143,18 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
 
    ```bash
    # 1) HTTP API body 上限預設 100KB，判題送不進大測資 → 調成 16MB
+
    docker exec piston_api sed -i \
      "s/body_parser.json()/body_parser.json({ limit: '16mb' })/; s/body_parser.urlencoded({ extended: true })/body_parser.urlencoded({ extended: true, limit: '16mb' })/" \
      /piston_api/src/index.js
+  
    # 2) stdin 寫入後立刻 destroy()，緩衝區沒寫完就被丟掉，程式只收得到前 ~200KB → 拿掉那行
+
    docker exec piston_api sed -i '/proc.stdin.destroy();/d' /piston_api/src/job.js
+
    # 3) 使用者程式在 stdin 還沒寫完前就結束（提早 return / RE），父行程繼續寫入已關閉的 pipe
    #    會噴未捕捉的 EPIPE，整個 Piston process 直接崩潰（影響當下所有人的提交）→ 補一個空的 error handler
+   
    docker exec piston_api sed -i \
      "s/proc.stdin.write(this.stdin);/proc.stdin.on('error', () => {}); proc.stdin.write(this.stdin);/" \
      /piston_api/src/job.js
@@ -156,7 +163,18 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
 
    > `docker cp` 到這個容器的 `/tmp` 常常悄悄失敗（`/tmp` 掛的是 tmpfs），要塞檔案進容器的話改用 `/root` 之類的一般目錄。
 
-   Piston 本身的沙箱只管資源（CPU/記憶體/時間）跟檔案系統範圍，**不管使用者程式碼能不能呼叫子程序**——submission 裡直接 `import subprocess` / `os.system` 就能在容器裡跑任意指令。**現在只有 Java 走這條路**（C/C++/Python/JavaScript 已經換成 [sandbox-runner](sandbox-runner/README.md) 的核心層級防護，不依賴這裡的補丁）。以下這份 `sitecustomize.py` 補丁仍然需要裝，因為 Piston 內建的 Python 套件在新增語言步驟時還是會被安裝出來，即使正式判題已經不走它：裝一份 `sitecustomize.py`（[deploy/piston-python-sitecustomize.py](deploy/piston-python-sitecustomize.py)）進 Python 套件的 `site-packages`，用 `sys.addaudithook` 在直譯器層級擋掉 `subprocess` / `os.system` / `os.popen` / `os.fork` / `ctypes` / `socket`（audit hook 裝上去後使用者程式碼無法移除，比字串黑名單擋 `import` 紮實）：
+   Piston 本身的沙箱只管資源（CPU/記憶體/時間）跟檔案系統範圍，**不管使用者程式碼能不能呼叫子程序**。submission 裡直接 `import subprocess` / `os.system`，就能在容器裡跑任意指令。
+
+   現在正式判題只有 Java 走 Piston；C/C++/Python/JavaScript 已經換成 [sandbox-runner](sandbox-runner/README.md) 的核心層級防護，不依賴這裡的補丁。不過 Piston 內建的 Python 套件在「新增語言」步驟時還是會被安裝出來，所以這份 `sitecustomize.py` 仍然要放進去。
+
+   補丁檔在 [deploy/piston-python-sitecustomize.py](deploy/piston-python-sitecustomize.py)。把它裝到 Python 套件的 `site-packages` 後，會用 `sys.addaudithook` 在直譯器層級擋掉：
+
+   - `subprocess`
+   - `os.system` / `os.popen` / `os.fork`
+   - `ctypes`
+   - `socket`
+
+   audit hook 裝上去後使用者程式碼無法移除，比字串黑名單擋 `import` 紮實：
 
    ```bash
    scp deploy/piston-python-sitecustomize.py root@<server>:/root/sitecustomize.py
