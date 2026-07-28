@@ -7,9 +7,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Web.Script.Serialization;
+using System.Windows.Forms;
 
 namespace ItouOJ
 {
@@ -24,8 +27,129 @@ namespace ItouOJ
             if (!ok) failures++;
         }
 
+        // 與伺服器 judge.ts 的 normalizeOutput 對照用；兩邊必須逐字一致，
+        // 否則選手本機看到「通過」、上傳後卻拿到 WA
+        public static readonly string[] NormalizeCases = {
+            "1\n2\n",
+            "1\n2",
+            "1 \n2  ",
+            "1\r\n2\r\n",
+            "1\n\n\n",
+            "",
+            "\n\n",
+            "  a  \n  b  ",
+            "a\tb\t",
+            "x\n \n y",
+            "\n",
+            "no-newline",
+        };
+
         public static int Main(string[] args)
         {
+            // GUI（winexe）模式下沒有主控台，StandardInput 的編碼行為和主控台程式
+            // 不同。這個模式把結果寫檔，讓 winexe 版本也能被驗證。
+            if (args.Length >= 2 && args[0] == "--probe-stdin")
+            {
+                string log = args[1];
+                StringBuilder sb = new StringBuilder();
+                try
+                {
+                    string probeCc = Runner.FindCompiler();
+                    sb.AppendLine("compiler=" + (probeCc ?? "(none)"));
+                    if (probeCc != null)
+                    {
+                        string dir = Path.Combine(Store.Root, "probe");
+                        Directory.CreateDirectory(dir);
+                        string src = Path.Combine(dir, "p.cpp");
+                        File.WriteAllText(src,
+                            "#include <bits/stdc++.h>\nusing namespace std;\n" +
+                            "int main(){long long a=-1,b=-1;cin>>a>>b;cout<<a<<\" \"<<b<<\" \"<<a+b<<endl;return 0;}\n",
+                            new UTF8Encoding(false));
+                        RunOutcome r = Runner.CompileAndRun(probeCc, src, "3 4\n", 8000);
+                        sb.AppendLine("compileFailed=" + r.CompileFailed);
+                        sb.AppendLine("compileError=" + (r.CompileError ?? ""));
+                        sb.AppendLine("exit=" + r.ExitCode);
+                        sb.AppendLine("timedOut=" + r.TimedOut);
+                        sb.AppendLine("stdout=" + Runner.Normalize(r.Stdout));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    sb.AppendLine("exception=" + ex.GetType().Name + ": " + ex.Message);
+                }
+                File.WriteAllText(log, sb.ToString(), new UTF8Encoding(false));
+                return 0;
+            }
+
+            // 建構整個主視窗（不顯示）並走一遍控制項樹。版面程式碼在建構期就
+            // 丟例外是常見的失敗模式，而自動化測試點不到按鈕，至少要確認建得起來。
+            if (args.Length >= 2 && args[0] == "--probe-ui")
+            {
+                string outPath = args[1];
+                StringBuilder sb = new StringBuilder();
+                System.Threading.Thread t = new System.Threading.Thread(delegate ()
+                {
+                    try
+                    {
+                        Application.EnableVisualStyles();
+                        using (MainForm f = new MainForm())
+                        {
+                            sb.AppendLine("constructed=ok");
+                            sb.AppendLine("title=" + f.Text);
+                            WalkControls(f, sb, 0);
+
+                            // 模擬切到「從檔案」，檢查相關控制項有沒有跟著啟用
+                            RadioButton rbFile = FindByText<RadioButton>(f, "從檔案");
+                            TextBox path = FindByName<TextBox>(f, "txtFile");
+                            Button browse = FindByText<Button>(f, "瀏覽…");
+                            sb.AppendLine("--- 切換到「從檔案」之前 ---");
+                            sb.AppendLine("txtFile.Enabled=" + (path == null ? "?" : path.Enabled.ToString()));
+                            sb.AppendLine("browse.Enabled=" + (browse == null ? "?" : browse.Enabled.ToString()));
+                            if (rbFile != null) rbFile.Checked = true;
+                            sb.AppendLine("--- 之後 ---");
+                            sb.AppendLine("rbFile.Checked=" + (rbFile == null ? "?" : rbFile.Checked.ToString()));
+                            sb.AppendLine("txtFile.Enabled=" + (path == null ? "?" : path.Enabled.ToString()));
+                            sb.AppendLine("browse.Enabled=" + (browse == null ? "?" : browse.Enabled.ToString()));
+
+                            // 版面實測：把視窗移到畫面外顯示一次，強制跑完 dock/anchor 計算，
+                            // 再檢查按鈕是不是真的落在可見範圍內
+                            f.StartPosition = FormStartPosition.Manual;
+                            f.Location = new Point(-4000, -4000);
+                            f.Show();
+                            Application.DoEvents();
+                            sb.AppendLine("--- 版面實測 ---");
+                            ReportBounds(sb, "btnUpload", FindByName<Button>(f, "btnUpload"));
+                            ReportBounds(sb, "btnSubmit", FindByName<Button>(f, "btnSubmit"));
+                            ReportBounds(sb, "btnTest", FindByName<Button>(f, "btnTest"));
+                            ReportBounds(sb, "btnBrowse", FindByName<Button>(f, "btnBrowse"));
+                            ReportBounds(sb, "btnRefresh", FindByName<Button>(f, "btnRefresh"));
+                            f.Hide();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        sb.AppendLine("exception=" + ex.GetType().Name + ": " + ex.Message);
+                        sb.AppendLine(ex.StackTrace);
+                    }
+                });
+                t.SetApartmentState(System.Threading.ApartmentState.STA);
+                t.Start();
+                t.Join(60000);
+                File.WriteAllText(outPath, sb.ToString(), new UTF8Encoding(false));
+                return 0;
+            }
+
+            if (args.Length >= 1 && args[0] == "--normalize")
+            {
+                // 印出正規化結果供跨語言比對（\n -> \\n 方便逐行 diff）
+                foreach (string c in NormalizeCases)
+                {
+                    Console.WriteLine(Runner.Normalize(c)
+                        .Replace("\\", "\\\\").Replace("\n", "\\n").Replace("\t", "\\t"));
+                }
+                return 0;
+            }
+
             if (args.Length < 3)
             {
                 Console.WriteLine("用法: TestHarness.exe <伺服器網址> <帳號> <密碼>");
@@ -38,6 +162,111 @@ namespace ItouOJ
             Api.InitTls();
             JavaScriptSerializer ser = new JavaScriptSerializer();
             ser.MaxJsonLength = 32 * 1024 * 1024;
+
+            // ── 0. 重新登入時的比賽選擇 ───────────────
+            // 賽後 session 過期、重新登入換發時，不能把選手切到別場比賽
+            Console.WriteLine("\n[0] 重新登入後的比賽選擇（純邏輯）");
+            List<int> listed = new List<int>() { 3, 2, 1 }; // API 依 startTime 倒序
+            Check("已設定 #2 -> 停在 #2 而不是清單第一筆",
+                  Selection.ChooseContestIndex(listed, 2) == 1,
+                  "index=" + Selection.ChooseContestIndex(listed, 2));
+            Check("已設定 #3 -> 停在 #3",
+                  Selection.ChooseContestIndex(listed, 3) == 0, null);
+            Check("尚未設定 -> 選第一筆",
+                  Selection.ChooseContestIndex(listed, 0) == 0, null);
+            Check("已設定但清單裡沒有 -> 回 -1（不要動選擇）",
+                  Selection.ChooseContestIndex(new List<int>() { 3, 1 }, 2) == -1,
+                  "index=" + Selection.ChooseContestIndex(new List<int>() { 3, 1 }, 2));
+            Check("空清單 -> 回 -1",
+                  Selection.ChooseContestIndex(new List<int>(), 0) == -1, null);
+
+            // ── 0a. 題目檔路徑解析與草稿 ──────────────
+            Console.WriteLine("\n[0a] 題目檔路徑與草稿保存");
+            string tmpDir = Path.Combine(Store.Root, "doctest");
+            Directory.CreateDirectory(tmpDir);
+            File.WriteAllText(Path.Combine(tmpDir, "A.pdf"), "fake");
+            File.WriteAllText(Path.Combine(tmpDir, "custom-B.pdf"), "fake");
+
+            Config c0 = new Config();
+            Check("沒設定資料夾 -> null", ProblemDoc.Resolve(c0, "A") == null, null);
+
+            c0.ProblemDir = tmpDir;
+            Check("依代號找到 A.pdf",
+                  ProblemDoc.Resolve(c0, "A") == Path.Combine(tmpDir, "A.pdf"), null);
+            Check("找不到對應檔案 -> null（UI 會停用開啟鈕）",
+                  ProblemDoc.Resolve(c0, "Z") == null, null);
+
+            // export-problems.mjs 產出的是 .html，也要能直接當題目檔
+            File.WriteAllText(Path.Combine(tmpDir, "D.html"), "fake");
+            Check("沒有 PDF 時退而找 D.html",
+                  ProblemDoc.Resolve(c0, "D") == Path.Combine(tmpDir, "D.html"), null);
+            File.WriteAllText(Path.Combine(tmpDir, "A.html"), "fake");
+            Check("PDF 與 HTML 並存時優先用 PDF",
+                  ProblemDoc.Resolve(c0, "A") == Path.Combine(tmpDir, "A.pdf"), null);
+
+            ProblemFile pf = new ProblemFile();
+            pf.Label = "B";
+            pf.Path = "custom-B.pdf"; // 相對路徑
+            c0.ProblemFiles.Add(pf);
+            Check("個別覆寫（相對路徑）解析成功",
+                  ProblemDoc.Resolve(c0, "B") == Path.Combine(tmpDir, "custom-B.pdf"), null);
+
+            ProblemFile pf2 = new ProblemFile();
+            pf2.Label = "C";
+            pf2.Path = Path.Combine(tmpDir, "does-not-exist.pdf");
+            c0.ProblemFiles.Add(pf2);
+            Check("覆寫指到不存在的檔 -> null", ProblemDoc.Resolve(c0, "C") == null, null);
+
+            Store.WriteDraft(999, "A", "int main(){}// 草稿測試\n");
+            Check("草稿寫入後可讀回",
+                  Store.ReadDraft(999, "A").Contains("草稿測試"), null);
+            Store.WriteDraft(999, "A", "");
+            Check("草稿可清空", Store.ReadDraft(999, "A") == "", null);
+            Check("沒有草稿的題目讀回空字串", Store.ReadDraft(999, "ZZ") == "", null);
+
+            // ── 0a2. 管理員 PIN 鎖 ────────────────────
+            Console.WriteLine("\n[0a2] 管理員 PIN 鎖");
+            Config cl = new Config();
+            Check("預設不鎖", !AdminLock.IsLocked(cl), null);
+            Check("沒設 PIN 時任何輸入都放行（避免鎖死）",
+                  AdminLock.Verify(cl, "whatever"), null);
+
+            cl.AdminPinHash = AdminLock.Hash("1234");
+            cl.Locked = true;
+            Check("設定後為鎖定狀態", AdminLock.IsLocked(cl), null);
+            Check("正確 PIN 可解鎖", AdminLock.Verify(cl, "1234"), null);
+            Check("錯誤 PIN 被拒絕", !AdminLock.Verify(cl, "1235"), null);
+            Check("空 PIN 被拒絕", !AdminLock.Verify(cl, ""), null);
+            Check("PIN 不以明碼存放",
+                  cl.AdminPinHash != "1234" && cl.AdminPinHash.Length == 64,
+                  cl.AdminPinHash.Substring(0, 16) + "…");
+
+            cl.Locked = true;
+            cl.AdminPinHash = "";
+            Check("標記鎖定但沒有 PIN -> 視為未鎖（否則永遠打不開）",
+                  !AdminLock.IsLocked(cl), null);
+
+            // ── 0b. 輸出比對規則 ──────────────────────
+            Console.WriteLine("\n[0b] 輸出正規化（必須與伺服器 judge.ts 一致）");
+            Check("忽略結尾換行", Runner.Normalize("1\n2\n") == "1\n2", null);
+            Check("去掉行尾空白", Runner.Normalize("1 \n2  ") == "1\n2", null);
+            Check("CRLF 視同 LF", Runner.Normalize("1\r\n2\r\n") == "1\n2", null);
+            Check("保留行首空白", Runner.Normalize("  a  ") == "  a", null);
+            Check("全空白輸入 -> 空字串", Runner.Normalize("\n\n") == "", null);
+            Check("null 不會爆", Runner.Normalize(null) == "", null);
+
+            // ── 0c. 編譯器偵測與實際編譯執行 ──────────
+            Console.WriteLine("\n[0c] 測試執行（編譯 + 跑 + 比對）");
+            string cc = Runner.FindCompiler();
+            if (cc == null)
+            {
+                Console.WriteLine("      這台機器沒有 g++，跳過（測試執行會顯示提示，不影響提交上傳）");
+            }
+            else
+            {
+                Console.WriteLine("      編譯器：" + cc);
+                RunLocalTests(cc);
+            }
 
             string setCookie;
             DateTime? serverDate;
@@ -72,7 +301,18 @@ namespace ItouOJ
                 List<Dictionary<string, object>> cs = Json.Array(root["contests"]);
                 Check("回傳比賽陣列", cs.Count > 0, cs.Count + " 場");
 
-                Dictionary<string, object> contest = cs[0];
+                // 挑有報名的那場：清單第一筆不一定是自己能交的比賽
+                Dictionary<string, object> contest = null;
+                foreach (Dictionary<string, object> c in cs)
+                {
+                    if (Convert.ToBoolean(c["joined"])) { contest = c; break; }
+                }
+                Check("找得到已報名的比賽", contest != null, null);
+                if (contest == null)
+                {
+                    Console.WriteLine("\n  沒有已報名的比賽，先跑 setup-test-contest.mjs");
+                    return 1;
+                }
                 int contestId = Convert.ToInt32(contest["id"]);
                 Console.WriteLine("      使用比賽 #" + contestId + " " + contest["title"] +
                                   "  (scoreMode=" + contest["scoreMode"] +
@@ -160,11 +400,32 @@ namespace ItouOJ
                       Convert.ToInt32(r2["duplicates"]) == 3,
                       "accepted=" + r2["accepted"] + " duplicates=" + r2["duplicates"]);
 
+                // ── 6b. 提交編號對應 ──────────────────────
+                Console.WriteLine("\n[6b] 網站提交編號對應（查看結果連結要用）");
+                Dictionary<string, int> idOf = new Dictionary<string, int>();
+                foreach (Dictionary<string, object> r in Json.Array(r2["results"]))
+                    idOf[Convert.ToString(r["clientKey"])] = Convert.ToInt32(r["submissionId"]);
+                Check("每一筆都對得到編號", idOf.Count == pending.Count,
+                      idOf.Count + " / " + pending.Count);
+                Check("重複上傳時仍回傳既有編號（不是 0）",
+                      idOf.Values.All(v => v > 0),
+                      string.Join(",", idOf.Values.Select(v => v.ToString()).ToArray()));
+                Check("編號各不相同", idOf.Values.Distinct().Count() == idOf.Count, null);
+
                 // ── 7. 標記已上傳 ─────────────────────────
                 Console.WriteLine("\n[7] 標記已上傳");
-                foreach (SpoolItem it in pending) Store.MarkUploaded(it.ClientKey);
+                foreach (SpoolItem it in pending)
+                {
+                    int sid;
+                    if (!idOf.TryGetValue(it.ClientKey, out sid)) sid = 0;
+                    Store.MarkUploaded(it.ClientKey, sid);
+                }
                 Check("pending 已清空", Store.ReadDir(Store.PendingDir).Count == 0, null);
-                Check("uploaded 有 3 筆", Store.ReadDir(Store.UploadedDir).Count == 3, null);
+                List<SpoolItem> done = Store.ReadDir(Store.UploadedDir);
+                Check("uploaded 有 3 筆", done.Count == 3, null);
+                Check("編號有寫進已上傳的檔案裡（重開程式後仍點得到連結）",
+                      done.All(x => x.SubmissionId > 0),
+                      string.Join(",", done.Select(x => "#" + x.SubmissionId).ToArray()));
 
                 // ── 7b. 語言限制 ──────────────────────────
                 Console.WriteLine("\n[7b] 語言限制（本比賽只開放 C++）");
@@ -235,6 +496,130 @@ namespace ItouOJ
             Console.WriteLine("\n===== " + (failures == 0
                 ? "全部通過" : failures + " 項失敗") + " =====");
             return failures == 0 ? 0 : 1;
+        }
+
+        static void ReportBounds(StringBuilder sb, string name, Control c)
+        {
+            if (c == null) { sb.AppendLine(name + " = (找不到)"); return; }
+            Control p = c.Parent;
+            string parentSize = p == null ? "?" : p.ClientSize.Width + "x" + p.ClientSize.Height;
+            bool visible = p != null && c.Left >= 0 && c.Top >= 0 &&
+                           c.Right <= p.ClientSize.Width && c.Bottom <= p.ClientSize.Height;
+            sb.AppendLine(string.Format("{0}: bounds={1} 父容器={2} {3}",
+                name, c.Bounds.ToString(), parentSize,
+                visible ? "可見" : "★ 超出父容器範圍，看不到"));
+        }
+
+        static T FindByText<T>(Control parent, string text) where T : Control
+        {
+            foreach (Control c in parent.Controls)
+            {
+                if (c is T && c.Text == text) return (T)c;
+                T found = FindByText<T>(c, text);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        // 靠私有欄位名稱找（同一個組件，反射拿得到）
+        static T FindByName<T>(Form form, string fieldName) where T : Control
+        {
+            System.Reflection.FieldInfo fi = form.GetType().GetField(fieldName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Public);
+            return fi == null ? null : fi.GetValue(form) as T;
+        }
+
+        static void WalkControls(Control parent, StringBuilder sb, int depth)
+        {
+            foreach (Control c in parent.Controls)
+            {
+                string kind = c.GetType().Name;
+                // 只記錄有意義的節點，避免輸出被 Label/Panel 淹沒
+                if (kind == "TabPage" || kind == "Button" || kind == "RadioButton" ||
+                    kind == "ComboBox" || kind == "ListView" || kind == "TabControl" ||
+                    (kind == "TextBox" && ((TextBox)c).Multiline))
+                {
+                    sb.AppendLine(new string(' ', depth * 2) + kind + ": " +
+                        (c.Text.Length > 0 ? c.Text : "(no text)"));
+                }
+                WalkControls(c, sb, depth + 1);
+            }
+        }
+
+        static string WriteTemp(string name, string code)
+        {
+            string dir = Path.Combine(Store.Root, "srctest");
+            Directory.CreateDirectory(dir);
+            string p = Path.Combine(dir, name);
+            File.WriteAllText(p, code, new System.Text.UTF8Encoding(false));
+            return p;
+        }
+
+        static void RunLocalTests(string cc)
+        {
+            // 1) 正常程式：讀兩個數相加
+            string ok = WriteTemp("ok.cpp",
+                "#include <bits/stdc++.h>\nusing namespace std;\n" +
+                "int main(){long long a,b;cin>>a>>b;cout<<a+b<<endl;return 0;}\n");
+            RunOutcome r = Runner.CompileAndRun(cc, ok, "3 4\n", 5000);
+            Check("正常程式編譯成功", !r.CompileFailed,
+                  r.CompileFailed ? r.CompileError : null);
+            Check("讀 stdin 並輸出正確結果",
+                  Runner.Normalize(r.Stdout) == "7", "stdout=" + Json2(r.Stdout));
+            Check("exit code 0", r.ExitCode == 0, "exit=" + r.ExitCode);
+
+            // 2) 輸出比對：AC 與 WA 都要判對
+            Check("輸出比對 AC（結尾換行差異不算錯）",
+                  Runner.Normalize(r.Stdout) == Runner.Normalize("7\n"), null);
+            Check("輸出比對 WA（答案不同要判錯）",
+                  Runner.Normalize(r.Stdout) != Runner.Normalize("8"), null);
+
+            // 3) 編譯錯誤
+            string bad = WriteTemp("bad.cpp", "int main(){ this is not c++ }\n");
+            RunOutcome rb = Runner.CompileAndRun(cc, bad, "", 5000);
+            Check("編譯錯誤被攔下並帶出訊息",
+                  rb.CompileFailed && !string.IsNullOrEmpty(rb.CompileError),
+                  rb.CompileFailed ? "有訊息" : "竟然編過了");
+
+            // 4) 無窮迴圈 -> 逾時中止
+            string loop = WriteTemp("loop.cpp",
+                "int main(){ while(true){} return 0; }\n");
+            DateTime t0 = DateTime.UtcNow;
+            RunOutcome rl = Runner.CompileAndRun(cc, loop, "", 2000);
+            double waited = (DateTime.UtcNow - t0).TotalMilliseconds;
+            Check("無窮迴圈被逾時中止", rl.TimedOut, null);
+            Check("逾時後有真的把行程殺掉（沒有卡住）", waited < 30000,
+                  Math.Round(waited) + " ms");
+
+            // 5) 執行期錯誤（非零結束碼）
+            string re = WriteTemp("re.cpp", "int main(){ return 3; }\n");
+            RunOutcome rr = Runner.CompileAndRun(cc, re, "", 5000);
+            Check("非零結束碼被回報", !rr.CompileFailed && rr.ExitCode == 3,
+                  "exit=" + rr.ExitCode);
+
+            // 6) 大量輸出不會卡死（非同步讀取的重點）
+            string big = WriteTemp("big.cpp",
+                "#include <cstdio>\nint main(){for(int i=0;i<20000;i++)printf(\"%d\\n\",i);return 0;}\n");
+            RunOutcome rg = Runner.CompileAndRun(cc, big, "", 10000);
+            string[] lines = Runner.Normalize(rg.Stdout).Split('\n');
+            Check("大量輸出（2 萬行）不會卡死且完整",
+                  !rg.TimedOut && lines.Length == 20000 && lines[19999] == "19999",
+                  "行數=" + lines.Length);
+
+            // 7) 程式不讀 stdin 也不該卡住
+            string noin = WriteTemp("noin.cpp",
+                "#include <cstdio>\nint main(){printf(\"hi\\n\");return 0;}\n");
+            RunOutcome rn = Runner.CompileAndRun(cc, noin, "some input\n", 5000);
+            Check("程式不讀 stdin 也能正常結束",
+                  !rn.TimedOut && Runner.Normalize(rn.Stdout) == "hi", null);
+        }
+
+        static string Json2(string s)
+        {
+            if (s == null) return "null";
+            return "\"" + s.Replace("\r", "\\r").Replace("\n", "\\n") + "\"";
         }
 
         static string Upload(string baseUrl, int contestId, string cookie,
