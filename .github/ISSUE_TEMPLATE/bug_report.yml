@@ -1,0 +1,31 @@
+name: Bug report
+about: Report a bug or unexpected behavior.
+title: '[BUG] '
+labels: bug
+body:
+  - type: markdown
+    attributes:
+      value: '請填寫下列欄位，以協助我們重現問題。'
+  - type: textarea
+    id: steps
+    attributes:
+      label: '重現步驟'
+      description: '請描述如何觸發此問題。'
+      placeholder: '1. ...\n2. ...'
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: '預期行為'
+      required: true
+  - type: input
+    id: actual
+    attributes:
+      label: '實際行為'
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: '環境'
+      description: '例如瀏覽器、Node.js、OS、專案版本等。'
+      required: true
