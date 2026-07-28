@@ -2,6 +2,11 @@
 # 2026-07-20 migrated to a new server (old one's disk filled up), old server
 # 23.146.248.51 has online-judge disabled now.
 # Note: deploys "committed" content (git archive HEAD) - commit first.
+#
+#   .\deploy\deploy.ps1          互動式（有未 commit 改動時會詢問）
+#   .\deploy\deploy.ps1 -Yes     不詢問，適合非互動環境
+
+param([switch]$Yes)
 
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
@@ -40,8 +45,16 @@ $dirty = git status --porcelain
 if ($dirty) {
     Write-Host "== 警告：有未 commit 的改動，這些不會被部署 ==" -ForegroundColor Yellow
     $dirty -split "`n" | Select-Object -First 10 | ForEach-Object { Write-Host "   $_" -ForegroundColor Yellow }
-    $answer = Read-Host "仍要以目前的 HEAD 部署嗎？(y/N)"
-    if ($answer -ne "y") { Write-Host "已取消。"; exit 1 }
+
+    if ($Yes) {
+        Write-Host "   （-Yes 已指定，繼續以 HEAD 部署）" -ForegroundColor Yellow
+    } elseif ([Environment]::UserInteractive -and $Host.UI.RawUI) {
+        $answer = Read-Host "仍要以目前的 HEAD 部署嗎？(y/N)"
+        if ($answer -ne "y") { Write-Host "已取消。"; exit 1 }
+    } else {
+        # 非互動環境（CI、自動化工具）問不到人，寧可停下來也不要默默部署到舊版本
+        throw "有未 commit 的改動且無法詢問；確定要以 HEAD 部署請加上 -Yes"
+    }
 }
 
 $head = (git rev-parse --short HEAD).Trim()
@@ -54,8 +67,10 @@ Invoke-Native "scp" { scp "$env:TEMP\oj.tar.gz" "${Server}:/tmp/oj.tar.gz" }
 # 資料庫是 oj.db（.env 的 DATABASE_URL="file:./oj.db"）。目錄下那個 0 bytes 的
 # dev.db 是殘留檔，備份它等於沒備份。
 Write-Host "== Backing up database =="
+# 遠端指令裡避免用雙引號：PowerShell 的跳脫在傳給 ssh 的過程中會被吃掉，
+# bash 收到裸括號就會語法錯誤。要引用就用單引號（PowerShell 原樣傳遞）。
 Invoke-Native "backup" {
-    ssh $Server "cd $AppDir && BK=oj.db.bak-`$(date +%Y%m%d-%H%M%S) && cp oj.db `$BK && echo `"   backup: `$BK (`$(stat -c%s `$BK) bytes)`" && ls -1t oj.db.bak-* | tail -n +6 | xargs -r rm -f"
+    ssh $Server "cd $AppDir && BK=oj.db.bak-`$(date +%Y%m%d-%H%M%S) && cp oj.db `$BK && stat -c '   backup: %n  %s bytes' `$BK && ls -1t oj.db.bak-* | tail -n +6 | xargs -r rm -f"
 }
 
 Write-Host "== Server: extract / install / migrate / build / restart =="
@@ -67,7 +82,7 @@ Invoke-Native "remote deploy" {
 # 確認 .next 是剛剛才產生的，而且網站真的回得了 200。
 Write-Host "== Verifying =="
 Invoke-Native "verify build freshness" {
-    ssh $Server "cd $AppDir && AGE=`$(( `$(date +%s) - `$(stat -c %Y .next) )) && echo `"   .next built `${AGE}s ago`" && [ `$AGE -lt 600 ]"
+    ssh $Server "cd $AppDir && AGE=`$(( `$(date +%s) - `$(stat -c %Y .next) )) && printf '   .next built %ss ago\n' `$AGE && [ `$AGE -lt 600 ]"
 }
 
 $status = (Invoke-WebRequest -Uri "https://oj.itousouta.me/" -UseBasicParsing -TimeoutSec 30).StatusCode
