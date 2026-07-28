@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageTransition from "@/components/PageTransition";
 import SiteLoader from "@/components/SiteLoader";
+import { isOfflineMode } from "@/lib/offline";
 
 export const metadata: Metadata = {
   title: { default: "itouOJ", template: "%s | itouOJ" },
@@ -23,20 +24,38 @@ const fontApply = `(function(){
   if('requestIdleCallback' in window) requestIdleCallback(apply); else setTimeout(apply,0);
 })();`;
 
+const GOOGLE_FONTS_CSS =
+  "https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&family=Shippori+Mincho:wght@400;600;700&display=swap";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // 斷網比賽時整組跳過外部字型：機房連不到 fonts.googleapis.com / font.emtech.cc，
+  // 留著只會讓每一頁都空等到 timeout（SiteLoader 的保險是 4 秒）。
+  const offline = isOfflineMode();
+
   return (
     <html lang="zh-Hant" className="h-full antialiased" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://font.emtech.cc" />
-        <link rel="preload" as="style" href={EMFONT_CSS} />
-        <script dangerouslySetInnerHTML={{ __html: fontApply }} />
-        <noscript>
-          <link rel="stylesheet" href={EMFONT_CSS} />
-        </noscript>
+        {!offline && (
+          <>
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link
+              rel="preconnect"
+              href="https://fonts.gstatic.com"
+              crossOrigin=""
+            />
+            <link rel="stylesheet" href={GOOGLE_FONTS_CSS} />
+            <link rel="preconnect" href="https://font.emtech.cc" />
+            <link rel="preload" as="style" href={EMFONT_CSS} />
+            <script dangerouslySetInnerHTML={{ __html: fontApply }} />
+            <noscript>
+              <link rel="stylesheet" href={EMFONT_CSS} />
+            </noscript>
+          </>
+        )}
       </head>
       <body className="flex min-h-full flex-col">
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />

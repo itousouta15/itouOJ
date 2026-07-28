@@ -2,7 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { assertContestProblemAccess, getContestPhase } from "@/lib/contest";
+import {
+  assertContestProblemAccess,
+  getContestPhase,
+  parseAllowedLanguages,
+} from "@/lib/contest";
 import Markdown from "@/components/Markdown";
 import ContestStatusBadge from "@/components/ContestStatusBadge";
 import ContestCountdown from "@/components/ContestCountdown";
@@ -97,6 +101,7 @@ export default async function ContestProblemPage({
         contestId={contest.id}
         // assertContestProblemAccess 已經擋掉 upcoming，這裡只會是 running/frozen/ended
         contestPhase={phase as "running" | "frozen" | "ended"}
+        allowedLanguages={parseAllowedLanguages(contest.allowedLanguages)}
       />
     </div>
   );

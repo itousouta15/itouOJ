@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getContestPhase } from "@/lib/contest";
+import { getContestPhase, toScoreMode } from "@/lib/contest";
 import { toTaipeiInputValue } from "@/lib/contestTime";
 import ContestForm from "@/components/ContestForm";
 import ContestRevealButton from "@/components/ContestRevealButton";
@@ -59,6 +59,8 @@ export default async function EditContestPage({
           startTime: toTaipeiInputValue(contest.startTime),
           endTime: toTaipeiInputValue(contest.endTime),
           freezeMinutes: contest.freezeMinutes,
+          scoreMode: toScoreMode(contest.scoreMode),
+          allowedLanguages: contest.allowedLanguages,
           isPublic: contest.isPublic,
           joinCode: contest.joinCode ?? "",
           problems: contest.problems.map((p) => ({

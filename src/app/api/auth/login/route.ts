@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
+import { isOfflineMode } from "@/lib/offline";
 
 const schema = z.object({
   username: z.string().min(1),
@@ -18,8 +19,15 @@ export async function POST(request: Request) {
 
   const user = await prisma.user.findUnique({ where: { username } });
   if (user && !user.passwordHash) {
+    // 斷網比賽時 OAuth 按鈕是隱藏的，叫選手「改用 Google 按鈕」只會讓他們卡住；
+    // 這種情況要找管理員用 scripts/contest-accounts.mjs 補一組密碼。
+    const provider = user.discordId && !user.googleId ? "Discord" : "Google";
     return Response.json(
-      { error: "此帳號使用 Google 登入，請改用 Google 按鈕" },
+      {
+        error: isOfflineMode()
+          ? "此帳號還沒有設定密碼，請找管理員協助設定"
+          : `此帳號使用 ${provider} 登入，請改用 ${provider} 按鈕`,
+      },
       { status: 401 }
     );
   }
