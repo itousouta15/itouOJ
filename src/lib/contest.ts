@@ -112,10 +112,13 @@ export interface ScoreboardCell {
   minutes: number;
   pending: boolean; // 凍結中，結果尚未公開
   judging: boolean; // 計分的那筆還在等判題（離線比賽整批上傳後會有一段這種狀態）
+  // 決定這一格結果的那筆提交，用來連到提交詳細頁；凍結中不給（不然點進去等於偷看）
+  submissionId: number | null;
 }
 
 export interface ScoreboardRow {
   userId: string;
+  username: string;
   name: string;
   solvedCount: number;
   // ICPC：總罰時；IOI：已解題目的總用時
@@ -175,7 +178,14 @@ export async function buildScoreboard(
     // id 當第二鍵：整批上傳時多筆時間戳可能被夾制到同一個邊界值，
     // 沒有穩定的次序 IOI 的「最後一次提交」就會變得不確定
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    select: { userId: true, problemId: true, status: true, createdAt: true },
+    // 帶上 id：計分板每一格要能連到決定該格結果的那筆提交
+    select: {
+      id: true,
+      userId: true,
+      problemId: true,
+      status: true,
+      createdAt: true,
+    },
   });
 
   const byUserProblem = new Map<string, typeof submissions>();
@@ -211,6 +221,7 @@ export async function buildScoreboard(
             minutes: 0,
             pending: true,
             judging: false,
+            submissionId: null,
           };
           continue;
         }
@@ -226,6 +237,9 @@ export async function buildScoreboard(
           minutes,
           pending: false,
           judging,
+          // IOI 只看最後一次，那筆就是這一格的依據；沒解出來時連過去也有用，
+          // 看得到是 WA 還是 TLE
+          submissionId: counted ? counted.id : null,
         };
         if (solved) {
           solvedCount++;
@@ -237,9 +251,11 @@ export async function buildScoreboard(
       // ICPC：首次 AC 定案，之前每次錯誤 +20 分罰時
       let wrongBeforeAc = 0;
       let acAt: Date | null = null;
+      let acId: number | null = null;
       for (const s of visible) {
         if (s.status === "AC") {
           acAt = s.createdAt;
+          acId = s.id;
           break;
         }
         if (WRONG_VERDICTS.has(s.status)) wrongBeforeAc++;
@@ -253,23 +269,28 @@ export async function buildScoreboard(
           minutes,
           pending: false,
           judging: false,
+          submissionId: acId,
         };
         solvedCount++;
         totalMinutes += minutes;
       } else {
         const totalAttempts = hasFrozenAttempt ? subs.length : wrongBeforeAc;
+        const last = visible.length > 0 ? visible[visible.length - 1] : null;
         cells[problem.id] = {
           attempts: totalAttempts,
           solved: false,
           minutes: 0,
           pending: hasFrozenAttempt,
           judging: visible.some((s) => UNJUDGED.has(s.status)),
+          // 沒解出來就連到最後一次嘗試；凍結中不給連結
+          submissionId: hasFrozenAttempt || !last ? null : last.id,
         };
       }
     }
 
     return {
       userId: p.userId,
+      username: p.user.username,
       name: p.user.displayName || p.user.username,
       solvedCount,
       totalMinutes,
