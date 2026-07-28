@@ -7,7 +7,7 @@ import PageTransition from "@/components/PageTransition";
 import SiteLoader from "@/components/SiteLoader";
 
 export const metadata: Metadata = {
-  title: { default: "itouOJ", template: "%s | Online Judge" },
+  title: { default: "itouOJ", template: "%s | itouOJ" },
   description: "itouSouta 的程式解題系統",
 };
 
