@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
+import { safeNextPath } from "@/lib/safeNext";
 import {
   GOOGLE_TOKEN_URL,
   OAUTH_STATE_COOKIE,
@@ -41,11 +42,18 @@ export async function GET(request: Request) {
 
   let savedState: string | undefined;
   let linkUserId: string | undefined;
+  let next: string | null = null;
   if (raw) {
     try {
-      const parsed = JSON.parse(raw) as { state?: string; linkUserId?: string };
+      const parsed = JSON.parse(raw) as {
+        state?: string;
+        linkUserId?: string;
+        next?: string | null;
+      };
       savedState = parsed.state;
       linkUserId = parsed.linkUserId;
+      // 存進來時已經驗過，這裡再驗一次：cookie 內容不該無條件信任
+      next = safeNextPath(parsed.next);
     } catch {
       savedState = raw;
     }
@@ -135,7 +143,7 @@ export async function GET(request: Request) {
       username: user.username,
       role: user.role,
     });
-    return Response.redirect(`${appUrl(request)}/`, 302);
+    return Response.redirect(`${appUrl(request)}${next ?? "/"}`, 302);
   } catch (err) {
     console.error("[google-auth] callback error:", err);
     return loginError();
