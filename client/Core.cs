@@ -11,6 +11,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
@@ -538,6 +539,167 @@ namespace ItouOJ
                 if (File.Exists(p)) return p;
             }
             return null;
+        }
+    }
+
+    public class LoopbackResult
+    {
+        public bool Ok { get; set; }
+        public string Token { get; set; }
+        public string Error { get; set; }
+    }
+
+    // 瀏覽器登入的本機接收端（同 gh CLI / AWS CLI 那套 loopback 做法）。
+    //
+    // 流程：在 127.0.0.1 開一個臨時 port → 用預設瀏覽器打開授權頁 →
+    // 使用者在網頁上登入（帳密 / Google / Discord 都行）並確認 →
+    // 瀏覽器把 token 導回這個 port。
+    //
+    // 用 TcpListener 自己講最簡單的 HTTP，而不是 HttpListener：後者在多數
+    // 前綴上需要 urlacl 或管理員權限，機房的受限帳號很可能註冊不了。
+    public static class Loopback
+    {
+        public static int FindFreePort()
+        {
+            TcpListener probe = new TcpListener(IPAddress.Loopback, 0);
+            probe.Start();
+            int port = ((IPEndPoint)probe.LocalEndpoint).Port;
+            probe.Stop();
+            return port;
+        }
+
+        public static string NewState()
+        {
+            byte[] b = new byte[18];
+            using (System.Security.Cryptography.RandomNumberGenerator rng =
+                   System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(b);
+            }
+            // 授權頁用 [A-Za-z0-9_-]{8,64} 驗證，所以要用 URL-safe 的字元
+            return Convert.ToBase64String(b)
+                .Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        }
+
+        // 等瀏覽器把 token 導回來。expectedState 不符就拒絕 —— 否則別的網頁
+        // 也能對著這個 port 亂送東西，把使用者登入成別人的帳號。
+        public static LoopbackResult WaitForCallback(
+            int port, string expectedState, int timeoutMs)
+        {
+            LoopbackResult result = new LoopbackResult();
+            TcpListener listener = new TcpListener(IPAddress.Loopback, port);
+            try
+            {
+                listener.Start();
+                DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+
+                while (DateTime.UtcNow < deadline)
+                {
+                    if (!listener.Pending())
+                    {
+                        System.Threading.Thread.Sleep(120);
+                        continue;
+                    }
+
+                    using (TcpClient client = listener.AcceptTcpClient())
+                    using (NetworkStream stream = client.GetStream())
+                    {
+                        client.ReceiveTimeout = 5000;
+                        string requestLine = ReadRequestLine(stream);
+                        string query = QueryOf(requestLine);
+
+                        string state = GetParam(query, "state");
+                        string token = GetParam(query, "token");
+
+                        if (string.IsNullOrEmpty(token))
+                        {
+                            // 瀏覽器可能會先來要 favicon 之類的，不是回呼就忽略
+                            Respond(stream, "等待授權中…", false);
+                            continue;
+                        }
+                        if (state != expectedState)
+                        {
+                            Respond(stream, "驗證失敗：state 不符，請重新登入。", true);
+                            result.Error = "state 不符（可能不是這次登入發起的請求）";
+                            return result;
+                        }
+
+                        Respond(stream, "登入成功，請回到收件程式。這個分頁可以關閉了。", false);
+                        result.Ok = true;
+                        result.Token = token;
+                        return result;
+                    }
+                }
+                result.Error = "等待逾時";
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Error = ex.Message;
+                return result;
+            }
+            finally
+            {
+                try { listener.Stop(); } catch { }
+            }
+        }
+
+        static string ReadRequestLine(NetworkStream stream)
+        {
+            StringBuilder sb = new StringBuilder();
+            byte[] one = new byte[1];
+            // 只需要第一行（GET /callback?... HTTP/1.1）
+            while (sb.Length < 8192)
+            {
+                int n = stream.Read(one, 0, 1);
+                if (n <= 0) break;
+                if (one[0] == (byte)'\n') break;
+                if (one[0] != (byte)'\r') sb.Append((char)one[0]);
+            }
+            return sb.ToString();
+        }
+
+        static string QueryOf(string requestLine)
+        {
+            int q = requestLine.IndexOf('?');
+            if (q < 0) return "";
+            int sp = requestLine.IndexOf(' ', q);
+            return sp < 0 ? requestLine.Substring(q + 1)
+                          : requestLine.Substring(q + 1, sp - q - 1);
+        }
+
+        static string GetParam(string query, string name)
+        {
+            foreach (string pair in query.Split('&'))
+            {
+                int eq = pair.IndexOf('=');
+                if (eq <= 0) continue;
+                if (pair.Substring(0, eq) != name) continue;
+                return Uri.UnescapeDataString(pair.Substring(eq + 1));
+            }
+            return null;
+        }
+
+        static void Respond(NetworkStream stream, string message, bool isError)
+        {
+            string color = isError ? "#c62828" : "#1b5e20";
+            string html =
+                "<!DOCTYPE html><html lang=\"zh-Hant\"><head><meta charset=\"utf-8\">" +
+                "<title>itouOJ 收件程式</title></head>" +
+                "<body style=\"font-family:'Microsoft JhengHei',sans-serif;" +
+                "display:flex;align-items:center;justify-content:center;height:90vh;margin:0\">" +
+                "<div style=\"text-align:center\">" +
+                "<div style=\"font-size:20px;color:" + color + "\">" + message + "</div>" +
+                "</div></body></html>";
+            byte[] body = Encoding.UTF8.GetBytes(html);
+            byte[] head = Encoding.ASCII.GetBytes(
+                "HTTP/1.1 200 OK\r\n" +
+                "Content-Type: text/html; charset=utf-8\r\n" +
+                "Content-Length: " + body.Length + "\r\n" +
+                "Connection: close\r\n\r\n");
+            stream.Write(head, 0, head.Length);
+            stream.Write(body, 0, body.Length);
+            stream.Flush();
         }
     }
 

@@ -126,7 +126,7 @@ namespace ItouOJ
                             SetField(f, "cfg", lockCfg);
                             InvokePrivate(f, "ApplyLockState");
                             foreach (string n in new string[] {
-                                "txtServer", "txtUser", "txtPass", "btnLogin",
+                                "txtServer", "txtUser", "btnLogin",
                                 "cboContest", "btnSettings", "btnUnlock" })
                             {
                                 Control c = FindByName<Control>(f, n);
@@ -286,6 +286,37 @@ namespace ItouOJ
             cl.AdminPinHash = "";
             Check("標記鎖定但沒有 PIN -> 視為未鎖（否則永遠打不開）",
                   !AdminLock.IsLocked(cl), null);
+
+            // ── 0a3. 瀏覽器登入的 loopback 接收端 ─────
+            Console.WriteLine("\n[0a3] 瀏覽器登入 loopback");
+            string st1 = Loopback.NewState();
+            string st2 = Loopback.NewState();
+            Check("state 每次不同", st1 != st2, null);
+            Check("state 符合授權頁的格式要求 [A-Za-z0-9_-]{8,64}",
+                  System.Text.RegularExpressions.Regex.IsMatch(st1, "^[A-Za-z0-9_-]{8,64}$"),
+                  st1);
+            int p1 = Loopback.FindFreePort();
+            Check("能取得可用的本機連接埠", p1 >= 1024 && p1 <= 65535, "port=" + p1);
+
+            // 正確的 state -> 收下 token
+            LoopbackResult good = ProbeCallback(p1, st1, st1, "tok-abc123");
+            Check("正確 state：收下 token", good.Ok && good.Token == "tok-abc123",
+                  good.Ok ? good.Token : good.Error);
+
+            // 錯誤的 state -> 必須拒絕，否則別的網頁也能把使用者登入成別人的帳號
+            int p2 = Loopback.FindFreePort();
+            LoopbackResult bad = ProbeCallback(p2, st1, st2, "tok-evil");
+            Check("錯誤 state：拒絕並不回傳 token",
+                  !bad.Ok && string.IsNullOrEmpty(bad.Token), bad.Error);
+
+            // 沒人來就要逾時，不能無限等下去把程式卡住
+            int p3 = Loopback.FindFreePort();
+            DateTime t0 = DateTime.UtcNow;
+            LoopbackResult timeout = Loopback.WaitForCallback(p3, st1, 1500);
+            double waited = (DateTime.UtcNow - t0).TotalMilliseconds;
+            Check("沒有回呼時會逾時結束",
+                  !timeout.Ok && waited >= 1400 && waited < 8000,
+                  Math.Round(waited) + " ms");
 
             // ── 0b. 輸出比對規則 ──────────────────────
             Console.WriteLine("\n[0b] 輸出正規化（必須與伺服器 judge.ts 一致）");
@@ -537,6 +568,36 @@ namespace ItouOJ
             Console.WriteLine("\n===== " + (failures == 0
                 ? "全部通過" : failures + " 項失敗") + " =====");
             return failures == 0 ? 0 : 1;
+        }
+
+        // 起一條背景執行緒模擬瀏覽器導回，主執行緒等 WaitForCallback 的結果
+        static LoopbackResult ProbeCallback(int port, string expectedState,
+                                            string sendState, string token)
+        {
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
+            {
+                System.Threading.Thread.Sleep(400); // 等監聽起來
+                try
+                {
+                    using (System.Net.Sockets.TcpClient c =
+                           new System.Net.Sockets.TcpClient("127.0.0.1", port))
+                    using (System.Net.Sockets.NetworkStream s = c.GetStream())
+                    {
+                        string req = "GET /callback?state=" +
+                            Uri.EscapeDataString(sendState) + "&token=" +
+                            Uri.EscapeDataString(token) +
+                            " HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n";
+                        byte[] b = Encoding.ASCII.GetBytes(req);
+                        s.Write(b, 0, b.Length);
+                        s.Flush();
+                        // 讀掉回應，讓伺服器端寫得完
+                        byte[] buf = new byte[1024];
+                        try { s.Read(buf, 0, buf.Length); } catch { }
+                    }
+                }
+                catch { }
+            });
+            return Loopback.WaitForCallback(port, expectedState, 8000);
         }
 
         static void SetField(Form form, string name, object value)

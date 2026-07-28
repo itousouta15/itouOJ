@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { getSession } from "@/lib/auth";
+import { safeNextPath } from "@/lib/safeNext";
 import {
   DISCORD_AUTH_URL,
   OAUTH_STATE_COOKIE,
@@ -23,11 +24,13 @@ export async function GET(request: Request) {
   }
 
   // state 防 CSRF：存進 cookie，callback 時比對
+  const next = safeNextPath(new URL(request.url).searchParams.get("next"));
+
   const state = crypto.randomUUID();
   const cookieStore = await cookies();
   cookieStore.set(
     OAUTH_STATE_COOKIE,
-    JSON.stringify({ state, linkUserId }),
+    JSON.stringify({ state, linkUserId, next }),
     {
       httpOnly: true,
       sameSite: "lax",

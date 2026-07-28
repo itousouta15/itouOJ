@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { getSession } from "@/lib/auth";
+import { safeNextPath } from "@/lib/safeNext";
 import {
   GOOGLE_AUTH_URL,
   OAUTH_STATE_COOKIE,
@@ -22,12 +23,17 @@ export async function GET(request: Request) {
     linkUserId = session.userId;
   }
 
+  // 登入後導回哪裡（收件程式的授權頁會用到）。只收站內路徑，見 safeNextPath。
+  const next = safeNextPath(
+    new URL(request.url).searchParams.get("next")
+  );
+
   // state 防 CSRF：存進 cookie，callback 時比對
   const state = crypto.randomUUID();
   const cookieStore = await cookies();
   cookieStore.set(
     OAUTH_STATE_COOKIE,
-    JSON.stringify({ state, linkUserId }),
+    JSON.stringify({ state, linkUserId, next }),
     {
       httpOnly: true,
       sameSite: "lax",
