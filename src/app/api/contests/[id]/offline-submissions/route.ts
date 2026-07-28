@@ -116,6 +116,13 @@ export async function POST(
 
   const accepted: number[] = [];
   let duplicates = 0;
+  // clientKey -> 伺服器上的提交編號。收件程式靠這個做出「查看結果」的連結；
+  // 只回傳 id 陣列的話，中間夾雜重複筆數時就對不回去是哪一筆對應哪一筆。
+  const results: {
+    clientKey: string;
+    submissionId: number;
+    duplicate: boolean;
+  }[] = [];
 
   for (const s of incoming) {
     // 用 userId 當前綴，避免有人拿別人的 clientKey 來讓對方的提交被當成重複而消失
@@ -127,6 +134,12 @@ export async function POST(
     });
     if (existing) {
       duplicates++;
+      // 重複也把編號給回去，重傳一次照樣拿得到連結
+      results.push({
+        clientKey: s.clientKey,
+        submissionId: existing.id,
+        duplicate: true,
+      });
       continue;
     }
 
@@ -144,6 +157,11 @@ export async function POST(
       select: { id: true },
     });
     accepted.push(created.id);
+    results.push({
+      clientKey: s.clientKey,
+      submissionId: created.id,
+      duplicate: false,
+    });
   }
 
   for (const submissionId of accepted) enqueueSubmission(submissionId);
@@ -153,5 +171,6 @@ export async function POST(
     duplicates,
     total: incoming.length,
     submissionIds: accepted,
+    results,
   });
 }
