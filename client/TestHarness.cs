@@ -437,6 +437,64 @@ namespace ItouOJ
             Check("負數倒數顯示為 00:00:00",
                   Phase.Clock(TimeSpan.FromSeconds(-5)) == "00:00:00", null);
 
+            // ── 0a5. 換人登入的隔離 ───────────────────
+            // 同一台機器換人用時，不能讓後面那位看到或拿走前一位的東西
+            Console.WriteLine("\n[0a5] 登出後的資料隔離");
+            Store.WriteDraft(777, "A", "// 甲同學的解法\nint main(){}\n");
+            Store.WriteDraft(777, "B", "// 甲同學的另一題\n");
+            Check("草稿寫入後讀得到",
+                  Store.ReadDraft(777, "A").Contains("甲同學"), null);
+            int clearedDrafts = Store.ClearDrafts();
+            Check("登出會清掉草稿（否則下一位直接看到上一位的程式碼）",
+                  Store.ReadDraft(777, "A") == "" && Store.ReadDraft(777, "B") == "",
+                  "清掉 " + clearedDrafts + " 份");
+
+            // 提交要綁擁有者
+            foreach (string f in Directory.Exists(Store.PendingDir)
+                     ? Directory.GetFiles(Store.PendingDir, "*.json") : new string[0])
+                File.Delete(f);
+            SpoolItem a1 = new SpoolItem();
+            a1.ClientKey = Guid.NewGuid().ToString("N");
+            a1.ProblemId = 1; a1.Label = "A"; a1.Language = "cpp";
+            a1.Code = "int main(){}"; a1.FileName = "a.cpp";
+            a1.SubmittedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ",
+                System.Globalization.CultureInfo.InvariantCulture);
+            a1.Owner = "studentA";
+            Store.WritePending(a1);
+
+            List<SpoolItem> readBack = Store.ReadDir(Store.PendingDir);
+            Check("提交有記錄擁有者",
+                  readBack.Count == 1 && readBack[0].Owner == "studentA",
+                  readBack.Count > 0 ? readBack[0].Owner : "無");
+
+            // 模擬 studentB 登入後的過濾邏輯（與 OnUpload 相同）
+            string me = "studentB";
+            int mineCount = 0, othersCount = 0;
+            foreach (SpoolItem it in readBack)
+            {
+                if (string.IsNullOrEmpty(it.Owner) || it.Owner == me) mineCount++;
+                else othersCount++;
+            }
+            Check("換人登入後，他人的提交不會被算成自己的",
+                  mineCount == 0 && othersCount == 1,
+                  "自己的 " + mineCount + " 筆／他人的 " + othersCount + " 筆");
+
+            // 舊版沒有 Owner 的資料要當成自己的，不能讓既有提交上傳不了
+            SpoolItem legacy = new SpoolItem();
+            legacy.ClientKey = Guid.NewGuid().ToString("N");
+            legacy.ProblemId = 1; legacy.Label = "A"; legacy.Language = "cpp";
+            legacy.Code = "int main(){}"; legacy.FileName = "old.cpp";
+            legacy.SubmittedAt = a1.SubmittedAt;
+            Store.WritePending(legacy);
+            int legacyMine = 0;
+            foreach (SpoolItem it in Store.ReadDir(Store.PendingDir))
+                if (string.IsNullOrEmpty(it.Owner) || it.Owner == me) legacyMine++;
+            Check("舊版沒有 Owner 的提交仍可上傳（不因升級而卡住）",
+                  legacyMine == 1, legacyMine + " 筆");
+
+            foreach (string f in Directory.GetFiles(Store.PendingDir, "*.json"))
+                File.Delete(f);
+
             // ── 0b. 輸出比對規則 ──────────────────────
             Console.WriteLine("\n[0b] 輸出正規化（必須與伺服器 judge.ts 一致）");
             Check("忽略結尾換行", Runner.Normalize("1\n2\n") == "1\n2", null);
