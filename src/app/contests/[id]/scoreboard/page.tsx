@@ -90,7 +90,14 @@ export default async function ContestScoreboardPage({
             {board.rows.map((row, i) => (
               <tr key={row.userId} className="hover:bg-panel2">
                 <td className="table-cell font-semibold text-dim">{i + 1}</td>
-                <td className="table-cell font-medium">{row.name}</td>
+                <td className="table-cell font-medium">
+                  <Link
+                    href={`/users/${row.username}`}
+                    className="text-blue hover:underline"
+                  >
+                    {row.name}
+                  </Link>
+                </td>
                 <td className="table-cell text-right font-semibold text-[#4caf50]">
                   {row.solvedCount}
                 </td>
@@ -100,8 +107,10 @@ export default async function ContestScoreboardPage({
                 {board.problems.map((p) => {
                   const cell = row.cells[p.id];
                   const isIoi = board.scoreMode === "IOI";
-                  return (
-                    <td key={p.id} className="table-cell text-center">
+                  // 有對應的提交就讓整格可以點進去看那筆的判題結果。
+                  // 凍結中的格子 submissionId 是 null，點不進去也看不到。
+                  const inner = (
+                    <>
                       {cell.pending ? (
                         <span className="mono text-mute" title="凍結中，結果尚未公開">
                           ?{cell.attempts > 0 ? ` (${cell.attempts})` : ""}
@@ -124,6 +133,21 @@ export default async function ContestScoreboardPage({
                         </span>
                       ) : (
                         <span className="text-mute">—</span>
+                      )}
+                    </>
+                  );
+                  return (
+                    <td key={p.id} className="table-cell p-0 text-center">
+                      {cell.submissionId ? (
+                        <Link
+                          href={`/submissions/${cell.submissionId}`}
+                          className="block px-4 py-[11px] hover:bg-inset"
+                          title="查看這筆提交"
+                        >
+                          {inner}
+                        </Link>
+                      ) : (
+                        <div className="px-4 py-[11px]">{inner}</div>
                       )}
                     </td>
                   );
