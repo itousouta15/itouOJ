@@ -6,6 +6,7 @@ import { getContestPhase } from "@/lib/contest";
 import ContestStatusBadge from "@/components/ContestStatusBadge";
 import ContestCountdown from "@/components/ContestCountdown";
 import ContestJoinButton from "@/components/ContestJoinButton";
+import OpenClientButton from "@/components/OpenClientButton";
 
 export const dynamic = "force-dynamic";
 
@@ -120,6 +121,7 @@ export default async function ContestPage({
             我的提交
           </Link>
         )}
+        {session && joined && <OpenClientButton contestId={contest.id} />}
       </div>
 
       <div className="card overflow-x-auto">
