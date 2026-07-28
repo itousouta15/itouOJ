@@ -32,6 +32,12 @@ namespace ItouOJ
         // 比賽限定的語言 key（例如只有 "cpp"）。空清單 = 不限制。
         public List<string> AllowedLanguages { get; set; }
 
+        // 比賽起訖時間（ISO 8601 UTC）。斷網後就是靠這兩個值加上校正過的時鐘
+        // 判斷「可以開始了沒」和「時間到了沒」—— 所有機器校正到同一個伺服器時間，
+        // 就會在同一刻解鎖、同一刻關閉，不需要網路發號施令。
+        public string StartTimeUtc { get; set; }
+        public string EndTimeUtc { get; set; }
+
         // 題目 PDF 所在資料夾；檔名預設為「代號.pdf」（A.pdf、B.pdf…）
         public string ProblemDir { get; set; }
         // 檔名不照慣例時的個別覆寫
@@ -57,6 +63,8 @@ namespace ItouOJ
             CompilerPath = "";
             Locked = false;
             AdminPinHash = "";
+            StartTimeUtc = "";
+            EndTimeUtc = "";
         }
     }
 
@@ -505,6 +513,61 @@ namespace ItouOJ
         public static bool IsLocked(Config cfg)
         {
             return cfg != null && cfg.Locked && !string.IsNullOrEmpty(cfg.AdminPinHash);
+        }
+    }
+
+    public enum ContestPhase { NotReady, Waiting, Running, Ended }
+
+    // 比賽現在處於哪個階段。
+    //
+    // 判斷完全靠本機時鐘 + 賽前校正值，不需要網路 —— 這是斷網比賽能「統一開始」
+    // 的關鍵：每台機器在設定時都對過伺服器時間，所以它們算出來的開始/結束時刻一致。
+    public static class Phase
+    {
+        public static DateTime NowUtc(Config cfg)
+        {
+            return DateTime.UtcNow.AddMilliseconds(cfg == null ? 0 : cfg.ClockOffsetMs);
+        }
+
+        public static DateTime? Parse(string iso)
+        {
+            if (string.IsNullOrEmpty(iso)) return null;
+            DateTime d;
+            if (DateTime.TryParse(iso, CultureInfo.InvariantCulture,
+                    DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out d))
+                return d;
+            return null;
+        }
+
+        public static ContestPhase Of(Config cfg)
+        {
+            if (cfg == null || cfg.ContestId <= 0 || cfg.Problems.Count == 0)
+                return ContestPhase.NotReady;
+
+            DateTime? start = Parse(cfg.StartTimeUtc);
+            DateTime? end = Parse(cfg.EndTimeUtc);
+            // 沒有時間資訊就不要把選手擋在門外，當作進行中
+            if (!start.HasValue || !end.HasValue) return ContestPhase.Running;
+
+            DateTime now = NowUtc(cfg);
+            if (now < start.Value) return ContestPhase.Waiting;
+            if (now >= end.Value) return ContestPhase.Ended;
+            return ContestPhase.Running;
+        }
+
+        // 剩餘時間；負值代表已過
+        public static TimeSpan Until(Config cfg, string iso)
+        {
+            DateTime? t = Parse(iso);
+            if (!t.HasValue) return TimeSpan.Zero;
+            return t.Value - NowUtc(cfg);
+        }
+
+        public static string Clock(TimeSpan t)
+        {
+            if (t.TotalSeconds < 0) t = TimeSpan.Zero;
+            return string.Format("{0:00}:{1:00}:{2:00}",
+                (int)t.TotalHours, t.Minutes, t.Seconds);
         }
     }
 

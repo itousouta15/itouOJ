@@ -48,6 +48,74 @@ namespace ItouOJ
         {
             // GUI（winexe）模式下沒有主控台，StandardInput 的編碼行為和主控台程式
             // 不同。這個模式把結果寫檔，讓 winexe 版本也能被驗證。
+            // 把視窗畫成圖檔。介面調整光看程式碼看不出結果，得真的把畫面存下來看。
+            if (args.Length >= 2 && args[0] == "--screenshot")
+            {
+                string outPng = args[1];
+                int tabIndex = args.Length >= 3 ? int.Parse(args[2]) : 0;
+                System.Threading.Thread th = new System.Threading.Thread(delegate ()
+                {
+                    try
+                    {
+                        Application.EnableVisualStyles();
+                        Application.SetCompatibleTextRenderingDefault(false);
+                        using (MainForm f = new MainForm())
+                        {
+                            f.StartPosition = FormStartPosition.Manual;
+                            f.Location = new Point(-4000, -4000);
+                            f.Show();
+                            Application.DoEvents();
+                            TabControl tc = FindByName<TabControl>(f, "tabs");
+                            if (tc != null && tabIndex < tc.TabPages.Count)
+                            {
+                                tc.SelectedIndex = tabIndex;
+                                Application.DoEvents();
+                                System.Threading.Thread.Sleep(400);
+                                Application.DoEvents();
+                            }
+                            // 診斷遮罩狀態
+                            Config c = Store.LoadConfig();
+                            Panel gate = FindByName<Panel>(f, "pnlGate");
+                            File.WriteAllText(outPng + ".info",
+                                "phase=" + Phase.Of(c) + "\r\n" +
+                                "start=" + c.StartTimeUtc + "\r\n" +
+                                "gate.Visible=" + (gate == null ? "null" : gate.Visible.ToString()) + "\r\n" +
+                                "gate.Bounds=" + (gate == null ? "null" : gate.Bounds.ToString()) + "\r\n" +
+                                "gate.index=" + (gate == null || gate.Parent == null
+                                    ? "?" : gate.Parent.Controls.GetChildIndex(gate).ToString()) + "\r\n",
+                                new UTF8Encoding(false));
+
+                            // DrawToBitmap 不會正確合成重疊的同層控制項（TabControl 上
+                            // 蓋的遮罩會被忽略），拍出來跟實際畫面不符。改用螢幕擷取，
+                            // 拍到的就是使用者真正看到的東西。
+                            f.Location = new Point(0, 0);
+                            f.BringToFront();
+                            f.Activate();
+                            Application.DoEvents();
+                            System.Threading.Thread.Sleep(700);
+                            Application.DoEvents();
+
+                            Rectangle r = f.Bounds;
+                            using (Bitmap bmp = new Bitmap(r.Width, r.Height))
+                            using (Graphics g = Graphics.FromImage(bmp))
+                            {
+                                g.CopyFromScreen(r.Location, Point.Empty, r.Size);
+                                bmp.Save(outPng, System.Drawing.Imaging.ImageFormat.Png);
+                            }
+                            f.Hide();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        File.WriteAllText(outPng + ".err", ex.ToString());
+                    }
+                });
+                th.SetApartmentState(System.Threading.ApartmentState.STA);
+                th.Start();
+                th.Join(60000);
+                return 0;
+            }
+
             if (args.Length >= 2 && args[0] == "--probe-stdin")
             {
                 string log = args[1];
@@ -317,6 +385,50 @@ namespace ItouOJ
             Check("沒有回呼時會逾時結束",
                   !timeout.Ok && waited >= 1400 && waited < 8000,
                   Math.Round(waited) + " ms");
+
+            // ── 0a4. 比賽階段（統一開始 / 時間到關閉）──
+            Console.WriteLine("\n[0a4] 比賽階段判斷");
+            Func<int, int, Config> mk = delegate (int startMin, int endMin)
+            {
+                Config c = new Config();
+                c.ContestId = 1;
+                c.Problems.Add(new ProblemEntry());
+                c.StartTimeUtc = DateTime.UtcNow.AddMinutes(startMin)
+                    .ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);
+                c.EndTimeUtc = DateTime.UtcNow.AddMinutes(endMin)
+                    .ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);
+                return c;
+            };
+            Check("開賽前 -> Waiting", Phase.Of(mk(10, 130)) == ContestPhase.Waiting, null);
+            Check("進行中 -> Running", Phase.Of(mk(-10, 110)) == ContestPhase.Running, null);
+            Check("已結束 -> Ended", Phase.Of(mk(-130, -10)) == ContestPhase.Ended, null);
+
+            Config noContest = new Config();
+            Check("還沒設定比賽 -> NotReady",
+                  Phase.Of(noContest) == ContestPhase.NotReady, null);
+
+            Config noTimes = new Config();
+            noTimes.ContestId = 1;
+            noTimes.Problems.Add(new ProblemEntry());
+            Check("有比賽但沒有時間資訊 -> 當作 Running（不把選手擋在門外）",
+                  Phase.Of(noTimes) == ContestPhase.Running, null);
+
+            // 時鐘校正必須真的影響判斷 —— 這是「統一開始」的基礎
+            Config skewed = mk(5, 125);          // 本機時間看是 5 分鐘後開始
+            skewed.ClockOffsetMs = 10 * 60000;   // 但伺服器比本機快 10 分鐘
+            Check("時鐘校正納入判斷：本機以為還沒開始，校正後其實已開始",
+                  Phase.Of(skewed) == ContestPhase.Running, null);
+
+            Config skewed2 = mk(-5, 115);
+            skewed2.ClockOffsetMs = -10 * 60000; // 伺服器比本機慢 10 分鐘
+            Check("反向校正：本機以為開始了，校正後其實還沒",
+                  Phase.Of(skewed2) == ContestPhase.Waiting, null);
+
+            TimeSpan left = Phase.Until(mk(-10, 50), noTimes.EndTimeUtc);
+            Check("倒數格式化", Phase.Clock(TimeSpan.FromSeconds(3725)) == "01:02:05",
+                  Phase.Clock(TimeSpan.FromSeconds(3725)));
+            Check("負數倒數顯示為 00:00:00",
+                  Phase.Clock(TimeSpan.FromSeconds(-5)) == "00:00:00", null);
 
             // ── 0b. 輸出比對規則 ──────────────────────
             Console.WriteLine("\n[0b] 輸出正規化（必須與伺服器 judge.ts 一致）");
