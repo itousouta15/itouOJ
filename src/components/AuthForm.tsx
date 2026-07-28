@@ -11,12 +11,15 @@ export default function AuthForm({
   googleError = false,
   discordEnabled = false,
   discordError = false,
+  next = null,
 }: {
   mode: "login" | "register";
   googleEnabled?: boolean;
   googleError?: boolean;
   discordEnabled?: boolean;
   discordError?: boolean;
+  // 登入後導回的站內路徑（已由 safeNextPath 驗證過）
+  next?: string | null;
 }) {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -47,7 +50,7 @@ export default function AuthForm({
         setLoading(false);
         return;
       }
-      router.push("/");
+      router.push(next ?? "/");
       router.refresh();
     } catch {
       setError("發生錯誤，請稍後再試");
@@ -99,13 +102,27 @@ export default function AuthForm({
             </div>
             <div className="space-y-2">
               {googleEnabled && (
-                <a href="/api/auth/google" className="btn-secondary w-full">
+                <a
+                  href={
+                    next
+                      ? `/api/auth/google?next=${encodeURIComponent(next)}`
+                      : "/api/auth/google"
+                  }
+                  className="btn-secondary w-full"
+                >
                   <GoogleIcon />
                   使用 Google {isLogin ? "登入" : "註冊"}
                 </a>
               )}
               {discordEnabled && (
-                <a href="/api/auth/discord" className="btn-secondary w-full">
+                <a
+                  href={
+                    next
+                      ? `/api/auth/discord?next=${encodeURIComponent(next)}`
+                      : "/api/auth/discord"
+                  }
+                  className="btn-secondary w-full"
+                >
                   <DiscordIcon />
                   使用 Discord {isLogin ? "登入" : "註冊"}
                 </a>
