@@ -39,7 +39,12 @@ export async function POST(request: Request) {
   }
 
   if (contestId !== undefined) {
-    const access = await assertContestProblemAccess(session, contestId, problemId);
+    const access = await assertContestProblemAccess(
+      session,
+      contestId,
+      problemId,
+      language
+    );
     if (!access.ok) {
       return Response.json({ error: access.error }, { status: access.status });
     }

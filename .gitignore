@@ -42,6 +42,14 @@ next-env.d.ts
 
 /src/generated/prisma
 dev.db
+test.db
 *.db-journal
+
+# 比賽選手帳密名單（scripts/contest-accounts.mjs 產出，含明碼密碼）
+contest-accounts-*.csv
+
+# 收件程式的建置產物（用 client/build.ps1 重建）
+client/*.exe
+client/*.pdb
 
 AGENTS.md

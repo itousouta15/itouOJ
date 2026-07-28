@@ -37,6 +37,14 @@ export default async function ContestScoreboardPage({
       </div>
       <h1 className="page-title">排行榜</h1>
 
+      {board.scoreMode === "IOI" && (
+        <p className="text-sm text-dim">
+          此比賽採 IOI 計分：每題只看
+          <span className="text-tx">最後一次提交</span>
+          的結果，錯誤提交不罰時；平手時比總用時。
+        </p>
+      )}
+
       {!revealed && (
         <div className="card border-[rgba(250,168,26,0.3)] p-4 text-sm text-[#faa81a]">
           🧊 排名已凍結{phase === "ended" ? "，比賽結束後由管理員公開最終成績" : `，最後 ${contest.freezeMinutes} 分鐘的結果暫不公開`}
@@ -58,7 +66,9 @@ export default async function ContestScoreboardPage({
               <th className="table-head w-16">名次</th>
               <th className="table-head">參賽者</th>
               <th className="table-head w-24 text-right">解題數</th>
-              <th className="table-head w-24 text-right">罰時</th>
+              <th className="table-head w-24 text-right">
+                {board.scoreMode === "IOI" ? "用時" : "罰時"}
+              </th>
               {board.problems.map((p) => (
                 <th key={p.id} className="table-head w-20 text-center" title={p.title}>
                   {p.label}
@@ -85,24 +95,33 @@ export default async function ContestScoreboardPage({
                   {row.solvedCount}
                 </td>
                 <td className="table-cell mono text-right text-dim">
-                  {row.totalPenalty}
+                  {row.totalMinutes}
                 </td>
                 {board.problems.map((p) => {
                   const cell = row.cells[p.id];
+                  const isIoi = board.scoreMode === "IOI";
                   return (
                     <td key={p.id} className="table-cell text-center">
                       {cell.pending ? (
                         <span className="mono text-mute" title="凍結中，結果尚未公開">
                           ?{cell.attempts > 0 ? ` (${cell.attempts})` : ""}
                         </span>
+                      ) : cell.judging ? (
+                        <span className="mono text-[#faa81a]" title="判題中">
+                          ⋯{cell.attempts > 0 ? ` (${cell.attempts})` : ""}
+                        </span>
                       ) : cell.solved ? (
                         <span className="mono text-[#4caf50]">
-                          +{cell.attempts > 0 ? cell.attempts : ""}
+                          {isIoi
+                            ? `✓${cell.attempts > 1 ? ` (${cell.attempts})` : ""}`
+                            : `+${cell.attempts > 0 ? cell.attempts : ""}`}
                           <br />
-                          <span className="text-xs text-dim">{cell.penaltyMinutes}</span>
+                          <span className="text-xs text-dim">{cell.minutes}</span>
                         </span>
                       ) : cell.attempts > 0 ? (
-                        <span className="mono text-[#ff6b6b]">-{cell.attempts}</span>
+                        <span className="mono text-[#ff6b6b]">
+                          {isIoi ? `✗ (${cell.attempts})` : `-${cell.attempts}`}
+                        </span>
                       ) : (
                         <span className="text-mute">—</span>
                       )}
