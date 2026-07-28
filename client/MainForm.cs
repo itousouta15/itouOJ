@@ -28,8 +28,13 @@ namespace ItouOJ
         Label lblStatus, lblAccount, lblLangHint, lblDraft, lblLock, lblWho, lblWhere;
         Panel setupPanel, pnlIdentity, lockableGroup, pnlGate;
         Label lblGateTitle, lblGateClock, lblGateHint, lblRemain;
+        Panel pnlGateAction;
+        Button btnGateAction;
+        ComboBox cboGateContest;
         System.Windows.Forms.Timer phaseTimer;
-        ContestPhase lastPhase = ContestPhase.NotReady;
+        Screen lastScreen = Screen.NeedLogin;
+        // 由 itouoj:// 帶進來、待登入後自動選取的比賽
+        int pendingContestId = 0;
         // 監考臨時離開等待畫面去改設定的寬限時間
         DateTime gateSuppressedUntil = DateTime.MinValue;
         Button btnSettings, btnUnlock, btnCheckin;
@@ -48,10 +53,15 @@ namespace ItouOJ
         bool probing = false;
         bool lastOnline = false;
 
-        public MainForm()
+        public MainForm() : this(null) { }
+
+        // launchUrl：從網站按「開啟收件程式」時，作業系統會用
+        // itouoj://start?server=...&contest=... 把程式叫起來並帶上這個參數。
+        public MainForm(string launchUrl)
         {
             Store.EnsureDirs();
             cfg = Store.LoadConfig();
+            ApplyLaunchUrl(launchUrl);
             BuildUi();
             LoadFromConfig();
             RefreshList();
@@ -73,6 +83,44 @@ namespace ItouOJ
             phaseTimer.Tick += OnPhaseTick;
             phaseTimer.Start();
             OnPhaseTick(null, EventArgs.Empty);
+        }
+
+        // itouoj://start?server=https%3A%2F%2Foj.itousouta.me&contest=3
+        //
+        // 只接受伺服器網址與比賽編號 —— 這是使用者可控的輸入，不該讓它帶進
+        // token 之類的東西。登入仍然要走瀏覽器授權那條路。
+        void ApplyLaunchUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return;
+            try
+            {
+                int q = url.IndexOf('?');
+                if (q < 0) return;
+                string server = null;
+                int contest = 0;
+                foreach (string pair in url.Substring(q + 1).Split('&'))
+                {
+                    int eq = pair.IndexOf('=');
+                    if (eq <= 0) continue;
+                    string k = pair.Substring(0, eq);
+                    string v = Uri.UnescapeDataString(pair.Substring(eq + 1));
+                    if (k == "server") server = v;
+                    else if (k == "contest") int.TryParse(v, out contest);
+                }
+
+                if (!string.IsNullOrEmpty(server) &&
+                    (server.StartsWith("http://") || server.StartsWith("https://")))
+                {
+                    cfg.ServerUrl = server.TrimEnd('/');
+                }
+                // 比賽編號只是記下來，真正的題目與時間仍要登入後向伺服器要
+                if (contest > 0 && contest != cfg.ContestId)
+                {
+                    pendingContestId = contest;
+                }
+                Store.SaveConfig(cfg);
+            }
+            catch { /* 參數壞掉不該讓程式開不起來 */ }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -249,12 +297,40 @@ namespace ItouOJ
             lblGateHint.Dock = DockStyle.Top;
             lblGateHint.Height = 60;
 
+            // 精靈式流程的主要動作鈕（登入 / 選比賽 / 上傳），置中大顆
+            pnlGateAction = new Panel();
+            pnlGateAction.Dock = DockStyle.Top;
+            pnlGateAction.Height = 96;
+            pnlGateAction.BackColor = Theme.Bg;
+
+            btnGateAction = Theme.Primary("");
+            btnGateAction.Size = new Size(240, 46);
+            btnGateAction.Click += OnGateAction;
+            pnlGateAction.Controls.Add(btnGateAction);
+            pnlGateAction.Resize += delegate
+            {
+                btnGateAction.Location = new Point(
+                    (pnlGateAction.Width - btnGateAction.Width) / 2, 10);
+            };
+
+            cboGateContest = Theme.Select();
+            cboGateContest.Size = new Size(420, 28);
+            cboGateContest.Visible = false;
+            cboGateContest.SelectedIndexChanged += OnContestChanged;
+            pnlGateAction.Controls.Add(cboGateContest);
+            pnlGateAction.Resize += delegate
+            {
+                cboGateContest.Location = new Point(
+                    (pnlGateAction.Width - cboGateContest.Width) / 2, 62);
+            };
+
             Panel spacer = new Panel();
             spacer.Dock = DockStyle.Top;
             spacer.Height = 90;
             spacer.BackColor = Theme.Bg;
 
             // Dock=Top 後加的在上面，所以由下往上加
+            pnlGate.Controls.Add(pnlGateAction);
             pnlGate.Controls.Add(lblGateHint);
             pnlGate.Controls.Add(lblGateClock);
             pnlGate.Controls.Add(lblGateTitle);
@@ -263,78 +339,115 @@ namespace ItouOJ
             return pnlGate;
         }
 
-        // 每秒檢查一次階段，該切換就切換
+        // 每秒重新決定該顯示哪個畫面。整個流程的狀態只在這裡判斷，
+        // 各分頁不自己做判斷，避免出現互相矛盾的畫面。
         void OnPhaseTick(object sender, EventArgs e)
         {
-            ContestPhase p = Phase.Of(cfg);
-
-            if (p == ContestPhase.NotReady)
-            {
-                pnlGate.Visible = false;
-                return;
-            }
+            Screen s = Flow.Current(cfg);
 
             // 監考按了「賽前設定」，暫時讓開
-            bool suppressed = DateTime.UtcNow < gateSuppressedUntil;
-
-            if (p == ContestPhase.Waiting)
-            {
-                pnlGate.Visible = !suppressed;
-                if (!suppressed) pnlGate.BringToFront();
-                lblGateTitle.Text = "比賽尚未開始";
-                lblGateTitle.ForeColor = Theme.Text;
-                lblGateClock.Text = Phase.Clock(Phase.Until(cfg, cfg.StartTimeUtc));
-                lblGateClock.ForeColor = Theme.Accent;
-                lblGateHint.Text = cfg.ContestTitle + "\r\n" +
-                    "時間一到會自動開放作答，請不要關閉程式。";
-                lastPhase = p;
-                return;
-            }
-
-            if (p == ContestPhase.Ended)
-            {
-                pnlGate.Visible = !suppressed;
-                if (!suppressed) pnlGate.BringToFront();
-                lblGateTitle.Text = "比賽已結束";
-                lblGateTitle.ForeColor = Theme.Bad;
-                lblGateClock.Text = "00:00:00";
-                lblGateClock.ForeColor = Theme.Bad;
-                int pending = Store.ReadDir(Store.PendingDir).Count;
-                lblGateHint.Text = pending > 0
-                    ? "還有 " + pending + " 筆提交未上傳。\r\n" +
-                      "等網路恢復後，切到「收件紀錄」分頁按「上傳到伺服器」。"
-                    : "所有提交都已上傳，可以到網站查看判題結果。";
-                if (lastPhase == ContestPhase.Running)
-                {
-                    // 從作答中切到結束的那一刻，把還沒落地的草稿存好
-                    SaveDraft();
-                    tabs.SelectedIndex = 1; // 帶到收件紀錄
-                    Status("時間到，提交入口已關閉", true);
-                }
-                lastPhase = p;
-                return;
-            }
-
-            // Running
-            if (pnlGate.Visible)
+            if (DateTime.UtcNow < gateSuppressedUntil)
             {
                 pnlGate.Visible = false;
-                if (lastPhase == ContestPhase.Waiting)
-                {
-                    tabs.SelectedIndex = 0;
-                    Status("比賽開始！", false);
-                }
+                return;
             }
-            // 作答中在狀態列顯示剩餘時間
-            TimeSpan left = Phase.Until(cfg, cfg.EndTimeUtc);
-            if (left.TotalSeconds > 0 && left.TotalMinutes < 10080)
+
+            switch (s)
             {
-                lblRemain.Text = "剩餘 " + Phase.Clock(left);
-                lblRemain.ForeColor = left.TotalMinutes <= 5 ? Theme.Bad : Theme.Dim;
-                lblRemain.Visible = true;
+                case Screen.NeedLogin:
+                    ShowGate("歡迎使用 itouOJ 收件程式", "", Theme.Text,
+                        "請先登入。會開啟瀏覽器讓你用 itouOJ 帳號登入，\r\n" +
+                        "帳號密碼、Google、Discord 都可以。",
+                        "用瀏覽器登入", false);
+                    break;
+
+                case Screen.NeedContest:
+                    ShowGate("選擇比賽", "", Theme.Text,
+                        "已登入為 " + cfg.Username + "。\r\n" +
+                        "請選擇你要參加的比賽（需要先在 itouOJ 網站上報名）。",
+                        "重新整理比賽清單", true);
+                    break;
+
+                case Screen.Waiting:
+                    ShowGate("比賽尚未開始",
+                        Phase.Clock(Phase.Until(cfg, cfg.StartTimeUtc)), Theme.Accent,
+                        cfg.ContestTitle + "\r\n時間一到會自動開放作答，請不要關閉程式。",
+                        null, false);
+                    break;
+
+                case Screen.Ended:
+                    int pending = Store.ReadDir(Store.PendingDir).Count;
+                    ShowGate("比賽已結束", "00:00:00", Theme.Bad,
+                        pending > 0
+                            ? "還有 " + pending + " 筆提交未上傳。\r\n網路恢復後請按下方按鈕回傳。"
+                            : "所有提交都已上傳，可以到 itouOJ 網站查看判題結果。",
+                        pending > 0 ? "回傳到伺服器" : "前往 itouOJ 查看結果", false);
+                    if (lastScreen == Screen.Answering)
+                    {
+                        SaveDraft();
+                        Status("時間到，提交入口已關閉", true);
+                    }
+                    break;
+
+                case Screen.Answering:
+                    if (pnlGate.Visible)
+                    {
+                        pnlGate.Visible = false;
+                        if (lastScreen == Screen.Waiting)
+                        {
+                            tabs.SelectedIndex = 0;
+                            Status("比賽開始！", false);
+                        }
+                    }
+                    TimeSpan left = Phase.Until(cfg, cfg.EndTimeUtc);
+                    if (left.TotalSeconds > 0 && left.TotalMinutes < 10080)
+                    {
+                        lblRemain.Text = "剩餘 " + Phase.Clock(left);
+                        lblRemain.ForeColor = left.TotalMinutes <= 5 ? Theme.Bad : Theme.Dim;
+                        lblRemain.Visible = true;
+                    }
+                    else lblRemain.Visible = false;
+                    break;
             }
-            else lblRemain.Visible = false;
-            lastPhase = p;
+
+            lastScreen = s;
+        }
+
+        void ShowGate(string title, string clock, Color clockColor,
+                      string hint, string actionText, bool showContestPicker)
+        {
+            pnlGate.Visible = true;
+            pnlGate.BringToFront();
+            lblGateTitle.Text = title;
+            lblGateTitle.ForeColor = clockColor == Theme.Bad ? Theme.Bad : Theme.Text;
+            lblGateClock.Text = clock;
+            lblGateClock.ForeColor = clockColor;
+            lblGateClock.Visible = clock.Length > 0;
+            lblGateHint.Text = hint;
+            btnGateAction.Visible = actionText != null;
+            if (actionText != null) btnGateAction.Text = actionText;
+            cboGateContest.Visible = showContestPicker;
+            lblRemain.Visible = false;
+        }
+
+        // 精靈畫面上那顆大按鈕，依目前階段做不同的事
+        void OnGateAction(object sender, EventArgs e)
+        {
+            switch (Flow.Current(cfg))
+            {
+                case Screen.NeedLogin:
+                    OnLogin(sender, e);
+                    break;
+                case Screen.NeedContest:
+                    try { LoadContests(); Status("已更新比賽清單", false); }
+                    catch (Exception ex) { Status("取得比賽清單失敗：" + ex.Message, true); }
+                    break;
+                case Screen.Ended:
+                    if (Store.ReadDir(Store.PendingDir).Count > 0) OnUpload(sender, e);
+                    else if (!string.IsNullOrEmpty(cfg.ServerUrl))
+                        OpenUrl(cfg.ServerUrl + "/submissions?mine=1&contest=" + cfg.ContestId);
+                    break;
+            }
         }
 
         // 時間外不准提交。UI 已經被遮罩擋住，這裡是第二道 —— 鍵盤快捷或
@@ -1236,6 +1349,7 @@ namespace ItouOJ
 
             contests.Clear();
             cboContest.Items.Clear();
+            cboGateContest.Items.Clear();
             List<int> ids = new List<int>();
             foreach (Dictionary<string, object> c in Json.Array(root["contests"]))
             {
@@ -1243,8 +1357,17 @@ namespace ItouOJ
                 int id = Convert.ToInt32(c["id"]);
                 ids.Add(id);
                 contests.Add(c);
-                cboContest.Items.Add(string.Format("{0}  (#{1}){2}",
-                    Convert.ToString(c["title"]), id, joined ? "" : "  ※尚未報名"));
+                string label = string.Format("{0}  (#{1}){2}",
+                    Convert.ToString(c["title"]), id, joined ? "" : "  ※尚未報名");
+                cboContest.Items.Add(label);
+                cboGateContest.Items.Add(label); // 精靈畫面上的選單同步
+            }
+
+            // 從網站跳轉進來時指定了比賽，登入後自動選它
+            if (pendingContestId > 0 && ids.Contains(pendingContestId))
+            {
+                cfg.ContestId = pendingContestId;
+                pendingContestId = 0;
             }
 
             int pick = Selection.ChooseContestIndex(ids, cfg.ContestId);
@@ -1263,7 +1386,10 @@ namespace ItouOJ
 
         void OnContestChanged(object sender, EventArgs e)
         {
-            int i = cboContest.SelectedIndex;
+            // 兩個選單（設定分頁、精靈畫面）共用這個處理常式，看是哪一個觸發的
+            int i = sender == cboGateContest
+                ? cboGateContest.SelectedIndex
+                : cboContest.SelectedIndex;
             if (i < 0 || i >= contests.Count) return;
             if (string.IsNullOrEmpty(cfg.Cookie)) return;
 
@@ -1710,12 +1836,12 @@ namespace ItouOJ
         }
 
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             Api.InitTls();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            Application.Run(new MainForm(args.Length > 0 ? args[0] : null));
         }
     }
 }

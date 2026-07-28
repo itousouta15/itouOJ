@@ -71,6 +71,21 @@ try {
     Write-Host "  桌面捷徑建立失敗（不影響使用）：$($_.Exception.Message)" -ForegroundColor Yellow
 }
 
+# 註冊 itouoj:// 通訊協定，讓網站上的「開啟收件程式」按鈕能直接把程式叫起來。
+# 寫在 HKCU 底下，不需要管理員權限。
+try {
+    $base = "HKCU:\Software\Classes\itouoj"
+    New-Item -Path $base -Force | Out-Null
+    Set-ItemProperty -Path $base -Name "(default)" -Value "URL:itouOJ Protocol"
+    Set-ItemProperty -Path $base -Name "URL Protocol" -Value ""
+    New-Item -Path "$base\shell\open\command" -Force | Out-Null
+    Set-ItemProperty -Path "$base\shell\open\command" -Name "(default)" `
+        -Value ('"' + $target + '" "%1"')
+    Write-Host "  已註冊 itouoj:// 通訊協定（網站可直接開啟本程式）"
+} catch {
+    Write-Host "  通訊協定註冊失敗（不影響手動開啟）：$($_.Exception.Message)" -ForegroundColor Yellow
+}
+
 Write-Host ""
 Write-Host "安裝完成。" -ForegroundColor Green
 Write-Host "接下來請在這台機器上開啟程式，到「賽前設定」分頁登入並選擇比賽。"
