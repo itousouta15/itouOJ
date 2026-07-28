@@ -26,8 +26,12 @@ namespace ItouOJ
                btnOpenProblem, btnOpenSubmission, btnOpenBoard;
         ListView listView;
         Label lblStatus, lblAccount, lblLangHint, lblDraft, lblLock, lblWho, lblWhere;
-        Panel setupPanel, pnlIdentity;
-        GroupBox lockableGroup;
+        Panel setupPanel, pnlIdentity, lockableGroup, pnlGate;
+        Label lblGateTitle, lblGateClock, lblGateHint, lblRemain;
+        System.Windows.Forms.Timer phaseTimer;
+        ContestPhase lastPhase = ContestPhase.NotReady;
+        // 監考臨時離開等待畫面去改設定的寬限時間
+        DateTime gateSuppressedUntil = DateTime.MinValue;
         Button btnSettings, btnUnlock, btnCheckin;
         // 解鎖只在本次執行有效，不寫回 config
         bool unlockedThisSession = false;
@@ -62,6 +66,13 @@ namespace ItouOJ
             // 啟動就回報一次。監考巡檢時只會「打開程式看一眼」，如果只在選比賽時
             // 才回報，昨天設定好的機器今天永遠顯示未回報，這個功能就沒用了。
             SendCheckinAsync(false);
+
+            // 每秒判斷比賽階段：時間到就自動開放作答、結束就自動關閉提交入口
+            phaseTimer = new System.Windows.Forms.Timer();
+            phaseTimer.Interval = 1000;
+            phaseTimer.Tick += OnPhaseTick;
+            phaseTimer.Start();
+            OnPhaseTick(null, EventArgs.Empty);
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -122,7 +133,7 @@ namespace ItouOJ
             int pending = Store.ReadDir(Store.PendingDir).Count;
             if (pending == 0) return;
 
-            btnUpload.BackColor = Color.FromArgb(0xFF, 0xE0, 0x80);
+            btnUpload.BackColor = Theme.Warn; // 提示色：有東西還沒上傳
             Status(string.Format(
                 "偵測到網路已恢復，有 {0} 筆提交還沒上傳 —— 請按右下角「上傳到伺服器」",
                 pending), false);
@@ -131,14 +142,20 @@ namespace ItouOJ
         void BuildUi()
         {
             Text = "itouOJ 收件程式";
-            Size = new Size(900, 720);
-            MinimumSize = new Size(760, 600);
-            Font = new Font("Microsoft JhengHei UI", 9F);
+            Font = Theme.Body;
+            BackColor = Theme.Bg;
+
+            // 全螢幕：比賽時佔滿畫面，選手不會被其他視窗分心，也少一個誤觸的機會。
+            // 用 Maximized 而不是無邊框全螢幕 —— 選手仍需要切到瀏覽器登入、
+            // 開題目 PDF，把視窗鎖死反而卡住正常流程。
+            WindowState = FormWindowState.Maximized;
+            MinimumSize = new Size(900, 640);
             StartPosition = FormStartPosition.CenterScreen;
 
             tabs = new TabControl();
             tabs.Dock = DockStyle.Fill;
-            tabs.Padding = new Point(14, 6);
+            tabs.Font = Theme.Body;
+            tabs.Padding = new Point(18, 8);
 
             tabs.TabPages.Add(BuildAnswerTab());
             tabs.TabPages.Add(BuildRecordsTab());
@@ -148,129 +165,335 @@ namespace ItouOJ
             // 狀態列固定在底部，切換分頁時訊息不會消失
             Panel bottom = new Panel();
             bottom.Dock = DockStyle.Bottom;
-            bottom.Height = 30;
+            bottom.Height = 34;
+            bottom.BackColor = Theme.Card;
+            bottom.Paint += delegate (object s, PaintEventArgs e)
+            {
+                using (Pen pen = new Pen(Theme.Border))
+                    e.Graphics.DrawLine(pen, 0, 0, ((Panel)s).Width, 0);
+            };
+
+            // 剩餘時間固定在右下角，作答時隨時看得到
+            lblRemain = new Label();
+            lblRemain.Dock = DockStyle.Right;
+            lblRemain.Width = 150;
+            lblRemain.Font = new Font("Consolas", 11F, FontStyle.Bold);
+            lblRemain.ForeColor = Theme.Dim;
+            lblRemain.TextAlign = ContentAlignment.MiddleRight;
+            lblRemain.Padding = new Padding(0, 0, 14, 0);
+            lblRemain.Visible = false;
+            bottom.Controls.Add(lblRemain);
+
             lblStatus = new Label();
             lblStatus.Dock = DockStyle.Fill;
+            lblStatus.Font = Theme.Body;
+            lblStatus.ForeColor = Theme.Dim;
             lblStatus.TextAlign = ContentAlignment.MiddleLeft;
-            lblStatus.Padding = new Padding(10, 0, 10, 0);
+            lblStatus.Padding = new Padding(14, 0, 14, 0);
             bottom.Controls.Add(lblStatus);
+            lblStatus.BringToFront();
+
             Controls.Add(bottom);
+
+            // 等待 / 結束畫面蓋住整個視窗（狀態列除外）。
+            // 放在 Form 而不是分頁裡：分頁內的 Dock=Fill 只拿得到其他面板分完後
+            // 剩下的空間，題目下拉和提交按鈕會露在外面。
+            Controls.Add(BuildGateOverlay());
+            pnlGate.BringToFront();
+        }
+
+        // ── 等待 / 結束的全屏遮罩 ─────────────────────
+        //
+        // 比賽尚未開始時蓋住整個作答分頁，時間到之後也一樣。這不只是提示：
+        // 遮罩擋住的是「題目與提交按鈕」本身，選手在時間外根本點不到。
+        // 判斷靠校正過的本機時鐘，所以斷網也準，而且每台機器同一刻切換。
+        Panel BuildGateOverlay()
+        {
+            pnlGate = new Panel();
+            pnlGate.Dock = DockStyle.Fill;
+            pnlGate.BackColor = Theme.Bg;
+            pnlGate.Visible = false;
+
+            // 監考在等待期間可能還要改設定，留一個入口（鎖了的話仍需 PIN）
+            Button toSetup = Theme.Secondary("賽前設定");
+            toSetup.Size = new Size(110, 32);
+            toSetup.Click += delegate
+            {
+                pnlGate.Visible = false;
+                tabs.SelectedIndex = 2;
+                gateSuppressedUntil = DateTime.UtcNow.AddSeconds(60);
+                Status("已暫時離開等待畫面（60 秒後自動返回）", false);
+            };
+            FlowLayoutPanel gateBar = MakeActionBar();
+            gateBar.Dock = DockStyle.Bottom;
+            gateBar.Padding = new Padding(0, 0, 20, 20);
+            gateBar.Controls.Add(toSetup);
+            pnlGate.Controls.Add(gateBar);
+
+            lblGateTitle = new Label();
+            lblGateTitle.Font = new Font("Microsoft JhengHei UI", 22F, FontStyle.Bold);
+            lblGateTitle.TextAlign = ContentAlignment.MiddleCenter;
+            lblGateTitle.Dock = DockStyle.Top;
+            lblGateTitle.Height = 56;
+
+            lblGateClock = new Label();
+            lblGateClock.Font = new Font("Consolas", 46F, FontStyle.Bold);
+            lblGateClock.TextAlign = ContentAlignment.MiddleCenter;
+            lblGateClock.Dock = DockStyle.Top;
+            lblGateClock.Height = 84;
+
+            lblGateHint = new Label();
+            lblGateHint.Font = new Font("Microsoft JhengHei UI", 11F);
+            lblGateHint.ForeColor = Theme.Dim;
+            lblGateHint.TextAlign = ContentAlignment.MiddleCenter;
+            lblGateHint.Dock = DockStyle.Top;
+            lblGateHint.Height = 60;
+
+            Panel spacer = new Panel();
+            spacer.Dock = DockStyle.Top;
+            spacer.Height = 90;
+            spacer.BackColor = Theme.Bg;
+
+            // Dock=Top 後加的在上面，所以由下往上加
+            pnlGate.Controls.Add(lblGateHint);
+            pnlGate.Controls.Add(lblGateClock);
+            pnlGate.Controls.Add(lblGateTitle);
+            pnlGate.Controls.Add(spacer);
+
+            return pnlGate;
+        }
+
+        // 每秒檢查一次階段，該切換就切換
+        void OnPhaseTick(object sender, EventArgs e)
+        {
+            ContestPhase p = Phase.Of(cfg);
+
+            if (p == ContestPhase.NotReady)
+            {
+                pnlGate.Visible = false;
+                return;
+            }
+
+            // 監考按了「賽前設定」，暫時讓開
+            bool suppressed = DateTime.UtcNow < gateSuppressedUntil;
+
+            if (p == ContestPhase.Waiting)
+            {
+                pnlGate.Visible = !suppressed;
+                if (!suppressed) pnlGate.BringToFront();
+                lblGateTitle.Text = "比賽尚未開始";
+                lblGateTitle.ForeColor = Theme.Text;
+                lblGateClock.Text = Phase.Clock(Phase.Until(cfg, cfg.StartTimeUtc));
+                lblGateClock.ForeColor = Theme.Accent;
+                lblGateHint.Text = cfg.ContestTitle + "\r\n" +
+                    "時間一到會自動開放作答，請不要關閉程式。";
+                lastPhase = p;
+                return;
+            }
+
+            if (p == ContestPhase.Ended)
+            {
+                pnlGate.Visible = !suppressed;
+                if (!suppressed) pnlGate.BringToFront();
+                lblGateTitle.Text = "比賽已結束";
+                lblGateTitle.ForeColor = Theme.Bad;
+                lblGateClock.Text = "00:00:00";
+                lblGateClock.ForeColor = Theme.Bad;
+                int pending = Store.ReadDir(Store.PendingDir).Count;
+                lblGateHint.Text = pending > 0
+                    ? "還有 " + pending + " 筆提交未上傳。\r\n" +
+                      "等網路恢復後，切到「收件紀錄」分頁按「上傳到伺服器」。"
+                    : "所有提交都已上傳，可以到網站查看判題結果。";
+                if (lastPhase == ContestPhase.Running)
+                {
+                    // 從作答中切到結束的那一刻，把還沒落地的草稿存好
+                    SaveDraft();
+                    tabs.SelectedIndex = 1; // 帶到收件紀錄
+                    Status("時間到，提交入口已關閉", true);
+                }
+                lastPhase = p;
+                return;
+            }
+
+            // Running
+            if (pnlGate.Visible)
+            {
+                pnlGate.Visible = false;
+                if (lastPhase == ContestPhase.Waiting)
+                {
+                    tabs.SelectedIndex = 0;
+                    Status("比賽開始！", false);
+                }
+            }
+            // 作答中在狀態列顯示剩餘時間
+            TimeSpan left = Phase.Until(cfg, cfg.EndTimeUtc);
+            if (left.TotalSeconds > 0 && left.TotalMinutes < 10080)
+            {
+                lblRemain.Text = "剩餘 " + Phase.Clock(left);
+                lblRemain.ForeColor = left.TotalMinutes <= 5 ? Theme.Bad : Theme.Dim;
+                lblRemain.Visible = true;
+            }
+            else lblRemain.Visible = false;
+            lastPhase = p;
+        }
+
+        // 時間外不准提交。UI 已經被遮罩擋住，這裡是第二道 —— 鍵盤快捷或
+        // 程式流程萬一繞過遮罩，這裡還會攔下來。
+        bool SubmissionOpen()
+        {
+            ContestPhase p = Phase.Of(cfg);
+            return p == ContestPhase.Running || p == ContestPhase.NotReady;
         }
 
         // ── 分頁一：作答 ─────────────────────────────
         TabPage BuildAnswerTab()
         {
             TabPage tab = new TabPage("作答");
-            tab.Padding = new Padding(10);
-            tab.BackColor = SystemColors.Control;
+            tab.Padding = new Padding(16);
+            tab.BackColor = Theme.Bg;
 
+            // ── 身分列 ──────────────────────────────
             // 一進畫面就要看得出「我是誰、在哪一場比賽、有沒有設定好」。
             // 開賽前監考逐台巡檢時，這一條就是判斷依據。
             pnlIdentity = new Panel();
             pnlIdentity.Dock = DockStyle.Top;
-            pnlIdentity.Height = 46;
-            pnlIdentity.BackColor = Color.FromArgb(0xF3, 0xF3, 0xF3);
+            pnlIdentity.Height = 62;
+            pnlIdentity.Padding = new Padding(14, 10, 10, 10);
 
             lblWho = new Label();
-            lblWho.SetBounds(10, 5, 640, 20);
-            lblWho.Font = new Font("Microsoft JhengHei UI", 10F, FontStyle.Bold);
+            lblWho.SetBounds(14, 9, 620, 22);
+            lblWho.Font = Theme.Title;
             pnlIdentity.Controls.Add(lblWho);
 
             lblWhere = new Label();
-            lblWhere.SetBounds(10, 24, 640, 18);
-            lblWhere.ForeColor = Color.DimGray;
+            lblWhere.SetBounds(14, 33, 620, 18);
+            lblWhere.Font = Theme.Small;
             pnlIdentity.Controls.Add(lblWhere);
 
-            // 監考巡檢時可以按這顆強制重送，不必重新選一次比賽
-            btnCheckin = new Button();
-            btnCheckin.Size = new Size(110, 28);
-            btnCheckin.Text = "重新回報就緒";
+            btnCheckin = Theme.Secondary("重新回報就緒");
+            btnCheckin.Size = new Size(118, 30);
             btnCheckin.Click += delegate { SendCheckinAsync(true); };
             FlowLayoutPanel idBar = MakeActionBar();
-            idBar.Padding = new Padding(0, 8, 4, 0);
+            idBar.Padding = new Padding(0, 14, 12, 0);
             idBar.Controls.Add(btnCheckin);
             pnlIdentity.Controls.Add(idBar);
 
-            tab.Controls.Add(pnlIdentity);
+            Panel gap1 = new Panel();
+            gap1.Dock = DockStyle.Top;
+            gap1.Height = 14;
+            gap1.BackColor = Theme.Bg;
 
-            Panel head = new Panel();
+            // ── 題目與來源 ──────────────────────────
+            Panel head = Theme.CardPanel();
             head.Dock = DockStyle.Top;
-            head.Height = 76;
+            head.Height = 106;
 
-            head.Controls.Add(MakeLabel("題目", 2, 8));
-            cboProblem = new ComboBox();
-            cboProblem.SetBounds(56, 5, 300, 23);
-            cboProblem.DropDownStyle = ComboBoxStyle.DropDownList;
+            Label lp = Theme.FieldLabel("題目");
+            lp.SetBounds(16, 16, 46, 26);
+            head.Controls.Add(lp);
+
+            cboProblem = Theme.Select();
+            cboProblem.SetBounds(64, 15, 330, 26);
             cboProblem.SelectedIndexChanged += OnProblemChanged;
             head.Controls.Add(cboProblem);
 
-            btnOpenProblem = new Button();
-            btnOpenProblem.SetBounds(366, 4, 110, 26);
-            btnOpenProblem.Text = "開啟題目";
+            btnOpenProblem = Theme.Secondary("開啟題目");
+            btnOpenProblem.SetBounds(404, 14, 104, 28);
             btnOpenProblem.Click += OnOpenProblem;
             head.Controls.Add(btnOpenProblem);
 
             lblLangHint = new Label();
-            lblLangHint.SetBounds(490, 8, 300, 20);
+            lblLangHint.SetBounds(522, 19, 300, 20);
+            lblLangHint.Font = Theme.Small;
             lblLangHint.AutoSize = false;
             head.Controls.Add(lblLangHint);
 
+            Panel sep = Theme.Divider();
+            sep.SetBounds(16, 54, 800, 1);
+            sep.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            head.Controls.Add(sep);
+
+            Label ls = Theme.FieldLabel("程式碼");
+            ls.SetBounds(16, 68, 46, 26);
+            head.Controls.Add(ls);
+
             rbTyped = new RadioButton();
-            rbTyped.SetBounds(56, 40, 110, 24);
+            rbTyped.SetBounds(64, 68, 96, 26);
             rbTyped.Text = "直接輸入";
+            rbTyped.Font = Theme.Body;
+            rbTyped.ForeColor = Theme.Text;
             rbTyped.Checked = true;
             rbTyped.CheckedChanged += OnSourceModeChanged;
             head.Controls.Add(rbTyped);
 
             rbFile = new RadioButton();
-            rbFile.SetBounds(172, 40, 90, 24);
+            rbFile.SetBounds(166, 68, 84, 26);
             rbFile.Text = "從檔案";
+            rbFile.Font = Theme.Body;
+            rbFile.ForeColor = Theme.Text;
             head.Controls.Add(rbFile);
 
-            txtFile = new TextBox();
-            txtFile.SetBounds(266, 41, 210, 23);
+            txtFile = Theme.Input();
+            txtFile.SetBounds(254, 69, 226, 24);
             txtFile.ReadOnly = true;
+            txtFile.BackColor = Theme.Inset;
             head.Controls.Add(txtFile);
 
-            btnBrowse = new Button();
-            btnBrowse.SetBounds(486, 40, 70, 25);
-            btnBrowse.Text = "瀏覽…";
+            btnBrowse = Theme.Secondary("瀏覽…");
+            btnBrowse.SetBounds(490, 67, 72, 28);
             btnBrowse.Click += OnBrowse;
             head.Controls.Add(btnBrowse);
 
-            tab.Controls.Add(head);
+            Panel gap2 = new Panel();
+            gap2.Dock = DockStyle.Top;
+            gap2.Height = 14;
+            gap2.BackColor = Theme.Bg;
 
+            // Dock=Top 是「後加的排在上面」，所以要照視覺順序由下往上加：
+            // gap2 → head → gap1 → 身分列，畫面上才會是 身分列 / gap1 / head / gap2。
+            tab.Controls.Add(gap2);
+            tab.Controls.Add(head);
+            tab.Controls.Add(gap1);
+            tab.Controls.Add(pnlIdentity);
+
+            // ── 動作列 ──────────────────────────────
             Panel foot = new Panel();
             foot.Dock = DockStyle.Bottom;
-            foot.Height = 46;
+            foot.Height = 56;
+            foot.BackColor = Theme.Bg;
+            foot.Padding = new Padding(0, 12, 0, 0);
 
-            btnTest = new Button();
-            btnTest.Size = new Size(110, 32);
-            btnTest.Text = "測試執行";
+            btnTest = Theme.Secondary("測試執行");
+            btnTest.Size = new Size(112, 36);
             btnTest.Click += OnTestRun;
 
-            btnSubmit = new Button();
-            btnSubmit.Size = new Size(130, 32);
-            btnSubmit.Text = "提  交";
-            btnSubmit.Font = new Font(Font, FontStyle.Bold);
+            btnSubmit = Theme.Primary("提交");
+            btnSubmit.Size = new Size(140, 36);
             btnSubmit.Click += OnSubmit;
 
             // 用 FlowLayoutPanel 靠右排，不要對 Panel 的子控制項用絕對座標 + Right 錨點：
             // 加入時 Panel 還沒被 dock 撐開（預設寬 200），錨點記下的右邊距會是負值，
             // 面板變寬後按鈕會被推到可視範圍外。
             FlowLayoutPanel actions = MakeActionBar();
+            actions.Padding = new Padding(0, 12, 0, 0);
             actions.Controls.Add(btnSubmit); // RightToLeft：先加的在最右邊
             actions.Controls.Add(btnTest);
             foot.Controls.Add(actions);
 
             lblDraft = new Label();
             lblDraft.Dock = DockStyle.Fill;
+            lblDraft.Font = Theme.Small;
             lblDraft.TextAlign = ContentAlignment.MiddleLeft;
-            lblDraft.ForeColor = Color.Gray;
+            lblDraft.ForeColor = Theme.Mute;
             foot.Controls.Add(lblDraft);
             lblDraft.BringToFront();
 
             tab.Controls.Add(foot);
+
+            // ── 編輯區 ──────────────────────────────
+            Panel editorWrap = Theme.CardPanel();
+            editorWrap.Dock = DockStyle.Fill;
+            editorWrap.Padding = new Padding(1);
 
             txtCode = new TextBox();
             txtCode.Dock = DockStyle.Fill;
@@ -278,10 +501,15 @@ namespace ItouOJ
             txtCode.AcceptsTab = true;
             txtCode.WordWrap = false;
             txtCode.ScrollBars = ScrollBars.Both;
-            txtCode.Font = new Font("Consolas", 11F);
+            txtCode.Font = Theme.Code;
+            txtCode.BorderStyle = BorderStyle.None;
+            txtCode.BackColor = Theme.Card;
+            txtCode.ForeColor = Theme.Text;
             txtCode.TextChanged += OnCodeChanged;
-            tab.Controls.Add(txtCode);
-            txtCode.BringToFront();
+            editorWrap.Controls.Add(txtCode);
+
+            tab.Controls.Add(editorWrap);
+            editorWrap.BringToFront();
 
             return tab;
         }
@@ -290,63 +518,70 @@ namespace ItouOJ
         TabPage BuildRecordsTab()
         {
             TabPage tab = new TabPage("收件紀錄");
-            tab.Padding = new Padding(10);
-            tab.BackColor = SystemColors.Control;
+            tab.Padding = new Padding(16);
+            tab.BackColor = Theme.Bg;
 
             Panel foot = new Panel();
             foot.Dock = DockStyle.Bottom;
-            foot.Height = 46;
+            foot.Height = 58;
+            foot.BackColor = Theme.Bg;
 
-            btnUpload = new Button();
-            btnUpload.Size = new Size(200, 36);
-            btnUpload.Text = "上傳到伺服器";
-            btnUpload.Font = new Font(Font, FontStyle.Bold);
+            btnUpload = Theme.Primary("上傳到伺服器");
+            btnUpload.Size = new Size(178, 38);
             btnUpload.Click += OnUpload;
 
-            btnOpenSubmission = new Button();
-            btnOpenSubmission.Size = new Size(130, 32);
-            btnOpenSubmission.Text = "查看判題結果";
+            btnOpenSubmission = Theme.Secondary("查看判題結果");
+            btnOpenSubmission.Size = new Size(124, 38);
             btnOpenSubmission.Enabled = false;
             btnOpenSubmission.Click += OnOpenSubmission;
 
-            btnOpenBoard = new Button();
-            btnOpenBoard.Size = new Size(100, 32);
-            btnOpenBoard.Text = "計分板";
+            btnOpenBoard = Theme.Secondary("計分板");
+            btnOpenBoard.Size = new Size(88, 38);
             btnOpenBoard.Click += OnOpenScoreboard;
 
             FlowLayoutPanel actions = MakeActionBar();
+            actions.Padding = new Padding(0, 14, 0, 0);
             actions.Controls.Add(btnUpload); // RightToLeft：先加的在最右邊
             actions.Controls.Add(btnOpenSubmission);
             actions.Controls.Add(btnOpenBoard);
             foot.Controls.Add(actions);
 
-            btnRefresh = new Button();
-            btnRefresh.Size = new Size(90, 32);
-            btnRefresh.Text = "重新整理";
-            btnRefresh.Dock = DockStyle.Left;
+            btnRefresh = Theme.Secondary("重新整理");
+            btnRefresh.SetBounds(0, 14, 92, 38);
             btnRefresh.Click += delegate { RefreshList(); };
             foot.Controls.Add(btnRefresh);
 
             lblAccount = new Label();
-            lblAccount.Dock = DockStyle.Fill;
+            lblAccount.SetBounds(104, 14, 360, 38);
+            lblAccount.Font = Theme.Body;
             lblAccount.TextAlign = ContentAlignment.MiddleLeft;
-            lblAccount.Padding = new Padding(12, 0, 0, 0);
             foot.Controls.Add(lblAccount);
-            lblAccount.BringToFront();
 
+            Label hint = Theme.Hint("雙擊任一列可開啟該筆的判題結果");
+            hint.Dock = DockStyle.Bottom;
+            hint.Height = 24;
+
+            // Dock=Bottom 是「後加的更靠近底邊」，所以按鈕列要最後加，
+            // 提示文字才會落在清單與按鈕之間。
+            tab.Controls.Add(hint);
             tab.Controls.Add(foot);
 
             listView = new ListView();
             listView.Dock = DockStyle.Fill;
             listView.View = View.Details;
             listView.FullRowSelect = true;
-            listView.GridLines = true;
+            listView.GridLines = false;
+            listView.BorderStyle = BorderStyle.FixedSingle;
+            listView.BackColor = Theme.Card;
+            listView.ForeColor = Theme.Text;
+            listView.Font = Theme.Body;
+            Theme.SetRowHeight(listView, 26);
             listView.Columns.Add("題目", 60);
-            listView.Columns.Add("提交時間", 150);
-            listView.Columns.Add("語言", 80);
-            listView.Columns.Add("來源", 200);
+            listView.Columns.Add("提交時間", 160);
+            listView.Columns.Add("語言", 90);
+            listView.Columns.Add("來源", 220);
             listView.Columns.Add("狀態", 100);
-            listView.Columns.Add("網站編號", 90);
+            listView.Columns.Add("網站編號", 96);
             listView.DoubleClick += OnOpenSubmission;
             listView.SelectedIndexChanged += delegate { UpdateOpenButton(); };
             tab.Controls.Add(listView);
@@ -359,93 +594,111 @@ namespace ItouOJ
         TabPage BuildSetupTab()
         {
             TabPage tab = new TabPage("賽前設定");
-            tab.Padding = new Padding(10);
-            tab.BackColor = SystemColors.Control;
+            tab.Padding = new Padding(16);
+            tab.BackColor = Theme.Bg;
 
             setupPanel = new Panel();
             setupPanel.Dock = DockStyle.Fill;
+            setupPanel.BackColor = Theme.Bg;
 
             // ── 帳號：永遠可用 ───────────────────────
-            // 不能跟著鎖。選手的 session 過期（JWT 七天）後必須重新登入才能上傳，
+            // 不能跟著鎖。選手的 session 過期後必須重新登入才能上傳，
             // 把登入一起鎖住等於讓他交不出東西。
-            GroupBox g = new GroupBox();
-            g.Text = "帳號（賽前登入一次；session 過期時可重新登入）";
-            g.SetBounds(12, 12, 820, 116);
+            Panel g = Theme.CardPanel();
+            g.SetBounds(0, 0, 860, 150);
             g.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
-            g.Controls.Add(MakeLabel("伺服器", 14, 30));
-            txtServer = new TextBox();
-            txtServer.SetBounds(76, 27, 340, 23);
+            Label t1 = Theme.SectionTitle("帳號");
+            t1.Location = new Point(16, 14);
+            g.Controls.Add(t1);
+
+            Label t1s = Theme.Hint("賽前登入一次即可；session 過期時可重新登入");
+            t1s.SetBounds(16, 34, 500, 18);
+            g.Controls.Add(t1s);
+
+            Label l1 = Theme.FieldLabel("伺服器");
+            l1.SetBounds(16, 62, 62, 26);
+            g.Controls.Add(l1);
+
+            txtServer = Theme.Input();
+            txtServer.SetBounds(84, 63, 340, 24);
             txtServer.Text = "https://oj.itousouta.me";
             g.Controls.Add(txtServer);
 
-            g.Controls.Add(MakeLabel("目前帳號", 14, 62));
-            txtUser = new TextBox();
-            txtUser.SetBounds(90, 59, 200, 23);
+            Label l2 = Theme.FieldLabel("目前帳號");
+            l2.SetBounds(16, 96, 62, 26);
+            g.Controls.Add(l2);
+
+            txtUser = Theme.Input();
+            txtUser.SetBounds(84, 97, 200, 24);
             txtUser.ReadOnly = true;
-            txtUser.BackColor = SystemColors.Control;
+            txtUser.BackColor = Theme.Inset;
             g.Controls.Add(txtUser);
 
-            btnLogin = new Button();
-            btnLogin.SetBounds(304, 57, 140, 28);
-            btnLogin.Text = "用瀏覽器登入";
+            btnLogin = Theme.Primary("用瀏覽器登入");
+            btnLogin.SetBounds(298, 94, 140, 30);
             btnLogin.Click += OnLogin;
             g.Controls.Add(btnLogin);
 
-            Label loginHint = new Label();
-            loginHint.SetBounds(14, 90, 780, 20);
-            loginHint.Text = "會開啟瀏覽器讓你登入（帳號密碼、Google、Discord 都可以），" +
-                             "收件程式本身不會接觸你的密碼。";
-            loginHint.ForeColor = Color.Gray;
+            Label loginHint = Theme.Hint(
+                "會開啟瀏覽器讓你登入（帳號密碼、Google、Discord 都可以），" +
+                "收件程式本身不會接觸你的密碼。");
+            loginHint.SetBounds(452, 100, 390, 34);
             g.Controls.Add(loginHint);
 
             setupPanel.Controls.Add(g);
 
             // ── 比賽與管理員設定：可鎖 ───────────────
             // 這兩項才是比賽中被亂改會出事的：比賽選錯，整批提交會送到別場去。
-            lockableGroup = new GroupBox();
-            lockableGroup.Text = "比賽與管理員設定";
-            lockableGroup.SetBounds(12, 132, 820, 150);
+            lockableGroup = Theme.CardPanel();
+            lockableGroup.SetBounds(0, 164, 860, 186);
             lockableGroup.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
-            lockableGroup.Controls.Add(MakeLabel("比賽", 14, 32));
-            cboContest = new ComboBox();
-            cboContest.SetBounds(76, 29, 340, 23);
-            cboContest.DropDownStyle = ComboBoxStyle.DropDownList;
+            Label t2 = Theme.SectionTitle("比賽與管理員設定");
+            t2.Location = new Point(16, 14);
+            lockableGroup.Controls.Add(t2);
+
+            Label l3 = Theme.FieldLabel("比賽");
+            l3.SetBounds(16, 46, 62, 26);
+            lockableGroup.Controls.Add(l3);
+
+            cboContest = Theme.Select();
+            cboContest.SetBounds(84, 46, 340, 26);
             cboContest.SelectedIndexChanged += OnContestChanged;
             lockableGroup.Controls.Add(cboContest);
 
-            btnSettings = new Button();
-            btnSettings.SetBounds(14, 66, 170, 34);
-            btnSettings.Text = "題目路徑與編譯器設定";
+            Panel sep2 = Theme.Divider();
+            sep2.SetBounds(16, 86, 828, 1);
+            sep2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            lockableGroup.Controls.Add(sep2);
+
+            btnSettings = Theme.Secondary("題目路徑與編譯器設定");
+            btnSettings.SetBounds(16, 100, 172, 34);
             btnSettings.Click += OnSettings;
             lockableGroup.Controls.Add(btnSettings);
 
-            Label hint = new Label();
-            hint.SetBounds(200, 62, 600, 44);
-            hint.Text = "設定題目 PDF 資料夾後，選手就能在「作答」分頁直接開啟題目。\n" +
-                        "設定存在 config.json，可複製到其他機器省去逐台設定。";
-            hint.ForeColor = Color.Gray;
+            Label hint = Theme.Hint(
+                "設定題目 PDF 資料夾後，選手就能在「作答」分頁直接開啟題目。\r\n" +
+                "設定存在 config.json，可複製到其他機器省去逐台設定。");
+            hint.SetBounds(200, 102, 640, 36);
             lockableGroup.Controls.Add(hint);
 
             lblLock = new Label();
-            lblLock.SetBounds(14, 110, 500, 24);
-            lblLock.ForeColor = Color.SaddleBrown;
+            lblLock.SetBounds(16, 146, 480, 24);
+            lblLock.Font = Theme.Body;
+            lblLock.ForeColor = Theme.Warn;
             lockableGroup.Controls.Add(lblLock);
 
-            btnUnlock = new Button();
-            btnUnlock.SetBounds(520, 106, 130, 28);
-            btnUnlock.Text = "輸入 PIN 解鎖";
+            btnUnlock = Theme.Secondary("輸入 PIN 解鎖");
+            btnUnlock.SetBounds(504, 143, 124, 30);
             btnUnlock.Visible = false;
             btnUnlock.Click += OnUnlock;
             lockableGroup.Controls.Add(btnUnlock);
 
             setupPanel.Controls.Add(lockableGroup);
 
-            Label where = new Label();
-            where.SetBounds(14, 296, 820, 40);
-            where.Text = "資料存放位置：" + Store.Root;
-            where.ForeColor = Color.Gray;
+            Label where = Theme.Hint("資料存放位置：" + Store.Root);
+            where.SetBounds(2, 362, 860, 36);
             where.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             setupPanel.Controls.Add(where);
             tab.Controls.Add(setupPanel);
@@ -735,32 +988,35 @@ namespace ItouOJ
 
             if (!loggedIn)
             {
-                lblWho.Text = "⚠ 尚未登入";
-                lblWho.ForeColor = Color.Firebrick;
+                lblWho.Text = "尚未登入";
+                lblWho.ForeColor = Theme.Bad;
                 lblWhere.Text = "請到「賽前設定」分頁登入，否則無法提交";
-                pnlIdentity.BackColor = Color.FromArgb(0xFD, 0xEC, 0xEA);
+                lblWhere.ForeColor = Theme.Bad;
+                pnlIdentity.BackColor = Theme.BadBg;
                 return;
             }
             if (!hasContest)
             {
-                lblWho.Text = "⚠ " + cfg.Username + "　尚未選擇比賽";
-                lblWho.ForeColor = Color.SaddleBrown;
+                lblWho.Text = cfg.Username + "　·　尚未選擇比賽";
+                lblWho.ForeColor = Theme.Warn;
                 lblWhere.Text = "請到「賽前設定」分頁選擇比賽";
-                pnlIdentity.BackColor = Color.FromArgb(0xFF, 0xF6, 0xE0);
+                lblWhere.ForeColor = Theme.Warn;
+                pnlIdentity.BackColor = Theme.WarnBg;
                 return;
             }
 
-            lblWho.Text = "✓ " + cfg.Username + "　" + cfg.ContestTitle;
-            lblWho.ForeColor = Color.FromArgb(0x1B, 0x5E, 0x20);
+            lblWho.Text = cfg.Username + "　·　" + cfg.ContestTitle;
+            lblWho.ForeColor = Theme.Good;
             string drift = Math.Abs(cfg.ClockOffsetMs) >= 1000
-                ? string.Format("・時鐘校正 {0:+0;-0} 秒", cfg.ClockOffsetMs / 1000.0)
+                ? string.Format("　·　時鐘校正 {0:+0;-0} 秒", cfg.ClockOffsetMs / 1000.0)
                 : "";
             string langs = cfg.AllowedLanguages.Count > 0
-                ? "・限用 " + LanguageNames(cfg.AllowedLanguages) : "";
+                ? "　·　限用 " + LanguageNames(cfg.AllowedLanguages) : "";
             lblWhere.Text = string.Format("{0} 題{1}{2}{3}",
                 cfg.Problems.Count, langs, drift,
-                checkedIn ? "・已回報就緒" : "");
-            pnlIdentity.BackColor = Color.FromArgb(0xE8, 0xF5, 0xE9);
+                checkedIn ? "　·　已回報就緒" : "");
+            lblWhere.ForeColor = Theme.Good;
+            pnlIdentity.BackColor = Theme.GoodBg;
         }
 
         // 向伺服器回報「這台機器準備好了」，讓監考在管理頁一眼看出哪台還沒設定。
@@ -1027,6 +1283,11 @@ namespace ItouOJ
 
                 cfg.ContestId = contestId;
                 cfg.ContestTitle = Convert.ToString(root["title"]);
+                // 起訖時間要存下來：斷網後就是靠它們判斷開始與結束
+                cfg.StartTimeUtc = root.ContainsKey("startTime")
+                    ? Convert.ToString(root["startTime"]) : "";
+                cfg.EndTimeUtc = root.ContainsKey("endTime")
+                    ? Convert.ToString(root["endTime"]) : "";
 
                 cfg.AllowedLanguages = new List<string>();
                 if (root.ContainsKey("allowedLanguages") && root["allowedLanguages"] != null)
@@ -1246,6 +1507,15 @@ namespace ItouOJ
             int pi = cboProblem.SelectedIndex;
             if (pi < 0) { Status("請選擇題目", true); return; }
 
+            // 第二道防線：遮罩已經擋住 UI，但流程萬一繞過去，這裡還會攔下來
+            if (!SubmissionOpen())
+            {
+                Status(Phase.Of(cfg) == ContestPhase.Waiting
+                    ? "比賽尚未開始，還不能提交"
+                    : "比賽已結束，提交入口已關閉", true);
+                return;
+            }
+
             string sourceName;
             string code = CurrentCode(out sourceName);
             if (code == null) return;
@@ -1415,7 +1685,7 @@ namespace ItouOJ
             btnUpload.Text = pending.Count > 0
                 ? string.Format("上傳到伺服器 ({0})", pending.Count)
                 : "上傳到伺服器";
-            if (pending.Count == 0) btnUpload.UseVisualStyleBackColor = true; // 清掉提示色
+            if (pending.Count == 0) btnUpload.BackColor = Theme.Btn; // 清掉提示色
             UpdateOpenButton();
         }
 

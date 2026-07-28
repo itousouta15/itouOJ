@@ -15,7 +15,7 @@ if (-not (Test-Path $csc)) {
     throw "找不到 csc.exe，這台機器缺少 .NET Framework 4.x"
 }
 
-$src = @("Core.cs", "Dialogs.cs", "MainForm.cs") | ForEach-Object { Join-Path $here $_ }
+$src = @("Theme.cs", "Core.cs", "Dialogs.cs", "MainForm.cs") | ForEach-Object { Join-Path $here $_ }
 $out = Join-Path $here "itouOJ-Submit.exe"
 
 $refs = @(
