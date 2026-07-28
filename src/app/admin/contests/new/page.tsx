@@ -12,7 +12,7 @@ export default async function NewContestPage() {
   if (session?.role !== "ADMIN") redirect("/");
 
   const problems = await prisma.problem.findMany({
-    orderBy: { id: "asc" },
+    orderBy: { order: "asc" },
     select: { id: true, title: true, isPublic: true },
   });
 
