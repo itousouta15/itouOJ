@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { fromTaipeiInputValue } from "@/lib/contestTime";
+import { LANGUAGES, type LanguageKey } from "@/lib/languages";
 
 interface ProblemOption {
   id: number;
@@ -22,6 +23,8 @@ export interface ContestFormInitial {
   startTime: string; // datetime-local 格式（本地時區，無 Z）
   endTime: string;
   freezeMinutes: number;
+  scoreMode: "ICPC" | "IOI";
+  allowedLanguages: string; // 逗號分隔；空字串 = 不限制
   isPublic: boolean;
   joinCode: string;
   problems: ContestProblemEntry[];
@@ -33,6 +36,8 @@ const EMPTY: ContestFormInitial = {
   startTime: "",
   endTime: "",
   freezeMinutes: 0,
+  scoreMode: "ICPC",
+  allowedLanguages: "",
   isPublic: true,
   joinCode: "",
   problems: [],
@@ -215,6 +220,60 @@ export default function ContestForm({
               0 = 不凍結，結束當下自動公開成績
             </p>
           </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">計分方式</label>
+          <select
+            className="input w-auto"
+            value={form.scoreMode}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                scoreMode: e.target.value as "ICPC" | "IOI",
+              }))
+            }
+          >
+            <option value="ICPC">ICPC：首次 AC 計分，錯誤提交 +20 分罰時</option>
+            <option value="IOI">IOI：每題只看最後一次提交，不罰時</option>
+          </select>
+          <p className="mt-1 text-xs text-mute">
+            斷網比賽（賽後才整批判題）請選 IOI——選手當下看不到結果，罰時會變成盲罰。
+          </p>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">可用語言</label>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {(Object.keys(LANGUAGES) as LanguageKey[]).map((key) => {
+              const selected = form.allowedLanguages
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
+              return (
+                <label
+                  key={key}
+                  className="flex cursor-pointer items-center gap-2 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(key)}
+                    onChange={(e) => {
+                      const next = e.target.checked
+                        ? [...selected, key]
+                        : selected.filter((k) => k !== key);
+                      setForm((f) => ({
+                        ...f,
+                        allowedLanguages: next.join(","),
+                      }));
+                    }}
+                  />
+                  {LANGUAGES[key].label}
+                </label>
+              );
+            })}
+          </div>
+          <p className="mt-1 text-xs text-mute">
+            全部不勾 = 不限制。勾選後，網頁提交、測試執行、離線收件程式都只收這些語言。
+          </p>
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">加入代碼</label>

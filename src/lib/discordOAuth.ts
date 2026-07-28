@@ -1,10 +1,13 @@
 // Discord OAuth 2.0（授權碼流程）共用設定
+import { isOfflineMode } from "@/lib/offline";
+
 export const DISCORD_AUTH_URL = "https://discord.com/api/oauth2/authorize";
 export const DISCORD_TOKEN_URL = "https://discord.com/api/oauth2/token";
 export const DISCORD_USER_URL = "https://discord.com/api/users/@me";
 export const OAUTH_STATE_COOKIE = "oj_oauth_state";
 
 export function discordConfigured(): boolean {
+  if (isOfflineMode()) return false;
   return Boolean(
     process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET
   );

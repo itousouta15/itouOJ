@@ -111,6 +111,15 @@ export default async function ContestPage({
         <Link href={`/contests/${contest.id}/scoreboard`} className="btn-secondary">
           排行榜
         </Link>
+        {session && (
+          // 斷網比賽整批上傳後，選手第一件想做的事就是確認自己交了什麼
+          <Link
+            href={`/submissions?mine=1&contest=${contest.id}`}
+            className="btn-secondary"
+          >
+            我的提交
+          </Link>
+        )}
       </div>
 
       <div className="card overflow-x-auto">

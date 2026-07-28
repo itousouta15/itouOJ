@@ -1,5 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&family=Shippori+Mincho:wght@400;600;700&display=swap");
 @import "tailwindcss";
+
+/* Google Fonts 改由 layout.tsx 用 <link> 載入，不放在這裡 @import：
+   斷網比賽（OFFLINE_MODE=1）時要能整組停用，CSS 做不到條件式載入。
+   所有 font-family 都留了 system-ui / serif / monospace 後備，字型沒載到
+   只是變樸素，版面不會壞。 */
 
 /* 辰宇落雁體（ChenYuLuoYan）由 emfont 分塊 subset 動態載入，
    見 layout.tsx 的 head（同 itousouta.me）。字體只有細版，

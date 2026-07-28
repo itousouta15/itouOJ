@@ -7,6 +7,9 @@ export const contestSchema = z
     startTime: z.coerce.date(),
     endTime: z.coerce.date(),
     freezeMinutes: z.number().int().min(0, "凍結時間不能是負的"),
+    scoreMode: z.enum(["ICPC", "IOI"]).default("ICPC"),
+    // 空字串 = 不限制語言；有值時是逗號分隔的語言 key
+    allowedLanguages: z.string().default(""),
     isPublic: z.boolean(),
     // 空字串 = 開放報名；有值 = 要輸入代碼才能報名
     joinCode: z.string().trim().max(32, "加入代碼最多 32 個字元").default(""),
