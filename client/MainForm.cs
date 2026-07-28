@@ -19,7 +19,7 @@ namespace ItouOJ
         Config cfg;
 
         TabControl tabs;
-        TextBox txtServer, txtUser, txtPass, txtFile, txtCode;
+        TextBox txtServer, txtUser, txtFile, txtCode;
         RadioButton rbTyped, rbFile;
         ComboBox cboContest, cboProblem;
         Button btnLogin, btnBrowse, btnTest, btnSubmit, btnUpload, btnRefresh,
@@ -370,7 +370,7 @@ namespace ItouOJ
             // 把登入一起鎖住等於讓他交不出東西。
             GroupBox g = new GroupBox();
             g.Text = "帳號（賽前登入一次；session 過期時可重新登入）";
-            g.SetBounds(12, 12, 820, 108);
+            g.SetBounds(12, 12, 820, 116);
             g.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
             g.Controls.Add(MakeLabel("伺服器", 14, 30));
@@ -379,22 +379,25 @@ namespace ItouOJ
             txtServer.Text = "https://oj.itousouta.me";
             g.Controls.Add(txtServer);
 
-            g.Controls.Add(MakeLabel("帳號", 14, 62));
+            g.Controls.Add(MakeLabel("目前帳號", 14, 62));
             txtUser = new TextBox();
-            txtUser.SetBounds(76, 59, 150, 23);
+            txtUser.SetBounds(90, 59, 200, 23);
+            txtUser.ReadOnly = true;
+            txtUser.BackColor = SystemColors.Control;
             g.Controls.Add(txtUser);
 
-            g.Controls.Add(MakeLabel("密碼", 236, 62));
-            txtPass = new TextBox();
-            txtPass.SetBounds(288, 59, 128, 23);
-            txtPass.UseSystemPasswordChar = true;
-            g.Controls.Add(txtPass);
-
             btnLogin = new Button();
-            btnLogin.SetBounds(430, 58, 140, 26);
-            btnLogin.Text = "登入並取得題目";
+            btnLogin.SetBounds(304, 57, 140, 28);
+            btnLogin.Text = "用瀏覽器登入";
             btnLogin.Click += OnLogin;
             g.Controls.Add(btnLogin);
+
+            Label loginHint = new Label();
+            loginHint.SetBounds(14, 90, 780, 20);
+            loginHint.Text = "會開啟瀏覽器讓你登入（帳號密碼、Google、Discord 都可以），" +
+                             "收件程式本身不會接觸你的密碼。";
+            loginHint.ForeColor = Color.Gray;
+            g.Controls.Add(loginHint);
 
             setupPanel.Controls.Add(g);
 
@@ -868,50 +871,92 @@ namespace ItouOJ
         }
 
         // ── 賽前：登入 → 抓比賽清單 ────────────────
+        // 瀏覽器登入：程式本身不碰密碼，也讓只有 Google/Discord、沒有密碼的帳號
+        // 能夠登入收件程式（正式站上六個帳號裡有四個是這種）。
         void OnLogin(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(BaseUrl())) { Status("請先填伺服器網址", true); return; }
-            if (txtUser.Text.Trim().Length == 0 || txtPass.Text.Length == 0)
+
+            int port;
+            string state;
+            try
             {
-                Status("請輸入帳號與密碼", true);
+                port = Loopback.FindFreePort();
+                state = Loopback.NewState();
+            }
+            catch (Exception ex)
+            {
+                Status("無法開啟本機連接埠：" + ex.Message, true);
+                return;
+            }
+
+            string url = BaseUrl() + "/desktop-auth?port=" + port +
+                         "&state=" + Uri.EscapeDataString(state);
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Status("無法開啟瀏覽器：" + ex.Message, true);
+                return;
+            }
+
+            btnLogin.Enabled = false;
+            btnLogin.Text = "等待瀏覽器授權…";
+            Status("已開啟瀏覽器，請在網頁上登入並按「授權」（3 分鐘內）", false);
+
+            string baseUrl = BaseUrl();
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
+            {
+                LoopbackResult r = Loopback.WaitForCallback(port, state, 180000);
+                try
+                {
+                    BeginInvoke((MethodInvoker)delegate { OnLoginCallback(r, baseUrl); });
+                }
+                catch { /* 視窗已關閉 */ }
+            });
+        }
+
+        void OnLoginCallback(LoopbackResult r, string baseUrl)
+        {
+            btnLogin.Enabled = true;
+            btnLogin.Text = "用瀏覽器登入";
+
+            if (!r.Ok)
+            {
+                Status("登入未完成：" + (r.Error ?? "未知原因"), true);
                 return;
             }
 
             Cursor = Cursors.WaitCursor;
-            btnLogin.Enabled = false;
             try
             {
-                Status("登入中…", false);
-                JavaScriptSerializer ser = new JavaScriptSerializer();
-                Dictionary<string, object> payload = new Dictionary<string, object>();
-                payload["username"] = txtUser.Text.Trim();
-                payload["password"] = txtPass.Text;
+                cfg.ServerUrl = baseUrl;
+                cfg.Cookie = "oj_session=" + r.Token;
 
+                // 用 token 打一次 API，確認它有效並取得自己的帳號名稱與伺服器時間
                 string setCookie;
                 DateTime? serverDate;
-                Api.Send(BaseUrl() + "/api/auth/login", "POST", null,
-                         ser.Serialize(payload), out setCookie, out serverDate);
-
-                string cookie = Api.ExtractSessionCookie(setCookie);
-                if (string.IsNullOrEmpty(cookie))
-                {
-                    Status("登入成功但沒拿到 session，請確認伺服器設定", true);
-                    return;
-                }
-
-                cfg.ServerUrl = BaseUrl();
-                cfg.Cookie = cookie;
-                cfg.Username = txtUser.Text.Trim();
+                string body = Api.Send(baseUrl + "/api/me", "GET", cfg.Cookie, null,
+                                       out setCookie, out serverDate);
+                JavaScriptSerializer ser = new JavaScriptSerializer();
+                Dictionary<string, object> me =
+                    ser.Deserialize<Dictionary<string, object>>(body);
+                cfg.Username = Convert.ToString(me["username"]);
                 if (serverDate.HasValue)
                 {
                     cfg.ClockOffsetMs =
                         (long)(serverDate.Value - DateTime.UtcNow).TotalMilliseconds;
                 }
+
                 Store.SaveConfig(cfg);
+                txtUser.Text = cfg.Username;
                 UpdateAccountLabel();
+                UpdateIdentityStrip();
 
                 LoadContests();
-                Status("登入成功，請選擇比賽", false);
+                Status("已登入為 " + cfg.Username + "，請選擇比賽", false);
             }
             catch (Exception ex)
             {
@@ -919,9 +964,7 @@ namespace ItouOJ
             }
             finally
             {
-                btnLogin.Enabled = true;
                 Cursor = Cursors.Default;
-                txtPass.Text = "";
             }
         }
 
