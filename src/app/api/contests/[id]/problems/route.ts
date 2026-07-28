@@ -24,7 +24,22 @@ export async function GET(
     include: {
       problems: {
         orderBy: [{ order: "asc" }, { id: "asc" }],
-        include: { problem: { select: { id: true, title: true } } },
+        include: {
+          problem: {
+            select: {
+              id: true,
+              title: true,
+              timeLimitMs: true,
+              // 只取範例測資。這份資料會被下載到選手機上離線保存，
+              // 一旦把 isSample=false 的也送出去，等於把所有隱藏測資交出去。
+              testCases: {
+                where: { isSample: true },
+                orderBy: [{ order: "asc" }, { id: "asc" }],
+                select: { input: true, output: true },
+              },
+            },
+          },
+        },
       },
     },
   });
@@ -57,6 +72,9 @@ export async function GET(
       problemId: cp.problemId,
       label: cp.label,
       title: started || isAdmin ? cp.problem.title : null,
+      timeLimitMs: cp.problem.timeLimitMs,
+      // 比賽開始前不給，否則題目內容會提早外流；收件程式屆時只能用自訂輸入測試
+      samples: started || isAdmin ? cp.problem.testCases : [],
     })),
   });
 }

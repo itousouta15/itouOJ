@@ -15,7 +15,7 @@ if (-not (Test-Path $csc)) {
     throw "找不到 csc.exe，這台機器缺少 .NET Framework 4.x"
 }
 
-$src = Join-Path $here "OfflineSubmit.cs"
+$src = @("Core.cs", "Dialogs.cs", "MainForm.cs") | ForEach-Object { Join-Path $here $_ }
 $out = Join-Path $here "itouOJ-Submit.exe"
 
 $refs = @(
@@ -29,7 +29,7 @@ $refs = @(
 # /codepage:65001 = 原始碼是 UTF-8（沒有這個選項，csc 會用系統 ANSI 讀，中文會變亂碼）
 # /target:winexe  = GUI 程式，執行時不會跳出黑色主控台視窗
 & $csc /nologo /target:winexe /codepage:65001 /optimize+ /platform:anycpu `
-    "/out:$out" "/reference:$refs" "$src"
+    "/out:$out" "/reference:$refs" @src
 
 if ($LASTEXITCODE -ne 0) { throw "編譯失敗（exit $LASTEXITCODE）" }
 
