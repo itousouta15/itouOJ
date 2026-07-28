@@ -18,9 +18,12 @@ export async function POST(request: Request) {
   }
   const { testCases, ...fields } = parsed.data;
 
+  const last = await prisma.problem.findFirst({ orderBy: { order: "desc" } });
+
   const problem = await prisma.problem.create({
     data: {
       ...fields,
+      order: (last?.order ?? 0) + 1,
       testCases: {
         create: testCases.map((tc, i) => ({ ...tc, order: i + 1 })),
       },
