@@ -25,8 +25,12 @@ namespace ItouOJ
         Button btnLogin, btnBrowse, btnTest, btnSubmit, btnUpload, btnRefresh,
                btnOpenProblem, btnOpenSubmission, btnOpenBoard;
         ListView listView;
-        Label lblStatus, lblAccount, lblLangHint, lblDraft;
-        Panel setupPanel, lockPanel;
+        Label lblStatus, lblAccount, lblLangHint, lblDraft, lblLock;
+        Panel setupPanel;
+        GroupBox lockableGroup;
+        Button btnSettings, btnUnlock;
+        // 解鎖只在本次執行有效，不寫回 config
+        bool unlockedThisSession = false;
 
         // 目前編輯區對應到哪一題；切題時要先把草稿存起來
         string draftLabel = null;
@@ -323,30 +327,15 @@ namespace ItouOJ
             tab.Padding = new Padding(10);
             tab.BackColor = SystemColors.Control;
 
-            // 鎖定時顯示這一層，蓋住底下的設定內容
-            lockPanel = new Panel();
-            lockPanel.Dock = DockStyle.Fill;
-            lockPanel.BackColor = SystemColors.Control;
-            lockPanel.Visible = false;
-
-            Label lockMsg = new Label();
-            lockMsg.SetBounds(20, 40, 600, 60);
-            lockMsg.Text = "🔒 這個分頁已由監考鎖定。\n\n比賽期間不需要更動這裡的設定。";
-            lockMsg.Font = new Font("Microsoft JhengHei UI", 11F);
-            lockPanel.Controls.Add(lockMsg);
-
-            Button btnUnlock = new Button();
-            btnUnlock.SetBounds(20, 116, 140, 34);
-            btnUnlock.Text = "輸入 PIN 解鎖";
-            btnUnlock.Click += OnUnlock;
-            lockPanel.Controls.Add(btnUnlock);
-
             setupPanel = new Panel();
             setupPanel.Dock = DockStyle.Fill;
 
+            // ── 帳號：永遠可用 ───────────────────────
+            // 不能跟著鎖。選手的 session 過期（JWT 七天）後必須重新登入才能上傳，
+            // 把登入一起鎖住等於讓他交不出東西。
             GroupBox g = new GroupBox();
-            g.Text = "連線與比賽（需要網路，賽前做一次即可）";
-            g.SetBounds(12, 12, 820, 150);
+            g.Text = "帳號（賽前登入一次；session 過期時可重新登入）";
+            g.SetBounds(12, 12, 820, 108);
             g.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
             g.Controls.Add(MakeLabel("伺服器", 14, 30));
@@ -372,45 +361,56 @@ namespace ItouOJ
             btnLogin.Click += OnLogin;
             g.Controls.Add(btnLogin);
 
-            g.Controls.Add(MakeLabel("比賽", 14, 96));
-            cboContest = new ComboBox();
-            cboContest.SetBounds(76, 93, 340, 23);
-            cboContest.DropDownStyle = ComboBoxStyle.DropDownList;
-            cboContest.SelectedIndexChanged += OnContestChanged;
-            g.Controls.Add(cboContest);
-
             setupPanel.Controls.Add(g);
 
-            GroupBox ga = new GroupBox();
-            ga.Text = "管理員";
-            ga.SetBounds(12, 174, 820, 96);
-            ga.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            // ── 比賽與管理員設定：可鎖 ───────────────
+            // 這兩項才是比賽中被亂改會出事的：比賽選錯，整批提交會送到別場去。
+            lockableGroup = new GroupBox();
+            lockableGroup.Text = "比賽與管理員設定";
+            lockableGroup.SetBounds(12, 132, 820, 150);
+            lockableGroup.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
-            Button btnSettings = new Button();
-            btnSettings.SetBounds(14, 28, 170, 34);
+            lockableGroup.Controls.Add(MakeLabel("比賽", 14, 32));
+            cboContest = new ComboBox();
+            cboContest.SetBounds(76, 29, 340, 23);
+            cboContest.DropDownStyle = ComboBoxStyle.DropDownList;
+            cboContest.SelectedIndexChanged += OnContestChanged;
+            lockableGroup.Controls.Add(cboContest);
+
+            btnSettings = new Button();
+            btnSettings.SetBounds(14, 66, 170, 34);
             btnSettings.Text = "題目路徑與編譯器設定";
             btnSettings.Click += OnSettings;
-            ga.Controls.Add(btnSettings);
+            lockableGroup.Controls.Add(btnSettings);
 
             Label hint = new Label();
-            hint.SetBounds(200, 24, 600, 44);
+            hint.SetBounds(200, 62, 600, 44);
             hint.Text = "設定題目 PDF 資料夾後，選手就能在「作答」分頁直接開啟題目。\n" +
                         "設定存在 config.json，可複製到其他機器省去逐台設定。";
             hint.ForeColor = Color.Gray;
-            ga.Controls.Add(hint);
+            lockableGroup.Controls.Add(hint);
 
-            setupPanel.Controls.Add(ga);
+            lblLock = new Label();
+            lblLock.SetBounds(14, 110, 500, 24);
+            lblLock.ForeColor = Color.SaddleBrown;
+            lockableGroup.Controls.Add(lblLock);
+
+            btnUnlock = new Button();
+            btnUnlock.SetBounds(520, 106, 130, 28);
+            btnUnlock.Text = "輸入 PIN 解鎖";
+            btnUnlock.Visible = false;
+            btnUnlock.Click += OnUnlock;
+            lockableGroup.Controls.Add(btnUnlock);
+
+            setupPanel.Controls.Add(lockableGroup);
 
             Label where = new Label();
-            where.SetBounds(14, 284, 820, 40);
+            where.SetBounds(14, 296, 820, 40);
             where.Text = "資料存放位置：" + Store.Root;
             where.ForeColor = Color.Gray;
             where.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             setupPanel.Controls.Add(where);
-
             tab.Controls.Add(setupPanel);
-            tab.Controls.Add(lockPanel);
-            lockPanel.BringToFront();
 
             return tab;
         }
@@ -578,14 +578,15 @@ namespace ItouOJ
             Status("設定已儲存", false);
         }
 
-        // 鎖定時用一層遮罩蓋掉設定內容。刻意不整個隱藏分頁，
-        // 這樣監考才找得到解鎖入口。
+        // 只鎖「比賽選擇」和「管理員設定」。登入必須永遠開著——選手的 session
+        // 過期後要重新登入才能上傳，鎖住等於讓他交不出東西。
         void ApplyLockState()
         {
-            bool locked = AdminLock.IsLocked(cfg);
-            lockPanel.Visible = locked;
-            setupPanel.Visible = !locked;
-            if (locked) lockPanel.BringToFront();
+            bool locked = AdminLock.IsLocked(cfg) && !unlockedThisSession;
+            cboContest.Enabled = !locked;
+            btnSettings.Enabled = !locked;
+            btnUnlock.Visible = locked;
+            lblLock.Text = locked ? "🔒 已由監考鎖定，比賽期間不需要更動" : "";
         }
 
         void OnUnlock(object sender, EventArgs e)
@@ -602,9 +603,8 @@ namespace ItouOJ
                 }
                 // 只在這次執行期間解開，不改動 config：關掉程式重開又是鎖著的，
                 // 監考忘記重新鎖也不會整場比賽都是開的
-                lockPanel.Visible = false;
-                setupPanel.Visible = true;
-                setupPanel.BringToFront();
+                unlockedThisSession = true;
+                ApplyLockState();
                 Status("已解鎖（僅本次執行；重新開啟程式會恢復鎖定）", false);
             }
         }
