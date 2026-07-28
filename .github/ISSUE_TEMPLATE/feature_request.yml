@@ -1,0 +1,25 @@
+name: Feature request
+about: Suggest a new feature or improvement.
+title: '[FEAT] '
+labels: enhancement
+body:
+  - type: markdown
+    attributes:
+      value: '請描述你希望新增的功能或改進。'
+  - type: input
+    id: motivation
+    attributes:
+      label: '為什麼需要這個功能？'
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: '功能描述'
+      placeholder: '請描述預期行為、使用情境、範例。'
+      required: true
+  - type: textarea
+    id: benefits
+    attributes:
+      label: '預期效益'
+      placeholder: '這個功能將解決什麼問題或改進什麼體驗？'
+      required: true
