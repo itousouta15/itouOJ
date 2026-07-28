@@ -117,6 +117,10 @@ model ContestParticipant {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   joinedAt  DateTime @default(now())
+  // 離線收件程式設定完成後回報的「這台機器準備好了」。斷網比賽開賽前，
+  // 監考要能一眼看出哪一台還沒設定好——漏一台那個選手整場都交不出東西。
+  clientReadyAt DateTime?
+  clientHost    String? // 回報的電腦名稱，方便對照是機房哪一台
 
   @@unique([contestId, userId])
 }

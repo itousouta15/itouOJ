@@ -25,12 +25,14 @@ namespace ItouOJ
         Button btnLogin, btnBrowse, btnTest, btnSubmit, btnUpload, btnRefresh,
                btnOpenProblem, btnOpenSubmission, btnOpenBoard;
         ListView listView;
-        Label lblStatus, lblAccount, lblLangHint, lblDraft, lblLock;
-        Panel setupPanel;
+        Label lblStatus, lblAccount, lblLangHint, lblDraft, lblLock, lblWho, lblWhere;
+        Panel setupPanel, pnlIdentity;
         GroupBox lockableGroup;
         Button btnSettings, btnUnlock;
         // 解鎖只在本次執行有效，不寫回 config
         bool unlockedThisSession = false;
+        // 這次執行是否已成功向伺服器回報就緒
+        bool checkedIn = false;
 
         // 目前編輯區對應到哪一題；切題時要先把草稿存起來
         string draftLabel = null;
@@ -157,6 +159,25 @@ namespace ItouOJ
             TabPage tab = new TabPage("作答");
             tab.Padding = new Padding(10);
             tab.BackColor = SystemColors.Control;
+
+            // 一進畫面就要看得出「我是誰、在哪一場比賽、有沒有設定好」。
+            // 開賽前監考逐台巡檢時，這一條就是判斷依據。
+            pnlIdentity = new Panel();
+            pnlIdentity.Dock = DockStyle.Top;
+            pnlIdentity.Height = 46;
+            pnlIdentity.BackColor = Color.FromArgb(0xF3, 0xF3, 0xF3);
+
+            lblWho = new Label();
+            lblWho.SetBounds(10, 5, 640, 20);
+            lblWho.Font = new Font("Microsoft JhengHei UI", 10F, FontStyle.Bold);
+            pnlIdentity.Controls.Add(lblWho);
+
+            lblWhere = new Label();
+            lblWhere.SetBounds(10, 24, 640, 18);
+            lblWhere.ForeColor = Color.DimGray;
+            pnlIdentity.Controls.Add(lblWhere);
+
+            tab.Controls.Add(pnlIdentity);
 
             Panel head = new Panel();
             head.Dock = DockStyle.Top;
@@ -684,6 +705,80 @@ namespace ItouOJ
             OnSourceModeChanged(null, EventArgs.Empty);
             OnProblemChanged(null, EventArgs.Empty);
             ApplyLockState();
+            UpdateIdentityStrip();
+        }
+
+        // 作答分頁最上方那條身分列。三種狀態要一眼分得出來：
+        // 沒登入（紅）、登入了但沒選比賽（橘）、都好了（綠）。
+        void UpdateIdentityStrip()
+        {
+            bool loggedIn = !string.IsNullOrEmpty(cfg.Username) &&
+                            !string.IsNullOrEmpty(cfg.Cookie);
+            bool hasContest = cfg.ContestId > 0 && cfg.Problems.Count > 0;
+
+            if (!loggedIn)
+            {
+                lblWho.Text = "⚠ 尚未登入";
+                lblWho.ForeColor = Color.Firebrick;
+                lblWhere.Text = "請到「賽前設定」分頁登入，否則無法提交";
+                pnlIdentity.BackColor = Color.FromArgb(0xFD, 0xEC, 0xEA);
+                return;
+            }
+            if (!hasContest)
+            {
+                lblWho.Text = "⚠ " + cfg.Username + "　尚未選擇比賽";
+                lblWho.ForeColor = Color.SaddleBrown;
+                lblWhere.Text = "請到「賽前設定」分頁選擇比賽";
+                pnlIdentity.BackColor = Color.FromArgb(0xFF, 0xF6, 0xE0);
+                return;
+            }
+
+            lblWho.Text = "✓ " + cfg.Username + "　" + cfg.ContestTitle;
+            lblWho.ForeColor = Color.FromArgb(0x1B, 0x5E, 0x20);
+            string drift = Math.Abs(cfg.ClockOffsetMs) >= 1000
+                ? string.Format("・時鐘校正 {0:+0;-0} 秒", cfg.ClockOffsetMs / 1000.0)
+                : "";
+            string langs = cfg.AllowedLanguages.Count > 0
+                ? "・限用 " + LanguageNames(cfg.AllowedLanguages) : "";
+            lblWhere.Text = string.Format("{0} 題{1}{2}{3}",
+                cfg.Problems.Count, langs, drift,
+                checkedIn ? "・已回報就緒" : "");
+            pnlIdentity.BackColor = Color.FromArgb(0xE8, 0xF5, 0xE9);
+        }
+
+        // 向伺服器回報「這台機器準備好了」，讓監考在管理頁一眼看出哪台還沒設定。
+        // 失敗不影響作答，只是狀態頁上會顯示未回報。
+        void SendCheckin()
+        {
+            if (string.IsNullOrEmpty(cfg.Cookie) || cfg.ContestId <= 0) return;
+            try
+            {
+                JavaScriptSerializer ser = new JavaScriptSerializer();
+                Dictionary<string, object> payload = new Dictionary<string, object>();
+                payload["host"] = Environment.MachineName;
+
+                string setCookie;
+                DateTime? serverDate;
+                string body = Api.Send(
+                    cfg.ServerUrl + "/api/contests/" + cfg.ContestId + "/checkin",
+                    "POST", cfg.Cookie, ser.Serialize(payload),
+                    out setCookie, out serverDate);
+
+                Dictionary<string, object> res =
+                    ser.Deserialize<Dictionary<string, object>>(body);
+                checkedIn = true;
+                if (res.ContainsKey("registered") && !Convert.ToBoolean(res["registered"]))
+                {
+                    checkedIn = false;
+                    Status("注意：這個帳號尚未報名此比賽，提交會被拒絕", true);
+                }
+            }
+            catch (Exception ex)
+            {
+                checkedIn = false;
+                Status("回報就緒失敗（不影響作答）：" + ex.Message, true);
+            }
+            UpdateIdentityStrip();
         }
 
         void UpdateAccountLabel()
@@ -881,11 +976,15 @@ namespace ItouOJ
                 Store.SaveConfig(cfg);
                 FillProblems();
                 UpdateLanguageHint();
+                OnProblemChanged(null, EventArgs.Empty);
                 string langNote = cfg.AllowedLanguages.Count > 0
                     ? "，限用 " + LanguageNames(cfg.AllowedLanguages)
                     : "";
                 Status(string.Format("已載入「{0}」的 {1} 道題目{2}，可以斷網作答了",
                     cfg.ContestTitle, cfg.Problems.Count, langNote), false);
+
+                // 設定完成 = 這台機器準備好了，回報給監考
+                SendCheckin();
             }
             catch (Exception ex)
             {
