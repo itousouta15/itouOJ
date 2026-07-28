@@ -51,8 +51,13 @@ if ($Tag) {
     if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
         throw "找不到 gh CLI，無法發布。安裝：https://cli.github.com/"
     }
-    $existing = & gh release view $Tag --json tagName 2>$null
-    if ($LASTEXITCODE -eq 0) { throw "$Tag 已經發布過了。要重發請先 gh release delete $Tag" }
+    $existing = $null
+    try {
+        $existing = & gh release view $Tag --json tagName 2>$null
+    } catch {
+        $existing = $null
+    }
+    if ($existing) { throw "$Tag 已經發布過了。要重發請先 gh release delete $Tag" }
 }
 
 $dirty = & git -C $repo status --porcelain
