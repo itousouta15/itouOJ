@@ -45,7 +45,7 @@ export default async function ContestScoreboardPage({
         </p>
       )}
 
-      {!revealed && (
+      {!revealed && contest.freezeMinutes > 0 && (
         <div className="card border-[rgba(250,168,26,0.3)] p-4 text-sm text-[#faa81a]">
           🧊 排名已凍結{phase === "ended" ? "，比賽結束後由管理員公開最終成績" : `，最後 ${contest.freezeMinutes} 分鐘的結果暫不公開`}
           {isAdmin && (
