@@ -20,6 +20,9 @@ namespace ItouOJ
     {
         static int failures = 0;
 
+        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint nFlags);
+
         static void Check(string name, bool ok, string detail)
         {
             Console.WriteLine((ok ? "  [PASS] " : "  [FAIL] ") + name +
@@ -85,21 +88,25 @@ namespace ItouOJ
                                     ? "?" : gate.Parent.Controls.GetChildIndex(gate).ToString()) + "\r\n",
                                 new UTF8Encoding(false));
 
-                            // DrawToBitmap 不會正確合成重疊的同層控制項（TabControl 上
-                            // 蓋的遮罩會被忽略），拍出來跟實際畫面不符。改用螢幕擷取，
-                            // 拍到的就是使用者真正看到的東西。
-                            f.Location = new Point(0, 0);
-                            f.BringToFront();
-                            f.Activate();
+                            // 用 PrintWindow(PW_RENDERFULLCONTENT) 讓視窗自己把內容畫進點陣圖。
+                            //
+                            // 不用 DrawToBitmap：它不會合成重疊的同層控制項，蓋在 TabControl
+                            // 上的遮罩會被忽略，拍出來與實際畫面不符。
+                            // 更不用 CopyFromScreen：那是抓螢幕座標上的畫面，會拍到使用者
+                            // 當下在做的任何事，而且視窗沒在最上層就整張都是別的東西。
                             Application.DoEvents();
-                            System.Threading.Thread.Sleep(700);
+                            System.Threading.Thread.Sleep(500);
                             Application.DoEvents();
 
                             Rectangle r = f.Bounds;
                             using (Bitmap bmp = new Bitmap(r.Width, r.Height))
-                            using (Graphics g = Graphics.FromImage(bmp))
                             {
-                                g.CopyFromScreen(r.Location, Point.Empty, r.Size);
+                                using (Graphics g = Graphics.FromImage(bmp))
+                                {
+                                    IntPtr hdc = g.GetHdc();
+                                    try { PrintWindow(f.Handle, hdc, 2 /* PW_RENDERFULLCONTENT */); }
+                                    finally { g.ReleaseHdc(hdc); }
+                                }
                                 bmp.Save(outPng, System.Drawing.Imaging.ImageFormat.Png);
                             }
                             f.Hide();

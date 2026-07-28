@@ -518,6 +518,36 @@ namespace ItouOJ
 
     public enum ContestPhase { NotReady, Waiting, Running, Ended }
 
+    // 選手看到的畫面。整個程式只有一處決定「現在該顯示什麼」，
+    // 避免各個分頁自己判斷而出現互相矛盾的狀態。
+    public enum Screen
+    {
+        NeedLogin,    // 還沒登入
+        NeedContest,  // 登入了但還沒選比賽
+        Waiting,      // 選好了，等開賽
+        Answering,    // 作答中
+        Ended         // 時間到，只剩上傳
+    }
+
+    public static class Flow
+    {
+        public static Screen Current(Config cfg)
+        {
+            if (cfg == null || string.IsNullOrEmpty(cfg.Cookie) ||
+                string.IsNullOrEmpty(cfg.Username))
+                return Screen.NeedLogin;
+            if (cfg.ContestId <= 0 || cfg.Problems.Count == 0)
+                return Screen.NeedContest;
+
+            switch (Phase.Of(cfg))
+            {
+                case ContestPhase.Waiting: return Screen.Waiting;
+                case ContestPhase.Ended: return Screen.Ended;
+                default: return Screen.Answering;
+            }
+        }
+    }
+
     // 比賽現在處於哪個階段。
     //
     // 判斷完全靠本機時鐘 + 賽前校正值，不需要網路 —— 這是斷網比賽能「統一開始」
