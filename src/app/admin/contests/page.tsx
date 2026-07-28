@@ -88,12 +88,21 @@ export default async function AdminContestsPage() {
                   )}
                 </td>
                 <td className="table-cell">
-                  <Link
-                    href={`/admin/contests/${c.id}/edit`}
-                    className="text-sm text-blue hover:underline"
-                  >
-                    編輯
-                  </Link>
+                  <div className="flex gap-3">
+                    <Link
+                      href={`/admin/contests/${c.id}/status`}
+                      className="text-sm text-blue hover:underline"
+                      title="開賽前確認每台選手機是否設定好"
+                    >
+                      狀態
+                    </Link>
+                    <Link
+                      href={`/admin/contests/${c.id}/edit`}
+                      className="text-sm text-blue hover:underline"
+                    >
+                      編輯
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}
