@@ -88,12 +88,12 @@ export default async function ProblemListPage() {
                 </td>
               </tr>
             )}
-            {problems.map((p) => (
+            {problems.map((p, i) => (
               <tr key={p.id} className="hover:bg-panel2">
                 <td className="table-cell text-center text-[#4caf50]">
                   {solvedSet.has(p.id) ? "✓" : ""}
                 </td>
-                <td className="table-cell text-dim">{p.id}</td>
+                <td className="table-cell text-dim">{i + 1}</td>
                 <td className="table-cell">
                   <Link
                     href={`/problems/${p.id}`}
