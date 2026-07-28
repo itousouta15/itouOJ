@@ -11,14 +11,27 @@ export const dynamic = "force-dynamic";
 export default async function SubmissionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mine?: string }>;
+  searchParams: Promise<{ mine?: string; contest?: string }>;
 }) {
-  const { mine } = await searchParams;
+  const { mine, contest } = await searchParams;
   const session = await getSession();
   const onlyMine = mine === "1" && session;
 
+  // 從比賽頁點「我的提交」進來時只列該場比賽的紀錄
+  const contestId = Number(contest);
+  const filterContest = Number.isInteger(contestId) && contestId > 0;
+  const filteredContest = filterContest
+    ? await prisma.contest.findUnique({
+        where: { id: contestId },
+        select: { id: true, title: true },
+      })
+    : null;
+
   const submissions = await prisma.submission.findMany({
-    where: onlyMine ? { userId: session!.userId } : {},
+    where: {
+      ...(onlyMine ? { userId: session!.userId } : {}),
+      ...(filteredContest ? { contestId: filteredContest.id } : {}),
+    },
     orderBy: { id: "desc" },
     take: 100,
     include: {
@@ -31,24 +44,49 @@ export default async function SubmissionsPage({
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-4">
+      <div className="mb-4 flex flex-wrap items-center gap-4">
         <h1 className="page-title">紀錄</h1>
-        <div className="flex gap-2 text-sm">
+        <div className="flex flex-wrap gap-2 text-sm">
           <Link
-            href="/submissions"
+            href={
+              filteredContest ? `/submissions?contest=${filteredContest.id}` : "/submissions"
+            }
             className={`pill ${!onlyMine ? "pill-active" : ""}`}
           >
             全部
           </Link>
           {session && (
             <Link
-              href="/submissions?mine=1"
+              href={
+                filteredContest
+                  ? `/submissions?mine=1&contest=${filteredContest.id}`
+                  : "/submissions?mine=1"
+              }
               className={`pill ${onlyMine ? "pill-active" : ""}`}
             >
               只看我的
             </Link>
           )}
         </div>
+        {filteredContest && (
+          <div className="flex items-center gap-2 text-sm text-dim">
+            <span>
+              比賽：
+              <Link
+                href={`/contests/${filteredContest.id}`}
+                className="text-blue hover:underline"
+              >
+                {filteredContest.title}
+              </Link>
+            </span>
+            <Link
+              href={onlyMine ? "/submissions?mine=1" : "/submissions"}
+              className="text-mute hover:underline"
+            >
+              ✕ 取消篩選
+            </Link>
+          </div>
+        )}
       </div>
       <p className="mono mb-2 text-[11px] text-mute sm:hidden">
         ← 左右滑動可看到更多欄位 →

@@ -1,9 +1,12 @@
 // Google OAuth 2.0（授權碼流程）共用設定
+import { isOfflineMode } from "@/lib/offline";
+
 export const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 export const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 export const OAUTH_STATE_COOKIE = "oj_oauth_state";
 
 export function googleConfigured(): boolean {
+  if (isOfflineMode()) return false;
   return Boolean(
     process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
   );

@@ -82,6 +82,12 @@ model Contest {
   startTime     DateTime
   endTime       DateTime
   freezeMinutes Int                  @default(0) // 0 = 不凍結
+  // ICPC = 首次 AC 計分、錯誤提交罰時 20 分；IOI = 每題只看最後一次提交、不罰時。
+  // 斷網比賽judge在賽後才跑，選手當下看不到結果，罰時會變成盲罰，所以用 IOI。
+  scoreMode     String               @default("ICPC") // ICPC | IOI
+  // 允許的語言，逗號分隔（例如 "cpp" 或 "cpp,python"）。空字串 = 不限制。
+  // SQLite 沒有陣列型別，所以用字串存；解析見 lib/contest.ts 的 parseAllowedLanguages。
+  allowedLanguages String            @default("")
   isPublic      Boolean              @default(true)
   joinCode      String? // 加入代碼；null = 開放任何人加入
   revealedAt    DateTime? // 管理員手動「公開最終成績」的時間；null = 尚未公開
@@ -175,6 +181,9 @@ model Submission {
   compileError String?
   timeMs       Int? // 所有測資的最大值
   memoryKb     Int?
+  // 離線收件程式為每筆提交產生的去重鍵。選手重複按上傳時用它擋掉重複寫入，
+  // 否則同一份程式會被灌成多筆、把 IOI 的「最後一次提交」和提交次數算錯。
+  clientKey    String?      @unique
   createdAt    DateTime     @default(now())
   results      TestResult[]
 }

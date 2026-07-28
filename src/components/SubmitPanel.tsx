@@ -76,17 +76,28 @@ interface SubmitPanelProps {
   contestId?: number;
   // 只有透過比賽內題目頁才會傳這個；ended 時停用送出/測試執行
   contestPhase?: "running" | "frozen" | "ended";
+  // 比賽限定語言時只列出這些；null = 不限制
+  allowedLanguages?: string[] | null;
 }
 
 export default function SubmitPanel({
   problemId,
   contestId,
   contestPhase,
+  allowedLanguages,
 }: SubmitPanelProps) {
   const locked = contestPhase === "ended";
   const router = useRouter();
-  const [language, setLanguage] = useState<LanguageKey>("cpp");
-  const [code, setCode] = useState(TEMPLATES.cpp);
+
+  const languageOptions = (Object.keys(LANGUAGES) as LanguageKey[]).filter(
+    (k) => !allowedLanguages || allowedLanguages.includes(k)
+  );
+  const defaultLanguage = languageOptions.includes("cpp")
+    ? "cpp"
+    : languageOptions[0] ?? "cpp";
+
+  const [language, setLanguage] = useState<LanguageKey>(defaultLanguage);
+  const [code, setCode] = useState(TEMPLATES[defaultLanguage]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [darkTheme, setDarkTheme] = useState(true);
@@ -97,8 +108,9 @@ export default function SubmitPanel({
 
   // 記住上次選的語言、以及每題每語言打到一半的程式碼
   useEffect(() => {
+    // 比賽限定語言時，不要把上次用的語言（可能是別的比賽用的）還原回來
     const saved = localStorage.getItem("oj-language") as LanguageKey | null;
-    if (saved && saved in LANGUAGES) switchLanguage(saved);
+    if (saved && languageOptions.includes(saved)) switchLanguage(saved);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -190,7 +202,7 @@ export default function SubmitPanel({
           value={language}
           onChange={(e) => switchLanguage(e.target.value as LanguageKey)}
         >
-          {(Object.keys(LANGUAGES) as LanguageKey[]).map((key) => (
+          {languageOptions.map((key) => (
             <option key={key} value={key}>
               {LANGUAGES[key].label}
             </option>
