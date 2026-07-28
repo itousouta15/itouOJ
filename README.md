@@ -80,6 +80,8 @@ prisma/
 deploy/                # 部署腳本與設定（見「部署」章節）
 
 sandbox-runner/         # 自架評測沙箱（C/C++/Python/JavaScript 用），詳見其 README
+
+client/                 # Windows 收件程式與打包工具，詳見 `client/README.md`
 ```
 
 ## 本地開發
