@@ -1,0 +1,935 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>itouOJ 收件程式 使用說明書</title>
+
+<style>
+  :root {
+    --bg: #e9e9ee;
+    --panel: #ebecf3;
+    --inset: #d2d5db;
+    --bd: rgba(6, 6, 7, 0.10);
+    --bd2: rgba(20, 24, 40, 0.18);
+    --tx: #22262d;
+    --dim: #494f59;
+    --mute: #6b7280;
+    --blue: #364a7c;
+    --good: #1b5e20;
+    --good-bg: #e7f3e8;
+    --bad: #b3261e;
+    --bad-bg: #fcebea;
+    --warn: #8a5a00;
+    --warn-bg: #fdf3df;
+
+    --sans: "Microsoft JhengHei UI", "Microsoft JhengHei", "Noto Sans TC",
+            "PingFang TC", "Hiragino Sans", system-ui, sans-serif;
+    --mono: Consolas, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1b1e23;
+      --panel: #24262b;
+      --inset: #181b20;
+      --bd: rgba(255, 255, 255, 0.08);
+      --bd2: rgba(255, 255, 255, 0.16);
+      --tx: #e8ebf2;
+      --dim: #9aa1ad;
+      --mute: #6a7280;
+      --blue: #b0bdf7;
+      --good: #7fc884;
+      --good-bg: rgba(76, 175, 80, 0.10);
+      --bad: #ff6b6b;
+      --bad-bg: rgba(237, 66, 69, 0.10);
+      --warn: #e0b872;
+      --warn-bg: rgba(224, 184, 114, 0.10);
+    }
+  }
+
+  :root[data-theme="light"] {
+    --bg: #e9e9ee;
+    --panel: #ebecf3;
+    --inset: #d2d5db;
+    --bd: rgba(6, 6, 7, 0.10);
+    --bd2: rgba(20, 24, 40, 0.18);
+    --tx: #22262d;
+    --dim: #494f59;
+    --mute: #6b7280;
+    --blue: #364a7c;
+    --good: #1b5e20;
+    --good-bg: #e7f3e8;
+    --bad: #b3261e;
+    --bad-bg: #fcebea;
+    --warn: #8a5a00;
+    --warn-bg: #fdf3df;
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #1b1e23;
+    --panel: #24262b;
+    --inset: #181b20;
+    --bd: rgba(255, 255, 255, 0.08);
+    --bd2: rgba(255, 255, 255, 0.16);
+    --tx: #e8ebf2;
+    --dim: #9aa1ad;
+    --mute: #6a7280;
+    --blue: #b0bdf7;
+    --good: #7fc884;
+    --good-bg: rgba(76, 175, 80, 0.10);
+    --bad: #ff6b6b;
+    --bad-bg: rgba(237, 66, 69, 0.10);
+    --warn: #e0b872;
+    --warn-bg: rgba(224, 184, 114, 0.10);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--tx);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 50rem;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 6rem;
+  }
+
+  /* ── 標題區 ─────────────────────────────── */
+  .masthead {
+    border-bottom: 2px solid var(--tx);
+    padding-bottom: 1.75rem;
+    margin-bottom: 3rem;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin-bottom: 0.75rem;
+  }
+
+  .standfirst {
+    color: var(--dim);
+    font-size: 1.02rem;
+    max-width: 34em;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    margin-top: 1.5rem;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    color: var(--mute);
+  }
+
+  .meta b {
+    color: var(--dim);
+    font-weight: 400;
+  }
+
+  /* ── 區段 ─────────────────────────────── */
+  .band {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mute);
+    border-bottom: 1px solid var(--bd2);
+    padding-bottom: 0.6rem;
+    margin: 4rem 0 2.25rem;
+  }
+
+  .band:first-of-type {
+    margin-top: 0;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.4;
+    text-wrap: balance;
+    margin-bottom: 0.6rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 2rem 0 0.5rem;
+  }
+
+  p {
+    margin-bottom: 1rem;
+    max-width: 40em;
+  }
+
+  p:last-child {
+    margin-bottom: 0;
+  }
+
+  strong {
+    font-weight: 700;
+  }
+
+  em {
+    font-style: normal;
+    color: var(--blue);
+    font-weight: 700;
+  }
+
+  a {
+    color: var(--blue);
+    text-underline-offset: 3px;
+  }
+
+  a:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--inset);
+    border: 1px solid var(--bd);
+    padding: 0.08em 0.38em;
+  }
+
+  /* ── 階段軌 ─────────────────────────────── */
+  .step {
+    display: grid;
+    grid-template-columns: 3.25rem 1fr;
+    column-gap: 1.5rem;
+    padding-bottom: 2.75rem;
+    break-inside: avoid;
+  }
+
+  .rail {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+
+  .rail::before {
+    content: "";
+    position: absolute;
+    top: 2.4rem;
+    bottom: -2.75rem;
+    width: 1px;
+    background: var(--bd2);
+  }
+
+  .step:last-of-type .rail::before {
+    display: none;
+  }
+
+  /* 斷網區間：軌線改虛線，標出網路不在的那一段 */
+  .step.offline .rail::before {
+    background: none;
+    border-left: 1px dashed var(--bd2);
+  }
+
+  .num {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--dim);
+    background: var(--bg);
+    border: 1px solid var(--bd2);
+    width: 2.1rem;
+    height: 2.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    margin-top: 0.2rem;
+  }
+
+  .step.offline .num {
+    border-style: dashed;
+  }
+
+  .where {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin-bottom: 0.35rem;
+  }
+
+  /* ── 畫面示意（永遠用程式本身的淺色配色）─────── */
+  .screen {
+    background: #e9e9ee;
+    border: 1px solid #c3c6d0;
+    color: #22262d;
+    margin: 1.25rem 0;
+    max-width: 34rem;
+  }
+
+  .screen-bar {
+    background: #f3f4f7;
+    border-bottom: 1px solid #dcdde3;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: #6b7280;
+    padding: 0.4rem 0.7rem;
+    letter-spacing: 0.06em;
+  }
+
+  .screen-body {
+    padding: 1.6rem 1.25rem 1.5rem;
+    text-align: center;
+  }
+
+  .screen-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .clock {
+    font-family: var(--mono);
+    font-size: 2.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    color: #364a7c;
+    line-height: 1.2;
+    margin: 0.5rem 0;
+  }
+
+  .clock.over {
+    color: #b3261e;
+  }
+
+  .screen-hint {
+    font-size: 0.84rem;
+    line-height: 1.7;
+    color: #494f59;
+    margin: 0.5rem 0 1.1rem;
+  }
+
+  .fake-btn {
+    display: inline-block;
+    background: #2b2f36;
+    color: #f2f4f9;
+    font-family: var(--sans);
+    font-size: 0.84rem;
+    font-weight: 700;
+    padding: 0.55rem 1.6rem;
+    border: 1px solid #2b2f36;
+  }
+
+  .fake-btn.ghost {
+    background: transparent;
+    color: #22262d;
+    border-color: #c3c6d0;
+  }
+
+  .fake-select {
+    display: block;
+    width: min(20rem, 100%);
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #c3c6d0;
+    color: #22262d;
+    font-size: 0.84rem;
+    padding: 0.4rem 0.6rem;
+    text-align: left;
+  }
+
+  /* ── 提示框 ─────────────────────────────── */
+  .note {
+    border-left: 3px solid var(--bd2);
+    padding: 0.15rem 0 0.15rem 1.1rem;
+    margin: 1.25rem 0;
+    color: var(--dim);
+    font-size: 0.94rem;
+    max-width: 40em;
+  }
+
+  .note.warn {
+    border-left-color: var(--bad);
+  }
+
+  .note.warn b {
+    color: var(--bad);
+  }
+
+  .note.ok {
+    border-left-color: var(--good);
+  }
+
+  .note.ok b {
+    color: var(--good);
+  }
+
+  /* ── 表 ─────────────────────────────── */
+  .tablewrap {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    border: 1px solid var(--bd2);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9rem;
+    min-width: 26rem;
+  }
+
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mute);
+    font-weight: 400;
+    background: var(--panel);
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--bd2);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--bd);
+    vertical-align: top;
+    line-height: 1.65;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  td.k {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 0.62rem;
+    height: 0.62rem;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: baseline;
+  }
+
+  .dot.r { background: #b3261e; }
+  .dot.o { background: #d18a1a; }
+  .dot.g { background: #4caf50; }
+
+  ul {
+    margin: 0 0 1rem 1.15rem;
+    max-width: 40em;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+    padding-left: 0.2rem;
+  }
+
+  li::marker {
+    color: var(--mute);
+  }
+
+  /* ── 疑難排解 ─────────────────────────── */
+  .fix {
+    border-top: 1px solid var(--bd);
+    padding: 1.1rem 0;
+    break-inside: avoid;
+  }
+
+  .fix:first-of-type {
+    border-top: 1px solid var(--bd2);
+  }
+
+  .fix-q {
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+  }
+
+  .fix-a {
+    color: var(--dim);
+    font-size: 0.94rem;
+    max-width: 40em;
+  }
+
+  footer {
+    margin-top: 4.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--bd2);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--mute);
+    line-height: 2;
+  }
+
+  @media (max-width: 34rem) {
+    .step {
+      grid-template-columns: 2.25rem 1fr;
+      column-gap: 0.9rem;
+    }
+    .num {
+      width: 1.75rem;
+      height: 1.75rem;
+      font-size: 0.72rem;
+    }
+    .clock {
+      font-size: 1.9rem;
+    }
+  }
+
+  /* ── 列印：機房沒網路，這份會被印出來 ───────── */
+  @media print {
+    :root {
+      --bg: #fff;
+      --panel: #f4f4f7;
+      --inset: #f0f0f3;
+      --bd: #ddd;
+      --bd2: #999;
+      --tx: #000;
+      --dim: #333;
+      --mute: #666;
+      --blue: #22406e;
+      --good: #1b5e20;
+      --bad: #a3201a;
+    }
+    body {
+      font-size: 10.5pt;
+      line-height: 1.7;
+    }
+    .wrap {
+      max-width: none;
+      padding: 0;
+    }
+    .band {
+      margin-top: 1.6rem;
+      break-after: avoid;
+    }
+    h2, h3 {
+      break-after: avoid;
+    }
+    .screen {
+      max-width: 26rem;
+    }
+    .clock {
+      font-size: 1.9rem;
+    }
+    footer {
+      margin-top: 2rem;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">itouOJ / 斷網比賽</div>
+    <h1>收件程式 使用說明書</h1>
+    <p class="standfirst">
+      比賽期間電腦沒有網路。你寫的程式碼會先存在這台電腦裡，
+      等比賽結束、網路恢復之後再一次送回 itouOJ 判題。
+    </p>
+    <div class="meta">
+      <span><b>版本</b> v1.2.0</span>
+      <span><b>適用</b> Windows 10 / 11</span>
+      <span><b>語言</b> C++</span>
+      <span><b>計分</b> IOI</span>
+    </div>
+  </header>
+
+  <div class="band">開始之前</div>
+
+  <h2>三件事先確認</h2>
+  <p>
+    這三件都必須在<strong>還有網路的時候</strong>做完。做完之後才可以斷網，
+    比賽全程就不再需要網路了。
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>要做的事</th><th>怎麼確認做好了</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="k">在 itouOJ 網站報名比賽</td>
+          <td>收件程式的比賽清單裡，這場比賽<strong>沒有</strong>標示「※尚未報名」</td>
+        </tr>
+        <tr>
+          <td class="k">在收件程式登入</td>
+          <td>「賽前設定」分頁的「目前帳號」顯示你的帳號</td>
+        </tr>
+        <tr>
+          <td class="k">選好比賽</td>
+          <td>畫面出現倒數計時，或直接進入作答畫面</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note warn">
+    <b>沒報名的話，比賽結束後上傳會被拒絕</b> —— 而且要到上傳那一刻才會發現，
+    整場的作答等於白做。開賽前請務必確認清單裡沒有「※尚未報名」。
+  </div>
+
+  <div class="band">比賽流程</div>
+
+  <h2>程式會帶著你走</h2>
+  <p>
+    收件程式會依照現在該做什麼，用整頁的畫面把你帶到下一步。
+    你不需要自己判斷該做什麼 —— <strong>照著畫面上寫的做就對了</strong>。
+  </p>
+
+  <div class="step">
+    <div class="rail"><div class="num">1</div></div>
+    <div>
+      <div class="where">開啟程式</div>
+      <h3>從桌面捷徑，或從網站按「開啟收件程式」</h3>
+      <p>
+        兩種方式都可以。從網站按按鈕的話，伺服器網址和比賽會自動填好，
+        比較省事。
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="rail"><div class="num">2</div></div>
+    <div>
+      <div class="where">登入</div>
+      <h3>按一下，用瀏覽器登入</h3>
+
+      <div class="screen">
+        <div class="screen-bar">itouOJ 收件程式</div>
+        <div class="screen-body">
+          <div class="screen-title">歡迎使用 itouOJ 收件程式</div>
+          <div class="screen-hint">
+            請先登入。會開啟瀏覽器讓你用 itouOJ 帳號登入，<br>
+            帳號密碼、Google、Discord 都可以。
+          </div>
+          <span class="fake-btn">用瀏覽器登入</span>
+        </div>
+      </div>
+
+      <p>
+        按下去會跳出你平常用的瀏覽器。用<strong>任何</strong>你習慣的方式登入
+        都可以，登好之後瀏覽器會自動跳回程式。
+      </p>
+      <div class="note ok">
+        <b>收件程式不會知道你的密碼。</b>密碼是打在瀏覽器裡的，
+        程式拿到的只是一組有期限的授權。
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="rail"><div class="num">3</div></div>
+    <div>
+      <div class="where">選比賽</div>
+      <h3>從清單挑出你要參加的那一場</h3>
+
+      <div class="screen">
+        <div class="screen-bar">itouOJ 收件程式</div>
+        <div class="screen-body">
+          <div class="screen-title">選擇比賽</div>
+          <div class="screen-hint">
+            已登入為 oj07。<br>
+            請選擇你要參加的比賽（需要先在 itouOJ 網站上報名）。
+          </div>
+          <span class="fake-btn ghost">重新整理比賽清單</span>
+          <select class="fake-select" aria-label="比賽清單範例" style="margin-top:0.8rem">
+            <option>2026 校內程式競賽 (#3)</option>
+          </select>
+        </div>
+      </div>
+
+      <p>
+        剛剛才在網站報名的話，清單可能還是舊的，按「重新整理比賽清單」再看一次。
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="rail"><div class="num">4</div></div>
+    <div>
+      <div class="where">等待開賽</div>
+      <h3>倒數歸零會自動開始，不要關掉程式</h3>
+
+      <div class="screen">
+        <div class="screen-bar">itouOJ 收件程式</div>
+        <div class="screen-body">
+          <div class="screen-title">比賽尚未開始</div>
+          <div class="clock">00:12:47</div>
+          <div class="screen-hint">
+            2026 校內程式競賽<br>
+            時間一到會自動開放作答，請不要關閉程式。
+          </div>
+        </div>
+      </div>
+
+      <p>
+        <strong>到這一步就可以斷網了。</strong>倒數不需要網路 —— 你的電腦已經
+        在登入時對過伺服器的時鐘，所以全場所有人的倒數都是一致的，
+        會在同一秒一起開始。
+      </p>
+    </div>
+  </div>
+
+  <div class="step offline">
+    <div class="rail"><div class="num">5</div></div>
+    <div>
+      <div class="where">作答 · 無網路</div>
+      <h3>看題目、寫程式、測試、提交</h3>
+      <p>
+        倒數歸零後畫面會自動切到「作答」分頁，右上角改成顯示<strong>剩餘時間</strong>。
+        最後 5 分鐘會變成紅色。
+      </p>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>按鈕</th><th>做什麼</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="k">開啟題目</td>
+              <td>用系統的 PDF 閱讀器打開這一題的題目</td>
+            </tr>
+            <tr>
+              <td class="k">直接輸入</td>
+              <td>在程式裡打程式碼。<strong>每秒自動存草稿</strong>，切題目、
+                關程式、當機都不會不見</td>
+            </tr>
+            <tr>
+              <td class="k">從檔案</td>
+              <td>用你習慣的編輯器寫，寫完選檔案。提交時會重新讀一次硬碟上的
+                最新內容</td>
+            </tr>
+            <tr>
+              <td class="k">測試執行</td>
+              <td>用這台電腦的 g++ 編譯，跑題目的範例測資並自動比對。
+                <strong>比對規則和伺服器判題完全一致</strong></td>
+            </tr>
+            <tr>
+              <td class="k">提交</td>
+              <td>把這一版收進待上傳清單</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <b>提交之後不會馬上有結果。</b>現在沒有網路，判題要等比賽結束、
+        上傳之後才會跑。這是這種比賽形式的本質，不是程式壞掉。
+      </div>
+
+      <div class="note ok">
+        <b>同一題可以交很多次。</b>計分方式是 IOI —— 每一題<strong>只算最後一次
+        提交</strong>，交錯了也不會被扣分。所以想到更好的寫法就儘管再交一次。
+      </div>
+
+      <p>
+        這場比賽<strong>只開放 C++</strong>。選了其他語言的檔案會在提交時被擋下來。
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="rail"><div class="num">6</div></div>
+    <div>
+      <div class="where">時間到</div>
+      <h3>提交入口會自動關閉</h3>
+
+      <div class="screen">
+        <div class="screen-bar">itouOJ 收件程式</div>
+        <div class="screen-body">
+          <div class="screen-title">比賽已結束</div>
+          <div class="clock over">00:00:00</div>
+          <div class="screen-hint">
+            還有 6 筆提交未上傳。<br>
+            網路恢復後請按下方按鈕回傳。
+          </div>
+          <span class="fake-btn">回傳到伺服器</span>
+        </div>
+      </div>
+
+      <p>
+        時間一到程式會自己收掉提交入口，你正在編輯的內容會先存成草稿。
+        <strong>不需要你按任何東西。</strong>
+      </p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="rail"><div class="num">7</div></div>
+    <div>
+      <div class="where">回傳 · 需要網路</div>
+      <h3>網路恢復後，按「回傳到伺服器」</h3>
+      <p>
+        監考宣布可以連網之後再按。畫面上會顯示還有幾筆沒傳，
+        傳完之後那個數字會歸零。
+      </p>
+      <ul>
+        <li>不小心按了兩次也沒關係，<strong>不會產生重複提交</strong></li>
+        <li>提交時間用的是校正過的時鐘，不會因為這台電腦時間不準而算錯</li>
+      </ul>
+      <div class="note warn">
+        <b>確認傳完再離開座位。</b>沒傳出去的提交只存在這台電腦的硬碟裡，
+        人走了機器關了就沒人幫得上忙。
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="rail"><div class="num">8</div></div>
+    <div>
+      <div class="where">看結果</div>
+      <h3>回 itouOJ 查判題結果</h3>
+      <p>
+        在「收件紀錄」分頁雙擊任何一筆，就會跳到網站上那一筆的判題詳情。
+        也可以按「計分板」看名次。
+      </p>
+      <div class="note">
+        <b>結果不會立刻出現。</b>全場的提交是在同一時間湧進判題佇列的，
+        而判題一次只跑一筆。人多的時候排隊要等上十幾分鐘是正常的。
+      </div>
+    </div>
+  </div>
+
+  <div class="band">看懂身分列</div>
+
+  <h2>「作答」分頁最上面那一行</h2>
+  <p>
+    顏色代表你現在能不能提交。<strong>開賽前先看一眼</strong>，
+    紅色或橘色就要處理，不要等到要交的時候才發現。
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>顏色</th><th>意思</th><th>怎麼處理</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="k"><span class="dot r"></span>紅</td>
+          <td>還沒登入，無法提交</td>
+          <td>到「賽前設定」按「用瀏覽器登入」</td>
+        </tr>
+        <tr>
+          <td class="k"><span class="dot o"></span>橘</td>
+          <td>已登入，但還沒選比賽</td>
+          <td>到「賽前設定」選比賽</td>
+        </tr>
+        <tr>
+          <td class="k"><span class="dot g"></span>綠</td>
+          <td>帳號、比賽都就緒</td>
+          <td>可以開始了</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="band">一台電腦換人用</div>
+
+  <h2>換人之前一定要按「登出」</h2>
+  <p>
+    在「賽前設定」分頁的「帳號」區塊。登出會<strong>清掉這台電腦上所有草稿</strong>
+    —— 不清的話，下一位同學打開作答分頁會直接看到你寫的程式碼。
+  </p>
+  <div class="note ok">
+    <b>你還沒上傳的提交不會被刪掉。</b>它們會被記上你的帳號收起來，
+    你之後登回來還是可以補傳。換成別人登入的話，程式會自動跳過不屬於他的那幾筆，
+    不會誤傳到別人帳號底下。
+  </div>
+
+  <div class="band">遇到狀況</div>
+
+  <div class="fix">
+    <div class="fix-q">比賽清單裡我要的那場標示「※尚未報名」</div>
+    <div class="fix-a">
+      你還沒在網站上報名這場比賽。趁還有網路，到 itouOJ 的比賽頁按報名，
+      回來按「重新整理比賽清單」。<strong>務必在開賽前解決</strong>。
+    </div>
+  </div>
+
+  <div class="fix">
+    <div class="fix-q">按了「用瀏覽器登入」，瀏覽器開了但沒跳回來</div>
+    <div class="fix-a">
+      確認這台電腦當下有網路（登入這一步需要）。仍然沒反應的話，
+      可能是防毒軟體擋掉了程式接收回傳的通道，跟監考說一聲。
+    </div>
+  </div>
+
+  <div class="fix">
+    <div class="fix-q">網站上按「開啟收件程式」沒有反應</div>
+    <div class="fix-a">
+      這台電腦沒有註冊過那個連結。直接用桌面捷徑開程式即可，
+      功能完全一樣，只是伺服器網址要自己填。
+    </div>
+  </div>
+
+  <div class="fix">
+    <div class="fix-q">「測試執行」說找不到編譯器</div>
+    <div class="fix-a">
+      這台電腦沒裝 g++，或裝在少見的位置。跟監考說一聲。
+      <strong>這不影響提交</strong> —— 提交不需要編譯，只是你沒辦法在交之前
+      自己先驗一次。
+    </div>
+  </div>
+
+  <div class="fix">
+    <div class="fix-q">測試執行的結果跟我自己算的不一樣</div>
+    <div class="fix-a">
+      比對規則和伺服器判題一致：忽略每行結尾的空白、忽略檔案結尾的空行，
+      其餘都要完全相同。輸出多印了提示文字（例如「請輸入 n：」）也會被判錯。
+    </div>
+  </div>
+
+  <div class="fix">
+    <div class="fix-q">程式當掉了，我寫的東西還在嗎</div>
+    <div class="fix-a">
+      在。「直接輸入」的內容每秒自動存草稿，重開程式後回到同一題就會看到。
+      已經按過「提交」的更不會不見，那些存成獨立的檔案。
+    </div>
+  </div>
+
+  <div class="fix">
+    <div class="fix-q">開啟程式時 Windows 說「已保護您的電腦」</div>
+    <div class="fix-a">
+      這台機器沒有用佈署腳本安裝，跟監考說一聲。
+      這不是防毒判定為病毒，是「未簽章 + 尚無信譽」造成的攔截。
+    </div>
+  </div>
+
+  <footer>
+    itouOJ 收件程式 v1.2.0 ・ 說明書隨程式版本更新<br>
+    技術細節與監考流程見 CONTEST-OFFLINE.md
+  </footer>
+
+</div>
+</body>
+</html>
