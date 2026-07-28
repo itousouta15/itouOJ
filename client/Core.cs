@@ -106,6 +106,9 @@ namespace ItouOJ
         public string FileName { get; set; }
         // 上傳成功後伺服器回傳的提交編號，用來組出「查看結果」的網址；0 = 尚未上傳
         public int SubmissionId { get; set; }
+        // 提交當下登入的帳號。同一台機器換人登入時，不能讓後面的人把前一位
+        // 尚未上傳的提交當成自己的送出去。
+        public string Owner { get; set; }
     }
 
     public static class Store
@@ -166,6 +169,23 @@ namespace ItouOJ
                                   new UTF8Encoding(false));
             }
             catch { /* 磁碟滿了之類的；不該讓存草稿失敗打斷作答 */ }
+        }
+
+        // 登出時要清掉。草稿是按「比賽+題號」存的、不綁使用者，
+        // 同一台機器換人登入的話，後面那位會直接看到前一位寫的程式碼。
+        public static int ClearDrafts()
+        {
+            int n = 0;
+            try
+            {
+                if (!Directory.Exists(DraftsDir)) return 0;
+                foreach (string f in Directory.GetFiles(DraftsDir, "*.cpp"))
+                {
+                    try { File.Delete(f); n++; } catch { }
+                }
+            }
+            catch { }
+            return n;
         }
 
         public static Config LoadConfig()

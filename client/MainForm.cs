@@ -37,7 +37,7 @@ namespace ItouOJ
         int pendingContestId = 0;
         // 監考臨時離開等待畫面去改設定的寬限時間
         DateTime gateSuppressedUntil = DateTime.MinValue;
-        Button btnSettings, btnUnlock, btnCheckin;
+        Button btnSettings, btnUnlock, btnCheckin, btnLogout;
         // 解鎖只在本次執行有效，不寫回 config
         bool unlockedThisSession = false;
         // 這次執行是否已成功向伺服器回報就緒
@@ -753,10 +753,15 @@ namespace ItouOJ
             btnLogin.Click += OnLogin;
             g.Controls.Add(btnLogin);
 
+            btnLogout = Theme.Secondary("登出");
+            btnLogout.SetBounds(448, 94, 84, 30);
+            btnLogout.Click += OnLogout;
+            g.Controls.Add(btnLogout);
+
             Label loginHint = Theme.Hint(
                 "會開啟瀏覽器讓你登入（帳號密碼、Google、Discord 都可以），" +
                 "收件程式本身不會接觸你的密碼。");
-            loginHint.SetBounds(452, 100, 390, 34);
+            loginHint.SetBounds(544, 100, 300, 34);
             g.Controls.Add(loginHint);
 
             setupPanel.Controls.Add(g);
@@ -1287,6 +1292,70 @@ namespace ItouOJ
             });
         }
 
+        // 登出。同一台機器換人用時，要確保下一位看不到也拿不走前一位的東西。
+        void OnLogout(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(cfg.Username))
+            {
+                Status("目前沒有登入的帳號", false);
+                return;
+            }
+
+            List<SpoolItem> mine = new List<SpoolItem>();
+            foreach (SpoolItem it in Store.ReadDir(Store.PendingDir))
+            {
+                if (string.IsNullOrEmpty(it.Owner) || it.Owner == cfg.Username)
+                    mine.Add(it);
+            }
+
+            string warn = "要登出 " + cfg.Username + " 嗎？\n\n" +
+                          "・尚未送出的草稿會被清除\n" +
+                          "・比賽選擇會重設";
+            if (mine.Count > 0)
+            {
+                // 提交本身保留在本機且綁著原帳號，別人登入也上傳不了；
+                // 但一定要講清楚，不然選手會以為東西不見了。
+                warn += "\n\n注意：你還有 " + mine.Count + " 筆提交尚未上傳。\n" +
+                        "它們會保留在這台電腦上，但只有你重新登入後才能上傳。";
+            }
+
+            if (MessageBox.Show(this, warn, "確認登出",
+                    MessageBoxButtons.OKCancel,
+                    mine.Count > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Question)
+                != DialogResult.OK) return;
+
+            // 草稿一定要清：它按「比賽+題號」存、不綁使用者，
+            // 留著等於把上一位的程式碼直接攤在下一位面前。
+            if (draftTimer != null) draftTimer.Stop();
+            int cleared = Store.ClearDrafts();
+
+            cfg.Cookie = "";
+            cfg.Username = "";
+            cfg.ContestId = 0;
+            cfg.ContestTitle = "";
+            cfg.Problems = new List<ProblemEntry>();
+            cfg.AllowedLanguages = new List<string>();
+            cfg.StartTimeUtc = "";
+            cfg.EndTimeUtc = "";
+            Store.SaveConfig(cfg);
+
+            checkedIn = false;
+            draftLabel = null;
+            txtUser.Text = "";
+            txtCode.TextChanged -= OnCodeChanged;
+            txtCode.Text = "";
+            txtCode.TextChanged += OnCodeChanged;
+            cboContest.Items.Clear();
+            cboGateContest.Items.Clear();
+            cboProblem.Items.Clear();
+            contests.Clear();
+
+            LoadFromConfig();
+            RefreshList();
+            OnPhaseTick(null, EventArgs.Empty);
+            Status(string.Format("已登出（清除 {0} 份草稿）", cleared), false);
+        }
+
         void OnLoginCallback(LoopbackResult r, string baseUrl)
         {
             btnLogin.Enabled = true;
@@ -1686,6 +1755,7 @@ namespace ItouOJ
             item.SubmittedAt = stamp.ToString("yyyy-MM-ddTHH:mm:ss.fffZ",
                                               CultureInfo.InvariantCulture);
             item.FileName = rbTyped.Checked ? "（程式內輸入）" : sourceName;
+            item.Owner = cfg.Username;
 
             try
             {
@@ -1705,7 +1775,30 @@ namespace ItouOJ
         // ── 賽後：整批上傳 ─────────────────────────
         void OnUpload(object sender, EventArgs e)
         {
-            List<SpoolItem> pending = Store.ReadDir(Store.PendingDir);
+            List<SpoolItem> all = Store.ReadDir(Store.PendingDir);
+
+            // 只上傳屬於目前登入者的。同一台機器換人登入時，不能把前一位選手
+            // 還沒上傳的提交當成自己的送出去 —— 那會變成冒領。
+            List<SpoolItem> pending = new List<SpoolItem>();
+            List<SpoolItem> others = new List<SpoolItem>();
+            foreach (SpoolItem it in all)
+            {
+                // Owner 為空的是舊版存下來的，視為目前使用者的
+                if (string.IsNullOrEmpty(it.Owner) || it.Owner == cfg.Username)
+                    pending.Add(it);
+                else others.Add(it);
+            }
+
+            if (others.Count > 0)
+            {
+                MessageBox.Show(this,
+                    string.Format(
+                        "有 {0} 筆提交是其他帳號（{1}）留下的，不會被上傳。\n\n" +
+                        "請那位選手重新登入後自行上傳。",
+                        others.Count, others[0].Owner),
+                    "略過他人的提交", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
             if (pending.Count == 0) { Status("沒有待上傳的提交", false); return; }
             if (string.IsNullOrEmpty(cfg.Cookie) || cfg.ContestId <= 0)
             {
