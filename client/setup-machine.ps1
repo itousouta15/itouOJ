@@ -55,6 +55,18 @@ if ($zone) {
 $hash = (Get-FileHash $target -Algorithm SHA256).Hash
 Write-Host "  SHA256 $hash"
 
+# 使用說明書。機房沒有網路，線上版連不到，所以整份帶著走放到本機。
+$manualSrc = Join-Path $here "使用說明書.html"
+$manual = $null
+if (Test-Path $manualSrc) {
+    $manual = Join-Path $targetDir "使用說明書.html"
+    Copy-Item $manualSrc $manual -Force
+    Unblock-File -Path $manual
+    Write-Host "  已複製使用說明書"
+} else {
+    Write-Host "  找不到使用說明書.html，略過（不影響程式使用）" -ForegroundColor Yellow
+}
+
 # 桌面捷徑
 $desktop = [Environment]::GetFolderPath("CommonDesktopDirectory")
 if (-not (Test-Path $desktop)) { $desktop = [Environment]::GetFolderPath("Desktop") }
@@ -67,6 +79,16 @@ try {
     $shortcut.Description = "itouOJ 斷網比賽收件程式"
     $shortcut.Save()
     Write-Host "  已建立桌面捷徑：$lnk"
+
+    # 說明書也放一份到桌面。選手在還沒開程式之前就會想看它。
+    if ($manual) {
+        $mlnk = Join-Path $desktop "itouOJ 使用說明書.lnk"
+        $ms = $shell.CreateShortcut($mlnk)
+        $ms.TargetPath = $manual
+        $ms.Description = "itouOJ 收件程式使用說明書"
+        $ms.Save()
+        Write-Host "  已建立說明書桌面捷徑"
+    }
 } catch {
     Write-Host "  桌面捷徑建立失敗（不影響使用）：$($_.Exception.Message)" -ForegroundColor Yellow
 }
