@@ -28,7 +28,7 @@ namespace ItouOJ
         Label lblStatus, lblAccount, lblLangHint, lblDraft, lblLock, lblWho, lblWhere;
         Panel setupPanel, pnlIdentity;
         GroupBox lockableGroup;
-        Button btnSettings, btnUnlock;
+        Button btnSettings, btnUnlock, btnCheckin;
         // 解鎖只在本次執行有效，不寫回 config
         bool unlockedThisSession = false;
         // 這次執行是否已成功向伺服器回報就緒
@@ -58,6 +58,10 @@ namespace ItouOJ
             netTimer.Interval = 15000;
             netTimer.Tick += OnNetTick;
             netTimer.Start();
+
+            // 啟動就回報一次。監考巡檢時只會「打開程式看一眼」，如果只在選比賽時
+            // 才回報，昨天設定好的機器今天永遠顯示未回報，這個功能就沒用了。
+            SendCheckinAsync(false);
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -176,6 +180,16 @@ namespace ItouOJ
             lblWhere.SetBounds(10, 24, 640, 18);
             lblWhere.ForeColor = Color.DimGray;
             pnlIdentity.Controls.Add(lblWhere);
+
+            // 監考巡檢時可以按這顆強制重送，不必重新選一次比賽
+            btnCheckin = new Button();
+            btnCheckin.Size = new Size(110, 28);
+            btnCheckin.Text = "重新回報就緒";
+            btnCheckin.Click += delegate { SendCheckinAsync(true); };
+            FlowLayoutPanel idBar = MakeActionBar();
+            idBar.Padding = new Padding(0, 8, 4, 0);
+            idBar.Controls.Add(btnCheckin);
+            pnlIdentity.Controls.Add(idBar);
 
             tab.Controls.Add(pnlIdentity);
 
@@ -747,38 +761,68 @@ namespace ItouOJ
         }
 
         // 向伺服器回報「這台機器準備好了」，讓監考在管理頁一眼看出哪台還沒設定。
+        //
+        // 三個時機都要送，缺一不可：
+        //   選好比賽時 —— 首次設定
+        //   程式啟動時 —— 昨天設定好、今天只是打開程式的機器，不送就永遠顯示未回報
+        //   上傳成功後 —— 順便更新一次「這台還活著」
         // 失敗不影響作答，只是狀態頁上會顯示未回報。
-        void SendCheckin()
+        //
+        // 走背景執行緒：啟動時同步打網路會讓視窗卡住好幾秒，機房網路慢的話更明顯。
+        void SendCheckinAsync(bool announce)
         {
             if (string.IsNullOrEmpty(cfg.Cookie) || cfg.ContestId <= 0) return;
-            try
+            if (string.IsNullOrEmpty(cfg.ServerUrl)) return;
+
+            string url = cfg.ServerUrl + "/api/contests/" + cfg.ContestId + "/checkin";
+            string cookie = cfg.Cookie;
+            string host = Environment.MachineName;
+
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
             {
-                JavaScriptSerializer ser = new JavaScriptSerializer();
-                Dictionary<string, object> payload = new Dictionary<string, object>();
-                payload["host"] = Environment.MachineName;
-
-                string setCookie;
-                DateTime? serverDate;
-                string body = Api.Send(
-                    cfg.ServerUrl + "/api/contests/" + cfg.ContestId + "/checkin",
-                    "POST", cfg.Cookie, ser.Serialize(payload),
-                    out setCookie, out serverDate);
-
-                Dictionary<string, object> res =
-                    ser.Deserialize<Dictionary<string, object>>(body);
-                checkedIn = true;
-                if (res.ContainsKey("registered") && !Convert.ToBoolean(res["registered"]))
+                bool ok = false;
+                bool registered = false;
+                string error = null;
+                try
                 {
-                    checkedIn = false;
-                    Status("注意：這個帳號尚未報名此比賽，提交會被拒絕", true);
+                    JavaScriptSerializer ser = new JavaScriptSerializer();
+                    Dictionary<string, object> payload = new Dictionary<string, object>();
+                    payload["host"] = host;
+
+                    string setCookie;
+                    DateTime? serverDate;
+                    string body = Api.Send(url, "POST", cookie, ser.Serialize(payload),
+                                           out setCookie, out serverDate);
+                    Dictionary<string, object> res =
+                        ser.Deserialize<Dictionary<string, object>>(body);
+                    ok = true;
+                    registered = !res.ContainsKey("registered") ||
+                                 Convert.ToBoolean(res["registered"]);
                 }
-            }
-            catch (Exception ex)
-            {
-                checkedIn = false;
-                Status("回報就緒失敗（不影響作答）：" + ex.Message, true);
-            }
-            UpdateIdentityStrip();
+                catch (Exception ex) { error = ex.Message; }
+
+                try
+                {
+                    BeginInvoke((MethodInvoker)delegate
+                    {
+                        checkedIn = ok && registered;
+                        if (ok && !registered)
+                        {
+                            Status("注意：這個帳號尚未報名此比賽，提交會被拒絕", true);
+                        }
+                        else if (ok && announce)
+                        {
+                            Status("已向伺服器回報就緒（" + host + "）", false);
+                        }
+                        else if (!ok && announce)
+                        {
+                            Status("回報就緒失敗（不影響作答）：" + error, true);
+                        }
+                        UpdateIdentityStrip();
+                    });
+                }
+                catch { /* 視窗已關閉 */ }
+            });
         }
 
         void UpdateAccountLabel()
@@ -984,7 +1028,7 @@ namespace ItouOJ
                     cfg.ContestTitle, cfg.Problems.Count, langNote), false);
 
                 // 設定完成 = 這台機器準備好了，回報給監考
-                SendCheckin();
+                SendCheckinAsync(false);
             }
             catch (Exception ex)
             {
@@ -1298,6 +1342,7 @@ namespace ItouOJ
                 }
 
                 RefreshList();
+                SendCheckinAsync(false); // 順便更新一次「這台還活著」
                 string msg = string.Format("上傳完成：新收 {0} 筆", accepted);
                 if (dup > 0) msg += string.Format("，已存在 {0} 筆（重複上傳會自動略過）", dup);
                 Status(msg, false);
