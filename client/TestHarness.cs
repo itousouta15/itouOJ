@@ -117,6 +117,47 @@ namespace ItouOJ
                             f.Location = new Point(-4000, -4000);
                             f.Show();
                             Application.DoEvents();
+
+                            // PIN 鎖：登入必須維持可用，只有比賽選擇與管理員設定該被鎖
+                            sb.AppendLine("--- PIN 鎖範圍 ---");
+                            Config lockCfg = Store.LoadConfig();
+                            lockCfg.AdminPinHash = AdminLock.Hash("1234");
+                            lockCfg.Locked = true;
+                            SetField(f, "cfg", lockCfg);
+                            InvokePrivate(f, "ApplyLockState");
+                            foreach (string n in new string[] {
+                                "txtServer", "txtUser", "txtPass", "btnLogin",
+                                "cboContest", "btnSettings", "btnUnlock" })
+                            {
+                                Control c = FindByName<Control>(f, n);
+                                sb.AppendLine(string.Format("  {0,-12} Enabled={1}",
+                                    n, c == null ? "?" : c.Enabled.ToString()));
+                            }
+
+                            sb.AppendLine("--- 解鎖後 ---");
+                            SetField(f, "unlockedThisSession", true);
+                            InvokePrivate(f, "ApplyLockState");
+                            foreach (string n in new string[] {
+                                "cboContest", "btnSettings", "btnUnlock" })
+                            {
+                                Control c = FindByName<Control>(f, n);
+                                sb.AppendLine(string.Format("  {0,-12} Enabled={1}",
+                                    n, c == null ? "?" : c.Enabled.ToString()));
+                            }
+
+                            sb.AppendLine("--- 未設定 PIN 時（不該鎖）---");
+                            Config open = Store.LoadConfig();
+                            open.Locked = true;
+                            open.AdminPinHash = "";
+                            SetField(f, "cfg", open);
+                            SetField(f, "unlockedThisSession", false);
+                            InvokePrivate(f, "ApplyLockState");
+                            foreach (string n in new string[] { "cboContest", "btnSettings" })
+                            {
+                                Control c = FindByName<Control>(f, n);
+                                sb.AppendLine(string.Format("  {0,-12} Enabled={1}",
+                                    n, c == null ? "?" : c.Enabled.ToString()));
+                            }
                             sb.AppendLine("--- 版面實測 ---");
                             ReportBounds(sb, "btnUpload", FindByName<Button>(f, "btnUpload"));
                             ReportBounds(sb, "btnSubmit", FindByName<Button>(f, "btnSubmit"));
@@ -496,6 +537,24 @@ namespace ItouOJ
             Console.WriteLine("\n===== " + (failures == 0
                 ? "全部通過" : failures + " 項失敗") + " =====");
             return failures == 0 ? 0 : 1;
+        }
+
+        static void SetField(Form form, string name, object value)
+        {
+            System.Reflection.FieldInfo fi = form.GetType().GetField(name,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Public);
+            if (fi != null) fi.SetValue(form, value);
+        }
+
+        static void InvokePrivate(Form form, string method)
+        {
+            System.Reflection.MethodInfo mi = form.GetType().GetMethod(method,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Public);
+            if (mi != null) mi.Invoke(form, null);
         }
 
         static void ReportBounds(StringBuilder sb, string name, Control c)
