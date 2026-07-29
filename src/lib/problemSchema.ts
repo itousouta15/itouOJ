@@ -1,12 +1,19 @@
 import { z } from "zod";
 
+// 題目共用欄位。獨立匯出給 problemProposalSchema 用，
+// 因為 problemSchema 本身帶 .superRefine()，zod 不允許對有 refinement 的
+// object schema 呼叫 .omit()（申請出題不需要子題功能，另外組一份更單純）。
+export const problemBaseFields = {
+  title: z.string().min(1, "標題不能是空的").max(200),
+  statement: z.string().min(1, "題敘不能是空的"),
+  difficulty: z.enum(["easy", "medium", "hard"]),
+  timeLimitMs: z.number().int().min(100).max(20000),
+  memoryLimitMb: z.number().int().min(16).max(1024),
+};
+
 export const problemSchema = z
   .object({
-    title: z.string().min(1, "標題不能是空的").max(200),
-    statement: z.string().min(1, "題敘不能是空的"),
-    difficulty: z.enum(["easy", "medium", "hard"]),
-    timeLimitMs: z.number().int().min(100).max(20000),
-    memoryLimitMb: z.number().int().min(16).max(1024),
+    ...problemBaseFields,
     isPublic: z.boolean(),
     // 沒有子題 = 沿用舊制整題 AC/WA；有子題則每筆測資都要指定所屬子題，各子題全對才拿到該子題配分
     subtasks: z
