@@ -52,6 +52,7 @@ export async function POST(request: Request) {
 
   const problem = await prisma.problem.findUnique({
     where: { id: problemId },
+    omit: { pdfData: true },
     include: {
       testCases: {
         where: { isSample: true },
