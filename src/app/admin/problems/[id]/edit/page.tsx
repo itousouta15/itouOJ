@@ -18,9 +18,16 @@ export default async function EditProblemPage({
   const { id } = await params;
   const problem = await prisma.problem.findUnique({
     where: { id: Number(id) },
-    include: { testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] } },
+    include: {
+      testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] },
+      subtasks: { orderBy: { order: "asc" } },
+    },
   });
   if (!problem) notFound();
+
+  const subtaskIndexById = new Map(
+    problem.subtasks.map((s, i) => [s.id, i])
+  );
 
   return (
     <div>
@@ -36,10 +43,18 @@ export default async function EditProblemPage({
           timeLimitMs: problem.timeLimitMs,
           memoryLimitMb: problem.memoryLimitMb,
           isPublic: problem.isPublic,
+          subtasks: problem.subtasks.map((s) => ({
+            points: s.points,
+            checkMode: s.checkMode === "firstLine" ? "firstLine" : "full",
+          })),
           testCases: problem.testCases.map((tc) => ({
             input: tc.input,
             output: tc.output,
             isSample: tc.isSample,
+            subtaskIndex:
+              tc.subtaskId != null
+                ? subtaskIndexById.get(tc.subtaskId) ?? null
+                : null,
           })),
         }}
       />

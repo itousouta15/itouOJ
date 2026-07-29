@@ -16,7 +16,17 @@ export async function GET(
     where: { id: submissionId },
     include: {
       user: { select: { username: true } },
-      problem: { select: { id: true, order: true, title: true } },
+      problem: {
+        select: {
+          id: true,
+          order: true,
+          title: true,
+          subtasks: {
+            orderBy: { order: "asc" },
+            select: { order: true, points: true },
+          },
+        },
+      },
       contest: true,
       results: { orderBy: { order: "asc" } },
     },
@@ -44,11 +54,13 @@ export async function GET(
     problem: submission.problem,
     language: submission.language,
     status: submission.status,
+    score: submission.score,
     timeMs: submission.timeMs,
     memoryKb: submission.memoryKb,
     createdAt: submission.createdAt,
     results: submission.results.map((r) => ({
       order: r.order,
+      subtaskOrder: r.subtaskOrder,
       verdict: r.verdict,
       timeMs: r.timeMs,
       memoryKb: r.memoryKb,
