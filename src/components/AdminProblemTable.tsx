@@ -106,7 +106,7 @@ export default function AdminProblemTable({
                 >
                   ⠿
                 </span>
-                {p.id}
+                {i + 1}
               </div>
             </td>
             <td className="table-cell font-medium">

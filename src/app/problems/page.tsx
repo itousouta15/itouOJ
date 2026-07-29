@@ -93,7 +93,7 @@ export default async function ProblemListPage() {
                 <td className="table-cell text-center text-[#4caf50]">
                   {solvedSet.has(p.id) ? "✓" : ""}
                 </td>
-                <td className="table-cell text-dim">{p.id}</td>
+                <td className="table-cell text-dim">{p.order}</td>
                 <td className="table-cell">
                   <Link
                     href={`/problems/${p.id}`}
