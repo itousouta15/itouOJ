@@ -356,9 +356,10 @@ const days: DaySeed[] = [
 ];
 
 const findCourse = db.prepare("SELECT id FROM Course WHERE title = ?");
+const findMaxOrder = db.prepare(`SELECT MAX("order") AS maxOrder FROM Problem`);
 const insertProblem = db.prepare(
-  `INSERT INTO Problem (title, statement, difficulty, timeLimitMs, memoryLimitMb, isPublic, createdAt)
-   VALUES (@title, @statement, @difficulty, @timeLimitMs, @memoryLimitMb, 1, datetime('now'))`
+  `INSERT INTO Problem (title, statement, difficulty, timeLimitMs, memoryLimitMb, isPublic, "order", createdAt)
+   VALUES (@title, @statement, @difficulty, @timeLimitMs, @memoryLimitMb, 1, @order, datetime('now'))`
 );
 const insertTestCase = db.prepare(
   `INSERT INTO TestCase (problemId, input, output, isSample, "order")
@@ -372,6 +373,10 @@ const insertCourseProblem = db.prepare(
 );
 
 const run = db.transaction(() => {
+  let nextOrder = (
+    (findMaxOrder.get() as { maxOrder: number | null }).maxOrder ?? 0
+  ) + 1;
+
   for (const day of days) {
     const existing = findCourse.get(day.courseTitle) as { id: number } | undefined;
     if (existing) {
@@ -387,6 +392,7 @@ const run = db.transaction(() => {
         difficulty: p.difficulty,
         timeLimitMs: p.timeLimitMs ?? 1000,
         memoryLimitMb: p.memoryLimitMb ?? 256,
+        order: nextOrder++,
       });
       const problemId = Number(info.lastInsertRowid);
       p.testCases.forEach((tc, i) => {
