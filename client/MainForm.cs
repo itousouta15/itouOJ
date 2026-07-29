@@ -78,10 +78,10 @@ namespace ItouOJ
             // 沒有這層的話，沒聽到監考宣布的選手可能就這樣關掉程式離場，
             // 提交永遠留在本機。
             netTimer = new System.Windows.Forms.Timer();
-            netTimer.Interval = 15000;
+            netTimer.Interval = 5000;
             netTimer.Tick += OnNetTick;
             netTimer.Start();
-            OnNetTick(null, EventArgs.Empty); // 開程式就先探一次，指示燈不必等 15 秒才有內容
+            OnNetTick(null, EventArgs.Empty); // 開程式就先探一次，指示燈不必等 5 秒才有內容
 
             // 啟動就回報一次。監考巡檢時只會「打開程式看一眼」，如果只在選比賽時
             // 才回報，昨天設定好的機器今天永遠顯示未回報，這個功能就沒用了。
@@ -93,6 +93,11 @@ namespace ItouOJ
             phaseTimer.Tick += OnPhaseTick;
             phaseTimer.Start();
             OnPhaseTick(null, EventArgs.Empty);
+
+            // 重新打開程式的第一件事：核對比賽現在的真實狀態，而不是只信任
+            // 上面那行用本機快取算出來的畫面。監考可能在程式沒開著的時候
+            // 延長、提早結束、或改動了這場比賽。
+            RefreshContestStateAsync();
         }
 
         // itouoj://start?server=https%3A%2F%2Foj.itousouta.me&contest=3
@@ -1654,96 +1659,11 @@ namespace ItouOJ
 
         void LoadContestState(int contestId)
         {
-            bool sameContest = cfg.ContestId == contestId;
-            string prevStart = cfg.StartTimeUtc;
-            string prevEnd = cfg.EndTimeUtc;
-            int prevProblems = cfg.Problems == null ? 0 : cfg.Problems.Count;
-
             Cursor = Cursors.WaitCursor;
             try
             {
-                string setCookie;
-                DateTime? serverDate;
-                string body = Api.Send(
-                    cfg.ServerUrl + "/api/contests/" + contestId + "/problems",
-                    "GET", cfg.Cookie, null, out setCookie, out serverDate);
-
-                JavaScriptSerializer ser = new JavaScriptSerializer();
-                Dictionary<string, object> root =
-                    ser.Deserialize<Dictionary<string, object>>(body);
-
-                cfg.ContestId = contestId;
-                cfg.ContestTitle = Convert.ToString(root["title"]);
-                // 起訖時間要存下來：斷網後就是靠它們判斷開始與結束
-                cfg.StartTimeUtc = root.ContainsKey("startTime")
-                    ? Convert.ToString(root["startTime"]) : "";
-                cfg.EndTimeUtc = root.ContainsKey("endTime")
-                    ? Convert.ToString(root["endTime"]) : "";
-
-                cfg.AllowedLanguages = new List<string>();
-                if (root.ContainsKey("allowedLanguages") && root["allowedLanguages"] != null)
-                {
-                    System.Collections.IEnumerable langs =
-                        root["allowedLanguages"] as System.Collections.IEnumerable;
-                    if (langs != null)
-                        foreach (object l in langs)
-                            cfg.AllowedLanguages.Add(Convert.ToString(l));
-                }
-
-                cfg.Problems = new List<ProblemEntry>();
-                foreach (Dictionary<string, object> p in Json.Array(root["problems"]))
-                {
-                    ProblemEntry pe = new ProblemEntry();
-                    pe.ProblemId = Convert.ToInt32(p["problemId"]);
-                    pe.Label = Convert.ToString(p["label"]);
-                    pe.Title = p["title"] == null ? "" : Convert.ToString(p["title"]);
-                    if (p.ContainsKey("timeLimitMs") && p["timeLimitMs"] != null)
-                        pe.TimeLimitMs = Convert.ToInt32(p["timeLimitMs"]);
-                    // 範例測資會一起存進 config.json，斷網時測試執行才有東西可比對
-                    if (p.ContainsKey("samples"))
-                    {
-                        foreach (Dictionary<string, object> s in Json.Array(p["samples"]))
-                        {
-                            SampleCase sc = new SampleCase();
-                            sc.Input = Convert.ToString(s["input"]);
-                            sc.Output = Convert.ToString(s["output"]);
-                            pe.Samples.Add(sc);
-                        }
-                    }
-                    cfg.Problems.Add(pe);
-                }
-                Store.SaveConfig(cfg);
-                FillProblems();
-                UpdateLanguageHint();
-                OnProblemChanged(null, EventArgs.Empty);
-                // 時間可能被監考改過，畫面要立刻跟上
-                //（例如比賽被延長，就該從「已結束」變回作答中）
-                OnPhaseTick(null, EventArgs.Empty);
-
-                if (sameContest)
-                {
-                    // 更新的重點就是「到底有沒有變」，沒講清楚等於沒更新
-                    List<string> changes = new List<string>();
-                    if (prevStart != cfg.StartTimeUtc) changes.Add("開始時間");
-                    if (prevEnd != cfg.EndTimeUtc) changes.Add("結束時間");
-                    if (prevProblems != cfg.Problems.Count)
-                        changes.Add("題數 " + prevProblems + " → " + cfg.Problems.Count);
-
-                    Status(changes.Count > 0
-                        ? "比賽資訊已更新：" + string.Join("、", changes.ToArray())
-                        : "比賽資訊已是最新，沒有變動", false);
-                }
-                else
-                {
-                    string langNote = cfg.AllowedLanguages.Count > 0
-                        ? "，限用 " + LanguageNames(cfg.AllowedLanguages)
-                        : "";
-                    Status(string.Format("已載入「{0}」的 {1} 道題目{2}，可以斷網作答了",
-                        cfg.ContestTitle, cfg.Problems.Count, langNote), false);
-                }
-
-                // 設定完成 = 這台機器準備好了，回報給監考
-                SendCheckinAsync(false);
+                Dictionary<string, object> root = FetchContestState(contestId);
+                ApplyContestState(contestId, root);
             }
             catch (Exception ex)
             {
@@ -1753,6 +1673,134 @@ namespace ItouOJ
             {
                 Cursor = Cursors.Default;
             }
+        }
+
+        // 純網路 + 解析，不摸任何 UI 控制項，背景執行緒也能安全呼叫。
+        Dictionary<string, object> FetchContestState(int contestId)
+        {
+            string setCookie;
+            DateTime? serverDate;
+            string body = Api.Send(
+                cfg.ServerUrl + "/api/contests/" + contestId + "/problems",
+                "GET", cfg.Cookie, null, out setCookie, out serverDate);
+
+            JavaScriptSerializer ser = new JavaScriptSerializer();
+            return ser.Deserialize<Dictionary<string, object>>(body);
+        }
+
+        // 把抓回來的比賽資訊套用到 cfg 並更新畫面。只能在 UI 執行緒呼叫。
+        void ApplyContestState(int contestId, Dictionary<string, object> root)
+        {
+            bool sameContest = cfg.ContestId == contestId;
+            string prevStart = cfg.StartTimeUtc;
+            string prevEnd = cfg.EndTimeUtc;
+            int prevProblems = cfg.Problems == null ? 0 : cfg.Problems.Count;
+
+            cfg.ContestId = contestId;
+            cfg.ContestTitle = Convert.ToString(root["title"]);
+            // 起訖時間要存下來：斷網後就是靠它們判斷開始與結束
+            cfg.StartTimeUtc = root.ContainsKey("startTime")
+                ? Convert.ToString(root["startTime"]) : "";
+            cfg.EndTimeUtc = root.ContainsKey("endTime")
+                ? Convert.ToString(root["endTime"]) : "";
+
+            cfg.AllowedLanguages = new List<string>();
+            if (root.ContainsKey("allowedLanguages") && root["allowedLanguages"] != null)
+            {
+                System.Collections.IEnumerable langs =
+                    root["allowedLanguages"] as System.Collections.IEnumerable;
+                if (langs != null)
+                    foreach (object l in langs)
+                        cfg.AllowedLanguages.Add(Convert.ToString(l));
+            }
+
+            cfg.Problems = new List<ProblemEntry>();
+            foreach (Dictionary<string, object> p in Json.Array(root["problems"]))
+            {
+                ProblemEntry pe = new ProblemEntry();
+                pe.ProblemId = Convert.ToInt32(p["problemId"]);
+                pe.Label = Convert.ToString(p["label"]);
+                pe.Title = p["title"] == null ? "" : Convert.ToString(p["title"]);
+                if (p.ContainsKey("timeLimitMs") && p["timeLimitMs"] != null)
+                    pe.TimeLimitMs = Convert.ToInt32(p["timeLimitMs"]);
+                // 範例測資會一起存進 config.json，斷網時測試執行才有東西可比對
+                if (p.ContainsKey("samples"))
+                {
+                    foreach (Dictionary<string, object> s in Json.Array(p["samples"]))
+                    {
+                        SampleCase sc = new SampleCase();
+                        sc.Input = Convert.ToString(s["input"]);
+                        sc.Output = Convert.ToString(s["output"]);
+                        pe.Samples.Add(sc);
+                    }
+                }
+                cfg.Problems.Add(pe);
+            }
+            Store.SaveConfig(cfg);
+            FillProblems();
+            UpdateLanguageHint();
+            OnProblemChanged(null, EventArgs.Empty);
+            // 時間可能被監考改過，畫面要立刻跟上——比賽被延長就從「已結束」變回
+            // 作答中；重新打開程式時發現已經超過結束時間（或還沒到開始時間），
+            // 就要回到全螢幕畫面，不能讓選手留在舊的作答畫面上。
+            OnPhaseTick(null, EventArgs.Empty);
+
+            if (sameContest)
+            {
+                // 更新的重點就是「到底有沒有變」，沒講清楚等於沒更新
+                List<string> changes = new List<string>();
+                if (prevStart != cfg.StartTimeUtc) changes.Add("開始時間");
+                if (prevEnd != cfg.EndTimeUtc) changes.Add("結束時間");
+                if (prevProblems != cfg.Problems.Count)
+                    changes.Add("題數 " + prevProblems + " → " + cfg.Problems.Count);
+
+                Status(changes.Count > 0
+                    ? "比賽資訊已更新：" + string.Join("、", changes.ToArray())
+                    : "比賽資訊已是最新，沒有變動", false);
+            }
+            else
+            {
+                string langNote = cfg.AllowedLanguages.Count > 0
+                    ? "，限用 " + LanguageNames(cfg.AllowedLanguages)
+                    : "";
+                Status(string.Format("已載入「{0}」的 {1} 道題目{2}，可以斷網作答了",
+                    cfg.ContestTitle, cfg.Problems.Count, langNote), false);
+            }
+
+            // 設定完成 = 這台機器準備好了，回報給監考
+            SendCheckinAsync(false);
+        }
+
+        // 重新打開程式時第一件事：背景向伺服器核對這場比賽現在的狀態。
+        // 不能同步做——選手機上這時多半還沒連上網路（比賽期間機房斷網是常態），
+        // 同步查會讓視窗卡住等到逾時。查得到就套用最新結果（可能因此從快取
+        // 顯示的「作答中」變回全螢幕的「尚未開始」或「已結束」）；查不到就
+        // 維持原本用本機快取算出來的畫面，不打擾使用者。
+        void RefreshContestStateAsync()
+        {
+            if (string.IsNullOrEmpty(cfg.Cookie) || cfg.ContestId <= 0) return;
+            if (string.IsNullOrEmpty(cfg.ServerUrl)) return;
+
+            int contestId = cfg.ContestId;
+
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
+            {
+                Dictionary<string, object> root = null;
+                try { root = FetchContestState(contestId); }
+                catch { /* 開程式當下多半還沒連網，維持本機快取即可 */ }
+                if (root == null) return;
+
+                try
+                {
+                    BeginInvoke((MethodInvoker)delegate
+                    {
+                        // 抓取期間使用者已經手動換了比賽，這筆結果就作廢
+                        if (cfg.ContestId != contestId) return;
+                        ApplyContestState(contestId, root);
+                    });
+                }
+                catch { /* 視窗已關閉 */ }
+            });
         }
 
         // ── 比賽中：選檔 → 提交到本機 ──────────────
