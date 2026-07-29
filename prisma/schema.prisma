@@ -35,9 +35,26 @@ model Problem {
   order           Int              @default(0) @unique // 題目列表顯示順序；同時是對外題號（網址 /problems/{order}）
   createdAt       DateTime         @default(now())
   testCases       TestCase[]
+  subtasks        Subtask[] // 有設定才走部分給分；沒有則維持整題 AC/WA
   submissions     Submission[]
   courseProblems  CourseProblem[]
   contestProblems ContestProblem[]
+}
+
+// 子題：把一題的測資分組並各自配分，用於部分給分。
+// 一題若完全沒有 Subtask，代表沿用舊制「整題只有 AC/WA」，不計分數。
+model Subtask {
+  id        Int        @id @default(autoincrement())
+  problemId Int
+  problem   Problem    @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  order     Int        @default(0) // 子題序號（1, 2, 3...），決定配分表與判題順序
+  points    Int // 此子題配分；一題的所有子題配分總和應為 100
+  // full = 完整比對輸出；firstLine = 只比對輸出第一行，其餘內容忽略
+  // （對應「只要某一行對就給分、後面明細寫錯不扣分」這種官方配分規則）
+  checkMode String     @default("full")
+  testCases TestCase[]
+
+  @@unique([problemId, order])
 }
 
 // 題單型課程：一組題目 + 說明，使用者加入後追蹤解題進度
@@ -162,13 +179,15 @@ model ProposalTestCase {
 }
 
 model TestCase {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   problemId Int
-  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  subtaskId Int? // 有值才計入部分給分；null = 沿用舊制整題 AC/WA
+  subtask   Subtask? @relation(fields: [subtaskId], references: [id], onDelete: Cascade)
   input     String
   output    String
-  isSample  Boolean @default(false) // 範例測資會顯示在題目頁
-  order     Int     @default(0)
+  isSample  Boolean  @default(false) // 範例測資會顯示在題目頁
+  order     Int      @default(0)
 }
 
 model Submission {
@@ -185,6 +204,8 @@ model Submission {
   compileError String?
   timeMs       Int? // 所有測資的最大值
   memoryKb     Int?
+  score        Int? // 有部分給分（子題）的題目才會有值，範圍 0~該題子題配分總和；沒有子題的題目維持 null
+
   // 離線收件程式為每筆提交產生的去重鍵。選手重複按上傳時用它擋掉重複寫入，
   // 否則同一份程式會被灌成多筆、把 IOI 的「最後一次提交」和提交次數算錯。
   clientKey    String?      @unique
@@ -197,6 +218,7 @@ model TestResult {
   submissionId Int
   submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   order        Int        @default(0)
+  subtaskOrder Int? // 對應 Subtask.order；沒有子題的題目維持 null
   verdict      String // AC WA TLE MLE RE
   timeMs       Int?
   memoryKb     Int?

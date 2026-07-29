@@ -40,11 +40,14 @@ export function normalizeOutput(text: string): string {
 }
 
 // 單筆測資的判定（判題與測試執行共用）
+// checkMode: full = 完整比對輸出；firstLine = 只比對輸出第一行，其餘內容忽略
+// （對應子題「只要某一行對就給分、後面明細寫錯不扣分」這種配分規則）
 export function runVerdict(
   run: import("@/lib/piston").PistonPhase,
   timeLimitMs: number,
   memoryLimitBytes: number,
-  expected: string
+  expected: string,
+  checkMode: "full" | "firstLine" = "full"
 ): string {
   if (run.signal === "SIGKILL") {
     // 被沙箱砍掉：看是撞到時間還是記憶體上限
@@ -54,9 +57,13 @@ export function runVerdict(
     return "MLE"; // OOM killer 常常在數值到頂前就動手
   }
   if (run.code !== 0) return "RE";
-  return normalizeOutput(run.stdout) === normalizeOutput(expected)
-    ? "AC"
-    : "WA";
+
+  const actual = normalizeOutput(run.stdout);
+  const want = normalizeOutput(expected);
+  if (checkMode === "firstLine") {
+    return actual.split("\n")[0] === want.split("\n")[0] ? "AC" : "WA";
+  }
+  return actual === want ? "AC" : "WA";
 }
 
 async function judgeSubmission(submissionId: number) {
@@ -64,7 +71,15 @@ async function judgeSubmission(submissionId: number) {
     where: { id: submissionId },
     include: {
       problem: {
-        include: { testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] } },
+        include: {
+          testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] },
+          subtasks: {
+            orderBy: { order: "asc" },
+            include: {
+              testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] },
+            },
+          },
+        },
       },
     },
   });
@@ -100,63 +115,99 @@ async function judgeSubmission(submissionId: number) {
   const memoryLimitBytes =
     problem.memoryLimitMb * lang.memoryMultiplier * 1024 * 1024;
 
+  const hasSubtasks = problem.subtasks.length > 0;
+  // 沒有子題就沿用舊制：所有測資當成單一群組，遇到第一筆失敗就整題停止。
+  // 有子題則每個子題各自跑完自己的測資（子題內遇到失敗就跳到下一個子題），
+  // 全對的子題才拿到該子題配分，最後加總成 score。
+  const groups = hasSubtasks
+    ? problem.subtasks.map((st) => ({
+        testCases: st.testCases,
+        points: st.points,
+        checkMode: st.checkMode === "firstLine" ? ("firstLine" as const) : ("full" as const),
+        subtaskOrder: st.order as number | null,
+      }))
+    : [
+        {
+          testCases: problem.testCases,
+          points: null as number | null,
+          checkMode: "full" as const,
+          subtaskOrder: null as number | null,
+        },
+      ];
+
   let overall = "AC";
   let maxTimeMs = 0;
   let maxMemoryKb = 0;
+  let score = hasSubtasks ? 0 : null;
+  let resultOrder = 0;
 
   try {
-    for (let i = 0; i < problem.testCases.length; i++) {
-      const tc = problem.testCases[i];
-      const result = await execute(submission.language, {
-        language: lang.piston,
-        version: lang.version,
-        filename: lang.filename,
-        code: submission.code,
-        stdin: tc.input,
-        runTimeoutMs: timeLimitMs,
-        runMemoryLimitBytes: memoryLimitBytes,
-      });
+    for (const group of groups) {
+      let groupPassed = true;
 
-      // 編譯失敗 → CE，直接結束
-      if (result.compile && result.compile.code !== 0) {
-        await prisma.submission.update({
-          where: { id: submissionId },
+      for (const tc of group.testCases) {
+        resultOrder++;
+        const result = await execute(submission.language, {
+          language: lang.piston,
+          version: lang.version,
+          filename: lang.filename,
+          code: submission.code,
+          stdin: tc.input,
+          runTimeoutMs: timeLimitMs,
+          runMemoryLimitBytes: memoryLimitBytes,
+        });
+
+        // 編譯失敗 → CE，直接結束
+        if (result.compile && result.compile.code !== 0) {
+          await prisma.submission.update({
+            where: { id: submissionId },
+            data: {
+              status: "CE",
+              compileError:
+                result.compile.stderr || result.compile.output || "編譯失敗",
+            },
+          });
+          return;
+        }
+
+        const run = result.run;
+        const timeMs = Math.round(run.cpu_time ?? run.wall_time ?? 0);
+        const memoryKb = Math.round((run.memory ?? 0) / 1024);
+        maxTimeMs = Math.max(maxTimeMs, timeMs);
+        maxMemoryKb = Math.max(maxMemoryKb, memoryKb);
+
+        const verdict = runVerdict(
+          run,
+          timeLimitMs,
+          memoryLimitBytes,
+          tc.output,
+          group.checkMode
+        );
+
+        await prisma.testResult.create({
           data: {
-            status: "CE",
-            compileError:
-              result.compile.stderr || result.compile.output || "編譯失敗",
+            submissionId,
+            order: resultOrder,
+            subtaskOrder: group.subtaskOrder,
+            verdict,
+            timeMs,
+            memoryKb,
           },
         });
-        return;
+
+        if (verdict !== "AC") {
+          groupPassed = false;
+          if (overall === "AC") overall = verdict; // 只記錄最早遇到的失敗
+          break; // 慣例：子題（或整題）內遇到第一筆失敗就停，換下一組
+        }
       }
 
-      const run = result.run;
-      const timeMs = Math.round(run.cpu_time ?? run.wall_time ?? 0);
-      const memoryKb = Math.round((run.memory ?? 0) / 1024);
-      maxTimeMs = Math.max(maxTimeMs, timeMs);
-      maxMemoryKb = Math.max(maxMemoryKb, memoryKb);
-
-      const verdict = runVerdict(run, timeLimitMs, memoryLimitBytes, tc.output);
-
-      await prisma.testResult.create({
-        data: {
-          submissionId,
-          order: i + 1,
-          verdict,
-          timeMs,
-          memoryKb,
-        },
-      });
-
-      if (verdict !== "AC") {
-        overall = verdict;
-        break; // 慣例：遇到第一筆失敗就停
-      }
+      if (hasSubtasks && groupPassed) score! += group.points!;
     }
 
     await prisma.submission.update({
       where: { id: submissionId },
-      data: { status: overall, timeMs: maxTimeMs, memoryKb: maxMemoryKb },
+      data: { status: overall, timeMs: maxTimeMs, memoryKb: maxMemoryKb, score },
     });
   } catch (err) {
     console.error(`[judge] submission ${submissionId} internal error:`, err);

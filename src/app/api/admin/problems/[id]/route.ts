@@ -25,7 +25,7 @@ export async function PUT(
       { status: 400 }
     );
   }
-  const { testCases, ...fields } = parsed.data;
+  const { testCases, subtasks, ...fields } = parsed.data;
 
   const existing = await prisma.problem.findUnique({
     where: { id: problemId },
@@ -34,19 +34,36 @@ export async function PUT(
     return Response.json({ error: "題目不存在" }, { status: 404 });
   }
 
-  // 測資整批換新（簡單且不易出錯）
-  await prisma.$transaction([
-    prisma.testCase.deleteMany({ where: { problemId } }),
-    prisma.problem.update({
+  // 測資與子題整批換新（簡單且不易出錯）
+  await prisma.$transaction(async (tx) => {
+    await tx.testCase.deleteMany({ where: { problemId } });
+    await tx.subtask.deleteMany({ where: { problemId } });
+    const updated = await tx.problem.update({
       where: { id: problemId },
       data: {
         ...fields,
-        testCases: {
-          create: testCases.map((tc, i) => ({ ...tc, order: i + 1 })),
+        subtasks: {
+          create: subtasks.map((s, i) => ({
+            order: i + 1,
+            points: s.points,
+            checkMode: s.checkMode,
+          })),
         },
       },
-    }),
-  ]);
+      include: { subtasks: { orderBy: { order: "asc" } } },
+    });
+    await tx.testCase.createMany({
+      data: testCases.map((tc, i) => ({
+        problemId,
+        input: tc.input,
+        output: tc.output,
+        isSample: tc.isSample,
+        order: i + 1,
+        subtaskId:
+          tc.subtaskIndex != null ? updated.subtasks[tc.subtaskIndex].id : null,
+      })),
+    });
+  });
   return Response.json({ ok: true });
 }
 

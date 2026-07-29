@@ -7,6 +7,12 @@ interface TestCaseInput {
   input: string;
   output: string;
   isSample: boolean;
+  subtaskIndex: number | null;
+}
+
+interface SubtaskInput {
+  points: number;
+  checkMode: "full" | "firstLine";
 }
 
 export interface ProblemFormData {
@@ -17,6 +23,7 @@ export interface ProblemFormData {
   timeLimitMs: number;
   memoryLimitMb: number;
   isPublic: boolean;
+  subtasks: SubtaskInput[];
   testCases: TestCaseInput[];
 }
 
@@ -28,7 +35,8 @@ const EMPTY: ProblemFormData = {
   timeLimitMs: 1000,
   memoryLimitMb: 256,
   isPublic: true,
-  testCases: [{ input: "", output: "", isSample: true }],
+  subtasks: [],
+  testCases: [{ input: "", output: "", isSample: true, subtaskIndex: null }],
 };
 
 export default function ProblemForm({
@@ -57,6 +65,37 @@ export default function ProblemForm({
       ),
     }));
   }
+
+  function setSubtask(i: number, patch: Partial<SubtaskInput>) {
+    setForm((f) => ({
+      ...f,
+      subtasks: f.subtasks.map((s, j) => (j === i ? { ...s, ...patch } : s)),
+    }));
+  }
+
+  function addSubtask() {
+    setForm((f) => ({
+      ...f,
+      subtasks: [...f.subtasks, { points: 0, checkMode: "full" }],
+    }));
+  }
+
+  // 刪除子題時，指向它的測資要清空、指向後面子題的測資要往前補一格索引
+  function removeSubtask(i: number) {
+    setForm((f) => ({
+      ...f,
+      subtasks: f.subtasks.filter((_, j) => j !== i),
+      testCases: f.testCases.map((tc) => {
+        if (tc.subtaskIndex == null) return tc;
+        if (tc.subtaskIndex === i) return { ...tc, subtaskIndex: null };
+        if (tc.subtaskIndex > i)
+          return { ...tc, subtaskIndex: tc.subtaskIndex - 1 };
+        return tc;
+      }),
+    }));
+  }
+
+  const totalPoints = form.subtasks.reduce((s, x) => s + x.points, 0);
 
   async function save() {
     setSaving(true);
@@ -169,6 +208,69 @@ export default function ProblemForm({
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="section-title">
+            子題與配分{form.subtasks.length > 0 ? `（合計 ${totalPoints} 分）` : ""}
+          </h2>
+          <button className="btn-secondary" onClick={addSubtask}>
+            ＋ 新增子題
+          </button>
+        </div>
+        {form.subtasks.length === 0 ? (
+          <p className="text-sm text-mute">
+            沒有子題＝整題只有 AC / WA（沿用預設判法）。加了子題之後，每筆測資都要指定所屬子題，該子題測資全對才拿到配分。
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {totalPoints !== 100 && (
+              <p className="text-sm text-[#ff6b6b]">
+                子題配分總和目前為 {totalPoints}，需為 100 才能儲存。
+              </p>
+            )}
+            {form.subtasks.map((s, i) => (
+              <div key={i} className="card flex flex-wrap items-center gap-4 p-4">
+                <p className="text-sm font-semibold text-dim">子題 {i + 1}</p>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-dim">配分</label>
+                  <input
+                    className="input w-24"
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={s.points}
+                    onChange={(e) =>
+                      setSubtask(i, { points: Number(e.target.value) })
+                    }
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-dim">比對方式</label>
+                  <select
+                    className="input"
+                    value={s.checkMode}
+                    onChange={(e) =>
+                      setSubtask(i, {
+                        checkMode: e.target.value as "full" | "firstLine",
+                      })
+                    }
+                  >
+                    <option value="full">完整比對輸出</option>
+                    <option value="firstLine">只比對第一行</option>
+                  </select>
+                </div>
+                <button
+                  className="ml-auto text-sm text-[#ff6b6b] hover:underline"
+                  onClick={() => removeSubtask(i)}
+                >
+                  刪除子題
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="section-title">
             測資（{form.testCases.length} 筆）
           </h2>
           <button
@@ -176,7 +278,7 @@ export default function ProblemForm({
             onClick={() =>
               set("testCases", [
                 ...form.testCases,
-                { input: "", output: "", isSample: false },
+                { input: "", output: "", isSample: false, subtaskIndex: null },
               ])
             }
           >
@@ -186,11 +288,35 @@ export default function ProblemForm({
         <div className="space-y-4">
           {form.testCases.map((tc, i) => (
             <div key={i} className="card p-4">
-              <div className="mb-2 flex items-center justify-between">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-dim">
                   測資 #{i + 1}
                 </p>
                 <div className="flex items-center gap-4">
+                  {form.subtasks.length > 0 && (
+                    <label className="flex items-center gap-1.5 text-sm">
+                      所屬子題
+                      <select
+                        className="input"
+                        value={tc.subtaskIndex ?? ""}
+                        onChange={(e) =>
+                          setTestCase(i, {
+                            subtaskIndex:
+                              e.target.value === ""
+                                ? null
+                                : Number(e.target.value),
+                          })
+                        }
+                      >
+                        <option value="">請選擇</option>
+                        {form.subtasks.map((s, si) => (
+                          <option key={si} value={si}>
+                            子題 {si + 1}（{s.points} 分）
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                   <label className="flex items-center gap-1.5 text-sm">
                     <input
                       type="checkbox"
