@@ -665,12 +665,21 @@ namespace ItouOJ
             }
 
             if (string.IsNullOrEmpty(cfg.ProblemDir)) return null;
+            if (!Directory.Exists(cfg.ProblemDir)) return null;
+
             // PDF 優先；沒有的話收 HTML（scripts/export-problems.mjs 的輸出格式），
-            // 兩者都能用系統預設程式開啟
-            foreach (string ext in new string[] { ".pdf", ".PDF", ".html", ".htm" })
+            // 兩者都能用系統預設程式開啟。子資料夾也一併搜尋——監考可能把題目檔
+            // 分資料夾整理，甚至刻意藏在裡面一層避免選手在資料夾裡翻到別題，
+            // 只找最外層會找不到。
+            foreach (string ext in new string[] { ".pdf", ".html", ".htm" })
             {
-                string p = Path.Combine(cfg.ProblemDir, label + ext);
-                if (File.Exists(p)) return p;
+                string[] hits;
+                try
+                {
+                    hits = Directory.GetFiles(cfg.ProblemDir, label + ext, SearchOption.AllDirectories);
+                }
+                catch { continue; } // 資料夾在搜尋過程中被移動/移除之類的意外，跳過這個副檔名
+                if (hits.Length > 0) return hits[0];
             }
             return null;
         }

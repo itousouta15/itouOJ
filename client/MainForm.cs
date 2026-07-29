@@ -14,12 +14,40 @@ using System.Windows.Forms;
 
 namespace ItouOJ
 {
+    // 一般 TextBox 貼上 LF-only（沒有 \r）的文字時，Win32 EDIT 控制項不認得
+    // 單獨的 \n 是換行，整段程式碼會擠成一行。很多編輯器/網頁複製出來的程式碼
+    // 就是 LF-only，貼上題目程式碼是這支程式最核心的操作，這個問題不能留著。
+    //
+    // 攔在 WM_PASTE 這一層，不管是 Ctrl+V、右鍵選單、還是滑鼠中鍵貼上都會經過
+    // 這裡，比只處理 Ctrl+V 的 KeyDown 更保險。
+    class PasteNormalizingTextBox : TextBox
+    {
+        const int WM_PASTE = 0x0302;
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == WM_PASTE)
+            {
+                if (Clipboard.ContainsText())
+                {
+                    string text = Clipboard.GetText();
+                    // 統一先收斂成 \n，再展開成 \r\n，不管來源是 \n、\r\n 還是混用都會一致
+                    text = text.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
+                    SelectedText = text; // 有選取範圍就取代，沒有就插入在游標位置，跟預設貼上行為一致
+                }
+                return; // 吃掉這個訊息，不讓預設處理再貼一次
+            }
+            base.WndProc(ref m);
+        }
+    }
+
     public class MainForm : Form
     {
         Config cfg;
 
         TabControl tabs;
-        TextBox txtServer, txtUser, txtFile, txtCode;
+        TextBox txtServer, txtUser, txtFile;
+        PasteNormalizingTextBox txtCode;
         RadioButton rbTyped, rbFile;
         ComboBox cboContest, cboProblem;
         Button btnLogin, btnBrowse, btnTest, btnSubmit, btnUpload, btnRefresh,
@@ -516,10 +544,13 @@ namespace ItouOJ
                         if (lastScreen == Screen.Waiting)
                         {
                             tabs.SelectedIndex = 0;
-                            // 題目清單上的「題名開賽後顯示」到這一刻就過期了，
-                            // 重畫一次換成正確說法
+                            // 題目清單上的「題名開賽後顯示」到這一刻就過期了，先重畫一次
+                            // 換成正確說法。但這只是換文字，題名本身（p.Title）還是賽前
+                            // 抓到的空字串——伺服器在開賽前本來就不會給標題（防洩題），
+                            // 所以要真的問到題名，得在這一刻真的有網路的話重抓一次。
                             FillProblems();
                             Status("比賽開始！", false);
+                            RefreshContestStateAsync();
                         }
                     }
                     TimeSpan left = Phase.Until(cfg, cfg.EndTimeUtc);
@@ -743,7 +774,7 @@ namespace ItouOJ
             editorWrap.Dock = DockStyle.Fill;
             editorWrap.Padding = new Padding(1);
 
-            txtCode = new TextBox();
+            txtCode = new PasteNormalizingTextBox();
             txtCode.Dock = DockStyle.Fill;
             txtCode.Multiline = true;
             txtCode.AcceptsTab = true;
