@@ -110,18 +110,28 @@ Ok ("itouOJ-Submit.exe          " + [math]::Round((Get-Item $distExe).Length / 1
 Ok ("itouOJ-lab-deploy-kit.zip  " + [math]::Round((Get-Item $zip).Length / 1KB, 1) + " KB")
 Ok ("SHA256  $hash")
 
-# 發行說明裡的 SHA256 必須對得上這次真的要上傳的那顆 exe
+# 發行說明裡的 SHA256 由這裡填，不要手寫。
+#
+# 這台用的是 .NET Framework 內建的舊版 csc，不支援 /deterministic —— 同一份
+# 原始碼每次編譯出來的 exe 都不一樣（內嵌的 MVID 每次重新產生）。所以事先
+# 手寫的校驗值必然對不上最後真的上傳的那顆，publish 出去反而是錯的資訊。
+# 改成把說明裡的 {{SHA256}} 換成剛剛算出來的值，兩者永遠一致。
+$notesForRelease = $NotesFile
 if ($NotesFile) {
-    $notes = Get-Content $NotesFile -Raw
-    if ($notes -notmatch [regex]::Escape($hash)) {
-        Warn "發行說明裡沒有這顆 exe 的 SHA256，請補上："
-        Write-Host "     $hash"
+    $utf8 = New-Object Text.UTF8Encoding($false)
+    $notes = [IO.File]::ReadAllText((Resolve-Path $NotesFile), $utf8)
+    if ($notes.Contains("{{SHA256}}")) {
+        $notesForRelease = Join-Path $dist "release-notes.md"
+        [IO.File]::WriteAllText($notesForRelease, $notes.Replace("{{SHA256}}", $hash), $utf8)
+        Ok "已把發行說明裡的 {{SHA256}} 換成實際校驗值"
+    } elseif ($notes -match $hash) {
+        Ok "發行說明已含正確的校驗值"
+    } else {
+        Warn "發行說明裡沒有 {{SHA256}} 佔位符，發布出去不會有校驗值"
         if (-not $Yes) {
             $ans = Read-Host "   仍要繼續嗎？(y/N)"
             if ($ans -ne "y") { throw "已取消" }
         }
-    } else {
-        Ok "發行說明的 SHA256 對得上"
     }
 }
 
@@ -136,7 +146,7 @@ Step "發布 $Tag"
 
 if (-not $Title) { $Title = "itouOJ 收件程式 $Tag" }
 
-& gh release create $Tag $zip $distExe --title $Title --notes-file $NotesFile
+& gh release create $Tag $zip $distExe --title $Title --notes-file $notesForRelease
 if ($LASTEXITCODE -ne 0) { throw "gh release create 失敗" }
 
 # 上傳可能部分失敗而 gh 仍然回 0，所以回頭確認兩個檔都在
