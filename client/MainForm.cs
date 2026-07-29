@@ -32,6 +32,9 @@ namespace ItouOJ
         // 連等待/結束的全屏遮罩也蓋不到它。
         Label lblClock;
         readonly ToolTip clockTip = new ToolTip();
+        // 目前連不連得上伺服器，跟時鐘一樣常駐狀態列，不必等有東西要上傳才看得到
+        Label lblNet;
+        readonly ToolTip netTip = new ToolTip();
         Panel pnlGateAction;
         Button btnGateAction;
         ComboBox cboGateContest;
@@ -69,13 +72,16 @@ namespace ItouOJ
             BuildUi();
             LoadFromConfig();
             RefreshList();
+            CheckForUpdateIfLaunchedFromBrowser(launchUrl);
 
-            // 網路一回來就主動提示。沒有這層的話，沒聽到監考宣布的選手可能
-            // 就這樣關掉程式離場，提交永遠留在本機。
+            // 網路一回來就主動提示，狀態列的連線指示燈也靠它更新。
+            // 沒有這層的話，沒聽到監考宣布的選手可能就這樣關掉程式離場，
+            // 提交永遠留在本機。
             netTimer = new System.Windows.Forms.Timer();
             netTimer.Interval = 15000;
             netTimer.Tick += OnNetTick;
             netTimer.Start();
+            OnNetTick(null, EventArgs.Empty); // 開程式就先探一次，指示燈不必等 15 秒才有內容
 
             // 啟動就回報一次。監考巡檢時只會「打開程式看一眼」，如果只在選比賽時
             // 才回報，昨天設定好的機器今天永遠顯示未回報，這個功能就沒用了。
@@ -127,6 +133,35 @@ namespace ItouOJ
             catch { /* 參數壞掉不該讓程式開不起來 */ }
         }
 
+        // 只在從網站「開啟收件程式」按鈕啟動時查——那正是賽前設定、還有網路的
+        // 時候，過了這個時間點通常就斷網了，查了也沒意義。查不到（沒有網路、
+        // GitHub API 限流）就當作沒事，不能讓版本檢查擋住正常使用。
+        void CheckForUpdateIfLaunchedFromBrowser(string launchUrl)
+        {
+            if (string.IsNullOrEmpty(launchUrl)) return;
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
+            {
+                string latestTag = UpdateCheck.FetchLatestTag();
+                if (!UpdateCheck.IsOlderThan(UpdateCheck.ClientVersion, latestTag)) return;
+
+                try
+                {
+                    BeginInvoke((MethodInvoker)delegate
+                    {
+                        MessageBox.Show(this,
+                            string.Format(
+                                "這台機器安裝的收件程式是 v{0}，GitHub 上已經有更新的 {1}。\r\n\r\n" +
+                                "建議比賽開始前先更新到最新版再繼續設定。\r\n" +
+                                "下載：https://github.com/itousouta15/itouOJ/releases",
+                                UpdateCheck.ClientVersion, latestTag),
+                            "偵測到新版本",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    });
+                }
+                catch { /* 視窗已關閉 */ }
+            });
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             if (draftTimer != null) draftTimer.Stop();
@@ -151,8 +186,11 @@ namespace ItouOJ
         void OnNetTick(object sender, EventArgs e)
         {
             if (probing) return;
-            if (string.IsNullOrEmpty(cfg.ServerUrl)) return;
-            if (Store.ReadDir(Store.PendingDir).Count == 0) return;
+            if (string.IsNullOrEmpty(cfg.ServerUrl))
+            {
+                SetNetLabel(null); // 還沒設定伺服器網址，無從得知
+                return;
+            }
 
             probing = true;
             string url = cfg.ServerUrl + "/api/me/contests";
@@ -191,6 +229,8 @@ namespace ItouOJ
 
         void OnNetProbeResult(bool online)
         {
+            SetNetLabel(online);
+
             if (online == lastOnline) return;
             lastOnline = online;
             if (!online) return;
@@ -202,6 +242,27 @@ namespace ItouOJ
             Status(string.Format(
                 "偵測到網路已恢復，有 {0} 筆提交還沒上傳 —— 請按右下角「上傳到伺服器」",
                 pending), false);
+        }
+
+        // online 為 null 代表還沒偵測過（例如伺服器網址還沒設定）
+        void SetNetLabel(bool? online)
+        {
+            if (lblNet == null) return;
+            if (online == null)
+            {
+                lblNet.Text = "● 尚未偵測";
+                lblNet.ForeColor = Theme.Mute;
+            }
+            else if (online.Value)
+            {
+                lblNet.Text = "● 已連線";
+                lblNet.ForeColor = Theme.Good;
+            }
+            else
+            {
+                lblNet.Text = "● 離線";
+                lblNet.ForeColor = Theme.Bad;
+            }
         }
 
         void BuildUi()
@@ -237,6 +298,23 @@ namespace ItouOJ
                 using (Pen pen = new Pen(Theme.Border))
                     e.Graphics.DrawLine(pen, 0, 0, ((Panel)s).Width, 0);
             };
+
+            // 目前是否連得上伺服器，跟時鐘一樣任何階段都看得到。
+            //
+            // 斷網比賽最需要知道的就是「現在到底斷了沒」——以前這件事只在
+            // 網路剛恢復、又剛好有東西要上傳時才會用一則提示訊息閃過去，
+            // 平常根本看不到目前狀態。
+            lblNet = new Label();
+            lblNet.Dock = DockStyle.Right;
+            lblNet.Width = 90;
+            lblNet.Font = Theme.BodyBold;
+            lblNet.TextAlign = ContentAlignment.MiddleRight;
+            lblNet.Padding = new Padding(0, 0, 10, 0);
+            bottom.Controls.Add(lblNet);
+            netTip.SetToolTip(lblNet,
+                "目前是否連得上 itouOJ 伺服器。\r\n" +
+                "比賽期間預期是「離線」；比賽結束、網路恢復後應變成「已連線」。");
+            SetNetLabel(null);
 
             // 校正後的現在時間，任何階段都看得到。
             //
@@ -1051,12 +1129,12 @@ namespace ItouOJ
             Status("設定已儲存", false);
         }
 
-        // 只鎖「比賽選擇」和「管理員設定」。登入必須永遠開著——選手的 session
+        // 只鎖「管理員設定」。登入必須永遠開著——選手的 session
         // 過期後要重新登入才能上傳，鎖住等於讓他交不出東西。
+        // 比賽選擇也不鎖：選錯比賽要能自己改回來，鎖住反而卡住需要臨時換場的情況。
         void ApplyLockState()
         {
             bool locked = AdminLock.IsLocked(cfg) && !unlockedThisSession;
-            cboContest.Enabled = !locked;
             btnSettings.Enabled = !locked;
             btnUnlock.Visible = locked;
             lblLock.Text = locked ? "🔒 已由監考鎖定，比賽期間不需要更動" : "";
