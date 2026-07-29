@@ -1008,6 +1008,12 @@ namespace ItouOJ
                 using (Stream s = req.GetRequestStream()) s.Write(data, 0, data.Length);
             }
 
+            // 時鐘校正要扣掉「這趟來回花了多久」，不然網路慢（DNS、TLS 握手、
+            // 第一次連線）會被整段算成時鐘飄移。t0 到收到 headers 那一刻（下面
+            // 的 t1）之間的時間，假設去回各佔一半，serverDate 往前補半趟——
+            // 呼叫端在這之後不久就會拿 serverDate 去減自己那時的 UtcNow，
+            // 這樣补過的值才會逼近真正的時鐘差，而不是把整趟網路延遲也算進去。
+            DateTime t0 = DateTime.UtcNow;
             HttpWebResponse resp = null;
             try
             {
@@ -1018,6 +1024,7 @@ namespace ItouOJ
                 resp = ex.Response as HttpWebResponse;
                 if (resp == null) throw;
             }
+            DateTime t1 = DateTime.UtcNow;
 
             using (resp)
             {
@@ -1029,7 +1036,8 @@ namespace ItouOJ
                             DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
                             out parsed))
                     {
-                        serverDate = parsed;
+                        double halfTripMs = (t1 - t0).TotalMilliseconds / 2.0;
+                        serverDate = parsed.AddMilliseconds(halfTripMs);
                     }
                 }
                 string sc = resp.Headers["Set-Cookie"];

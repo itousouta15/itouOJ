@@ -560,18 +560,22 @@ namespace ItouOJ
                     break;
 
                 case Screen.Waiting:
+                    // 監考巡場時光看這個畫面就要能確認「這台機器是誰、考哪一場」，
+                    // 不必另外切去「賽前設定」分頁查帳號。
                     ShowGate("比賽尚未開始",
                         Phase.Clock(Phase.Until(cfg, cfg.StartTimeUtc)), Theme.Accent,
-                        cfg.ContestTitle + "\r\n時間一到會自動開放作答，請不要關閉程式。",
+                        cfg.Username + "　·　" + cfg.ContestTitle +
+                        "\r\n時間一到會自動開放作答，請不要關閉程式。",
                         null, false);
                     break;
 
                 case Screen.Ended:
                     int pending = Store.ReadDir(Store.PendingDir).Count;
                     ShowGate("比賽已結束", "00:00:00", Theme.Bad,
-                        pending > 0
-                            ? "還有 " + pending + " 筆提交未上傳。\r\n網路恢復後請按下方按鈕回傳。"
-                            : "所有提交都已上傳，可以到 itouOJ 網站查看判題結果。",
+                        cfg.Username + "　·　" + cfg.ContestTitle + "\r\n" +
+                        (pending > 0
+                            ? "還有 " + pending + " 筆提交未上傳。網路恢復後請按下方按鈕回傳。"
+                            : "所有提交都已上傳，可以到 itouOJ 網站查看判題結果。"),
                         pending > 0 ? "回傳到伺服器" : "前往 itouOJ 查看結果", false);
                     if (lastScreen == Screen.Answering)
                     {
@@ -1452,6 +1456,7 @@ namespace ItouOJ
                     JavaScriptSerializer ser = new JavaScriptSerializer();
                     Dictionary<string, object> payload = new Dictionary<string, object>();
                     payload["host"] = host;
+                    payload["clientVersion"] = UpdateCheck.ClientVersion;
 
                     string setCookie;
                     DateTime? serverDate;
