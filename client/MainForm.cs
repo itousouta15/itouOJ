@@ -55,7 +55,7 @@ namespace ItouOJ
         ListView listView;
         Label lblStatus, lblAccount, lblLangHint, lblDraft, lblLock, lblWho, lblWhere;
         Panel setupPanel, pnlIdentity, lockableGroup, pnlGate;
-        Label lblGateTitle, lblGateClock, lblGateHint, lblRemain;
+        Label lblGateTitle, lblGateClock, lblGateIdentity, lblGateHint, lblRemain;
         // 校正後的現在時間。放在狀態列 —— 那是唯一每個階段都看得到的地方，
         // 連等待/結束的全屏遮罩也蓋不到它。
         Label lblClock;
@@ -475,6 +475,15 @@ namespace ItouOJ
             lblGateClock.Dock = DockStyle.Top;
             lblGateClock.Height = 84;
 
+            // 帳號、比賽名稱——監考巡場光看這個畫面就要一眼認出「這台是誰、
+            // 考哪一場」，字級特地跟下面純輔助說明的 lblGateHint 分開，大很多。
+            lblGateIdentity = new Label();
+            lblGateIdentity.Font = new Font("Microsoft JhengHei UI", 16F, FontStyle.Bold);
+            lblGateIdentity.ForeColor = Theme.Text;
+            lblGateIdentity.TextAlign = ContentAlignment.MiddleCenter;
+            lblGateIdentity.Dock = DockStyle.Top;
+            lblGateIdentity.Height = 36;
+
             lblGateHint = new Label();
             lblGateHint.Font = new Font("Microsoft JhengHei UI", 11F);
             lblGateHint.ForeColor = Theme.Dim;
@@ -517,6 +526,7 @@ namespace ItouOJ
             // Dock=Top 後加的在上面，所以由下往上加
             pnlGate.Controls.Add(pnlGateAction);
             pnlGate.Controls.Add(lblGateHint);
+            pnlGate.Controls.Add(lblGateIdentity);
             pnlGate.Controls.Add(lblGateClock);
             pnlGate.Controls.Add(lblGateTitle);
             pnlGate.Controls.Add(spacer);
@@ -546,36 +556,36 @@ namespace ItouOJ
             switch (s)
             {
                 case Screen.NeedLogin:
-                    ShowGate("歡迎使用 itouOJ 收件程式", "", Theme.Text,
+                    ShowGate("歡迎使用 itouOJ 收件程式", "", Theme.Text, null,
                         "請先登入。會開啟瀏覽器讓你用 itouOJ 帳號登入，\r\n" +
                         "帳號密碼、Google、Discord 都可以。",
                         "用瀏覽器登入", false);
                     break;
 
                 case Screen.NeedContest:
-                    ShowGate("選擇比賽", "", Theme.Text,
-                        "已登入為 " + cfg.Username + "。\r\n" +
+                    ShowGate("選擇比賽", "", Theme.Text, cfg.Username,
                         "請選擇你要參加的比賽（需要先在 itouOJ 網站上報名）。",
                         "重新整理比賽清單", true);
                     break;
 
                 case Screen.Waiting:
                     // 監考巡場時光看這個畫面就要能確認「這台機器是誰、考哪一場」，
-                    // 不必另外切去「賽前設定」分頁查帳號。
+                    // 不必另外切去「賽前設定」分頁查帳號——所以帳號/比賽這行用
+                    // lblGateIdentity，字級特地比下面的說明文字大上不少。
                     ShowGate("比賽尚未開始",
                         Phase.Clock(Phase.Until(cfg, cfg.StartTimeUtc)), Theme.Accent,
-                        cfg.Username + "　·　" + cfg.ContestTitle +
-                        "\r\n時間一到會自動開放作答，請不要關閉程式。",
+                        cfg.Username + "　·　" + cfg.ContestTitle,
+                        "時間一到會自動開放作答，請不要關閉程式。",
                         null, false);
                     break;
 
                 case Screen.Ended:
                     int pending = Store.ReadDir(Store.PendingDir).Count;
                     ShowGate("比賽已結束", "00:00:00", Theme.Bad,
-                        cfg.Username + "　·　" + cfg.ContestTitle + "\r\n" +
-                        (pending > 0
+                        cfg.Username + "　·　" + cfg.ContestTitle,
+                        pending > 0
                             ? "還有 " + pending + " 筆提交未上傳。網路恢復後請按下方按鈕回傳。"
-                            : "所有提交都已上傳，可以到 itouOJ 網站查看判題結果。"),
+                            : "所有提交都已上傳，可以到 itouOJ 網站查看判題結果。",
                         pending > 0 ? "回傳到伺服器" : "前往 itouOJ 查看結果", false);
                     if (lastScreen == Screen.Answering)
                     {
@@ -625,7 +635,7 @@ namespace ItouOJ
             lblClock.ForeColor = calibrated ? Theme.Text : Theme.Mute;
         }
 
-        void ShowGate(string title, string clock, Color clockColor,
+        void ShowGate(string title, string clock, Color clockColor, string identity,
                       string hint, string actionText, bool showContestPicker)
         {
             pnlGate.Visible = true;
@@ -635,6 +645,8 @@ namespace ItouOJ
             lblGateClock.Text = clock;
             lblGateClock.ForeColor = clockColor;
             lblGateClock.Visible = clock.Length > 0;
+            lblGateIdentity.Text = identity ?? "";
+            lblGateIdentity.Visible = !string.IsNullOrEmpty(identity);
             lblGateHint.Text = hint;
             btnGateAction.Visible = actionText != null;
             if (actionText != null) btnGateAction.Text = actionText;
