@@ -25,6 +25,7 @@ export default async function ProblemPage({
         where: { isSample: true },
         orderBy: [{ order: "asc" }, { id: "asc" }],
       },
+      subtasks: { orderBy: { order: "asc" } },
     },
   });
   if (!problem || (!problem.isPublic && session?.role !== "ADMIN")) {
@@ -57,6 +58,36 @@ export default async function ProblemPage({
       <div className="card p-6">
         <Markdown>{problem.statement}</Markdown>
       </div>
+
+      {problem.subtasks.length > 0 && (
+        <div>
+          <h2 className="mb-3 section-title">配分方式</h2>
+          <div className="card overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="table-head w-20">子題</th>
+                  <th className="table-head w-24 text-right">配分</th>
+                  <th className="table-head">比對方式</th>
+                </tr>
+              </thead>
+              <tbody>
+                {problem.subtasks.map((s) => (
+                  <tr key={s.id}>
+                    <td className="table-cell">子題 {s.order}</td>
+                    <td className="table-cell text-right">{s.points} 分</td>
+                    <td className="table-cell text-dim">
+                      {s.checkMode === "firstLine"
+                        ? "只看輸出第一行是否正確"
+                        : "完整輸出需完全正確"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {problem.testCases.length > 0 && (
         <div className="space-y-4">

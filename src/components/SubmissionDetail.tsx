@@ -8,14 +8,21 @@ import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 interface SubmissionData {
   id: number;
   username: string;
-  problem: { id: number; order: number; title: string };
+  problem: {
+    id: number;
+    order: number;
+    title: string;
+    subtasks: { order: number; points: number }[];
+  };
   language: string;
   status: string;
+  score: number | null;
   timeMs: number | null;
   memoryKb: number | null;
   createdAt: string;
   results: {
     order: number;
+    subtaskOrder: number | null;
     verdict: string;
     timeMs: number | null;
     memoryKb: number | null;
@@ -88,11 +95,25 @@ export default function SubmissionDetail({ id }: { id: number }) {
     ? LANGUAGES[data.language].label
     : data.language;
 
+  const hasSubtasks = data.problem.subtasks.length > 0;
+  const maxScore = data.problem.subtasks.reduce((s, x) => s + x.points, 0);
+  const subtaskGroups = hasSubtasks
+    ? data.problem.subtasks.map((s) => ({
+        ...s,
+        results: data.results.filter((r) => r.subtaskOrder === s.order),
+      }))
+    : [];
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="page-title">提交 #{data.id}</h1>
         <VerdictBadge status={data.status} />
+        {hasSubtasks && data.score != null && (
+          <span className="mono text-sm text-dim">
+            得分 {data.score} / {maxScore}
+          </span>
+        )}
       </div>
 
       <div className="card p-4 text-sm">
@@ -135,7 +156,60 @@ export default function SubmissionDetail({ id }: { id: number }) {
         </div>
       )}
 
-      {data.results.length > 0 && (
+      {hasSubtasks && subtaskGroups.some((g) => g.results.length > 0) && (
+        <div className="space-y-4">
+          {subtaskGroups.map((g) => {
+            if (g.results.length === 0) return null;
+            const passed = g.results.every((r) => r.verdict === "AC");
+            return (
+              <div key={g.order} className="card overflow-x-auto">
+                <div className="flex items-center justify-between border-b border-bd px-4 py-2">
+                  <p className="text-sm font-semibold">
+                    子題 {g.order}（{g.points} 分）
+                  </p>
+                  <span
+                    className={
+                      passed ? "text-sm text-[#4caf50]" : "text-sm text-[#ff6b6b]"
+                    }
+                  >
+                    {passed ? `通過，得 ${g.points} 分` : "未通過，得 0 分"}
+                  </span>
+                </div>
+                <table className="w-full">
+                  <thead>
+                    <tr>
+                      <th className="table-head w-24">測資</th>
+                      <th className="table-head">結果</th>
+                      <th className="table-head w-28 text-right">時間</th>
+                      <th className="table-head w-28 text-right">記憶體</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {g.results.map((r) => (
+                      <tr key={r.order}>
+                        <td className="table-cell text-dim">#{r.order}</td>
+                        <td className="table-cell">
+                          <VerdictBadge status={r.verdict} />
+                        </td>
+                        <td className="table-cell text-right text-dim">
+                          {r.timeMs != null ? `${r.timeMs} ms` : "—"}
+                        </td>
+                        <td className="table-cell text-right text-dim">
+                          {r.memoryKb != null
+                            ? `${(r.memoryKb / 1024).toFixed(1)} MB`
+                            : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!hasSubtasks && data.results.length > 0 && (
         <div className="card overflow-x-auto">
           <table className="w-full">
             <thead>
