@@ -16,7 +16,7 @@ export async function GET(
     where: { id: submissionId },
     include: {
       user: { select: { username: true } },
-      problem: { select: { id: true, title: true } },
+      problem: { select: { id: true, order: true, title: true } },
       contest: true,
       results: { orderBy: { order: "asc" } },
     },

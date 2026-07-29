@@ -200,7 +200,7 @@ export default async function CoursePage({
                 <td className="table-cell text-dim">{e.problem.order}</td>
                 <td className="table-cell">
                   <Link
-                    href={`/problems/${e.problem.id}`}
+                    href={`/problems/${e.problem.order}`}
                     className="font-medium text-blue hover:underline"
                   >
                     {e.problem.title}
