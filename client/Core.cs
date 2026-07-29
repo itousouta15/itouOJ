@@ -996,7 +996,7 @@ namespace ItouOJ
     {
         // 這台編譯出來的收件程式版本。發新版、跑 client/release.ps1 -Tag vX.Y.Z
         // 時記得同步把這裡改成同一個版號，否則版本檢查會失準。
-        public const string ClientVersion = "1.2.7";
+        public const string ClientVersion = "1.2.8";
 
         // 查 GitHub 最新 release 的 tag（例如 "v1.2.5"）；查不到（沒有網路、
         // API 限流等）就回傳 null，呼叫端要當作「查不到，不要擋使用者」處理。
