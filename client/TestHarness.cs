@@ -540,6 +540,20 @@ namespace ItouOJ
             Check("比賽結束但還有沒上傳的 -> 不清（清了就要重登才傳得出去）",
                   !Flow.ShouldResetOnExit(xc, 3), "待上傳 3 筆");
 
+            // ── 0a7. 題目清單的標題 ───────────────────
+            // 伺服器在開賽前不給題名，客戶端不能就這樣顯示成空的 ——
+            // 那看起來像資料抓壞了，選手會以為要重設。
+            Console.WriteLine("\n[0a7] 沒有題名時的顯示");
+            Check("開賽前：講明題名之後才會出現",
+                  MainForm.ProblemItemText("A", "", true) == "A（題名開賽後顯示）",
+                  MainForm.ProblemItemText("A", "", true));
+            Check("開賽後仍是空的：指向題目 PDF（斷網比賽不會再抓一次）",
+                  MainForm.ProblemItemText("B", "", false) == "B（題名請見題目 PDF）",
+                  MainForm.ProblemItemText("B", "", false));
+            Check("有題名就正常顯示",
+                  MainForm.ProblemItemText("C", "A + B", false) == "C - A + B",
+                  MainForm.ProblemItemText("C", "A + B", false));
+
             // ── 0b. 輸出比對規則 ──────────────────────
             Console.WriteLine("\n[0b] 輸出正規化（必須與伺服器 judge.ts 一致）");
             Check("忽略結尾換行", Runner.Normalize("1\n2\n") == "1\n2", null);
