@@ -642,6 +642,44 @@ namespace ItouOJ
         }
     }
 
+    // 題目 PDF 有設密碼保護時，伺服器給的是 AES-256-CBC 加密過的位元組
+    // （lib/pdfCrypto.ts 加密、這裡對稱解密），格式是 [iv 16 bytes][密文]，
+    // key = SHA256(密碼)。用 CBC 不用 GCM：AesGcm 是 .NET Core 3.0+ 才有的
+    // API，.NET Framework 4.x 沒有，CBC 才是伺服器/收件程式雙邊都不必額外
+    // 裝套件就能用的交集——這裡要的只是賽前不給看，不是防篡改。
+    public static class PdfCrypto
+    {
+        const int IvLen = 16;
+
+        public static byte[] Decrypt(byte[] blob, string password)
+        {
+            byte[] key;
+            using (System.Security.Cryptography.SHA256 sha =
+                   System.Security.Cryptography.SHA256.Create())
+            {
+                key = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
+            }
+
+            byte[] iv = new byte[IvLen];
+            Array.Copy(blob, 0, iv, 0, IvLen);
+            byte[] ciphertext = new byte[blob.Length - IvLen];
+            Array.Copy(blob, IvLen, ciphertext, 0, ciphertext.Length);
+
+            using (System.Security.Cryptography.Aes aes =
+                   System.Security.Cryptography.Aes.Create())
+            {
+                aes.Mode = System.Security.Cryptography.CipherMode.CBC;
+                aes.Padding = System.Security.Cryptography.PaddingMode.PKCS7;
+                aes.Key = key;
+                aes.IV = iv;
+                using (System.Security.Cryptography.ICryptoTransform dec = aes.CreateDecryptor())
+                {
+                    return dec.TransformFinalBlock(ciphertext, 0, ciphertext.Length);
+                }
+            }
+        }
+    }
+
     public static class ProblemDoc
     {
         // 題目檔的解析順序：個別覆寫 > 資料夾裡的「代號.pdf」。
@@ -705,15 +743,26 @@ namespace ItouOJ
                          "/problems/" + Uri.EscapeDataString(label) + "/doc";
             try
             {
-                string contentType;
-                byte[] bytes = Api.SendBinary(url, cookie, out contentType);
-                string ext = (contentType != null &&
-                              contentType.IndexOf("pdf", StringComparison.OrdinalIgnoreCase) >= 0)
-                    ? ".pdf" : ".html";
+                string contentType, pdfPassword;
+                byte[] bytes = Api.SendBinary(url, cookie, out contentType, out pdfPassword);
+                // 有密碼代表伺服器給的是加密過的位元組（一定是 PDF——HTML 版本
+                // 不會加密），contentType 這時是 octet-stream，不能用它判斷副檔名。
+                string ext = pdfPassword != null ? ".pdf"
+                    : (contentType != null &&
+                       contentType.IndexOf("pdf", StringComparison.OrdinalIgnoreCase) >= 0)
+                        ? ".pdf" : ".html";
                 string dir = CacheDir(contestId);
                 Directory.CreateDirectory(dir);
                 string path = Path.Combine(dir, label + ext);
                 File.WriteAllBytes(path, bytes);
+
+                // 密碼跟加密檔放在同一個快取資料夾裡的 sidecar 檔——開賽前這個
+                // 密碼就已經在選手機上了，跟直接把明碼檔案佈署上去比起來，
+                // 至少不會被隨手打開；OnOpenProblem 會在真的開賽後才讀它來解密。
+                string passPath = path + ".pass";
+                if (pdfPassword != null) File.WriteAllText(passPath, pdfPassword);
+                else if (File.Exists(passPath)) File.Delete(passPath);
+
                 return path;
             }
             catch
@@ -1000,9 +1049,13 @@ namespace ItouOJ
 
         // 給下載題目文件用：伺服器回的是 PDF 或 HTML，不是 JSON，用 StreamReader
         // 硬轉文字會把 PDF 的二進位內容弄壞，所以另外開一個回傳原始位元組的版本。
-        public static byte[] SendBinary(string url, string cookie, out string contentType)
+        // pdfPassword 非 null 代表這份是加密過的 PDF（伺服器用
+        // X-Itouoj-Pdf-Password-B64 header 帶密碼過來，這裡解 base64 還原）。
+        public static byte[] SendBinary(string url, string cookie, out string contentType,
+                                         out string pdfPassword)
         {
             contentType = null;
+            pdfPassword = null;
             HttpWebRequest req = Build(url, "GET", cookie);
             req.Accept = "*/*";
 
@@ -1020,6 +1073,12 @@ namespace ItouOJ
             using (resp)
             {
                 contentType = resp.ContentType;
+                string passB64 = resp.Headers["X-Itouoj-Pdf-Password-B64"];
+                if (!string.IsNullOrEmpty(passB64))
+                {
+                    try { pdfPassword = Encoding.UTF8.GetString(Convert.FromBase64String(passB64)); }
+                    catch { pdfPassword = null; }
+                }
                 using (MemoryStream ms = new MemoryStream())
                 {
                     resp.GetResponseStream().CopyTo(ms);
@@ -1062,6 +1121,30 @@ namespace ItouOJ
             }
             return null;
         }
+
+        // 給抓 GitHub release 附件用：公開資源，不帶 cookie。GitHub 的下載連結
+        // 會 302 轉到 objects.githubusercontent.com，HttpWebRequest 預設就會
+        // 自動跟著轉址，不用特別處理。
+        public static byte[] DownloadPublic(string url, int timeoutMs)
+        {
+            HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
+            req.Method = "GET";
+            req.UserAgent = "itouOJ-OfflineSubmit";
+            req.Timeout = timeoutMs;
+            req.ReadWriteTimeout = timeoutMs;
+            using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+            using (MemoryStream ms = new MemoryStream())
+            {
+                resp.GetResponseStream().CopyTo(ms);
+                return ms.ToArray();
+            }
+        }
+    }
+
+    public class LatestRelease
+    {
+        public string Tag;
+        public string ExeDownloadUrl; // null 代表這個 release 沒有附 itouOJ-Submit.exe
     }
 
     // 版本檢查：選手是從 GitHub Releases 下載收件程式的（見 RELEASING.md），
@@ -1072,9 +1155,10 @@ namespace ItouOJ
         // 時記得同步把這裡改成同一個版號，否則版本檢查會失準。
         public const string ClientVersion = "1.2.9";
 
-        // 查 GitHub 最新 release 的 tag（例如 "v1.2.5"）；查不到（沒有網路、
-        // API 限流等）就回傳 null，呼叫端要當作「查不到，不要擋使用者」處理。
-        public static string FetchLatestTag()
+        // 查 GitHub 最新 release（tag 跟 itouOJ-Submit.exe 附件的下載連結）；
+        // 查不到（沒有網路、API 限流等）就回傳 null，呼叫端要當作
+        // 「查不到，不要擋使用者」處理。
+        public static LatestRelease FetchLatestRelease()
         {
             try
             {
@@ -1093,10 +1177,35 @@ namespace ItouOJ
                     Dictionary<string, object> d = ser.Deserialize<Dictionary<string, object>>(body);
                     object tag;
                     if (d == null || !d.TryGetValue("tag_name", out tag)) return null;
-                    return Convert.ToString(tag);
+
+                    string exeUrl = null;
+                    object assetsObj;
+                    if (d.TryGetValue("assets", out assetsObj))
+                    {
+                        foreach (Dictionary<string, object> asset in Json.Array(assetsObj))
+                        {
+                            object name;
+                            if (asset.TryGetValue("name", out name) &&
+                                string.Equals(Convert.ToString(name), "itouOJ-Submit.exe",
+                                    StringComparison.OrdinalIgnoreCase))
+                            {
+                                object url;
+                                if (asset.TryGetValue("browser_download_url", out url))
+                                    exeUrl = Convert.ToString(url);
+                                break;
+                            }
+                        }
+                    }
+                    return new LatestRelease { Tag = Convert.ToString(tag), ExeDownloadUrl = exeUrl };
                 }
             }
             catch { return null; }
+        }
+
+        public static string FetchLatestTag()
+        {
+            LatestRelease r = FetchLatestRelease();
+            return r == null ? null : r.Tag;
         }
 
         // current 沒有 v 前綴、latestTag 有沒有都可以；逐段數字比較
@@ -1127,6 +1236,74 @@ namespace ItouOJ
                 parts[i] = v;
             }
             return parts;
+        }
+
+        // 開程式前先檢查、有新版就直接換掉重開，選手不用自己點連結下載。
+        // 回傳 true 代表已經在背景交給新版重啟，這個行程接下來該直接結束，
+        // 不要再開 MainForm（不然舊、新兩個視窗會同時出現）。
+        //
+        // 任何一步失敗（沒網路、下載失敗、寫檔失敗……）都直接回傳 false，
+        // 讓呼叫端照舊開啟目前這一份——版本檢查絕對不能變成「開不了程式」。
+        public static bool CheckAndSelfUpdate(string[] launchArgs)
+        {
+            LatestRelease latest = FetchLatestRelease();
+            if (latest == null || string.IsNullOrEmpty(latest.ExeDownloadUrl)) return false;
+            if (!IsOlderThan(ClientVersion, latest.Tag)) return false;
+
+            byte[] newExeBytes;
+            try
+            {
+                newExeBytes = Api.DownloadPublic(latest.ExeDownloadUrl, 15000);
+            }
+            catch { return false; }
+            // 明顯不像正常大小的 exe 就當作下載壞了，不要拿去蓋掉目前能用的版本
+            if (newExeBytes == null || newExeBytes.Length < 20 * 1024) return false;
+
+            try
+            {
+                string currentExe = Application.ExecutablePath;
+                string tempDir = Path.Combine(Path.GetTempPath(), "itouoj-update");
+                Directory.CreateDirectory(tempDir);
+                string newExePath = Path.Combine(tempDir, "itouOJ-Submit.new.exe");
+                File.WriteAllBytes(newExePath, newExeBytes);
+
+                // 用 PowerShell 而不是 .bat：機房路徑常常帶中文字（桌面、比賽資料夾
+                // 名稱之類的），.bat 靠系統內碼頁解讀很容易亂碼失敗，PowerShell
+                // 這裡整段用 -EncodedCommand（UTF-16LE + base64）傳，不受內碼頁影響。
+                //
+                // 現在這個行程還占著 currentExe 這個檔案，蓋不過去，所以真正的
+                // 複製要等這個行程結束——用重試迴圈等，而不是猜一個固定的
+                // Start-Sleep 秒數。
+                string arg0 = (launchArgs != null && launchArgs.Length > 0) ? launchArgs[0] : null;
+                string script =
+                    "$target = " + PsQuote(currentExe) + "\n" +
+                    "$newFile = " + PsQuote(newExePath) + "\n" +
+                    "for ($i = 0; $i -lt 20; $i++) {\n" +
+                    "  try { Copy-Item -Path $newFile -Destination $target -Force -ErrorAction Stop; break }\n" +
+                    "  catch { Start-Sleep -Seconds 1 }\n" +
+                    "}\n" +
+                    "Start-Process -FilePath $target" +
+                    (arg0 != null ? " -ArgumentList @(" + PsQuote(arg0) + ")" : "") + "\n" +
+                    "Remove-Item -Path $newFile -Force -ErrorAction SilentlyContinue\n";
+
+                string encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = "-NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand " + encoded,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                };
+                Process.Start(psi);
+                return true;
+            }
+            catch { return false; }
+        }
+
+        static string PsQuote(string s)
+        {
+            return "'" + s.Replace("'", "''") + "'";
         }
     }
 }

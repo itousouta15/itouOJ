@@ -2,6 +2,7 @@ import JSZip from "jszip";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { renderProblemDocHtml } from "@/lib/renderProblemDoc";
+import { decryptPdf } from "@/lib/pdfCrypto";
 
 // 管理員專用：把一場比賽的題目打包成一份 ZIP，裡面是可離線開啟的 <代號>.html
 // （字型內嵌，不用另外帶字型檔）。用來取代「跑 scripts/export-problems.mjs」
@@ -39,6 +40,7 @@ export async function GET(
               memoryLimitMb: true,
               pdfData: true,
               pdfFilename: true,
+              pdfPassword: true,
               testCases: {
                 where: { isSample: true },
                 orderBy: [{ order: "asc" }, { id: "asc" }],
@@ -60,9 +62,13 @@ export async function GET(
   const zip = new JSZip();
   for (const cp of contest.problems) {
     // 題目有上傳正式 PDF 的話用那份，跟單題下載（/api/contests/[id]/problems/[label]/doc）
-    // 邏輯一致；沒有才現場產生 HTML。
+    // 邏輯一致；沒有才現場產生 HTML。管理員在網站上抓下來是要自己看/列印的，
+    // 有設密碼保護也要解密後才給，不然管理員自己都打不開。
     if (cp.problem.pdfData) {
-      zip.file(`${cp.label}.pdf`, cp.problem.pdfData);
+      const bytes = cp.problem.pdfPassword
+        ? decryptPdf(Buffer.from(cp.problem.pdfData), cp.problem.pdfPassword)
+        : Buffer.from(cp.problem.pdfData);
+      zip.file(`${cp.label}.pdf`, bytes);
       continue;
     }
     const html = await renderProblemDocHtml({

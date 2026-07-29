@@ -28,6 +28,8 @@ export interface ProblemFormData {
   testCases: TestCaseInput[];
   // 目前伺服器上已經有的 PDF 檔名（唯讀，只給畫面顯示現況用）
   pdfFilename: string | null;
+  // 目前的 PDF 是否已經設密碼保護（唯讀，只顯示現況；密碼本身不會回傳到前端）
+  pdfHasPassword: boolean;
 }
 
 export interface AvailableTag {
@@ -47,6 +49,7 @@ const EMPTY: ProblemFormData = {
   subtasks: [],
   testCases: [{ input: "", output: "", isSample: true, subtaskIndex: null }],
   pdfFilename: null,
+  pdfHasPassword: false,
 };
 
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
@@ -80,6 +83,7 @@ export default function ProblemForm({
   // PDF 是三態的：不動／移除／換新檔，跟其他欄位「直接改 form 裡的值」不一樣，
   // 所以不放進 form，存檔時才轉成 problemSchema 期待的 pdfUpload 形狀。
   const [newPdf, setNewPdf] = useState<{ filename: string; base64: string } | null>(null);
+  const [newPdfPassword, setNewPdfPassword] = useState("");
   const [removePdf, setRemovePdf] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
 
@@ -162,7 +166,11 @@ export default function ProblemForm({
     setSaving(true);
     setError("");
     try {
-      const pdfUpload = removePdf ? null : newPdf ?? undefined;
+      const pdfUpload = removePdf
+        ? null
+        : newPdf
+          ? { ...newPdf, password: newPdfPassword.trim() || null }
+          : undefined;
       const res = await fetch(
         editing ? `/api/admin/problems/${initial!.id}` : "/api/admin/problems",
         {
@@ -312,7 +320,10 @@ export default function ProblemForm({
               <button
                 type="button"
                 className="ml-2 text-[#ff6b6b] hover:underline"
-                onClick={() => setNewPdf(null)}
+                onClick={() => {
+                  setNewPdf(null);
+                  setNewPdfPassword("");
+                }}
               >
                 取消
               </button>
@@ -320,6 +331,7 @@ export default function ProblemForm({
           ) : form.pdfFilename ? (
             <p className="text-sm text-dim">
               目前已上傳：{form.pdfFilename}
+              {form.pdfHasPassword && "（已設密碼保護）"}
               <button
                 type="button"
                 className="ml-2 text-[#ff6b6b] hover:underline"
@@ -338,6 +350,25 @@ export default function ProblemForm({
             disabled={pdfLoading}
             onChange={(e) => onPdfSelected(e.target.files?.[0] ?? null)}
           />
+          {newPdf && (
+            <div className="mt-2">
+              <label className="mb-1 block text-sm font-medium">
+                PDF 密碼保護（選填）
+              </label>
+              <input
+                className="input max-w-xs"
+                type="text"
+                value={newPdfPassword}
+                onChange={(e) => setNewPdfPassword(e.target.value)}
+                placeholder="留空 = 不加密"
+              />
+              <p className="mt-1 text-xs text-mute">
+                有設密碼的話，比賽開始前就算開放提前下載，選手機上存的也是加密過的檔案，
+                打不開；收件程式會在真正開賽那一刻自動解密開啟，不需要選手手動輸入密碼。
+                密碼會明碼存在資料庫裡，記得自己留一份備份。
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
