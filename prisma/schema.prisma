@@ -40,6 +40,11 @@ model Problem {
   pdfData         Bytes?
   pdfFilename     String?
   pdfUploadedAt   DateTime?
+  // 有設定的話 pdfData 是用這組密碼加密過的（AES-256-CBC，見 lib/pdfCrypto.ts），
+  // 不是明碼 PDF。斷網比賽賽前把加密檔跟密碼一起佈署到選手機上，收件程式
+  // 在開賽前不會解密開啟；開賽那一刻才自動解密——檔案早佈署到手也打不開，
+  // 比純粹的按鈕鎖多一層真正的加密保護。
+  pdfPassword     String?
   createdAt       DateTime         @default(now())
   testCases       TestCase[]
   subtasks        Subtask[] // 有設定才走部分給分；沒有則維持整題 AC/WA

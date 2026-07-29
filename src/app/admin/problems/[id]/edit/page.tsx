@@ -31,6 +31,7 @@ export default async function EditProblemPage({
         memoryLimitMb: true,
         isPublic: true,
         pdfFilename: true,
+        pdfPassword: true,
         testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] },
         subtasks: { orderBy: { order: "asc" } },
         tags: { select: { tagId: true } },
@@ -60,6 +61,7 @@ export default async function EditProblemPage({
           memoryLimitMb: problem.memoryLimitMb,
           isPublic: problem.isPublic,
           pdfFilename: problem.pdfFilename,
+          pdfHasPassword: !!problem.pdfPassword,
           tagIds: problem.tags.map((t) => t.tagId),
           subtasks: problem.subtasks.map((s) => ({
             points: s.points,

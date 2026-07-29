@@ -541,18 +541,16 @@ namespace ItouOJ
                   !Flow.ShouldResetOnExit(xc, 3), "待上傳 3 筆");
 
             // ── 0a7. 題目清單的標題 ───────────────────
-            // 伺服器在開賽前不給題名，客戶端不能就這樣顯示成空的 ——
-            // 那看起來像資料抓壞了，選手會以為要重設。
+            // 伺服器現在賽前就會給題名（選比賽當下就抓、存進 config.json，
+            // 免得斷網比賽在開賽前掉線就再也補不回來）。這裡只保留萬一
+            // 題名還是空的 fallback 顯示，不能顯示成空的看起來像資料壞了。
             Console.WriteLine("\n[0a7] 沒有題名時的顯示");
-            Check("開賽前：講明題名之後才會出現",
-                  MainForm.ProblemItemText("A", "", true) == "A（題名開賽後顯示）",
-                  MainForm.ProblemItemText("A", "", true));
-            Check("開賽後仍是空的：指向題目 PDF（斷網比賽不會再抓一次）",
-                  MainForm.ProblemItemText("B", "", false) == "B（題名請見題目 PDF）",
-                  MainForm.ProblemItemText("B", "", false));
+            Check("沒題名：指向題目 PDF",
+                  MainForm.ProblemItemText("B", "") == "B（題名請見題目 PDF）",
+                  MainForm.ProblemItemText("B", ""));
             Check("有題名就正常顯示",
-                  MainForm.ProblemItemText("C", "A + B", false) == "C - A + B",
-                  MainForm.ProblemItemText("C", "A + B", false));
+                  MainForm.ProblemItemText("C", "A + B") == "C - A + B",
+                  MainForm.ProblemItemText("C", "A + B"));
 
             // ── 0b. 輸出比對規則 ──────────────────────
             Console.WriteLine("\n[0b] 輸出正規化（必須與伺服器 judge.ts 一致）");
