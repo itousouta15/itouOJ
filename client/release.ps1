@@ -100,7 +100,17 @@ foreach ($d in $kitDirs) {
 }
 
 $zip = Join-Path $dist "itouOJ-lab-deploy-kit.zip"
-Compress-Archive -Path (Join-Path $staging "*") -DestinationPath $zip -Force
+# 剛建置出來的 exe 常常被防毒軟體即時掃描短暫鎖住，Compress-Archive 這時候
+# 讀檔會直接噴 UnauthorizedAccessException。重試幾次、每次等一下再試。
+for ($i = 1; $i -le 5; $i++) {
+    try {
+        Compress-Archive -Path (Join-Path $staging "*") -DestinationPath $zip -Force -ErrorAction Stop
+        break
+    } catch {
+        if ($i -eq 5) { throw }
+        Start-Sleep -Seconds 2
+    }
+}
 Copy-Item $exe -Destination $dist -Force
 Remove-Item $staging -Recurse -Force
 
