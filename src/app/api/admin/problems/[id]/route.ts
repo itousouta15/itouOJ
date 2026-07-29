@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { problemSchema } from "@/lib/problemSchema";
+import { pdfUpdateData, PdfUploadError } from "@/lib/problemPdf";
 
 async function requireAdmin() {
   const session = await getSession();
@@ -25,16 +26,28 @@ export async function PUT(
       { status: 400 }
     );
   }
-  const { testCases, subtasks, tagIds, ...fields } = parsed.data;
+  const { testCases, subtasks, tagIds, pdfUpload, ...fields } = parsed.data;
+
+  let pdf;
+  try {
+    pdf = pdfUpdateData(pdfUpload);
+  } catch (err) {
+    if (err instanceof PdfUploadError) {
+      return Response.json({ error: err.message }, { status: 400 });
+    }
+    throw err;
+  }
 
   const existing = await prisma.problem.findUnique({
     where: { id: problemId },
+    select: { id: true },
   });
   if (!existing) {
     return Response.json({ error: "題目不存在" }, { status: 404 });
   }
 
-  // 測資、子題與標籤整批換新（簡單且不易出錯）
+  // 測資、子題與標籤整批換新（簡單且不易出錯）。PDF 不在此列——沒有明確
+  // 上傳新檔或按移除的話（pdf 是空物件 {}），維持原本的檔案不動。
   await prisma.$transaction(async (tx) => {
     await tx.testCase.deleteMany({ where: { problemId } });
     await tx.subtask.deleteMany({ where: { problemId } });
@@ -43,6 +56,7 @@ export async function PUT(
       where: { id: problemId },
       data: {
         ...fields,
+        ...pdf,
         subtasks: {
           create: subtasks.map((s, i) => ({
             order: i + 1,

@@ -13,6 +13,9 @@ export const contestSchema = z
     isPublic: z.boolean(),
     // 空字串 = 開放報名；有值 = 要輸入代碼才能報名
     joinCode: z.string().trim().max(32, "加入代碼最多 32 個字元").default(""),
+    // 預設 false：題目文件（PDF/HTML）平常要等開賽才給下載，避免洩題。
+    // 管理員針對這場比賽自行評估風險後才能開啟。
+    allowEarlyProblemDownload: z.boolean().default(false),
     problems: z
       .array(
         z.object({

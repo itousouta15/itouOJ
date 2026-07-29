@@ -21,6 +21,7 @@ export default async function ProblemPage({
   const session = await getSession();
   const problem = await prisma.problem.findUnique({
     where: { order: problemOrder },
+    omit: { pdfData: true },
     include: {
       testCases: {
         where: { isSample: true },

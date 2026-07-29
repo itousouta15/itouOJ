@@ -39,7 +39,10 @@ export async function POST(request: Request) {
       return Response.json({ error: access.error }, { status: access.status });
     }
   } else {
-    const problem = await prisma.problem.findUnique({ where: { id: problemId } });
+    const problem = await prisma.problem.findUnique({
+      where: { id: problemId },
+      select: { isPublic: true },
+    });
     if (!problem || (!problem.isPublic && session.role !== "ADMIN")) {
       return Response.json({ error: "題目不存在" }, { status: 404 });
     }

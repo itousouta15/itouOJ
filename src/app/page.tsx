@@ -27,6 +27,7 @@ export default async function HomePage() {
     where: { isPublic: true },
     orderBy: { id: "desc" },
     take: 5,
+    select: { id: true, order: true, title: true, difficulty: true },
   });
 
   const latestSubmissions = await prisma.submission.findMany({

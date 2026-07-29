@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { problemSchema } from "@/lib/problemSchema";
+import { pdfUpdateData, PdfUploadError } from "@/lib/problemPdf";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -16,14 +17,28 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const { testCases, subtasks, tagIds, ...fields } = parsed.data;
+  const { testCases, subtasks, tagIds, pdfUpload, ...fields } = parsed.data;
 
-  const last = await prisma.problem.findFirst({ orderBy: { order: "desc" } });
+  let pdf;
+  try {
+    pdf = pdfUpdateData(pdfUpload);
+  } catch (err) {
+    if (err instanceof PdfUploadError) {
+      return Response.json({ error: err.message }, { status: 400 });
+    }
+    throw err;
+  }
+
+  const last = await prisma.problem.findFirst({
+    orderBy: { order: "desc" },
+    select: { order: true },
+  });
 
   const problem = await prisma.$transaction(async (tx) => {
     const created = await tx.problem.create({
       data: {
         ...fields,
+        ...pdf,
         order: (last?.order ?? 0) + 1,
         subtasks: {
           create: subtasks.map((s, i) => ({

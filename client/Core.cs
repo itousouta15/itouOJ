@@ -683,6 +683,44 @@ namespace ItouOJ
             }
             return null;
         }
+
+        // 從伺服器下載的題目文件放這裡，跟管理員手動指定的 ProblemDir 分開，
+        // 不會互相覆蓋。
+        public static string CacheDir(int contestId)
+        {
+            return Path.Combine(Store.Root, "problem-docs", contestId.ToString());
+        }
+
+        // 下載一題的題目文件（PDF 優先，伺服器沒有上傳 PDF 就是現場產生的 HTML），
+        // 存到本機快取。伺服器會自己決定現在准不准下載（賽前又沒開放提前下載
+        // 就會回 403），這裡遇到任何失敗都回傳 null，呼叫端要當作「這題暫時
+        // 拿不到文件」處理，不能讓一題失敗擋住其他題目或整個賽前設定流程。
+        public static string DownloadAndCache(string serverUrl, string cookie, int contestId, string label)
+        {
+            if (string.IsNullOrEmpty(serverUrl) || string.IsNullOrEmpty(cookie) ||
+                string.IsNullOrEmpty(label))
+                return null;
+
+            string url = serverUrl + "/api/contests/" + contestId +
+                         "/problems/" + Uri.EscapeDataString(label) + "/doc";
+            try
+            {
+                string contentType;
+                byte[] bytes = Api.SendBinary(url, cookie, out contentType);
+                string ext = (contentType != null &&
+                              contentType.IndexOf("pdf", StringComparison.OrdinalIgnoreCase) >= 0)
+                    ? ".pdf" : ".html";
+                string dir = CacheDir(contestId);
+                Directory.CreateDirectory(dir);
+                string path = Path.Combine(dir, label + ext);
+                File.WriteAllBytes(path, bytes);
+                return path;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 
     public class LoopbackResult
@@ -956,6 +994,42 @@ namespace ItouOJ
                         throw new ApplicationException(ExtractError(text, (int)resp.StatusCode));
                     }
                     return text;
+                }
+            }
+        }
+
+        // 給下載題目文件用：伺服器回的是 PDF 或 HTML，不是 JSON，用 StreamReader
+        // 硬轉文字會把 PDF 的二進位內容弄壞，所以另外開一個回傳原始位元組的版本。
+        public static byte[] SendBinary(string url, string cookie, out string contentType)
+        {
+            contentType = null;
+            HttpWebRequest req = Build(url, "GET", cookie);
+            req.Accept = "*/*";
+
+            HttpWebResponse resp = null;
+            try
+            {
+                resp = (HttpWebResponse)req.GetResponse();
+            }
+            catch (WebException ex)
+            {
+                resp = ex.Response as HttpWebResponse;
+                if (resp == null) throw;
+            }
+
+            using (resp)
+            {
+                contentType = resp.ContentType;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    resp.GetResponseStream().CopyTo(ms);
+                    byte[] bytes = ms.ToArray();
+                    if ((int)resp.StatusCode >= 400)
+                    {
+                        throw new ApplicationException(
+                            ExtractError(Encoding.UTF8.GetString(bytes), (int)resp.StatusCode));
+                    }
+                    return bytes;
                 }
             }
         }

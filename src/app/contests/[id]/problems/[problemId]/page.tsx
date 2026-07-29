@@ -31,6 +31,7 @@ export default async function ContestProblemPage({
 
   const problem = await prisma.problem.findUnique({
     where: { id: baseProblem.id },
+    omit: { pdfData: true },
     include: {
       testCases: {
         where: { isSample: true },
