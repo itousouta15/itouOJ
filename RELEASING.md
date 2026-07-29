@@ -56,6 +56,10 @@ $refs = "System.dll,System.Core.dll,System.Drawing.dll,System.Windows.Forms.dll,
 **比賽當天用的版本要在賽前幾天就定下來並實機測過。** 賽前一天才發新版，
 等於把沒人跑過的東西送進機房。
 
+**決定版號的同時，把 `client/Core.cs` 裡 `UpdateCheck.ClientVersion` 改成同一個版號再建置。**
+這個常數是「從瀏覽器開啟收件程式」時版本檢查的比對基準（見 `UpdateCheck` class）；
+沒同步更新的話，選手機器永遠不會被提醒該更新了。
+
 ### 3. 寫發行說明
 
 寫成一個 markdown 檔（放 `client/dist/` 或任何暫存位置都行，不要進 git）。
