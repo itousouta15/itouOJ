@@ -7,6 +7,7 @@ import DifficultyBadge from "@/components/DifficultyBadge";
 
 export interface AdminProblemRow {
   id: number;
+  order: number;
   title: string;
   difficulty: string;
   isPublic: boolean;
@@ -110,7 +111,7 @@ export default function AdminProblemTable({
               </div>
             </td>
             <td className="table-cell font-medium">
-              <Link href={`/problems/${p.id}`} className="text-blue hover:underline">
+              <Link href={`/problems/${p.order}`} className="text-blue hover:underline">
                 {p.title}
               </Link>
             </td>

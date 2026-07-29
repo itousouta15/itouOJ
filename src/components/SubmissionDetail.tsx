@@ -8,7 +8,7 @@ import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 interface SubmissionData {
   id: number;
   username: string;
-  problem: { id: number; title: string };
+  problem: { id: number; order: number; title: string };
   language: string;
   status: string;
   timeMs: number | null;
@@ -100,7 +100,7 @@ export default function SubmissionDetail({ id }: { id: number }) {
           <p>
             <span className="text-dim">題目：</span>
             <Link
-              href={`/problems/${data.problem.id}`}
+              href={`/problems/${data.problem.order}`}
               className="text-blue hover:underline"
             >
               {data.problem.title}

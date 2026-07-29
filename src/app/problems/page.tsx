@@ -96,7 +96,7 @@ export default async function ProblemListPage() {
                 <td className="table-cell text-dim">{p.order}</td>
                 <td className="table-cell">
                   <Link
-                    href={`/problems/${p.id}`}
+                    href={`/problems/${p.order}`}
                     className="font-medium text-blue hover:underline"
                   >
                     {p.title}

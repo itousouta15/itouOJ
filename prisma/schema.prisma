@@ -32,7 +32,7 @@ model Problem {
   timeLimitMs     Int              @default(1000)
   memoryLimitMb   Int              @default(256)
   isPublic        Boolean          @default(true)
-  order           Int              @default(0) // 題目列表顯示順序，管理員可調整
+  order           Int              @default(0) @unique // 題目列表顯示順序；同時是對外題號（網址 /problems/{order}）
   createdAt       DateTime         @default(now())
   testCases       TestCase[]
   submissions     Submission[]

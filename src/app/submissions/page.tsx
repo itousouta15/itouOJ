@@ -36,7 +36,7 @@ export default async function SubmissionsPage({
     take: 100,
     include: {
       user: { select: { username: true, displayName: true } },
-      problem: { select: { id: true, title: true } },
+      problem: { select: { id: true, order: true, title: true } },
       contest: true,
     },
   });

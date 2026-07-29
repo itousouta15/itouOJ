@@ -52,7 +52,7 @@ export default async function UserProfilePage({
         where: { userId: user.id },
         orderBy: { id: "desc" },
         take: 20,
-        include: { problem: { select: { id: true, title: true } } },
+        include: { problem: { select: { id: true, order: true, title: true } } },
       }),
     ]);
 
