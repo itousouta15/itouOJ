@@ -16,13 +16,17 @@ export default async function EditProblemPage({
   if (session?.role !== "ADMIN") redirect("/");
 
   const { id } = await params;
-  const problem = await prisma.problem.findUnique({
-    where: { id: Number(id) },
-    include: {
-      testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] },
-      subtasks: { orderBy: { order: "asc" } },
-    },
-  });
+  const [problem, tags] = await Promise.all([
+    prisma.problem.findUnique({
+      where: { id: Number(id) },
+      include: {
+        testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] },
+        subtasks: { orderBy: { order: "asc" } },
+        tags: { select: { tagId: true } },
+      },
+    }),
+    prisma.tag.findMany({ orderBy: { name: "asc" } }),
+  ]);
   if (!problem) notFound();
 
   const subtaskIndexById = new Map(
@@ -35,6 +39,7 @@ export default async function EditProblemPage({
         編輯題目 #{problem.order}
       </h1>
       <ProblemForm
+        availableTags={tags}
         initial={{
           id: problem.id,
           title: problem.title,
@@ -43,6 +48,7 @@ export default async function EditProblemPage({
           timeLimitMs: problem.timeLimitMs,
           memoryLimitMb: problem.memoryLimitMb,
           isPublic: problem.isPublic,
+          tagIds: problem.tags.map((t) => t.tagId),
           subtasks: problem.subtasks.map((s) => ({
             points: s.points,
             checkMode: s.checkMode === "firstLine" ? "firstLine" : "full",

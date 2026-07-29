@@ -39,6 +39,23 @@ model Problem {
   submissions     Submission[]
   courseProblems  CourseProblem[]
   contestProblems ContestProblem[]
+  tags            ProblemTag[]
+}
+
+// 標籤庫：管理員統一建立/管理，題目從中勾選，避免同義詞打散（如「字串」跟「string」變兩個標籤）
+model Tag {
+  id       Int          @id @default(autoincrement())
+  name     String       @unique
+  problems ProblemTag[]
+}
+
+model ProblemTag {
+  problemId Int
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  tagId     Int
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, tagId])
 }
 
 // 子題：把一題的測資分組並各自配分，用於部分給分。

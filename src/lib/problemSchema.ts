@@ -15,6 +15,7 @@ export const problemSchema = z
   .object({
     ...problemBaseFields,
     isPublic: z.boolean(),
+    tagIds: z.array(z.number().int()).default([]),
     // 沒有子題 = 沿用舊制整題 AC/WA；有子題則每筆測資都要指定所屬子題，各子題全對才拿到該子題配分
     subtasks: z
       .array(

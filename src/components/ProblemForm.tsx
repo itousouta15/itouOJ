@@ -23,8 +23,14 @@ export interface ProblemFormData {
   timeLimitMs: number;
   memoryLimitMb: number;
   isPublic: boolean;
+  tagIds: number[];
   subtasks: SubtaskInput[];
   testCases: TestCaseInput[];
+}
+
+export interface AvailableTag {
+  id: number;
+  name: string;
 }
 
 const EMPTY: ProblemFormData = {
@@ -35,14 +41,17 @@ const EMPTY: ProblemFormData = {
   timeLimitMs: 1000,
   memoryLimitMb: 256,
   isPublic: true,
+  tagIds: [],
   subtasks: [],
   testCases: [{ input: "", output: "", isSample: true, subtaskIndex: null }],
 };
 
 export default function ProblemForm({
   initial,
+  availableTags = [],
 }: {
   initial?: ProblemFormData;
+  availableTags?: AvailableTag[];
 }) {
   const router = useRouter();
   const editing = initial?.id != null;
@@ -63,6 +72,15 @@ export default function ProblemForm({
       testCases: f.testCases.map((tc, j) =>
         j === i ? { ...tc, ...patch } : tc
       ),
+    }));
+  }
+
+  function toggleTag(tagId: number) {
+    setForm((f) => ({
+      ...f,
+      tagIds: f.tagIds.includes(tagId)
+        ? f.tagIds.filter((id) => id !== tagId)
+        : [...f.tagIds, tagId],
     }));
   }
 
@@ -202,6 +220,30 @@ export default function ProblemForm({
               公開題目
             </label>
           </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">標籤</label>
+          {availableTags.length === 0 ? (
+            <p className="text-sm text-mute">
+              還沒有標籤，先到「標籤管理」建立幾個
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {availableTags.map((tag) => {
+                const active = form.tagIds.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    className={`pill ${active ? "pill-active" : ""}`}
+                    onClick={() => toggleTag(tag.id)}
+                  >
+                    {tag.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

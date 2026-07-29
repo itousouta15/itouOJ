@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const { testCases, subtasks, ...fields } = parsed.data;
+  const { testCases, subtasks, tagIds, ...fields } = parsed.data;
 
   const last = await prisma.problem.findFirst({ orderBy: { order: "desc" } });
 
@@ -32,6 +32,7 @@ export async function POST(request: Request) {
             checkMode: s.checkMode,
           })),
         },
+        tags: { create: tagIds.map((tagId) => ({ tagId })) },
       },
       include: { subtasks: { orderBy: { order: "asc" } } },
     });
