@@ -26,6 +26,8 @@ export interface ProblemFormData {
   tagIds: number[];
   subtasks: SubtaskInput[];
   testCases: TestCaseInput[];
+  // 目前伺服器上已經有的 PDF 檔名（唯讀，只給畫面顯示現況用）
+  pdfFilename: string | null;
 }
 
 export interface AvailableTag {
@@ -44,7 +46,24 @@ const EMPTY: ProblemFormData = {
   tagIds: [],
   subtasks: [],
   testCases: [{ input: "", output: "", isSample: true, subtaskIndex: null }],
+  pdfFilename: null,
 };
+
+const MAX_PDF_BYTES = 10 * 1024 * 1024;
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("讀取檔案失敗"));
+    reader.onload = () => {
+      const result = String(reader.result ?? "");
+      // data:application/pdf;base64,JVBERi0... -> 只要逗號後面的部分
+      const comma = result.indexOf(",");
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function ProblemForm({
   initial,
@@ -58,6 +77,11 @@ export default function ProblemForm({
   const [form, setForm] = useState<ProblemFormData>(initial ?? EMPTY);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  // PDF 是三態的：不動／移除／換新檔，跟其他欄位「直接改 form 裡的值」不一樣，
+  // 所以不放進 form，存檔時才轉成 problemSchema 期待的 pdfUpload 形狀。
+  const [newPdf, setNewPdf] = useState<{ filename: string; base64: string } | null>(null);
+  const [removePdf, setRemovePdf] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   function set<K extends keyof ProblemFormData>(
     key: K,
@@ -115,16 +139,36 @@ export default function ProblemForm({
 
   const totalPoints = form.subtasks.reduce((s, x) => s + x.points, 0);
 
+  async function onPdfSelected(file: File | null) {
+    if (!file) return;
+    setError("");
+    if (file.size > MAX_PDF_BYTES) {
+      setError(`PDF 檔案不能超過 ${MAX_PDF_BYTES / 1024 / 1024} MB`);
+      return;
+    }
+    setPdfLoading(true);
+    try {
+      const base64 = await readFileAsBase64(file);
+      setNewPdf({ filename: file.name, base64 });
+      setRemovePdf(false);
+    } catch {
+      setError("讀取 PDF 檔案失敗");
+    } finally {
+      setPdfLoading(false);
+    }
+  }
+
   async function save() {
     setSaving(true);
     setError("");
     try {
+      const pdfUpload = removePdf ? null : newPdf ?? undefined;
       const res = await fetch(
         editing ? `/api/admin/problems/${initial!.id}` : "/api/admin/problems",
         {
           method: editing ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, id: undefined }),
+          body: JSON.stringify({ ...form, id: undefined, pdfUpload }),
         }
       );
       const data = await res.json();
@@ -244,6 +288,56 @@ export default function ProblemForm({
               })}
             </div>
           )}
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">正式 PDF</label>
+          <p className="mb-2 text-xs text-mute">
+            沒有上傳的話，「下載題目文件」會用題敘現場產生排版好的 HTML；
+            上傳自製的正式 PDF 後會改用這份檔案。
+          </p>
+          {removePdf ? (
+            <p className="text-sm text-dim">
+              儲存後會移除目前的 PDF。
+              <button
+                type="button"
+                className="ml-2 text-blue hover:underline"
+                onClick={() => setRemovePdf(false)}
+              >
+                取消
+              </button>
+            </p>
+          ) : newPdf ? (
+            <p className="text-sm text-dim">
+              已選擇新檔案：{newPdf.filename}
+              <button
+                type="button"
+                className="ml-2 text-[#ff6b6b] hover:underline"
+                onClick={() => setNewPdf(null)}
+              >
+                取消
+              </button>
+            </p>
+          ) : form.pdfFilename ? (
+            <p className="text-sm text-dim">
+              目前已上傳：{form.pdfFilename}
+              <button
+                type="button"
+                className="ml-2 text-[#ff6b6b] hover:underline"
+                onClick={() => setRemovePdf(true)}
+              >
+                移除
+              </button>
+            </p>
+          ) : (
+            <p className="text-sm text-mute">尚未上傳</p>
+          )}
+          <input
+            className="mt-2 block text-sm"
+            type="file"
+            accept="application/pdf"
+            disabled={pdfLoading}
+            onChange={(e) => onPdfSelected(e.target.files?.[0] ?? null)}
+          />
         </div>
       </div>
 

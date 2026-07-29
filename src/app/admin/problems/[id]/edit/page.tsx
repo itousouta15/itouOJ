@@ -19,7 +19,18 @@ export default async function EditProblemPage({
   const [problem, tags] = await Promise.all([
     prisma.problem.findUnique({
       where: { id: Number(id) },
-      include: {
+      // 明確列欄位、不整包 include：pdfData 是 BLOB，隨隨便便撈出來太浪費，
+      // 這裡只需要檔名判斷「有沒有上傳」，畫面上顯示用。
+      select: {
+        id: true,
+        order: true,
+        title: true,
+        statement: true,
+        difficulty: true,
+        timeLimitMs: true,
+        memoryLimitMb: true,
+        isPublic: true,
+        pdfFilename: true,
         testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] },
         subtasks: { orderBy: { order: "asc" } },
         tags: { select: { tagId: true } },
@@ -48,6 +59,7 @@ export default async function EditProblemPage({
           timeLimitMs: problem.timeLimitMs,
           memoryLimitMb: problem.memoryLimitMb,
           isPublic: problem.isPublic,
+          pdfFilename: problem.pdfFilename,
           tagIds: problem.tags.map((t) => t.tagId),
           subtasks: problem.subtasks.map((s) => ({
             points: s.points,

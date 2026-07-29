@@ -14,6 +14,7 @@ export default async function AdminProblemsPage() {
 
   const problems = await prisma.problem.findMany({
     orderBy: { order: "asc" },
+    omit: { pdfData: true },
     include: { _count: { select: { testCases: true, submissions: true } } },
   });
   const rows = problems.map((p) => ({

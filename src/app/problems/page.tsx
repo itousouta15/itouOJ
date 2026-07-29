@@ -25,6 +25,7 @@ export default async function ProblemListPage({
       ...(tag ? { tags: { some: { tag: { name: tag } } } } : {}),
     },
     orderBy: { order: "asc" },
+    omit: { pdfData: true },
     include: { tags: { include: { tag: true } } },
   });
   const acCounts = await prisma.submission.groupBy({

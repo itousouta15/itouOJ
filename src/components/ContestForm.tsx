@@ -27,6 +27,7 @@ export interface ContestFormInitial {
   allowedLanguages: string; // 逗號分隔；空字串 = 不限制
   isPublic: boolean;
   joinCode: string;
+  allowEarlyProblemDownload: boolean;
   problems: ContestProblemEntry[];
 }
 
@@ -40,6 +41,7 @@ const EMPTY: ContestFormInitial = {
   allowedLanguages: "",
   isPublic: true,
   joinCode: "",
+  allowEarlyProblemDownload: false,
   problems: [],
 };
 
@@ -310,6 +312,26 @@ export default function ContestForm({
             }
           />
           公開比賽（未公開時只有管理員看得到）
+        </label>
+        <label className="flex cursor-pointer items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={form.allowEarlyProblemDownload}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                allowEarlyProblemDownload: e.target.checked,
+              }))
+            }
+          />
+          <span>
+            允許選手端在開賽前下載題目文件
+            <br />
+            <span className="text-xs text-mute">
+              預設關閉：題目文件平常要等開賽才能下載，避免洩題。斷網比賽如果需要在賽前設定階段就把檔案存到選手機上，才需要開啟——開啟後選手登入即可下載完整題目內容，請自行評估洩題風險。
+            </span>
+          </span>
         </label>
       </div>
 
