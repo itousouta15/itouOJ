@@ -980,4 +980,70 @@ namespace ItouOJ
             return null;
         }
     }
+
+    // 版本檢查：選手是從 GitHub Releases 下載收件程式的（見 RELEASING.md），
+    // 所以「最新版」就是 GitHub 上最新的 release tag，不需要另外做伺服器端機制。
+    public static class UpdateCheck
+    {
+        // 這台編譯出來的收件程式版本。發新版、跑 client/release.ps1 -Tag vX.Y.Z
+        // 時記得同步把這裡改成同一個版號，否則版本檢查會失準。
+        public const string ClientVersion = "1.2.5";
+
+        // 查 GitHub 最新 release 的 tag（例如 "v1.2.5"）；查不到（沒有網路、
+        // API 限流等）就回傳 null，呼叫端要當作「查不到，不要擋使用者」處理。
+        public static string FetchLatestTag()
+        {
+            try
+            {
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create(
+                    "https://api.github.com/repos/itousouta15/itouOJ/releases/latest");
+                req.Method = "GET";
+                req.UserAgent = "itouOJ-OfflineSubmit"; // GitHub API 沒有 User-Agent 會直接拒絕
+                req.Accept = "application/vnd.github+json";
+                req.Timeout = 6000;
+                req.ReadWriteTimeout = 6000;
+                using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                using (StreamReader sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    string body = sr.ReadToEnd();
+                    JavaScriptSerializer ser = new JavaScriptSerializer();
+                    Dictionary<string, object> d = ser.Deserialize<Dictionary<string, object>>(body);
+                    object tag;
+                    if (d == null || !d.TryGetValue("tag_name", out tag)) return null;
+                    return Convert.ToString(tag);
+                }
+            }
+            catch { return null; }
+        }
+
+        // current 沒有 v 前綴、latestTag 有沒有都可以；逐段數字比較
+        // （字串比較會把 "1.2.10" 判成比 "1.2.9" 小，所以不能直接比字串）。
+        public static bool IsOlderThan(string current, string latestTag)
+        {
+            if (string.IsNullOrEmpty(latestTag)) return false;
+            int[] a = ParseVersion(current);
+            int[] b = ParseVersion(latestTag);
+            for (int i = 0; i < 3; i++)
+            {
+                if (a[i] != b[i]) return a[i] < b[i];
+            }
+            return false;
+        }
+
+        static int[] ParseVersion(string s)
+        {
+            int[] parts = new int[3];
+            if (string.IsNullOrEmpty(s)) return parts;
+            s = s.Trim();
+            if (s.Length > 0 && (s[0] == 'v' || s[0] == 'V')) s = s.Substring(1);
+            string[] segs = s.Split('.');
+            for (int i = 0; i < 3 && i < segs.Length; i++)
+            {
+                int v;
+                int.TryParse(segs[i], out v);
+                parts[i] = v;
+            }
+            return parts;
+        }
+    }
 }
