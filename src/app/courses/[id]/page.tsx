@@ -197,7 +197,7 @@ export default async function CoursePage({
                 <td className="table-cell text-center text-[#4caf50]">
                   {solvedSet.has(e.problemId) ? "✓" : ""}
                 </td>
-                <td className="table-cell text-dim">{e.problem.id}</td>
+                <td className="table-cell text-dim">{e.problem.order}</td>
                 <td className="table-cell">
                   <Link
                     href={`/problems/${e.problem.id}`}

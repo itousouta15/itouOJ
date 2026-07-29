@@ -36,7 +36,7 @@ export default async function ProblemPage({
       <div>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="page-title">
-            #{problem.id}. {problem.title}
+            #{problem.order}. {problem.title}
           </h1>
           <DifficultyBadge difficulty={problem.difficulty} />
           {session?.role === "ADMIN" && (
