@@ -3,17 +3,29 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import DifficultyBadge from "@/components/DifficultyBadge";
+import TagBadge from "@/components/TagBadge";
 
 export const metadata: Metadata = { title: "題目列表" };
 export const dynamic = "force-dynamic";
 
-export default async function ProblemListPage() {
+export default async function ProblemListPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tag?: string }>;
+}) {
+  const { tag } = await searchParams;
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
 
+  const allTags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+
   const problems = await prisma.problem.findMany({
-    where: isAdmin ? {} : { isPublic: true },
+    where: {
+      ...(isAdmin ? {} : { isPublic: true }),
+      ...(tag ? { tags: { some: { tag: { name: tag } } } } : {}),
+    },
     orderBy: { order: "asc" },
+    include: { tags: { include: { tag: true } } },
   });
   const acCounts = await prisma.submission.groupBy({
     by: ["problemId"],
@@ -55,6 +67,22 @@ export default async function ProblemListPage() {
           </div>
         )}
       </div>
+      {allTags.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Link href="/problems" className={`pill ${!tag ? "pill-active" : ""}`}>
+            全部
+          </Link>
+          {allTags.map((t) => (
+            <Link
+              key={t.id}
+              href={`/problems?tag=${encodeURIComponent(t.name)}`}
+              className={`pill ${tag === t.name ? "pill-active" : ""}`}
+            >
+              {t.name}
+            </Link>
+          ))}
+        </div>
+      )}
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -62,6 +90,7 @@ export default async function ProblemListPage() {
               <th className="table-head w-12 text-center">狀態</th>
               <th className="table-head w-16">#</th>
               <th className="table-head">標題</th>
+              <th className="table-head">標籤</th>
               <th className="table-head w-24">難度</th>
               <th className="table-head w-28 text-right">通過 / 提交</th>
             </tr>
@@ -70,11 +99,11 @@ export default async function ProblemListPage() {
             {problems.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="table-cell py-10 text-center text-mute"
                 >
-                  還沒有題目
-                  {isAdmin && (
+                  {tag ? "這個標籤下還沒有題目" : "還沒有題目"}
+                  {isAdmin && !tag && (
                     <>
                       ，
                       <Link
@@ -106,6 +135,13 @@ export default async function ProblemListPage() {
                       （未公開）
                     </span>
                   )}
+                </td>
+                <td className="table-cell">
+                  <div className="flex flex-wrap gap-1.5">
+                    {p.tags.map((pt) => (
+                      <TagBadge key={pt.tagId} name={pt.tag.name} />
+                    ))}
+                  </div>
                 </td>
                 <td className="table-cell">
                   <DifficultyBadge difficulty={p.difficulty} />
