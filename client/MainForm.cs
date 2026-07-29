@@ -46,11 +46,11 @@ namespace ItouOJ
         Config cfg;
 
         TabControl tabs;
-        TextBox txtServer, txtUser, txtFile;
+        TextBox txtServer, txtUser, txtFile, txtLoginUser, txtLoginPass;
         PasteNormalizingTextBox txtCode;
         RadioButton rbTyped, rbFile;
         ComboBox cboContest, cboProblem;
-        Button btnLogin, btnBrowse, btnTest, btnSubmit, btnUpload, btnRefresh,
+        Button btnLogin, btnPasswordLogin, btnBrowse, btnTest, btnSubmit, btnUpload, btnRefresh,
                btnOpenProblem, btnOpenSubmission, btnOpenBoard;
         ListView listView;
         Label lblStatus, lblAccount, lblLangHint, lblDraft, lblLock, lblWho, lblWhere;
@@ -70,6 +70,8 @@ namespace ItouOJ
         Screen lastScreen = Screen.NeedLogin;
         // 由 itouoj:// 帶進來、待登入後自動選取的比賽
         int pendingContestId = 0;
+        // 由 itouoj:// 帶進來的瀏覽器目前登入帳號，僅供比對用，不是憑證
+        string launchUser = null;
         // 監考臨時離開等待畫面去改設定的寬限時間
         DateTime gateSuppressedUntil = DateTime.MinValue;
         Button btnSettings, btnUnlock, btnCheckin, btnLogout, btnRefreshContest;
@@ -101,6 +103,7 @@ namespace ItouOJ
             LoadFromConfig();
             RefreshList();
             CheckForUpdateIfLaunchedFromBrowser(launchUrl);
+            WarnIfAccountMismatch();
 
             // 網路一回來就主動提示，狀態列的連線指示燈也靠它更新。
             // 沒有這層的話，沒聽到監考宣布的選手可能就這樣關掉程式離場，
@@ -149,6 +152,7 @@ namespace ItouOJ
                     string v = Uri.UnescapeDataString(pair.Substring(eq + 1));
                     if (k == "server") server = v;
                     else if (k == "contest") int.TryParse(v, out contest);
+                    else if (k == "user") launchUser = v;
                 }
 
                 if (!string.IsNullOrEmpty(server) &&
@@ -164,6 +168,26 @@ namespace ItouOJ
                 Store.SaveConfig(cfg);
             }
             catch { /* 參數壞掉不該讓程式開不起來 */ }
+        }
+
+        // 從網站「開啟收件程式」按鈕啟動時，帶進來的帳號如果跟這台機器目前
+        // 登入的不一樣，就提醒一下——避免上一位選手（或監考測試用）的帳號
+        // 忘了登出，這一位整場比賽都用錯帳號送出而不自知。
+        //
+        // launchUser 只是「使用者可控的比對用資訊」，不是憑證，所以這裡只警告、
+        // 不自動登出：自動清掉草稿/選比賽這種有副作用的動作不該由網址參數觸發。
+        void WarnIfAccountMismatch()
+        {
+            if (string.IsNullOrEmpty(launchUser)) return;
+            if (string.IsNullOrEmpty(cfg.Username)) return; // 這台還沒登入過，之後走登入流程自然就是對的帳號
+            if (cfg.Username == launchUser) return;
+
+            MessageBox.Show(this,
+                string.Format(
+                    "網站上目前登入的帳號是「{0}」，但這台機器的收件程式登入的是「{1}」。\r\n\r\n" +
+                    "如果不是你本人的帳號，請到「賽前設定」分頁按「登出」，再重新登入。",
+                    launchUser, cfg.Username),
+                "登入帳號不一致", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         // 只在從網站「開啟收件程式」按鈕啟動時查——那正是賽前設定、還有網路的
@@ -884,7 +908,7 @@ namespace ItouOJ
             // 不能跟著鎖。選手的 session 過期後必須重新登入才能上傳，
             // 把登入一起鎖住等於讓他交不出東西。
             Panel g = Theme.CardPanel();
-            g.SetBounds(0, 0, 860, 150);
+            g.SetBounds(0, 0, 860, 194);
             g.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
             Label t1 = Theme.SectionTitle("帳號");
@@ -930,12 +954,47 @@ namespace ItouOJ
             loginHint.SetBounds(544, 100, 300, 34);
             g.Controls.Add(loginHint);
 
+            Panel sep1 = Theme.Divider();
+            sep1.SetBounds(16, 140, 828, 1);
+            sep1.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            g.Controls.Add(sep1);
+
+            // 不用開瀏覽器也能登入：機器沒有預設瀏覽器、或選手不想離開這個
+            // 視窗時可以用。帳號要先在 itouOJ 網站的「帳號設定」裡設定密碼
+            // 才能用（Google/Discord 專用帳號預設沒有密碼）。
+            Label lPw = Theme.FieldLabel("帳密登入");
+            lPw.SetBounds(16, 156, 62, 26);
+            g.Controls.Add(lPw);
+
+            txtLoginUser = Theme.Input();
+            txtLoginUser.SetBounds(84, 157, 140, 24);
+            g.Controls.Add(txtLoginUser);
+
+            txtLoginPass = Theme.Input();
+            txtLoginPass.SetBounds(232, 157, 140, 24);
+            txtLoginPass.UseSystemPasswordChar = true;
+            txtLoginPass.KeyDown += delegate (object s, KeyEventArgs e)
+            {
+                if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; OnPasswordLogin(s, EventArgs.Empty); }
+            };
+            g.Controls.Add(txtLoginPass);
+
+            btnPasswordLogin = Theme.Secondary("登入");
+            btnPasswordLogin.SetBounds(380, 156, 84, 28);
+            btnPasswordLogin.Click += OnPasswordLogin;
+            g.Controls.Add(btnPasswordLogin);
+
+            Label loginHint2 = Theme.Hint(
+                "帳號還沒設定密碼的話，到 itouOJ 網站「帳號設定」設定一組即可。");
+            loginHint2.SetBounds(480, 160, 364, 18);
+            g.Controls.Add(loginHint2);
+
             setupPanel.Controls.Add(g);
 
             // ── 比賽與管理員設定：可鎖 ───────────────
             // 這兩項才是比賽中被亂改會出事的：比賽選錯，整批提交會送到別場去。
             lockableGroup = Theme.CardPanel();
-            lockableGroup.SetBounds(0, 164, 860, 186);
+            lockableGroup.SetBounds(0, 208, 860, 186);
             lockableGroup.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
             Label t2 = Theme.SectionTitle("比賽與管理員設定");
@@ -994,7 +1053,7 @@ namespace ItouOJ
             setupPanel.Controls.Add(lockableGroup);
 
             Label where = Theme.Hint("資料存放位置：" + Store.Root);
-            where.SetBounds(2, 362, 860, 36);
+            where.SetBounds(2, 406, 860, 36);
             where.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             setupPanel.Controls.Add(where);
             tab.Controls.Add(setupPanel);
@@ -1570,16 +1629,70 @@ namespace ItouOJ
                 return;
             }
 
+            cfg.ServerUrl = baseUrl;
+            cfg.Cookie = "oj_session=" + r.Token;
+            FinishLogin();
+        }
+
+        // 不開瀏覽器、直接帳號密碼登入：機器沒有預設瀏覽器、或不想離開這個視窗
+        // 時可以用。帳號要先在 itouOJ 網站「帳號設定」裡設定密碼才能用——
+        // Google/Discord 專用帳號預設沒有密碼，這是刻意的（見 /api/auth/password）。
+        void OnPasswordLogin(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(BaseUrl())) { Status("請先填伺服器網址", true); return; }
+            string username = txtLoginUser.Text.Trim();
+            string password = txtLoginPass.Text;
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
+                Status("請輸入帳號與密碼", true);
+                return;
+            }
+
+            btnPasswordLogin.Enabled = false;
+            try
+            {
+                JavaScriptSerializer ser = new JavaScriptSerializer();
+                Dictionary<string, object> payload = new Dictionary<string, object>();
+                payload["username"] = username;
+                payload["password"] = password;
+
+                string setCookie;
+                DateTime? serverDate;
+                Api.Send(BaseUrl() + "/api/auth/login", "POST", null, ser.Serialize(payload),
+                         out setCookie, out serverDate);
+
+                string sessionCookie = Api.ExtractSessionCookie(setCookie);
+                if (string.IsNullOrEmpty(sessionCookie))
+                {
+                    Status("登入失敗：伺服器沒有回傳登入憑證", true);
+                    return;
+                }
+
+                cfg.ServerUrl = BaseUrl();
+                cfg.Cookie = sessionCookie;
+                txtLoginPass.Text = ""; // 密碼不留在畫面上
+                FinishLogin();
+            }
+            catch (Exception ex)
+            {
+                Status("登入失敗：" + ex.Message, true);
+            }
+            finally
+            {
+                btnPasswordLogin.Enabled = true;
+            }
+        }
+
+        // 瀏覽器登入、帳密登入收尾都靠這個：用目前 cfg.ServerUrl / cfg.Cookie
+        // 打一次 /api/me，確認憑證有效並取得帳號名稱與伺服器時間。
+        void FinishLogin()
+        {
             Cursor = Cursors.WaitCursor;
             try
             {
-                cfg.ServerUrl = baseUrl;
-                cfg.Cookie = "oj_session=" + r.Token;
-
-                // 用 token 打一次 API，確認它有效並取得自己的帳號名稱與伺服器時間
                 string setCookie;
                 DateTime? serverDate;
-                string body = Api.Send(baseUrl + "/api/me", "GET", cfg.Cookie, null,
+                string body = Api.Send(cfg.ServerUrl + "/api/me", "GET", cfg.Cookie, null,
                                        out setCookie, out serverDate);
                 JavaScriptSerializer ser = new JavaScriptSerializer();
                 Dictionary<string, object> me =
