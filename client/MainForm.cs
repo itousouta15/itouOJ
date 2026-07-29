@@ -433,6 +433,9 @@ namespace ItouOJ
                         if (lastScreen == Screen.Waiting)
                         {
                             tabs.SelectedIndex = 0;
+                            // 題目清單上的「題名開賽後顯示」到這一刻就過期了，
+                            // 重畫一次換成正確說法
+                            FillProblems();
                             Status("比賽開始！", false);
                         }
                     }
@@ -1280,15 +1283,32 @@ namespace ItouOJ
             lblAccount.ForeColor = Color.DarkGreen;
         }
 
+        public static string ProblemItemText(string label, string title, bool beforeStart)
+        {
+            if (!string.IsNullOrEmpty(title)) return label + " - " + title;
+            return label + (beforeStart ? "（題名開賽後顯示）" : "（題名請見題目 PDF）");
+        }
+
         void FillProblems()
         {
+            // 保留原本選的那一題。比賽中按「更新比賽資訊」也會走到這裡，
+            // 重設成第一題的話，正在寫第 C 題的人會被跳回 A 題並載入 A 的草稿。
+            int keep = cboProblem.SelectedIndex;
             cboProblem.Items.Clear();
+
+            // 伺服器在比賽開始前不給題目標題（免得題名提早外流），所以這時
+            // p.Title 是空的。只印代號會讓人以為資料抓壞了 —— 講明白它為什麼空。
+            //
+            // 開賽後仍然空的情況也要講清楚：斷網比賽是在賽前設定的，那次抓到的
+            // 就是空標題，而機器整場離線不會再抓一次。這不是故障，題名在
+            // 桌面的題目 PDF 上。
+            bool beforeStart = Phase.Of(cfg) == ContestPhase.Waiting;
+
             foreach (ProblemEntry p in cfg.Problems)
-            {
-                string t = string.IsNullOrEmpty(p.Title) ? "" : " - " + p.Title;
-                cboProblem.Items.Add(p.Label + t);
-            }
-            if (cboProblem.Items.Count > 0) cboProblem.SelectedIndex = 0;
+                cboProblem.Items.Add(ProblemItemText(p.Label, p.Title, beforeStart));
+            if (cboProblem.Items.Count > 0)
+                cboProblem.SelectedIndex =
+                    (keep >= 0 && keep < cboProblem.Items.Count) ? keep : 0;
         }
 
         void Status(string text, bool error)
