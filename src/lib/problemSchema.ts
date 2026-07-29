@@ -23,6 +23,9 @@ export const problemSchema = z
       .object({
         filename: z.string().min(1).max(200),
         base64: z.string().min(1),
+        // 選填：有給的話 PDF 存檔時會用這組密碼加密，開賽前佈署到選手機上
+        // 也打不開，收件程式在開賽那一刻才自動解密。
+        password: z.string().max(200).nullable().optional(),
       })
       .nullable()
       .optional(),

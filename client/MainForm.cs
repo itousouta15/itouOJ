@@ -75,6 +75,7 @@ namespace ItouOJ
         // 監考臨時離開等待畫面去改設定的寬限時間
         DateTime gateSuppressedUntil = DateTime.MinValue;
         Button btnSettings, btnUnlock, btnCheckin, btnLogout, btnRefreshContest;
+        Button btnBackToCountdown;
         // 解鎖只在本次執行有效，不寫回 config
         bool unlockedThisSession = false;
         // 這次執行是否已成功向伺服器回報就緒
@@ -517,6 +518,10 @@ namespace ItouOJ
 
             Screen s = Flow.Current(cfg);
 
+            // 比賽還沒開始時才需要「回到倒數畫面」——開賽後倒數畫面本來就
+            // 已經自動收起，沒有頁面好回去。
+            btnBackToCountdown.Visible = s == Screen.Waiting;
+
             // 監考按了「賽前設定」，暫時讓開
             if (DateTime.UtcNow < gateSuppressedUntil)
             {
@@ -568,10 +573,6 @@ namespace ItouOJ
                         if (lastScreen == Screen.Waiting)
                         {
                             tabs.SelectedIndex = 0;
-                            // 題目清單上的「題名開賽後顯示」到這一刻就過期了，先重畫一次
-                            // 換成正確說法。但這只是換文字，題名本身（p.Title）還是賽前
-                            // 抓到的空字串——伺服器在開賽前本來就不會給標題（防洩題），
-                            // 所以要真的問到題名，得在這一刻真的有網路的話重抓一次。
                             FillProblems();
                             Status("比賽開始！", false);
                             RefreshContestStateAsync();
@@ -1059,6 +1060,28 @@ namespace ItouOJ
             where.SetBounds(2, 406, 860, 36);
             where.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             setupPanel.Controls.Add(where);
+
+            // 比賽還沒開始時，「賽前設定」是從倒數畫面按過來的（暫時讓開
+            // 60 秒，見 BuildGateOverlay 的 toSetup）。這裡放對應的返回鈕，
+            // 不必乾等 60 秒或切分頁去找，改完設定就能立刻回去確認倒數。
+            FlowLayoutPanel backBar = new FlowLayoutPanel();
+            backBar.Dock = DockStyle.Top;
+            backBar.FlowDirection = FlowDirection.RightToLeft;
+            backBar.Height = 44;
+            backBar.Padding = new Padding(0, 4, 4, 4);
+            backBar.BackColor = Theme.Bg;
+
+            btnBackToCountdown = Theme.Secondary("回到倒數畫面");
+            btnBackToCountdown.Size = new Size(130, 32);
+            btnBackToCountdown.Visible = false;
+            btnBackToCountdown.Click += delegate
+            {
+                gateSuppressedUntil = DateTime.MinValue;
+                OnPhaseTick(null, EventArgs.Empty);
+            };
+            backBar.Controls.Add(btnBackToCountdown);
+
+            tab.Controls.Add(backBar);
             tab.Controls.Add(setupPanel);
 
             return tab;
@@ -1223,7 +1246,21 @@ namespace ItouOJ
             }
             try
             {
-                Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+                // 有 .pass 這個 sidecar 檔代表快取存的是加密過的位元組（見
+                // ProblemDoc.DownloadAndCache）——直接開只會看到亂碼，
+                // 要先用同一份密碼解密到暫存檔，再開那份暫存檔。
+                string passPath = path + ".pass";
+                string openPath = path;
+                if (File.Exists(passPath))
+                {
+                    string password = File.ReadAllText(passPath);
+                    byte[] plain = PdfCrypto.Decrypt(File.ReadAllBytes(path), password);
+                    string tempDir = Path.Combine(Path.GetTempPath(), "itouoj-open");
+                    Directory.CreateDirectory(tempDir);
+                    openPath = Path.Combine(tempDir, draftLabel + ".pdf");
+                    File.WriteAllBytes(openPath, plain);
+                }
+                Process.Start(new ProcessStartInfo(openPath) { UseShellExecute = true });
                 Status("已開啟 " + Path.GetFileName(path), false);
             }
             catch (Exception ex)
@@ -1476,10 +1513,12 @@ namespace ItouOJ
             lblAccount.ForeColor = Color.DarkGreen;
         }
 
-        public static string ProblemItemText(string label, string title, bool beforeStart)
+        public static string ProblemItemText(string label, string title)
         {
             if (!string.IsNullOrEmpty(title)) return label + " - " + title;
-            return label + (beforeStart ? "（題名開賽後顯示）" : "（題名請見題目 PDF）");
+            // 理論上不會發生：伺服器現在賽前就會給標題，選比賽當下就抓得到，
+            // 留著這個 fallback 只是防機器帶的是升級前存下來的舊 config.json。
+            return label + "（題名請見題目 PDF）";
         }
 
         void FillProblems()
@@ -1489,16 +1528,8 @@ namespace ItouOJ
             int keep = cboProblem.SelectedIndex;
             cboProblem.Items.Clear();
 
-            // 伺服器在比賽開始前不給題目標題（免得題名提早外流），所以這時
-            // p.Title 是空的。只印代號會讓人以為資料抓壞了 —— 講明白它為什麼空。
-            //
-            // 開賽後仍然空的情況也要講清楚：斷網比賽是在賽前設定的，那次抓到的
-            // 就是空標題，而機器整場離線不會再抓一次。這不是故障，題名在
-            // 桌面的題目 PDF 上。
-            bool beforeStart = Phase.Of(cfg) == ContestPhase.Waiting;
-
             foreach (ProblemEntry p in cfg.Problems)
-                cboProblem.Items.Add(ProblemItemText(p.Label, p.Title, beforeStart));
+                cboProblem.Items.Add(ProblemItemText(p.Label, p.Title));
             if (cboProblem.Items.Count > 0)
                 cboProblem.SelectedIndex =
                     (keep >= 0 && keep < cboProblem.Items.Count) ? keep : 0;
@@ -2401,6 +2432,12 @@ namespace ItouOJ
         static void Main(string[] args)
         {
             Api.InitTls();
+            // 開程式前先查有沒有新版：有的話直接背景下載換掉、重開新版，
+            // 這個行程就結束在這裡，不用再往下開 MainForm（不然新舊兩個視窗
+            // 會同時跑）。查不到新版、沒有網路、下載失敗都會直接回傳 false，
+            // 照舊往下開目前這一份，版本檢查不能變成「開不了程式」。
+            if (UpdateCheck.CheckAndSelfUpdate(args)) return;
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm(args.Length > 0 ? args[0] : null));

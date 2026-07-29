@@ -3,7 +3,9 @@ import { getSession } from "@/lib/auth";
 import { getContestPhase, parseAllowedLanguages } from "@/lib/contest";
 
 // 給離線收件程式在賽前設定階段抓題號對應用（PDF 上的「A 題」是伺服器上的哪個 problemId）。
-// 比賽開始前只給代號，不給標題——不然題目名稱會提早外流。
+// 標題賽前就會給：斷網比賽是在賽前設定階段抓一次這支 API 存進 config.json，
+// 那次如果沒抓到標題，之後全場離線就再也補不回來了。題目內容本身（statement、
+// samples）風險高很多——會不會提早外流才是重點，仍然要等開賽才給。
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -71,7 +73,7 @@ export async function GET(
     problems: contest.problems.map((cp) => ({
       problemId: cp.problemId,
       label: cp.label,
-      title: started || isAdmin ? cp.problem.title : null,
+      title: cp.problem.title,
       timeLimitMs: cp.problem.timeLimitMs,
       // 比賽開始前不給，否則題目內容會提早外流；收件程式屆時只能用自訂輸入測試
       samples: started || isAdmin ? cp.problem.testCases : [],
