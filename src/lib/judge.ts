@@ -140,6 +140,11 @@ async function judgeSubmission(submissionId: number) {
   let maxMemoryKb = 0;
   let score = hasSubtasks ? 0 : null;
   let resultOrder = 0;
+  // 同一筆 submission、不同測資的原始碼完全相同，第一筆測資編譯出來的
+  // 執行檔記下來，後面測資直接重用，不用每筆都重新編譯一次
+  // （sandbox-runner 才吃這個欄位；Piston 語言就一直是 undefined，execute()
+  // 會忽略它，行為跟原本一樣）。
+  let compiledBinary: string | undefined;
 
   try {
     for (const group of groups) {
@@ -155,6 +160,7 @@ async function judgeSubmission(submissionId: number) {
           stdin: tc.input,
           runTimeoutMs: timeLimitMs,
           runMemoryLimitBytes: memoryLimitBytes,
+          precompiledBinary: compiledBinary,
         });
 
         // 編譯失敗 → CE，直接結束
@@ -168,6 +174,9 @@ async function judgeSubmission(submissionId: number) {
             },
           });
           return;
+        }
+        if (!compiledBinary && result.compiled_binary) {
+          compiledBinary = result.compiled_binary;
         }
 
         const run = result.run;
