@@ -172,6 +172,9 @@ model ContestParticipant {
   // 監考要能一眼看出哪一台還沒設定好——漏一台那個選手整場都交不出東西。
   clientReadyAt DateTime?
   clientHost    String? // 回報的電腦名稱，方便對照是機房哪一台
+  // 回報的收件程式版本號（例如 "1.2.11"）。監考巡場時可以一眼看出
+  // 哪幾台還在跑舊版——尤其是開程式前自動更新失敗（沒網路、被防毒擋下）的機器。
+  clientVersion String?
 
   @@unique([contestId, userId])
 }

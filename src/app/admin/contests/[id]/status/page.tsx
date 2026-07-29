@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getContestPhase } from "@/lib/contest";
 import ContestStatusBadge from "@/components/ContestStatusBadge";
+import AutoRefresh from "@/components/AutoRefresh";
 
 export const metadata: Metadata = { title: "參賽者狀態" };
 export const dynamic = "force-dynamic";
@@ -51,10 +52,25 @@ export default async function ContestStatusPage({
     name: p.user.displayName || p.user.username,
     readyAt: p.clientReadyAt,
     host: p.clientHost,
+    version: p.clientVersion,
     submissions: countMap.get(p.userId) ?? 0,
   }));
 
   const ready = rows.filter((r) => r.readyAt).length;
+
+  // 場上大多數機器回報的版本 = 這場比賽「正常」的版本，少數不同的才要提醒
+  // 監考去看一下——不需要另外去查 GitHub 最新 release 是哪一版。
+  const versionCounts = new Map<string, number>();
+  for (const r of rows) {
+    if (!r.version) continue;
+    versionCounts.set(r.version, (versionCounts.get(r.version) ?? 0) + 1);
+  }
+  let majorityVersion: string | null = null;
+  for (const [v, c] of versionCounts) {
+    if (majorityVersion === null || c > (versionCounts.get(majorityVersion) ?? 0)) {
+      majorityVersion = v;
+    }
+  }
   const phase = getContestPhase(contest);
   const fmt = (d: Date) =>
     d.toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
@@ -68,9 +84,12 @@ export default async function ContestStatusPage({
         <ContestStatusBadge contest={contest} />
       </div>
 
-      <div>
-        <h1 className="page-title">參賽者狀態</h1>
-        <p className="mt-1 text-sm text-dim">{contest.title}</p>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h1 className="page-title">參賽者狀態</h1>
+          <p className="mt-1 text-sm text-dim">{contest.title}</p>
+        </div>
+        <AutoRefresh intervalMs={5000} />
       </div>
 
       <div className="card grid gap-4 p-5 sm:grid-cols-3">
@@ -112,6 +131,15 @@ export default async function ContestStatusPage({
         </div>
       )}
 
+      {majorityVersion &&
+        rows.some((r) => r.version && r.version !== majorityVersion) && (
+          <div className="card border-[rgba(250,168,26,0.3)] p-4 text-sm text-[#faa81a]">
+            有機器回報的收件程式版本跟場上多數（v{majorityVersion}）不一樣，
+            可能是開程式前的自動更新失敗（沒網路、被防毒擋下）。
+            開賽前建議確認那幾台，必要時手動重新下載安裝。
+          </div>
+        )}
+
       <p className="mono mb-2 text-[11px] text-mute sm:hidden">
         ← 左右滑動可看到更多欄位 →
       </p>
@@ -124,13 +152,14 @@ export default async function ContestStatusPage({
               <th className="table-head w-28">收件程式</th>
               <th className="table-head w-44">回報時間</th>
               <th className="table-head w-36">電腦名稱</th>
+              <th className="table-head w-24">版本</th>
               <th className="table-head w-24 text-right">提交數</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="table-cell py-10 text-center text-mute">
+                <td colSpan={7} className="table-cell py-10 text-center text-mute">
                   還沒有人報名這場比賽
                 </td>
               </tr>
@@ -158,6 +187,15 @@ export default async function ContestStatusPage({
                 </td>
                 <td className="table-cell mono text-sm text-dim">
                   {r.host || "—"}
+                </td>
+                <td
+                  className={`table-cell mono text-sm ${
+                    r.version && majorityVersion && r.version !== majorityVersion
+                      ? "font-semibold text-[#faa81a]"
+                      : "text-dim"
+                  }`}
+                >
+                  {r.version ? `v${r.version}` : "—"}
                 </td>
                 <td className="table-cell text-right text-dim">
                   {r.submissions > 0 ? (

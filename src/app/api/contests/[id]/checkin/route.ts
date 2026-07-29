@@ -11,6 +11,9 @@ import { getContestPhase, parseAllowedLanguages } from "@/lib/contest";
 const schema = z.object({
   // 回報的電腦名稱，方便對照是機房哪一台
   host: z.string().trim().max(100).optional(),
+  // 收件程式版本號（例如 "1.2.11"）。開程式前雖然會自動更新，但沒網路、
+  // 被防毒擋下時會失敗又不出聲——監考巡場靠這個欄位抓出還在跑舊版的機器。
+  clientVersion: z.string().trim().max(20).optional(),
 });
 
 export async function POST(
@@ -31,6 +34,7 @@ export async function POST(
   const body = await request.json().catch(() => ({}));
   const parsed = schema.safeParse(body ?? {});
   const host = parsed.success ? parsed.data.host : undefined;
+  const clientVersion = parsed.success ? parsed.data.clientVersion : undefined;
 
   const contest = await prisma.contest.findUnique({ where: { id: contestId } });
   if (!contest) {
@@ -58,7 +62,11 @@ export async function POST(
 
   await prisma.contestParticipant.update({
     where: { id: participant.id },
-    data: { clientReadyAt: new Date(), clientHost: host ?? null },
+    data: {
+      clientReadyAt: new Date(),
+      clientHost: host ?? null,
+      clientVersion: clientVersion ?? null,
+    },
   });
 
   return Response.json({
