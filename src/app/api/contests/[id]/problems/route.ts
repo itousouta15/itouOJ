@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getContestPhase, parseAllowedLanguages } from "@/lib/contest";
+import { parseAllowedLanguages } from "@/lib/contest";
 
 // 給離線收件程式在賽前設定階段抓題號對應用（PDF 上的「A 題」是伺服器上的哪個 problemId）。
-// 標題賽前就會給：斷網比賽是在賽前設定階段抓一次這支 API 存進 config.json，
-// 那次如果沒抓到標題，之後全場離線就再也補不回來了。題目內容本身（statement、
-// samples）風險高很多——會不會提早外流才是重點，仍然要等開賽才給。
+// 標題、範例測資賽前就會給：斷網比賽是在賽前設定階段抓一次這支 API
+// 存進 config.json，那次如果沒抓到，之後全場離線就再也補不回來了——
+// 「測試執行」沒有範例測資可比對，選手整場都測不了自己的程式。
+// 完整題敘（statement）跟隱藏測資風險高很多，不在這支 API 的範圍內，
+// 仍然要透過 /api/contests/[id]/problems/[label]/doc 那條「等開賽才給」的路徑。
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -60,8 +62,6 @@ export async function GET(
     }
   }
 
-  const started = getContestPhase(contest) !== "upcoming";
-
   return Response.json({
     id: contest.id,
     title: contest.title,
@@ -75,8 +75,7 @@ export async function GET(
       label: cp.label,
       title: cp.problem.title,
       timeLimitMs: cp.problem.timeLimitMs,
-      // 比賽開始前不給，否則題目內容會提早外流；收件程式屆時只能用自訂輸入測試
-      samples: started || isAdmin ? cp.problem.testCases : [],
+      samples: cp.problem.testCases,
     })),
   });
 }
