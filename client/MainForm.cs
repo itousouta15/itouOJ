@@ -402,6 +402,20 @@ namespace ItouOJ
             lblRemain.Visible = false;
             bottom.Controls.Add(lblRemain);
 
+            // 比賽還沒開始時，「賽前設定」是從倒數畫面按過來的（暫時讓開
+            // 60 秒，見 BuildGateOverlay 的 toSetup）。放在狀態列而不是
+            // 「賽前設定」分頁裡——分頁裡的話切到別的分頁就看不到，回不去。
+            btnBackToCountdown = Theme.Secondary("回到倒數畫面");
+            btnBackToCountdown.Dock = DockStyle.Right;
+            btnBackToCountdown.Width = 130;
+            btnBackToCountdown.Visible = false;
+            btnBackToCountdown.Click += delegate
+            {
+                gateSuppressedUntil = DateTime.MinValue;
+                OnPhaseTick(null, EventArgs.Empty);
+            };
+            bottom.Controls.Add(btnBackToCountdown);
+
             lblStatus = new Label();
             lblStatus.Dock = DockStyle.Fill;
             lblStatus.Font = Theme.Body;
@@ -1061,27 +1075,6 @@ namespace ItouOJ
             where.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             setupPanel.Controls.Add(where);
 
-            // 比賽還沒開始時，「賽前設定」是從倒數畫面按過來的（暫時讓開
-            // 60 秒，見 BuildGateOverlay 的 toSetup）。這裡放對應的返回鈕，
-            // 不必乾等 60 秒或切分頁去找，改完設定就能立刻回去確認倒數。
-            FlowLayoutPanel backBar = new FlowLayoutPanel();
-            backBar.Dock = DockStyle.Top;
-            backBar.FlowDirection = FlowDirection.RightToLeft;
-            backBar.Height = 44;
-            backBar.Padding = new Padding(0, 4, 4, 4);
-            backBar.BackColor = Theme.Bg;
-
-            btnBackToCountdown = Theme.Secondary("回到倒數畫面");
-            btnBackToCountdown.Size = new Size(130, 32);
-            btnBackToCountdown.Visible = false;
-            btnBackToCountdown.Click += delegate
-            {
-                gateSuppressedUntil = DateTime.MinValue;
-                OnPhaseTick(null, EventArgs.Empty);
-            };
-            backBar.Controls.Add(btnBackToCountdown);
-
-            tab.Controls.Add(backBar);
             tab.Controls.Add(setupPanel);
 
             return tab;
