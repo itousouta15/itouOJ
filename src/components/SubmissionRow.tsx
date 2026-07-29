@@ -14,7 +14,7 @@ export interface SubmissionRowData {
   createdAtLabel: string;
   username: string;
   displayName?: string | null;
-  problem: { id: number; title: string };
+  problem: { id: number; order: number; title: string };
 }
 
 export default function SubmissionRow({ s }: { s: SubmissionRowData }) {
@@ -28,7 +28,7 @@ export default function SubmissionRow({ s }: { s: SubmissionRowData }) {
       <td className="table-cell mono text-dim">{s.id}</td>
       <td className="table-cell">
         <Link
-          href={`/problems/${s.problem.id}`}
+          href={`/problems/${s.problem.order}`}
           className="font-medium text-blue hover:underline"
           onClick={(e) => e.stopPropagation()}
         >

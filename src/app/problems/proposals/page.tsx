@@ -17,6 +17,15 @@ export default async function MyProposalsPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  const approvedProblemIds = proposals
+    .map((p) => p.approvedProblemId)
+    .filter((id): id is number => id != null);
+  const approvedProblems = await prisma.problem.findMany({
+    where: { id: { in: approvedProblemIds } },
+    select: { id: true, order: true },
+  });
+  const orderByProblemId = new Map(approvedProblems.map((p) => [p.id, p.order]));
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -56,14 +65,16 @@ export default async function MyProposalsPage() {
                   編輯
                 </Link>
               )}
-              {p.status === "APPROVED" && p.approvedProblemId && (
-                <Link
-                  href={`/problems/${p.approvedProblemId}`}
-                  className="text-blue hover:underline"
-                >
-                  查看題目 →
-                </Link>
-              )}
+              {p.status === "APPROVED" &&
+                p.approvedProblemId &&
+                orderByProblemId.has(p.approvedProblemId) && (
+                  <Link
+                    href={`/problems/${orderByProblemId.get(p.approvedProblemId)}`}
+                    className="text-blue hover:underline"
+                  >
+                    查看題目 →
+                  </Link>
+                )}
             </div>
           </div>
         ))}

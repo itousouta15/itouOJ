@@ -14,12 +14,12 @@ export default async function ProblemPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const problemId = Number(id);
-  if (!Number.isInteger(problemId)) notFound();
+  const problemOrder = Number(id);
+  if (!Number.isInteger(problemOrder)) notFound();
 
   const session = await getSession();
   const problem = await prisma.problem.findUnique({
-    where: { id: problemId },
+    where: { order: problemOrder },
     include: {
       testCases: {
         where: { isSample: true },
