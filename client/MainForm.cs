@@ -575,6 +575,9 @@ namespace ItouOJ
                             FillProblems();
                             Status("比賽開始！", false);
                             RefreshContestStateAsync();
+                            // 「開啟題目」在賽前是鎖住的（就算檔案早就佈署在機器上），
+                            // 這一刻要立刻解鎖，不必等使用者手動切題目才刷新
+                            UpdateProblemButton();
                         }
                     }
                     TimeSpan left = Phase.Until(cfg, cfg.EndTimeUtc);
@@ -1133,8 +1136,18 @@ namespace ItouOJ
             UpdateProblemButton();
         }
 
+        // 題目檔就算已經放在機器上（例如監考為了穩定，提前把整包題目連同
+        // 收件程式一起佈署），比賽開始前也不能給選手打開——不然「先裝好」
+        // 就等於「先洩題」。所以按鈕能不能按不是只看檔案存不存在，還要看
+        // 現在是不是已經開賽。
         void UpdateProblemButton()
         {
+            if (Flow.Current(cfg) == Screen.Waiting)
+            {
+                btnOpenProblem.Enabled = false;
+                btnOpenProblem.Text = "比賽尚未開始";
+                return;
+            }
             string path = draftLabel == null ? null : ProblemDoc.Resolve(cfg, draftLabel);
             btnOpenProblem.Enabled = path != null;
             btnOpenProblem.Text = path != null ? "開啟題目" : "題目未設定";
@@ -1195,6 +1208,13 @@ namespace ItouOJ
 
         void OnOpenProblem(object sender, EventArgs e)
         {
+            // 按鈕理論上該擋的它都擋了，這裡再驗一次是防呆：萬一按鈕狀態
+            // 沒即時更新（例如剛好卡在階段切換的瞬間），也不能真的開得了檔案。
+            if (Flow.Current(cfg) == Screen.Waiting)
+            {
+                Status("比賽還沒開始，現在還不能看題目", true);
+                return;
+            }
             string path = draftLabel == null ? null : ProblemDoc.Resolve(cfg, draftLabel);
             if (path == null)
             {
@@ -1913,6 +1933,47 @@ namespace ItouOJ
 
             // 設定完成 = 這台機器準備好了，回報給監考
             SendCheckinAsync(false);
+
+            // 題目文件能下載就先下載存起來（伺服器自己決定准不准，賽前又沒開
+            // allowEarlyProblemDownload 就會被擋，這裡就當作那題暫時沒有文件）。
+            // 背景執行，不能讓下載卡住 UI——這個方法本身也會被背景執行緒的
+            // RefreshContestStateAsync 呼叫到，同步做的話會卡住整個訊息迴圈。
+            DownloadProblemDocsAsync(contestId, cfg.Problems, cfg.ServerUrl, cfg.Cookie);
+        }
+
+        void DownloadProblemDocsAsync(
+            int contestId, List<ProblemEntry> problems, string serverUrl, string cookie)
+        {
+            if (problems == null || problems.Count == 0) return;
+            if (string.IsNullOrEmpty(serverUrl) || string.IsNullOrEmpty(cookie)) return;
+
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate
+            {
+                int downloaded = 0;
+                foreach (ProblemEntry pe in problems)
+                {
+                    if (ProblemDoc.DownloadAndCache(serverUrl, cookie, contestId, pe.Label) != null)
+                        downloaded++;
+                }
+                if (downloaded == 0) return;
+
+                try
+                {
+                    BeginInvoke((MethodInvoker)delegate
+                    {
+                        // 下載期間使用者可能換了比賽，這批結果就不再相關
+                        if (cfg.ContestId != contestId) return;
+                        // 只在管理員沒手動指定過「題目路徑」時才接管，不覆蓋監考自己選的資料夾
+                        if (string.IsNullOrEmpty(cfg.ProblemDir))
+                        {
+                            cfg.ProblemDir = ProblemDoc.CacheDir(contestId);
+                            Store.SaveConfig(cfg);
+                        }
+                        UpdateProblemButton();
+                    });
+                }
+                catch { /* 視窗已關閉 */ }
+            });
         }
 
         // 重新打開程式時第一件事：背景向伺服器核對這場比賽現在的狀態。

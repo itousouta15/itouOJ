@@ -33,6 +33,13 @@ model Problem {
   memoryLimitMb   Int              @default(256)
   isPublic        Boolean          @default(true)
   order           Int              @default(0) @unique // 題目列表顯示順序；同時是對外題號（網址 /problems/{order}）
+  // 管理員自製的正式題目檔（通常是排版過的 PDF）。沒有上傳的話，下載題目文件時
+  // 會退回用 statement 現場產生的 HTML（見 lib/renderProblemDoc.ts）。
+  // 掛在 Problem 而不是 ContestProblem：後者每次比賽編輯存檔都會整批刪除重建
+  // （見 admin/contests/[id] 的 PUT），掛在那裡的話存檔就把上傳的檔案弄丟了。
+  pdfData         Bytes?
+  pdfFilename     String?
+  pdfUploadedAt   DateTime?
   createdAt       DateTime         @default(now())
   testCases       TestCase[]
   subtasks        Subtask[] // 有設定才走部分給分；沒有則維持整題 AC/WA
@@ -125,6 +132,11 @@ model Contest {
   isPublic      Boolean              @default(true)
   joinCode      String? // 加入代碼；null = 開放任何人加入
   revealedAt    DateTime? // 管理員手動「公開最終成績」的時間；null = 尚未公開
+  // 預設關閉：題目文件（PDF/HTML）平常要等開賽才給選手端下載，避免洩題。
+  // 管理員針對個別比賽自行評估風險後才能開啟，讓斷網比賽在賽前設定階段
+  // 就把檔案下載到選手機——開啟後「有沒有洩題風險」是管理員自己承擔的判斷，
+  // 不是系統預設行為。
+  allowEarlyProblemDownload Boolean  @default(false)
   createdAt     DateTime             @default(now())
   problems      ContestProblem[]
   participants  ContestParticipant[]

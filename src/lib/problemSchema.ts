@@ -16,6 +16,16 @@ export const problemSchema = z
     ...problemBaseFields,
     isPublic: z.boolean(),
     tagIds: z.array(z.number().int()).default([]),
+    // 三態：key 沒出現＝維持原本的 PDF 不動；null＝移除；有值＝換成新檔案。
+    // 表單每次存檔都會送整份資料，如果沒有這個區分，改個標題的錯字就會把
+    // 已經上傳的 PDF 弄丟（逼使用者每次存檔都要重新選一次檔案）。
+    pdfUpload: z
+      .object({
+        filename: z.string().min(1).max(200),
+        base64: z.string().min(1),
+      })
+      .nullable()
+      .optional(),
     // 沒有子題 = 沿用舊制整題 AC/WA；有子題則每筆測資都要指定所屬子題，各子題全對才拿到該子題配分
     subtasks: z
       .array(
