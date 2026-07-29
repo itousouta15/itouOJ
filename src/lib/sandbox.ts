@@ -16,6 +16,9 @@ export async function sandboxExecute(params: {
   stdin: string;
   runTimeoutMs: number;
   runMemoryLimitBytes: number;
+  // 有給的話（同一筆 submission 前一筆測資編譯出來的執行檔）sandbox-runner
+  // 會跳過重新編譯，直接拿這份去跑——見 judge.ts 的 compile-once 快取。
+  precompiledBinary?: string;
 }): Promise<PistonResult> {
   const res = await fetch(`${SANDBOX_URL}/api/v2/execute`, {
     method: "POST",
@@ -28,6 +31,7 @@ export async function sandboxExecute(params: {
       compile_timeout: 15000,
       run_timeout: params.runTimeoutMs,
       run_memory_limit: params.runMemoryLimitBytes,
+      precompiled_binary: params.precompiledBinary,
     }),
   });
   if (!res.ok) {

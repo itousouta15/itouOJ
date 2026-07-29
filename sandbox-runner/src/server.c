@@ -18,6 +18,18 @@
 // thread-per-connection): one request judged at a time. This is a
 // deliberate, simple concurrency guard -- see the plan's risk note about
 // /api/run having none today.
+//
+// M9: compile-once caching. judge.ts judges one test case per request, and
+// with no caching that meant recompiling identical source from scratch for
+// every test case of the same submission. An optional `precompiled_binary`
+// request field (base64) skips straight to the run phase using those bytes
+// instead of invoking the compiler; a successful fresh compile echoes the
+// binary back as `compiled_binary` so the caller can hand it back on the
+// submission's remaining test cases. Doesn't change the trust boundary:
+// this API is loopback-only, so the only caller is judge.ts itself, and the
+// cached bytes are always exactly what the real compiler already produced
+// from that submission's own source earlier in the same judging pass --
+// never anything supplied by the student directly.
 #define _GNU_SOURCE
 #include <arpa/inet.h>
 #include <cjson/cJSON.h>
@@ -285,6 +297,93 @@ static long parse_meta_long(const char *meta, const char *key) {
   return atol(p + strlen(key));
 }
 
+// ---- minimal base64 (no external dependency) ----
+//
+// Used to shuttle a compiled binary between server and judge process so the
+// same submission's later test cases can skip recompiling. Both ends are on
+// loopback only -- see the "compile-once" note in process_execute() for why
+// this doesn't change the trust boundary.
+
+static const char B64_TABLE[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static char *base64_encode(const unsigned char *data, size_t len) {
+  size_t out_len = 4 * ((len + 2) / 3);
+  char *out = malloc(out_len + 1);
+  if (!out) return NULL;
+  size_t i = 0, j = 0;
+  while (i + 3 <= len) {
+    unsigned int n = ((unsigned int)data[i] << 16) |
+                      ((unsigned int)data[i + 1] << 8) | data[i + 2];
+    out[j++] = B64_TABLE[(n >> 18) & 0x3F];
+    out[j++] = B64_TABLE[(n >> 12) & 0x3F];
+    out[j++] = B64_TABLE[(n >> 6) & 0x3F];
+    out[j++] = B64_TABLE[n & 0x3F];
+    i += 3;
+  }
+  size_t rem = len - i;
+  if (rem == 1) {
+    unsigned int n = (unsigned int)data[i] << 16;
+    out[j++] = B64_TABLE[(n >> 18) & 0x3F];
+    out[j++] = B64_TABLE[(n >> 12) & 0x3F];
+    out[j++] = '=';
+    out[j++] = '=';
+  } else if (rem == 2) {
+    unsigned int n =
+        ((unsigned int)data[i] << 16) | ((unsigned int)data[i + 1] << 8);
+    out[j++] = B64_TABLE[(n >> 18) & 0x3F];
+    out[j++] = B64_TABLE[(n >> 12) & 0x3F];
+    out[j++] = B64_TABLE[(n >> 6) & 0x3F];
+    out[j++] = '=';
+  }
+  out[j] = '\0';
+  return out;
+}
+
+static int base64_val(char c) {
+  if (c >= 'A' && c <= 'Z') return c - 'A';
+  if (c >= 'a' && c <= 'z') return c - 'a' + 26;
+  if (c >= '0' && c <= '9') return c - '0' + 52;
+  if (c == '+') return 62;
+  if (c == '/') return 63;
+  return -1;
+}
+
+// NULL on malformed input (caller must treat that the same as "compile
+// failed" -- never silently fall back to compiling from source once a
+// precompiled_binary field was present, that would defeat the point of
+// the caller's cache and mask a real bug).
+static unsigned char *base64_decode(const char *in, size_t *out_len) {
+  size_t in_len = strlen(in);
+  if (in_len == 0 || in_len % 4 != 0) return NULL;
+  size_t pad = 0;
+  if (in[in_len - 1] == '=') pad++;
+  if (in_len > 1 && in[in_len - 2] == '=') pad++;
+  size_t out_cap = (in_len / 4) * 3 - pad;
+  unsigned char *out = malloc(out_cap > 0 ? out_cap : 1);
+  if (!out) return NULL;
+  size_t j = 0;
+  for (size_t i = 0; i < in_len; i += 4) {
+    int v0 = base64_val(in[i]);
+    int v1 = base64_val(in[i + 1]);
+    int is_pad2 = in[i + 2] == '=';
+    int is_pad3 = in[i + 3] == '=';
+    int v2 = is_pad2 ? 0 : base64_val(in[i + 2]);
+    int v3 = is_pad3 ? 0 : base64_val(in[i + 3]);
+    if (v0 < 0 || v1 < 0 || (!is_pad2 && v2 < 0) || (!is_pad3 && v3 < 0)) {
+      free(out);
+      return NULL;
+    }
+    unsigned int n = ((unsigned int)v0 << 18) | ((unsigned int)v1 << 12) |
+                      ((unsigned int)v2 << 6) | (unsigned int)v3;
+    if (j < out_cap) out[j++] = (n >> 16) & 0xFF;
+    if (!is_pad2 && j < out_cap) out[j++] = (n >> 8) & 0xFF;
+    if (!is_pad3 && j < out_cap) out[j++] = n & 0xFF;
+  }
+  *out_len = j;
+  return out;
+}
+
 static void cleanup_workdir(const char *workdir) {
   char *argv[] = {"rm", "-rf", (char *)workdir, NULL};
   int exit_code, term_signal;
@@ -421,6 +520,10 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
   cJSON *j_run_mem = cJSON_GetObjectItemCaseSensitive(req, "run_memory_limit");
   cJSON *j_compile_timeout =
       cJSON_GetObjectItemCaseSensitive(req, "compile_timeout");
+  // 選填：呼叫端快取住的上一次編譯結果（base64），同一筆 submission
+  // 後續測資帶著這個欄位來就跳過重新編譯，直接拿這份執行檔去跑。
+  cJSON *j_precompiled =
+      cJSON_GetObjectItemCaseSensitive(req, "precompiled_binary");
 
   if (!cJSON_IsString(j_language) || !cJSON_IsArray(j_files) ||
       cJSON_GetArraySize(j_files) < 1) {
@@ -457,6 +560,8 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
                                  : 15000;
 
   int is_interpreted = lang->compiler == NULL;
+  int has_precompiled = !is_interpreted && cJSON_IsString(j_precompiled) &&
+                         j_precompiled->valuestring[0] != '\0';
 
   // --- per-request scratch workdir ---
   mkdir(WORK_ROOT, 0755);
@@ -513,6 +618,39 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
     struct captured_output empty = {0};
     cJSON_AddItemToObject(resp, "compile",
                            build_phase_json(&empty, 0, -1, 0, 0));
+  } else if (has_precompiled) {
+    // compile-once: caller already has this exact submission compiled from
+    // an earlier test case in the same judging pass and is handing the
+    // binary straight back instead of source -- write it directly where
+    // the freshly-compiled binary would have gone and skip invoking the
+    // compiler entirely. Doesn't touch the run-phase sandboxing at all
+    // (jail below runs /bin/prog exactly the same either way), so this
+    // only changes how the binary gets into that path, not what's allowed
+    // to happen once jail takes over.
+    size_t decoded_len = 0;
+    unsigned char *decoded =
+        base64_decode(j_precompiled->valuestring, &decoded_len);
+    struct captured_output empty = {0};
+    if (decoded && decoded_len > 0) {
+      FILE *bf = fopen(bin_path, "wb");
+      if (bf) {
+        fwrite(decoded, 1, decoded_len, bf);
+        fclose(bf);
+        chmod(bin_path, 0755);
+      } else {
+        compile_failed = 1;
+      }
+    } else {
+      // Malformed cache value from the caller -- treat as a hard failure
+      // rather than silently falling back to compiling from source, so a
+      // bug on the caller's side surfaces immediately instead of masking
+      // itself as "just a bit slower than expected".
+      compile_failed = 1;
+    }
+    free(decoded);
+    cJSON_AddItemToObject(
+        resp, "compile",
+        build_phase_json(&empty, compile_failed ? -1 : 0, -1, 0, 0));
   } else {
     // --- compile (host-side, not sandboxed -- see file header) ---
     struct captured_output compile_out = {0};
@@ -526,6 +664,31 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
         build_phase_json(&compile_out, compile_exit, compile_sig, 0, 0));
     compile_failed = compile_sig >= 0 || compile_exit != 0;
     free_captured(&compile_out);
+
+    // 編譯成功就把執行檔位元組回傳給呼叫端快取，下一筆測資才能省掉
+    // 重新編譯——只有「這次真的重新編譯」才回傳，呼叫端已經有的話
+    // （帶 precompiled_binary 進來那些請求）沒必要再送一次。
+    if (!compile_failed) {
+      FILE *bf = fopen(bin_path, "rb");
+      if (bf) {
+        fseek(bf, 0, SEEK_END);
+        long bin_size = ftell(bf);
+        fseek(bf, 0, SEEK_SET);
+        if (bin_size > 0) {
+          unsigned char *bin_data = malloc((size_t)bin_size);
+          if (bin_data && fread(bin_data, 1, (size_t)bin_size, bf) ==
+                              (size_t)bin_size) {
+            char *encoded = base64_encode(bin_data, (size_t)bin_size);
+            if (encoded) {
+              cJSON_AddStringToObject(resp, "compiled_binary", encoded);
+              free(encoded);
+            }
+          }
+          free(bin_data);
+        }
+        fclose(bf);
+      }
+    }
   }
 
   if (compile_failed) {
