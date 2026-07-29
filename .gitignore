@@ -55,3 +55,6 @@ client/*.pdb
 AGENTS.md
 # 題目匯出（scripts/export-problems.mjs 產出，可隨時重新產生）
 problem-docs/
+
+# 建置產物：每次重建都會變（舊版 csc 不支援 /deterministic）
+client/dist/
