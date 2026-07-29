@@ -161,14 +161,10 @@ export default async function SettingsPage({
       </section>
 
       <section className="card p-6">
-        <h2 className="section-title mb-4">修改密碼</h2>
-        {user.passwordHash ? (
-          <ChangePasswordForm />
-        ) : (
-          <p className="text-sm text-dim">
-            此帳號透過 {user.googleId ? "Google" : "Discord"} 登入，沒有本地密碼。
-          </p>
-        )}
+        <h2 className="section-title mb-4">
+          {user.passwordHash ? "修改密碼" : "設定密碼"}
+        </h2>
+        <ChangePasswordForm hasPassword={Boolean(user.passwordHash)} />
       </section>
 
       <section className="card p-6">
