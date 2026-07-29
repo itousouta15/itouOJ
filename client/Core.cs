@@ -566,6 +566,27 @@ namespace ItouOJ
                 default: return Screen.Answering;
             }
         }
+
+        // 關掉程式時要不要回到初始狀態（清掉身分、比賽選擇、草稿）。
+        //
+        // 預設要 —— 同一台機器下一位開起來應該是全新的。但有兩種情況清了會害人
+        // 交不出東西，寧可留著髒資料也不能清：
+        //
+        //   1. 已選比賽且比賽還沒結束。機房這時候是斷網的，而重新登入需要網路，
+        //      清掉等於那台機器再也回不來。
+        //   2. 還有沒上傳的提交。清掉身分之後那些提交會變成「別人的」，
+        //      要原本那位重新登入才傳得出去。
+        public static bool ShouldResetOnExit(Config cfg, int pendingCount)
+        {
+            if (cfg == null || string.IsNullOrEmpty(cfg.Username)) return false;
+
+            Screen s = Current(cfg);
+            if (s == Screen.Waiting || s == Screen.Answering) return false;
+
+            if (pendingCount > 0) return false;
+
+            return true;
+        }
     }
 
     // 比賽現在處於哪個階段。

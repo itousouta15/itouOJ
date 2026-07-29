@@ -37,7 +37,7 @@ namespace ItouOJ
         int pendingContestId = 0;
         // 監考臨時離開等待畫面去改設定的寬限時間
         DateTime gateSuppressedUntil = DateTime.MinValue;
-        Button btnSettings, btnUnlock, btnCheckin, btnLogout;
+        Button btnSettings, btnUnlock, btnCheckin, btnLogout, btnRefreshContest;
         // 解鎖只在本次執行有效，不寫回 config
         bool unlockedThisSession = false;
         // 這次執行是否已成功向伺服器回報就緒
@@ -125,9 +125,22 @@ namespace ItouOJ
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            // 關視窗前一定要把還沒落地的草稿寫掉，否則最後一秒打的字會消失
             if (draftTimer != null) draftTimer.Stop();
-            SaveDraft();
+
+            if (Flow.ShouldResetOnExit(cfg, Store.ReadDir(Store.PendingDir).Count))
+            {
+                // 草稿按「比賽+題號」存、不綁使用者，留著等於把上一位的程式碼
+                // 直接攤在下一位面前，所以連同身分一起清掉。
+                Store.ClearDrafts();
+                ClearSession();
+                Store.SaveConfig(cfg);
+            }
+            else
+            {
+                // 沒有要重設就一定要把最後一秒打的字寫下來
+                SaveDraft();
+            }
+
             base.OnFormClosing(e);
         }
 
@@ -785,6 +798,18 @@ namespace ItouOJ
             cboContest.SelectedIndexChanged += OnContestChanged;
             lockableGroup.Controls.Add(cboContest);
 
+            // 刻意不受 PIN 鎖影響：重抓比賽資訊改不壞任何東西，而比賽被延長時
+            // 正是鎖著的狀態下最需要它。
+            btnRefreshContest = Theme.Secondary("更新比賽資訊");
+            btnRefreshContest.SetBounds(436, 45, 128, 28);
+            btnRefreshContest.Click += OnRefreshContest;
+            lockableGroup.Controls.Add(btnRefreshContest);
+
+            Label refreshHint = Theme.Hint(
+                "監考改了比賽時間或題目後按這裡更新，不必登出重登。");
+            refreshHint.SetBounds(576, 50, 400, 20);
+            lockableGroup.Controls.Add(refreshHint);
+
             Panel sep2 = Theme.Divider();
             sep2.SetBounds(16, 86, 828, 1);
             sep2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
@@ -1293,6 +1318,21 @@ namespace ItouOJ
         }
 
         // 登出。同一台機器換人用時，要確保下一位看不到也拿不走前一位的東西。
+        // 清掉「這是誰、在考哪一場」。管理員設定（題目路徑、編譯器、PIN）、
+        // 伺服器網址與時鐘校正值屬於這台機器而不屬於某個人，一律保留 ——
+        // 否則每換一位選手就要重做一次賽前設定。
+        void ClearSession()
+        {
+            cfg.Cookie = "";
+            cfg.Username = "";
+            cfg.ContestId = 0;
+            cfg.ContestTitle = "";
+            cfg.Problems = new List<ProblemEntry>();
+            cfg.AllowedLanguages = new List<string>();
+            cfg.StartTimeUtc = "";
+            cfg.EndTimeUtc = "";
+        }
+
         void OnLogout(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(cfg.Username))
@@ -1329,14 +1369,7 @@ namespace ItouOJ
             if (draftTimer != null) draftTimer.Stop();
             int cleared = Store.ClearDrafts();
 
-            cfg.Cookie = "";
-            cfg.Username = "";
-            cfg.ContestId = 0;
-            cfg.ContestTitle = "";
-            cfg.Problems = new List<ProblemEntry>();
-            cfg.AllowedLanguages = new List<string>();
-            cfg.StartTimeUtc = "";
-            cfg.EndTimeUtc = "";
+            ClearSession();
             Store.SaveConfig(cfg);
 
             checkedIn = false;
@@ -1462,10 +1495,39 @@ namespace ItouOJ
             if (i < 0 || i >= contests.Count) return;
             if (string.IsNullOrEmpty(cfg.Cookie)) return;
 
+            LoadContestState(Convert.ToInt32(contests[i]["id"]));
+        }
+
+        // 重新向伺服器要這場比賽的題目、起訖時間與語言限制。
+        //
+        // 監考臨時延長比賽、加題、改語言限制之後，選手機上的快取就過期了 ——
+        // 而起訖時間正是斷網後判斷開始與結束的唯一依據。以前唯一的更新方式是
+        // 登出再登入，那會連帶清掉草稿，代價太大。
+        void OnRefreshContest(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(cfg.Cookie))
+            {
+                Status("尚未登入，無法更新比賽資訊", true);
+                return;
+            }
+            if (cfg.ContestId <= 0)
+            {
+                Status("尚未選擇比賽", true);
+                return;
+            }
+            LoadContestState(cfg.ContestId);
+        }
+
+        void LoadContestState(int contestId)
+        {
+            bool sameContest = cfg.ContestId == contestId;
+            string prevStart = cfg.StartTimeUtc;
+            string prevEnd = cfg.EndTimeUtc;
+            int prevProblems = cfg.Problems == null ? 0 : cfg.Problems.Count;
+
             Cursor = Cursors.WaitCursor;
             try
             {
-                int contestId = Convert.ToInt32(contests[i]["id"]);
                 string setCookie;
                 DateTime? serverDate;
                 string body = Api.Send(
@@ -1520,11 +1582,31 @@ namespace ItouOJ
                 FillProblems();
                 UpdateLanguageHint();
                 OnProblemChanged(null, EventArgs.Empty);
-                string langNote = cfg.AllowedLanguages.Count > 0
-                    ? "，限用 " + LanguageNames(cfg.AllowedLanguages)
-                    : "";
-                Status(string.Format("已載入「{0}」的 {1} 道題目{2}，可以斷網作答了",
-                    cfg.ContestTitle, cfg.Problems.Count, langNote), false);
+                // 時間可能被監考改過，畫面要立刻跟上
+                //（例如比賽被延長，就該從「已結束」變回作答中）
+                OnPhaseTick(null, EventArgs.Empty);
+
+                if (sameContest)
+                {
+                    // 更新的重點就是「到底有沒有變」，沒講清楚等於沒更新
+                    List<string> changes = new List<string>();
+                    if (prevStart != cfg.StartTimeUtc) changes.Add("開始時間");
+                    if (prevEnd != cfg.EndTimeUtc) changes.Add("結束時間");
+                    if (prevProblems != cfg.Problems.Count)
+                        changes.Add("題數 " + prevProblems + " → " + cfg.Problems.Count);
+
+                    Status(changes.Count > 0
+                        ? "比賽資訊已更新：" + string.Join("、", changes.ToArray())
+                        : "比賽資訊已是最新，沒有變動", false);
+                }
+                else
+                {
+                    string langNote = cfg.AllowedLanguages.Count > 0
+                        ? "，限用 " + LanguageNames(cfg.AllowedLanguages)
+                        : "";
+                    Status(string.Format("已載入「{0}」的 {1} 道題目{2}，可以斷網作答了",
+                        cfg.ContestTitle, cfg.Problems.Count, langNote), false);
+                }
 
                 // 設定完成 = 這台機器準備好了，回報給監考
                 SendCheckinAsync(false);

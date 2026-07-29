@@ -495,6 +495,51 @@ namespace ItouOJ
             foreach (string f in Directory.GetFiles(Store.PendingDir, "*.json"))
                 File.Delete(f);
 
+            // ── 0a6. 關閉程式時的重設判斷 ─────────────
+            // 清錯的代價不對稱：少清一次只是髒；多清一次會讓斷網中的選手
+            // 再也登不回來、交不出東西。所以每個分支都要有測試釘住。
+            Console.WriteLine("\n[0a6] 關掉程式要不要回到初始狀態");
+
+            Config xc = new Config();
+            xc.ServerUrl = "https://oj.itousouta.me";
+            Check("沒登入就沒東西好清",
+                  !Flow.ShouldResetOnExit(xc, 0), null);
+
+            xc.Cookie = "c"; xc.Username = "oj07";
+            Check("登入了但還沒選比賽 -> 清",
+                  Flow.ShouldResetOnExit(xc, 0), null);
+
+            xc.ContestId = 3;
+            xc.Problems = new List<ProblemEntry>();
+            ProblemEntry pe0 = new ProblemEntry();
+            pe0.ProblemId = 1; pe0.Label = "A";
+            xc.Problems.Add(pe0);
+
+            string fmt = "yyyy-MM-ddTHH:mm:ss.fffZ";
+            System.Globalization.CultureInfo inv =
+                System.Globalization.CultureInfo.InvariantCulture;
+
+            // 等待開賽：網路這時已經斷了，清掉就再也登不回來
+            xc.StartTimeUtc = DateTime.UtcNow.AddMinutes(20).ToString(fmt, inv);
+            xc.EndTimeUtc = DateTime.UtcNow.AddMinutes(200).ToString(fmt, inv);
+            Check("等待開賽中 -> 不清（斷網後無法重新登入）",
+                  !Flow.ShouldResetOnExit(xc, 0), Flow.Current(xc).ToString());
+
+            // 作答中：同上，而且還會連草稿一起消失
+            xc.StartTimeUtc = DateTime.UtcNow.AddMinutes(-20).ToString(fmt, inv);
+            xc.EndTimeUtc = DateTime.UtcNow.AddMinutes(100).ToString(fmt, inv);
+            Check("作答中 -> 不清",
+                  !Flow.ShouldResetOnExit(xc, 0), Flow.Current(xc).ToString());
+
+            // 比賽結束且都傳完了：網路已恢復，可以放心交還給下一位
+            xc.StartTimeUtc = DateTime.UtcNow.AddMinutes(-200).ToString(fmt, inv);
+            xc.EndTimeUtc = DateTime.UtcNow.AddMinutes(-20).ToString(fmt, inv);
+            Check("比賽結束且全部上傳完 -> 清",
+                  Flow.ShouldResetOnExit(xc, 0), Flow.Current(xc).ToString());
+
+            Check("比賽結束但還有沒上傳的 -> 不清（清了就要重登才傳得出去）",
+                  !Flow.ShouldResetOnExit(xc, 3), "待上傳 3 筆");
+
             // ── 0b. 輸出比對規則 ──────────────────────
             Console.WriteLine("\n[0b] 輸出正規化（必須與伺服器 judge.ts 一致）");
             Check("忽略結尾換行", Runner.Normalize("1\n2\n") == "1\n2", null);
