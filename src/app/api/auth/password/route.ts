@@ -4,7 +4,8 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
 const schema = z.object({
-  currentPassword: z.string().min(1, "請輸入目前密碼"),
+  // 只有「已經有密碼」才需要驗證目前密碼；Google/Discord 帳號第一次設定密碼沒有舊密碼可驗
+  currentPassword: z.string().optional(),
   newPassword: z.string().min(6, "新密碼至少 6 個字元").max(72),
 });
 
@@ -29,17 +30,17 @@ export async function POST(request: Request) {
   if (!user) {
     return Response.json({ error: "請先登入" }, { status: 401 });
   }
-  if (!user.passwordHash) {
-    return Response.json(
-      { error: "此帳號使用 Google 登入，沒有密碼可以修改" },
-      { status: 400 }
-    );
+  if (user.passwordHash) {
+    // 已經有密碼：一定要驗證目前密碼才能改
+    if (!parsed.data.currentPassword) {
+      return Response.json({ error: "請輸入目前密碼" }, { status: 400 });
+    }
+    const ok = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
+    if (!ok) {
+      return Response.json({ error: "目前密碼不正確" }, { status: 400 });
+    }
   }
-
-  const ok = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
-  if (!ok) {
-    return Response.json({ error: "目前密碼不正確" }, { status: 400 });
-  }
+  // 沒有密碼（Google/Discord 帳號）：這是第一次設定，不需要驗證舊密碼
 
   await prisma.user.update({
     where: { id: user.id },

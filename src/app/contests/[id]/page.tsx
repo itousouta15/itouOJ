@@ -121,7 +121,9 @@ export default async function ContestPage({
             我的提交
           </Link>
         )}
-        {session && joined && <OpenClientButton contestId={contest.id} />}
+        {session && joined && (
+          <OpenClientButton contestId={contest.id} username={session.username} />
+        )}
       </div>
 
       <div className="card overflow-x-auto">
