@@ -25,7 +25,7 @@ export default async function EditProblemPage({
   return (
     <div>
       <h1 className="mb-4 page-title">
-        編輯題目 #{problem.id}
+        編輯題目 #{problem.order}
       </h1>
       <ProblemForm
         initial={{

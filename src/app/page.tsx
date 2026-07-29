@@ -34,7 +34,7 @@ export default async function HomePage() {
     take: 8,
     include: {
       user: { select: { username: true, displayName: true } },
-      problem: { select: { id: true, title: true } },
+      problem: { select: { id: true, order: true, title: true } },
     },
   });
 
@@ -160,9 +160,9 @@ export default async function HomePage() {
                 key={p.id}
                 className="flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
               >
-                <span className="mono w-8 text-sm text-mute">{p.id}</span>
+                <span className="mono w-8 text-sm text-mute">{p.order}</span>
                 <Link
-                  href={`/problems/${p.id}`}
+                  href={`/problems/${p.order}`}
                   className="flex-1 truncate font-medium text-blue hover:underline"
                 >
                   {p.title}

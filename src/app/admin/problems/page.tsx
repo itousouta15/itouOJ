@@ -18,6 +18,7 @@ export default async function AdminProblemsPage() {
   });
   const rows = problems.map((p) => ({
     id: p.id,
+    order: p.order,
     title: p.title,
     difficulty: p.difficulty,
     isPublic: p.isPublic,
