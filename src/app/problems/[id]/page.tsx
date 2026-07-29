@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import Markdown from "@/components/Markdown";
 import DifficultyBadge from "@/components/DifficultyBadge";
+import TagBadge from "@/components/TagBadge";
 import SubmitPanel from "@/components/SubmitPanel";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ export default async function ProblemPage({
         orderBy: [{ order: "asc" }, { id: "asc" }],
       },
       subtasks: { orderBy: { order: "asc" } },
+      tags: { include: { tag: true } },
     },
   });
   if (!problem || (!problem.isPublic && session?.role !== "ADMIN")) {
@@ -40,6 +42,9 @@ export default async function ProblemPage({
             #{problem.order}. {problem.title}
           </h1>
           <DifficultyBadge difficulty={problem.difficulty} />
+          {problem.tags.map((pt) => (
+            <TagBadge key={pt.tagId} name={pt.tag.name} />
+          ))}
           {session?.role === "ADMIN" && (
             <Link
               href={`/admin/problems/${problem.id}/edit`}
