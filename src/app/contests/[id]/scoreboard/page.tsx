@@ -24,6 +24,8 @@ export default async function ContestScoreboardPage({
 
   const revealed = isContestRevealed(contest);
   const phase = getContestPhase(contest);
+  // 比賽結束了、但成績還等著管理員公開
+  const awaitingReveal = phase === "ended" && !revealed;
   const board = await buildScoreboard(contestId, { revealAll: revealed });
   if (!board) notFound();
 
@@ -45,15 +47,32 @@ export default async function ContestScoreboardPage({
         </p>
       )}
 
-      {!revealed && contest.freezeMinutes > 0 && (
+      {/*
+        「已凍結」只在真的凍結時才說。不能用 !revealed 判斷 ——
+        isContestRevealed 在比賽進行中一律回 false，拿它當條件的話
+        freeze=0 的比賽會冒出「最後 0 分鐘的結果暫不公開」，
+        freeze>0 但還沒進到凍結期的也會提早宣告凍結（其實還是即時的）。
+        真正算凍結時機的是 getContestPhase。
+      */}
+      {(phase === "frozen" || awaitingReveal) && (
         <div className="card border-[rgba(250,168,26,0.3)] p-4 text-sm text-[#faa81a]">
-          🧊 排名已凍結{phase === "ended" ? "，比賽結束後由管理員公開最終成績" : `，最後 ${contest.freezeMinutes} 分鐘的結果暫不公開`}
+          🧊 排名已凍結
+          {awaitingReveal
+            ? "，比賽結束後由管理員公開最終成績"
+            : `，最後 ${contest.freezeMinutes} 分鐘的結果暫不公開`}
           {isAdmin && (
             <Link href={`/admin/contests/${contest.id}/edit`} className="ml-2 underline">
               前往公開
             </Link>
           )}
         </div>
+      )}
+
+      {/* 還沒凍結但之後會凍結：先講一聲，但別用警示色，現在的榜是即時的 */}
+      {phase === "running" && contest.freezeMinutes > 0 && (
+        <p className="text-sm text-dim">
+          最後 {contest.freezeMinutes} 分鐘排名會凍結，屆時的提交結果不會即時顯示。
+        </p>
       )}
 
       <p className="mono mb-2 text-[11px] text-mute sm:hidden">
