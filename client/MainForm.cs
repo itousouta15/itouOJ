@@ -28,6 +28,10 @@ namespace ItouOJ
         Label lblStatus, lblAccount, lblLangHint, lblDraft, lblLock, lblWho, lblWhere;
         Panel setupPanel, pnlIdentity, lockableGroup, pnlGate;
         Label lblGateTitle, lblGateClock, lblGateHint, lblRemain;
+        // 校正後的現在時間。放在狀態列 —— 那是唯一每個階段都看得到的地方，
+        // 連等待/結束的全屏遮罩也蓋不到它。
+        Label lblClock;
+        readonly ToolTip clockTip = new ToolTip();
         Panel pnlGateAction;
         Button btnGateAction;
         ComboBox cboGateContest;
@@ -234,6 +238,23 @@ namespace ItouOJ
                     e.Graphics.DrawLine(pen, 0, 0, ((Panel)s).Width, 0);
             };
 
+            // 校正後的現在時間，任何階段都看得到。
+            //
+            // 「統一開始」整套機制就是靠每台機器對過同一個伺服器時鐘，但在這之前
+            // 那個值只存在 config.json 裡，監考沒辦法確認各機是否真的一致。
+            // 擺出來之後巡一遍場就能核對。
+            lblClock = new Label();
+            lblClock.Dock = DockStyle.Right;
+            lblClock.Width = 160;
+            lblClock.Font = new Font("Consolas", 11F, FontStyle.Bold);
+            lblClock.ForeColor = Theme.Text;
+            lblClock.TextAlign = ContentAlignment.MiddleRight;
+            lblClock.Padding = new Padding(0, 0, 10, 0);
+            bottom.Controls.Add(lblClock);
+            clockTip.SetToolTip(lblClock,
+                "這台機器校正後的時間（以伺服器為準）。\r\n" +
+                "全場每一台都應該顯示同一個時間。");
+
             // 剩餘時間固定在右下角，作答時隨時看得到
             lblRemain = new Label();
             lblRemain.Dock = DockStyle.Right;
@@ -290,6 +311,7 @@ namespace ItouOJ
             gateBar.Padding = new Padding(0, 0, 20, 20);
             gateBar.Controls.Add(toSetup);
             pnlGate.Controls.Add(gateBar);
+
 
             lblGateTitle = new Label();
             lblGateTitle.Font = new Font("Microsoft JhengHei UI", 22F, FontStyle.Bold);
@@ -356,6 +378,8 @@ namespace ItouOJ
         // 各分頁不自己做判斷，避免出現互相矛盾的畫面。
         void OnPhaseTick(object sender, EventArgs e)
         {
+            UpdateClock();
+
             Screen s = Flow.Current(cfg);
 
             // 監考按了「賽前設定」，暫時讓開
@@ -424,6 +448,18 @@ namespace ItouOJ
             }
 
             lastScreen = s;
+        }
+
+        // 校正後的現在時間。沒對過時鐘（還沒登入過）就講明是本機時間，
+        // 否則監考會以為看到的是校正值而誤判各機一致。
+        void UpdateClock()
+        {
+            DateTime now = Phase.NowUtc(cfg).ToLocalTime();
+            bool calibrated = cfg != null && cfg.ClockOffsetMs != 0;
+            string text = now.ToString("HH:mm:ss");
+
+            lblClock.Text = calibrated ? "現在 " + text : text + " 未校正";
+            lblClock.ForeColor = calibrated ? Theme.Text : Theme.Mute;
         }
 
         void ShowGate(string title, string clock, Color clockColor,
