@@ -5,7 +5,10 @@ import { getSession } from "@/lib/auth";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import TagBadge from "@/components/TagBadge";
 
-export const metadata: Metadata = { title: "題目列表" };
+export const metadata: Metadata = {
+  title: "題目列表",
+  description: "APCS 風格的程式練習題，依難度與標籤分類，線上直接提交評測。",
+};
 export const dynamic = "force-dynamic";
 
 export default async function ProblemListPage({
