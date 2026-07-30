@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -7,8 +8,32 @@ import DifficultyBadge from "@/components/DifficultyBadge";
 import TagBadge from "@/components/TagBadge";
 import SubmitPanel from "@/components/SubmitPanel";
 import ProblemDiscussion from "@/components/ProblemDiscussion";
+import { markdownSnippet } from "@/lib/textSnippet";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const problemOrder = Number(id);
+  if (!Number.isInteger(problemOrder)) return {};
+
+  // 私人題目不給標題/摘要——頁面本身對非管理員會 404，這裡也不能讓
+  // generateMetadata 把題名先洩漏到 <head> 裡。
+  const problem = await prisma.problem.findUnique({
+    where: { order: problemOrder },
+    select: { title: true, statement: true, isPublic: true },
+  });
+  if (!problem || !problem.isPublic) return {};
+
+  return {
+    title: `#${problemOrder}. ${problem.title}`,
+    description: markdownSnippet(problem.statement),
+  };
+}
 
 export default async function ProblemPage({
   params,
