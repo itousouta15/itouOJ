@@ -52,7 +52,14 @@ export async function GET(
       language: true,
       createdAt: true,
       authorId: true,
-      author: { select: { username: true, displayName: true, role: true } },
+      author: {
+        select: {
+          username: true,
+          displayName: true,
+          role: true,
+          avatarUrl: true,
+        },
+      },
     },
   });
 
@@ -68,6 +75,9 @@ export async function GET(
       language: s.language,
       createdAt: s.createdAt,
       authorName: s.author.displayName || s.author.username,
+      // username 是個人頁的網址（/users/{username}），displayName 不保證唯一，不能拿來連
+      authorUsername: s.author.username,
+      authorAvatarUrl: s.author.avatarUrl,
       authorIsAdmin: s.author.role === "ADMIN",
       canDelete: isAdmin || s.authorId === session?.userId,
     })),

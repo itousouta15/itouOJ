@@ -14,6 +14,7 @@ interface GoogleIdTokenPayload {
   sub?: string;
   email?: string;
   name?: string;
+  picture?: string;
 }
 
 // 產生符合站內規則（3-20 字英數底線）且不重複的 username
@@ -112,13 +113,24 @@ export async function GET(request: Request) {
       if (!existing) {
         await prisma.user.update({
           where: { id: linkUserId },
-          data: { googleId: payload.sub, email: payload.email ?? undefined },
+          data: {
+            googleId: payload.sub,
+            email: payload.email ?? undefined,
+            avatarUrl: payload.picture ?? undefined,
+          },
         });
       }
       return Response.redirect(`${appUrl(request)}/settings?linked=google`, 302);
     }
 
     let user = existing;
+    if (user && payload.picture && user.avatarUrl !== payload.picture) {
+      // 每次登入都跟一次頭像：使用者在 Google 換了大頭貼，站內才不會一直停在舊的
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { avatarUrl: payload.picture },
+      });
+    }
     if (!user) {
       // 第一次用這個 Google 帳號登入 → 自動建立帳號（規則同註冊：第一個使用者是管理員）
       const base = payload.email?.split("@")[0] || payload.name || "user";
@@ -133,6 +145,7 @@ export async function GET(request: Request) {
           googleId: payload.sub,
           email: payload.email ?? null,
           displayName: payload.name ?? null,
+          avatarUrl: payload.picture ?? null,
           role: userCount === 0 ? "ADMIN" : "USER",
         },
       });

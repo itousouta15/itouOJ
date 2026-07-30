@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import SubmissionRow from "@/components/SubmissionRow";
+import Avatar from "@/components/Avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -81,11 +82,18 @@ export default async function UserProfilePage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <section className="card p-6">
-        <div className="mb-4 flex items-center gap-3">
-          <h1 className="page-title">{user.displayName || user.username}</h1>
-          {user.role === "ADMIN" && (
-            <span className="vbadge vbadge-purple">管理員</span>
-          )}
+        <div className="mb-4 flex items-center gap-4">
+          <Avatar
+            name={user.displayName || user.username}
+            src={user.avatarUrl}
+            size={64}
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="page-title">{user.displayName || user.username}</h1>
+            {user.role === "ADMIN" && (
+              <span className="vbadge vbadge-purple">管理員</span>
+            )}
+          </div>
         </div>
         <dl className="mb-5 space-y-3 border-b border-bd pb-5 text-sm">
           <div className="flex items-center justify-between">
