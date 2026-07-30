@@ -22,6 +22,8 @@ model User {
   courses      CourseMember[]
   contests     ContestParticipant[]
   problemProposals ProblemProposal[]
+  problemComments  ProblemComment[]
+  problemSolutions ProblemSolution[]
 }
 
 model Problem {
@@ -52,6 +54,53 @@ model Problem {
   courseProblems  CourseProblem[]
   contestProblems ContestProblem[]
   tags            ProblemTag[]
+  comments        ProblemComment[]
+  solutions       ProblemSolution[]
+}
+
+// 題目討論區的一則留言（提問、給提示、賽後檢討）。
+//
+// 留言本身不做「先 AC 才看得到」的限制——留言是拿來問問題的，卡住的人看不到
+// 就失去意義了。真正會直接洩答案的是題解，那個才鎖（見 ProblemSolution）。
+// 但只要這題還被某場沒結束的比賽用到，整個討論區（含留言）就會對一般使用者
+// 隱藏，避免有人在比賽進行中把提示貼上去；判斷見 lib/problemDiscussion.ts。
+model ProblemComment {
+  id        Int      @id @default(autoincrement())
+  problemId Int
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String // Markdown
+  // 回覆對象；null = 這是一則主留言。刻意只做一層，不做無限巢狀——
+  // 討論串太深在手機上會擠成一條線，而且這裡的用途主要是「學生問、老師答」。
+  parentId  Int?
+  parent    ProblemComment?  @relation("ProblemCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   ProblemComment[] @relation("ProblemCommentReplies")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([problemId])
+}
+
+// 使用者分享的題解。內容一定會直接洩題，所以「要先自己 AC 過這一題才看得到」，
+// 跟 Codeforces / LeetCode / 洛谷的慣例一致——還沒解出來的人看不到答案，
+// 保留自己想的價值；已經解出來的人才能互相觀摩不同寫法。
+// 這是刻意放寬 api/submissions/[id] 那條「程式碼只有本人和管理員看得到」的規則，
+// 但放寬的對象僅限「作者自己選擇公開的那一份」，不是所有提交紀錄。
+model ProblemSolution {
+  id        Int      @id @default(autoincrement())
+  problemId Int
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title     String
+  content   String // Markdown，解題想法
+  code      String? // 選填：附上的程式碼
+  language  String? // code 有值時才有意義，對應 lib/languages.ts 的 key
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([problemId])
 }
 
 // 標籤庫：管理員統一建立/管理，題目從中勾選，避免同義詞打散（如「字串」跟「string」變兩個標籤）
