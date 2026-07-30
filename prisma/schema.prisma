@@ -17,6 +17,9 @@ model User {
   role         String               @default("USER") // USER | ADMIN
   displayName  String? // 顯示名稱（未設定時顯示 username）
   bio          String? // 自我介紹
+  // Google / Discord 登入時帶回來的頭像網址，每次登入都會更新（對方換頭像這裡才跟得上）。
+  // 站內沒有自己上傳頭像的功能，所以純密碼帳號這欄是 null，前端退回顯示名字首字。
+  avatarUrl    String?
   createdAt    DateTime             @default(now())
   submissions  Submission[]
   courses      CourseMember[]

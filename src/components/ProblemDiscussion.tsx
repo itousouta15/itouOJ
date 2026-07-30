@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Markdown from "@/components/Markdown";
+import Avatar from "@/components/Avatar";
 import { LANGUAGES, LANGUAGE_KEYS, isLanguageKey } from "@/lib/languages";
 
 interface Access {
@@ -14,25 +15,28 @@ interface Access {
   solved: boolean;
 }
 
-interface CommentNode {
+interface Author {
+  authorName: string;
+  authorUsername: string;
+  authorAvatarUrl: string | null;
+  authorIsAdmin: boolean;
+}
+
+interface CommentNode extends Author {
   id: number;
   content: string;
   createdAt: string;
-  authorName: string;
-  authorIsAdmin: boolean;
   canDelete: boolean;
   replies?: CommentNode[];
 }
 
-interface SolutionItem {
+interface SolutionItem extends Author {
   id: number;
   title: string;
   content: string;
   code: string | null;
   language: string | null;
   createdAt: string;
-  authorName: string;
-  authorIsAdmin: boolean;
   canDelete: boolean;
 }
 
@@ -43,24 +47,39 @@ function formatTime(iso: string) {
   });
 }
 
+// 頭像 + 名字（連到個人頁）+ 管理員標記 + 時間。留言、回覆、題解共用同一個表頭。
 function AuthorLine({
-  name,
-  isAdmin,
+  author,
   at,
+  size = 32,
 }: {
-  name: string;
-  isAdmin: boolean;
+  author: Author;
   at: string;
+  size?: number;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
-      <span className="font-semibold text-tx">{name}</span>
-      {isAdmin && (
-        <span className="rounded bg-inset px-1.5 py-0.5 text-xs text-dim">
-          管理員
-        </span>
-      )}
-      <span className="mono text-xs text-mute">{formatTime(at)}</span>
+    <div className="flex items-center gap-2">
+      <Link href={`/users/${author.authorUsername}`} className="shrink-0">
+        <Avatar
+          name={author.authorName}
+          src={author.authorAvatarUrl}
+          size={size}
+        />
+      </Link>
+      <div className="flex flex-wrap items-center gap-x-2 text-sm leading-tight">
+        <Link
+          href={`/users/${author.authorUsername}`}
+          className="font-semibold text-tx hover:text-blue hover:underline"
+        >
+          {author.authorName}
+        </Link>
+        {author.authorIsAdmin && (
+          <span className="rounded bg-inset px-1.5 py-0.5 text-xs text-dim">
+            管理員
+          </span>
+        )}
+        <span className="mono text-xs text-mute">{formatTime(at)}</span>
+      </div>
     </div>
   );
 }
@@ -269,11 +288,7 @@ export default function ProblemDiscussion({
             comments.map((c) => (
               <div key={c.id} className="card p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <AuthorLine
-                    name={c.authorName}
-                    isAdmin={c.authorIsAdmin}
-                    at={c.createdAt}
-                  />
+                  <AuthorLine author={c} at={c.createdAt} />
                   {c.canDelete && (
                     <button
                       type="button"
@@ -293,11 +308,7 @@ export default function ProblemDiscussion({
                     {c.replies!.map((r) => (
                       <div key={r.id}>
                         <div className="flex items-start justify-between gap-3">
-                          <AuthorLine
-                            name={r.authorName}
-                            isAdmin={r.authorIsAdmin}
-                            at={r.createdAt}
-                          />
+                          <AuthorLine author={r} at={r.createdAt} size={24} />
                           {r.canDelete && (
                             <button
                               type="button"
@@ -467,12 +478,8 @@ export default function ProblemDiscussion({
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="font-semibold text-tx">{s.title}</h3>
-                        <div className="mt-1">
-                          <AuthorLine
-                            name={s.authorName}
-                            isAdmin={s.authorIsAdmin}
-                            at={s.createdAt}
-                          />
+                        <div className="mt-2">
+                          <AuthorLine author={s} at={s.createdAt} />
                         </div>
                       </div>
                       {s.canDelete && (
