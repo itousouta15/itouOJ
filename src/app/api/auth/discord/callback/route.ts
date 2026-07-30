@@ -7,6 +7,7 @@ import {
   DISCORD_USER_URL,
   OAUTH_STATE_COOKIE,
   appUrl,
+  discordAvatarUrl,
   discordConfigured,
   redirectUri,
 } from "@/lib/discordOAuth";
@@ -16,6 +17,7 @@ interface DiscordUser {
   username?: string;
   global_name?: string | null;
   email?: string | null;
+  avatar?: string | null; // 頭像 hash，不是網址；用 discordAvatarUrl() 組
 }
 
 // 產生符合站內規則（3-20 字英數底線）且不重複的 username
@@ -106,6 +108,8 @@ export async function GET(request: Request) {
     const discordUser = (await userRes.json()) as DiscordUser;
     if (!discordUser.id) return loginError();
 
+    const avatar = discordAvatarUrl(discordUser.id, discordUser.avatar);
+
     const existing = await prisma.user.findUnique({
       where: { discordId: discordUser.id },
     });
@@ -121,6 +125,7 @@ export async function GET(request: Request) {
           data: {
             discordId: discordUser.id,
             email: discordUser.email ?? undefined,
+            avatarUrl: avatar ?? undefined,
           },
         });
       }
@@ -128,6 +133,13 @@ export async function GET(request: Request) {
     }
 
     let user = existing;
+    if (user && avatar && user.avatarUrl !== avatar) {
+      // 每次登入都跟一次頭像：使用者在 Discord 換了大頭貼，站內才不會一直停在舊的
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { avatarUrl: avatar },
+      });
+    }
     if (!user) {
       // 第一次用這個 Discord 帳號登入 → 自動建立帳號（規則同註冊：第一個使用者是管理員）
       const base =
@@ -146,6 +158,7 @@ export async function GET(request: Request) {
           discordId: discordUser.id,
           email: discordUser.email ?? null,
           displayName: discordUser.global_name ?? discordUser.username ?? null,
+          avatarUrl: avatar,
           role: userCount === 0 ? "ADMIN" : "USER",
         },
       });
