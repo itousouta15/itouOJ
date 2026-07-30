@@ -45,7 +45,14 @@ export async function GET(
       parentId: true,
       createdAt: true,
       authorId: true,
-      author: { select: { username: true, displayName: true, role: true } },
+      author: {
+        select: {
+          username: true,
+          displayName: true,
+          role: true,
+          avatarUrl: true,
+        },
+      },
     },
   });
 
@@ -55,6 +62,9 @@ export async function GET(
     content: c.content,
     createdAt: c.createdAt,
     authorName: c.author.displayName || c.author.username,
+    // username 是個人頁的網址（/users/{username}），displayName 不保證唯一，不能拿來連
+    authorUsername: c.author.username,
+    authorAvatarUrl: c.author.avatarUrl,
     authorIsAdmin: c.author.role === "ADMIN",
     // 自己的留言可以刪，管理員可以刪任何一則
     canDelete: isAdmin || c.authorId === session?.userId,
