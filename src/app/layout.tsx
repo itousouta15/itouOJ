@@ -7,9 +7,17 @@ import PageTransition from "@/components/PageTransition";
 import SiteLoader from "@/components/SiteLoader";
 import { isOfflineMode } from "@/lib/offline";
 
+// metadataBase 給相對網址（OG 圖片、canonical）補齊網域用；沒設的話 Next.js
+// 只會警告，不影響功能，但社群分享預覽、搜尋結果的網址可能會是錯的相對路徑。
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.APP_URL ?? "https://oj.itousouta.me"),
   title: { default: "itouOJ", template: "%s | itouOJ" },
-  description: "itouSouta 的程式解題系統",
+  description: "itouSouta 的程式解題系統，收錄 APCS 風格的練習題與線上比賽。",
+  openGraph: {
+    siteName: "itouOJ",
+    type: "website",
+    locale: "zh_TW",
+  },
 };
 
 // 在 hydration 前套用主題，避免亮→暗閃爍

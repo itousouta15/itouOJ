@@ -1,10 +1,33 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import Markdown from "@/components/Markdown";
+import { markdownSnippet } from "@/lib/textSnippet";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const announcementId = Number(id);
+  if (!Number.isInteger(announcementId)) return {};
+
+  const announcement = await prisma.announcement.findUnique({
+    where: { id: announcementId },
+    select: { title: true, content: true },
+  });
+  if (!announcement) return {};
+
+  return {
+    title: announcement.title,
+    description: markdownSnippet(announcement.content),
+  };
+}
 
 export default async function AnnouncementPage({
   params,
