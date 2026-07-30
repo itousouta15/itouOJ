@@ -6,6 +6,7 @@ import Markdown from "@/components/Markdown";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import TagBadge from "@/components/TagBadge";
 import SubmitPanel from "@/components/SubmitPanel";
+import ProblemDiscussion from "@/components/ProblemDiscussion";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +133,11 @@ export default async function ProblemPage({
           後再提交程式碼
         </div>
       )}
+
+      <div>
+        <h2 className="mb-3 section-title">討論與題解</h2>
+        <ProblemDiscussion problemId={problem.id} loggedIn={!!session} />
+      </div>
     </div>
   );
 }
