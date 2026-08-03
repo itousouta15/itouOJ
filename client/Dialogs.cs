@@ -29,6 +29,8 @@ namespace ItouOJ
             MinimizeBox = false;
             StartPosition = FormStartPosition.CenterParent;
             Font = new Font("Microsoft JhengHei UI", 9F);
+            AutoScaleDimensions = new SizeF(96F, 96F);
+            AutoScaleMode = AutoScaleMode.Dpi; // 125%/150% 縮放的螢幕上不模糊、不裁切
             Pin = "";
 
             Label lbl = new Label();
@@ -116,6 +118,8 @@ namespace ItouOJ
             Size = new Size(640, 520);
             MinimumSize = new Size(560, 440);
             Font = new Font("Microsoft JhengHei UI", 9F);
+            AutoScaleDimensions = new SizeF(96F, 96F);
+            AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterParent;
 
             Label l1 = new Label();
@@ -345,6 +349,8 @@ namespace ItouOJ
             Size = new Size(720, 640);
             MinimumSize = new Size(620, 520);
             Font = new Font("Microsoft JhengHei UI", 9F);
+            AutoScaleDimensions = new SizeF(96F, 96F);
+            AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterParent;
 
             Label lblFile = new Label();
