@@ -62,6 +62,7 @@ namespace ItouOJ
                     {
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
+                        MainForm.InitDpiAwareness(); // 跟正式程式同一條繪製路徑
                         using (MainForm f = new MainForm())
                         {
                             f.StartPosition = FormStartPosition.Manual;
@@ -167,6 +168,7 @@ namespace ItouOJ
                     try
                     {
                         Application.EnableVisualStyles();
+                        MainForm.InitDpiAwareness(); // 跟正式程式同一條繪製路徑
                         using (MainForm f = new MainForm())
                         {
                             sb.AppendLine("constructed=ok");
