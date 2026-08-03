@@ -160,6 +160,14 @@ namespace ItouOJ
             catch { return ""; }
         }
 
+        // 只問「有沒有草稿」，不把內容讀出來。側欄題目徽章每題都要問一次，
+        // 內容可能大到 64KB，讀全部只為了判斷存在太浪費。
+        public static bool DraftExists(int contestId, string label)
+        {
+            try { return File.Exists(DraftPath(contestId, label)); }
+            catch { return false; }
+        }
+
         public static void WriteDraft(int contestId, string label, string code)
         {
             try

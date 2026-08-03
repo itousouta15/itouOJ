@@ -34,15 +34,17 @@ namespace ItouOJ
         public static readonly Color WarnBg = ColorTranslator.FromHtml("#FDF3DF");
         public static readonly Color Bad = ColorTranslator.FromHtml("#B3261E");
         public static readonly Color BadBg = ColorTranslator.FromHtml("#FCEBEA");
+        // 題目側欄的選取列底色（淺藍灰，比全彩的 GoodBg 低調，不會跟狀態色混淆）
+        public static readonly Color Selection = ColorTranslator.FromHtml("#DDE4F2");
 
         // ── 字體 ────────────────────────────────
         const string Face = "Microsoft JhengHei UI";
         const string Mono = "Consolas";
 
-        public static Font Body { get { return new Font(Face, 9.5F); } }
-        public static Font BodyBold { get { return new Font(Face, 9.5F, FontStyle.Bold); } }
-        public static Font Small { get { return new Font(Face, 8.5F); } }
-        public static Font Title { get { return new Font(Face, 11F, FontStyle.Bold); } }
+        public static Font Body { get { return new Font(Face, 10F); } }
+        public static Font BodyBold { get { return new Font(Face, 10F, FontStyle.Bold); } }
+        public static Font Small { get { return new Font(Face, 9F); } }
+        public static Font Title { get { return new Font(Face, 12F, FontStyle.Bold); } }
         public static Font Code { get { return new Font(Mono, 11F); } }
         public static Font CodeSmall { get { return new Font(Mono, 9.5F); } }
 
@@ -54,6 +56,13 @@ namespace ItouOJ
             Panel p = new Panel();
             p.BackColor = Card;
             p.Padding = new Padding(16, 14, 16, 14);
+            CardBorder(p);
+            return p;
+        }
+
+        // 幫任何 Panel 掛上卡片邊框（TableLayoutPanel 直接當卡片用時也需要）
+        public static void CardBorder(Panel p)
+        {
             p.Paint += delegate (object s, PaintEventArgs e)
             {
                 Panel me = (Panel)s;
@@ -62,7 +71,30 @@ namespace ItouOJ
                     e.Graphics.DrawRectangle(pen, 0, 0, me.Width - 1, me.Height - 1);
                 }
             };
+        }
+
+        // 卡片但不要內距（內部用 TableLayoutPanel 自己控制間距）
+        public static Panel CardPanelNoPad()
+        {
+            Panel p = CardPanel();
+            p.Padding = new Padding(0);
             return p;
+        }
+
+        // 統一的 TableLayoutPanel：無邊距、白底。
+        //
+        // 注意：這裡不預設任何 Column/RowStyle——TableLayoutPanel 的樣式集合
+        // 是空的，設定 ColumnCount/RowCount 也不會自動補樣式（預設 Percent 100）。
+        // 呼叫端必須自行 Add 與行列數相符的樣式，加錯順序會整個錯位。
+        public static TableLayoutPanel Table()
+        {
+            TableLayoutPanel t = new TableLayoutPanel();
+            t.BackColor = Bg;
+            t.Padding = new Padding(0);
+            t.Margin = new Padding(0);
+            t.ColumnCount = 1;
+            t.RowCount = 1;
+            return t;
         }
 
         public static Label SectionTitle(string text)
