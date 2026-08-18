@@ -268,15 +268,16 @@ model ProposalTestCase {
 }
 
 model TestCase {
-  id        Int      @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   problemId Int
-  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  problem   Problem      @relation(fields: [problemId], references: [id], onDelete: Cascade)
   subtaskId Int? // 有值才計入部分給分；null = 沿用舊制整題 AC/WA
-  subtask   Subtask? @relation(fields: [subtaskId], references: [id], onDelete: Cascade)
+  subtask   Subtask?     @relation(fields: [subtaskId], references: [id], onDelete: Cascade)
   input     String
   output    String
-  isSample  Boolean  @default(false) // 範例測資會顯示在題目頁
-  order     Int      @default(0)
+  isSample  Boolean      @default(false) // 範例測資會顯示在題目頁
+  order     Int          @default(0)
+  results   TestResult[]
 }
 
 model Submission {
@@ -311,4 +312,12 @@ model TestResult {
   verdict      String // AC WA TLE MLE RE
   timeMs       Int?
   memoryKb     Int?
+  // 測資本體只用連結拿（輸入/預期輸出直接沿用 TestCase，不重複存一份）；
+  // 題目改測資或刪除測資後，舊的評測紀錄就跟著失去這個連結（SetNull），
+  // 只是看不到測資內容，判定結果本身不受影響。
+  testCaseId   Int?
+  testCase     TestCase?  @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
+  // 這筆測資實際跑出來的 stdout，截斷避免異常輸出把資料庫灌爆
+  // （見 lib/judge.ts 的 MAX_ACTUAL_OUTPUT_LEN）。
+  actualOutput String?
 }
