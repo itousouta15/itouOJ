@@ -141,6 +141,79 @@ static int add_node_rules(scmp_filter_ctx ctx) {
   return 0;
 }
 
+// Compile-phase policy: gcc/g++ launch a multi-process toolchain (cc1/
+// cc1plus, as, collect2/ld) with a syscall surface far broader than any of
+// the harvested run-phase profiles above -- fork/exec chains, scratch-file
+// I/O under /work, /bin, /tmp, etc. Building a tight allowlist the same
+// way those profiles were built (strace-harvest real submissions, see the
+// file header) isn't done yet -- no Linux box was available to harvest
+// against when this was written (see the vulnerability report this
+// responds to: itouoj-critical-compiler-file-read). Until that harvest
+// happens, this profile inverts the model: default ALLOW, with an
+// explicit kill-list of syscalls that have no legitimate use during
+// compilation and still matter even after the mount namespace (see
+// jail.c's pivot_into_rootfs compile_mode path), full capability drop,
+// and cgroup limits already in place by the time this installs --
+// namespace/capability-escape primitives, network (the compiler needs
+// none), kernel/module control, and system time changes. This is
+// deliberately less strict than the harvested profiles above; replacing
+// it with a real harvested allowlist is the tracked follow-up hardening
+// once a Linux dev environment is available.
+static int add_compile_deny_rules(scmp_filter_ctx ctx) {
+  int denied[] = {
+      SCMP_SYS(ptrace),
+      SCMP_SYS(mount),
+      SCMP_SYS(umount2),
+      SCMP_SYS(pivot_root),
+      SCMP_SYS(chroot),
+      SCMP_SYS(reboot),
+      SCMP_SYS(init_module),
+      SCMP_SYS(finit_module),
+      SCMP_SYS(delete_module),
+      SCMP_SYS(kexec_load),
+      SCMP_SYS(kexec_file_load),
+      SCMP_SYS(swapon),
+      SCMP_SYS(swapoff),
+      SCMP_SYS(acct),
+      SCMP_SYS(settimeofday),
+      SCMP_SYS(clock_settime),
+      SCMP_SYS(clock_adjtime),
+      SCMP_SYS(adjtimex),
+      SCMP_SYS(sethostname),
+      SCMP_SYS(setdomainname),
+      SCMP_SYS(socket),
+      SCMP_SYS(socketpair),
+      SCMP_SYS(connect),
+      SCMP_SYS(bind),
+      SCMP_SYS(listen),
+      SCMP_SYS(accept),
+      SCMP_SYS(accept4),
+      SCMP_SYS(sendto),
+      SCMP_SYS(recvfrom),
+      SCMP_SYS(sendmsg),
+      SCMP_SYS(recvmsg),
+      SCMP_SYS(unshare),
+      SCMP_SYS(setns),
+      SCMP_SYS(personality),
+      SCMP_SYS(iopl),
+      SCMP_SYS(ioperm),
+      SCMP_SYS(syslog),
+      SCMP_SYS(quotactl),
+      SCMP_SYS(add_key),
+      SCMP_SYS(request_key),
+      SCMP_SYS(keyctl),
+      SCMP_SYS(bpf),
+      SCMP_SYS(perf_event_open),
+  };
+  for (size_t i = 0; i < sizeof(denied) / sizeof(denied[0]); i++) {
+    if (seccomp_rule_add(ctx, SCMP_ACT_KILL_PROCESS, denied[i], 0) < 0) {
+      fprintf(stderr, "[seccomp] failed to deny syscall #%d\n", denied[i]);
+      return -1;
+    }
+  }
+  return 0;
+}
+
 int seccomp_install_run_filter(const char *profile) {
   // TEMPORARY debug escape hatch for diagnosing a new profile's real
   // syscall needs inside the actual sandboxed mount/namespace environment
@@ -151,6 +224,21 @@ int seccomp_install_run_filter(const char *profile) {
     scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_ALLOW);
     if (!ctx) return -1;
     int rc = seccomp_load(ctx);
+    seccomp_release(ctx);
+    return rc;
+  }
+
+  if (strcmp(profile, "compile") == 0) {
+    scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_ALLOW);
+    if (!ctx) {
+      fprintf(stderr, "[seccomp] seccomp_init failed\n");
+      return -1;
+    }
+    int rc = add_compile_deny_rules(ctx);
+    if (rc == 0 && seccomp_load(ctx) < 0) {
+      fprintf(stderr, "[seccomp] seccomp_load failed\n");
+      rc = -1;
+    }
     seccomp_release(ctx);
     return rc;
   }

@@ -47,6 +47,14 @@ struct child_args {
   const char *seccomp_profile;
   int sync_read_fd;
   char *const *argv;
+  // See pivot_into_rootfs(): the compile phase needs to write its output
+  // binary (and scratch files) inside this rootfs, so it can't get the
+  // same "whole tree read-only" lockdown the run phase gets. Derived from
+  // seccomp_profile == "compile" in main() -- see the security report
+  // this responds to (host-side unsandboxed compilation letting a
+  // submission's #include read arbitrary host files via compiler
+  // diagnostics).
+  int compile_mode;
 };
 
 static int write_file(const char *path, const char *content) {
@@ -65,7 +73,7 @@ static int write_file(const char *path, const char *content) {
   return 0;
 }
 
-static int pivot_into_rootfs(const char *rootfs) {
+static int pivot_into_rootfs(const char *rootfs, int compile_mode) {
   // Detach from the host's mount propagation tree before touching anything,
   // otherwise later mounts/unmounts here would propagate back to the host.
   if (mount(NULL, "/", NULL, MS_REC | MS_PRIVATE, NULL) == -1) {
@@ -124,6 +132,26 @@ static int pivot_into_rootfs(const char *rootfs) {
     return -1;
   }
 
+  if (compile_mode) {
+    // Compile writes its output binary and scratch files inside this
+    // rootfs (at /work, /bin, /tmp -- all plain directories the caller
+    // freshly created for this one request, never shared with anything
+    // else), so it can't take the same "whole tree read-only" lockdown
+    // below. Only /usr -- the compiler toolchain, bind-mounted by the
+    // caller before this ran -- gets locked read-only here; a
+    // non-recursive-beyond-itself remount of one mountpoint can't affect
+    // unrelated siblings elsewhere in the tree. Everything else in this
+    // view is either that read-only toolchain or this request's own
+    // empty scratch dirs -- there is no host path reachable from here
+    // beyond what the caller explicitly bind-mounted.
+    if (mount(NULL, "/usr", NULL, MS_BIND | MS_REMOUNT | MS_RDONLY | MS_REC,
+              NULL) == -1) {
+      perror("remount /usr read-only");
+      return -1;
+    }
+    return 0;
+  }
+
   // Everything above needed the rootfs writable (staging/removing
   // .old_root). Lock it down now, right before the untrusted program runs.
   // A plain MS_BIND mount ignores MS_RDONLY, so making it stick needs a
@@ -164,7 +192,7 @@ static int child_main(void *arg) {
   // ns-root at this point -- must happen BEFORE dropping to an unprivileged
   // uid below, since setuid() away from 0 clears the effective capability
   // set immediately.
-  if (pivot_into_rootfs(a->rootfs) == -1) {
+  if (pivot_into_rootfs(a->rootfs, a->compile_mode) == -1) {
     _exit(127);
   }
 
@@ -295,6 +323,7 @@ int main(int argc, char *argv[]) {
       .seccomp_profile = seccomp_profile,
       .sync_read_fd = sync_pipe[0],
       .argv = &argv[6],
+      .compile_mode = strcmp(seccomp_profile, "compile") == 0,
   };
 
   char *stack = malloc(STACK_SIZE);
