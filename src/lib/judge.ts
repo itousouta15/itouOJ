@@ -29,6 +29,15 @@ export async function resumePendingSubmissions() {
   }
 }
 
+// 存進 TestResult.actualOutput 的長度上限，避免異常輸出（例如無窮迴圈狂印）
+// 把資料庫灌爆——只是拿來給學生對答案用，不需要完整內容。
+const MAX_ACTUAL_OUTPUT_LEN = 4000;
+
+function truncateOutput(text: string): string {
+  if (text.length <= MAX_ACTUAL_OUTPUT_LEN) return text;
+  return text.slice(0, MAX_ACTUAL_OUTPUT_LEN) + "\n...(輸出過長，已截斷)";
+}
+
 // 比對輸出：每行去掉行尾空白、忽略結尾空行（一般 OJ 慣例）
 export function normalizeOutput(text: string): string {
   return text
@@ -47,7 +56,7 @@ export function runVerdict(
   timeLimitMs: number,
   memoryLimitBytes: number,
   expected: string,
-  checkMode: "full" | "firstLine" = "full"
+  checkMode: "full" | "firstLine" = "full",
 ): string {
   if (run.signal === "SIGKILL") {
     // 被沙箱砍掉：看是撞到時間還是記憶體上限
@@ -123,7 +132,10 @@ async function judgeSubmission(submissionId: number) {
     ? problem.subtasks.map((st) => ({
         testCases: st.testCases,
         points: st.points,
-        checkMode: st.checkMode === "firstLine" ? ("firstLine" as const) : ("full" as const),
+        checkMode:
+          st.checkMode === "firstLine"
+            ? ("firstLine" as const)
+            : ("full" as const),
         subtaskOrder: st.order as number | null,
       }))
     : [
@@ -190,7 +202,7 @@ async function judgeSubmission(submissionId: number) {
           timeLimitMs,
           memoryLimitBytes,
           tc.output,
-          group.checkMode
+          group.checkMode,
         );
 
         await prisma.testResult.create({
@@ -201,6 +213,8 @@ async function judgeSubmission(submissionId: number) {
             verdict,
             timeMs,
             memoryKb,
+            testCaseId: tc.id,
+            actualOutput: truncateOutput(run.stdout),
           },
         });
 
@@ -216,7 +230,12 @@ async function judgeSubmission(submissionId: number) {
 
     await prisma.submission.update({
       where: { id: submissionId },
-      data: { status: overall, timeMs: maxTimeMs, memoryKb: maxMemoryKb, score },
+      data: {
+        status: overall,
+        timeMs: maxTimeMs,
+        memoryKb: maxMemoryKb,
+        score,
+      },
     });
   } catch (err) {
     console.error(`[judge] submission ${submissionId} internal error:`, err);
