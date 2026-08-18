@@ -6,13 +6,20 @@
 // Scope for M5: C and C++ only (mirrors what's already hardened through
 // M4). Python/Java/JavaScript are M7's job.
 //
-// Known simplification, called out explicitly: compilation (gcc/g++) runs
-// directly on the host, NOT through the namespace/cgroup/seccomp sandbox --
-// only the compiled binary's RUN phase goes through `jail`. This mirrors
-// the plan's "asymmetric strictness" reasoning (the compiler operates on
-// attacker-controlled *source*, not attacker-controlled *machine code*),
-// but sandboxing the compiler too is legitimate future hardening, not done
-// here.
+// SECURITY FIX (itouoj-critical-compiler-file-read): compilation (gcc/g++)
+// used to run directly on the host, NOT through the namespace/cgroup/
+// seccomp sandbox -- only the compiled binary's RUN phase went through
+// `jail`. The reasoning at the time was "asymmetric strictness" (the
+// compiler operates on attacker-controlled *source*, not attacker-
+// controlled *machine code*), but that missed that the C preprocessor's
+// #include is itself attacker-steerable: a submission could #include an
+// arbitrary host path and have gcc's compile-error diagnostics echo that
+// file's content back through /api/run's compileError, up to and
+// including this app's own .env. Compilation now goes through `jail` too
+// -- see setup_compiler_rootfs() and the "compile" seccomp profile in
+// seccomp.c -- with its own, more permissive-but-still-jailed rootfs
+// (jail.c's pivot_into_rootfs compile_mode path) since it needs to write
+// its output binary, unlike the run phase.
 //
 // Single-threaded by construction (MHD_USE_INTERNAL_POLLING_THREAD without
 // thread-per-connection): one request judged at a time. This is a
@@ -52,6 +59,13 @@
 #define JAIL_BIN "./jail"
 #define WORK_ROOT "./work"
 #define DEFAULT_PIDS_MAX "32"
+// Compile-phase jail limits -- independent of the per-problem run_mem_mb
+// (which bounds the *submission's own* program, not the compiler). gcc/g++
+// with -O2 can need a few hundred MB on complex templates; generous
+// headroom here isn't a correctness concern the way the run phase's limit
+// is, it's just a backstop against a compile that's gone pathological.
+#define COMPILE_MEM_MB 1024
+#define COMPILE_PIDS_MAX "64" // cc1/cc1plus, as, collect2, ld -- a handful
 #define PYTHON_HOME "/opt/piston-data/packages/python/3.12.0"
 #define NODE_HOME "/opt/piston-data/packages/node/20.11.1"
 
@@ -67,8 +81,15 @@ struct lang_info {
 };
 
 static const struct lang_info LANGS[] = {
-    {"c", "gcc", "main.c", "native", NULL, NULL},
-    {"c++", "g++", "main.cpp", "native", NULL, NULL},
+    // Absolute paths, not bare "gcc"/"g++": the compile phase now runs
+    // inside `jail` (see the compile_mode path below), whose child_main
+    // execve()s directly -- no $PATH lookup like the old host-side
+    // run_child()'s execvp() got away with. Same absolute paths as the
+    // host's `which gcc`/`which g++`, which resolve identically inside
+    // the jail since /usr is bind-mounted at that same absolute path
+    // (see setup_compiler_rootfs).
+    {"c", "/usr/bin/gcc", "main.c", "native", NULL, NULL},
+    {"c++", "/usr/bin/g++", "main.cpp", "native", NULL, NULL},
     {"python", NULL, "main.py", "python", PYTHON_HOME,
      "/opt/runtime/bin/python3.12"},
     {"javascript", NULL, "main.js", "node", NODE_HOME,
@@ -447,6 +468,60 @@ static void teardown_interpreter_rootfs(const char *rootfs_dir) {
   umount2(dst, MNT_DETACH);
 }
 
+// ---- compiler rootfs bind mounts ----
+//
+// Same merged-/usr trick as the interpreter rootfs above, but without a
+// /opt/runtime package tree: gcc/g++ and their whole toolchain (cc1/
+// cc1plus, as, collect2/ld, crt startup objects, headers) all live under
+// the host's /usr on this distro's layout (confirmed against the actual
+// deployed toolchain: `gcc -print-prog-name=cc1plus` etc. all resolve
+// under /usr/libexec/gcc and /usr/lib/gcc), so bind-mounting just /usr is
+// sufficient -- nothing from the app's own deployment directory, .env, or
+// any other host path is ever exposed to the compiler. This is the fix
+// for itouoj-critical-compiler-file-read: the compile step used to run
+// directly on the host with the real filesystem visible, so a
+// submission's #include could pull in and echo back any file the
+// sandbox-server process (root) could read.
+static void setup_compiler_rootfs(const char *rootfs_dir) {
+  char dst[400];
+  snprintf(dst, sizeof(dst), "%s/usr", rootfs_dir);
+  bind_mount_ro("/usr", dst);
+
+  char link[400];
+  snprintf(link, sizeof(link), "%s/lib", rootfs_dir);
+  if (symlink("usr/lib", link) == -1 && errno != EEXIST) {
+    fprintf(stderr, "[server] symlink %s: %s\n", link, strerror(errno));
+  }
+  snprintf(link, sizeof(link), "%s/lib64", rootfs_dir);
+  if (symlink("usr/lib64", link) == -1 && errno != EEXIST) {
+    fprintf(stderr, "[server] symlink %s: %s\n", link, strerror(errno));
+  }
+
+  // gcc writes scratch files (assembler intermediate output etc.) to
+  // $TMPDIR, defaulting to /tmp when unset -- this minimal rootfs has no
+  // /tmp otherwise. World-writable (like a real /tmp): the in-jail
+  // process runs as an unprivileged mapped uid that doesn't own this
+  // root-created directory, so it needs the "other" write bit to use it
+  // at all -- see the same reasoning on bin_dir below.
+  //
+  // mkdir()'s mode argument is masked by the caller's umask (sandbox-
+  // server's systemd unit runs with the standard 0022, which silently
+  // drops exactly the "other write" bit this needs) -- chmod() afterward
+  // sets the exact bits requested, unaffected by umask. Learned this the
+  // hard way: an interactive root shell's manual test of this same mkdir
+  // call didn't reproduce the bug because the test script had its own
+  // explicit chmod, masking the real gap until it hit the actual service.
+  snprintf(dst, sizeof(dst), "%s/tmp", rootfs_dir);
+  mkdir(dst, 01777);
+  chmod(dst, 01777);
+}
+
+static void teardown_compiler_rootfs(const char *rootfs_dir) {
+  char dst[400];
+  snprintf(dst, sizeof(dst), "%s/usr", rootfs_dir);
+  umount2(dst, MNT_DETACH);
+}
+
 // ---- HTTP layer ----
 
 static enum MHD_Result send_text_response(struct MHD_Connection *conn,
@@ -569,9 +644,9 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
   snprintf(workdir, sizeof(workdir), "%s/%ld-%d", WORK_ROOT, (long)time(NULL),
            rand());
   mkdir(workdir, 0755);
-  char rootfs_dir[300], bin_dir[320], src_path[340], bin_path[360];
+  char rootfs_dir[300], bin_dir[320], src_path[400], bin_path[360];
   char work_dir_in_rootfs[340], interp_src_path[380];
-  char script_path_in_rootfs[64];
+  char script_path_in_rootfs[64], src_path_in_rootfs[64];
   snprintf(rootfs_dir, sizeof(rootfs_dir), "%s/rootfs", workdir);
   mkdir(rootfs_dir, 0755);
 
@@ -595,9 +670,24 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
     run_program_argv[run_program_argc++] = (char *)lang->interpreter_path;
     run_program_argv[run_program_argc++] = script_path_in_rootfs;
   } else {
+    // Written to /bin (world-writable -- see setup_compiler_rootfs's /tmp
+    // comment for why, including the umask gotcha this chmod works
+    // around) so the compile jail can write /bin/prog there; the run
+    // phase later execve()s that same path under its own, separately-
+    // jailed, fully read-only-locked view of this rootfs.
     snprintf(bin_dir, sizeof(bin_dir), "%s/bin", rootfs_dir);
-    mkdir(bin_dir, 0755);
-    snprintf(src_path, sizeof(src_path), "%s/%s", workdir, lang->filename);
+    mkdir(bin_dir, 0777);
+    chmod(bin_dir, 0777);
+    // Source lives inside rootfs_dir (not the parent workdir) so the
+    // compile jail's pivoted view can see it at /work/<filename> --
+    // mirrors the interpreted branch above.
+    snprintf(work_dir_in_rootfs, sizeof(work_dir_in_rootfs), "%s/work",
+             rootfs_dir);
+    mkdir(work_dir_in_rootfs, 0755);
+    snprintf(src_path, sizeof(src_path), "%s/%s", work_dir_in_rootfs,
+             lang->filename);
+    snprintf(src_path_in_rootfs, sizeof(src_path_in_rootfs), "/work/%s",
+             lang->filename);
     snprintf(bin_path, sizeof(bin_path), "%s/prog", bin_dir);
     FILE *sf = fopen(src_path, "w");
     if (sf) {
@@ -652,18 +742,55 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
         resp, "compile",
         build_phase_json(&empty, compile_failed ? -1 : 0, -1, 0, 0));
   } else {
-    // --- compile (host-side, not sandboxed -- see file header) ---
+    // --- compile, jailed (fix for itouoj-critical-compiler-file-read) ---
+    // Used to run directly on the host via run_child(); now goes through
+    // the same `jail` binary the run phase uses below, pointed at this
+    // request's own rootfs_dir with /usr bind-mounted read-only by
+    // setup_compiler_rootfs. The compiler can now only ever see that
+    // read-only toolchain plus this one request's own /work (source) and
+    // /bin (output) -- no app deployment directory, .env, or other host
+    // path is reachable, however a submission's #include is crafted.
+    setup_compiler_rootfs(rootfs_dir);
+
     struct captured_output compile_out = {0};
     int compile_exit = 0, compile_sig = -1;
-    char *compile_argv[] = {(char *)lang->compiler, "-O2", "-static",
-                             "-o",  bin_path,        src_path, NULL};
-    run_child(compile_argv, NULL, 0, 0, compile_timeout_ms, &compile_out,
-              &compile_exit, &compile_sig);
+    char compile_mem_s[16], compile_to_s[16];
+    snprintf(compile_mem_s, sizeof(compile_mem_s), "%d", COMPILE_MEM_MB);
+    snprintf(compile_to_s, sizeof(compile_to_s), "%ld", compile_timeout_ms);
+
+    char *compile_jail_argv[] = {JAIL_BIN,
+                                  rootfs_dir,
+                                  compile_mem_s,
+                                  (char *)COMPILE_PIDS_MAX,
+                                  compile_to_s,
+                                  "compile",
+                                  (char *)lang->compiler,
+                                  "-O2",
+                                  "-static",
+                                  "-o",
+                                  "/bin/prog",
+                                  src_path_in_rootfs,
+                                  NULL};
+    // Outer timeout generous relative to compile_timeout_ms for the same
+    // reason the run phase's is below -- jail enforces the real limit
+    // itself via cgroup.kill.
+    //
+    // Known simplification: compile_exit/compile_sig below are now
+    // jail's own exit status, not gcc's directly -- jail folds a signaled
+    // or timed-out inner process into its own plain exit code (128+sig,
+    // or 124 for timeout; see jail.c's main()), so a compiler crash shows
+    // up here as e.g. code=139 rather than signal=SIGSEGV. Doesn't affect
+    // compile_failed below (still correctly true either way) or any
+    // caller (judge.ts/route.ts only ever check compile.code !== 0), just
+    // the cosmetic shape of a failed compile's JSON.
+    run_child(compile_jail_argv, NULL, 0, 1, compile_timeout_ms + 3000,
+              &compile_out, &compile_exit, &compile_sig);
     cJSON_AddItemToObject(
         resp, "compile",
         build_phase_json(&compile_out, compile_exit, compile_sig, 0, 0));
     compile_failed = compile_sig >= 0 || compile_exit != 0;
     free_captured(&compile_out);
+    teardown_compiler_rootfs(rootfs_dir);
 
     // 編譯成功就把執行檔位元組回傳給呼叫端快取，下一筆測資才能省掉
     // 重新編譯——只有「這次真的重新編譯」才回傳，呼叫端已經有的話
