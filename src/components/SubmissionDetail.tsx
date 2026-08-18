@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import VerdictBadge from "@/components/VerdictBadge";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
@@ -26,6 +26,9 @@ interface SubmissionData {
     verdict: string;
     timeMs: number | null;
     memoryKb: number | null;
+    input: string | null;
+    expectedOutput: string | null;
+    actualOutput: string | null;
   }[];
   code: string | null;
   compileError: string | null;
@@ -39,10 +42,44 @@ interface HiddenSubmission {
 
 const TERMINAL = ["AC", "WA", "TLE", "MLE", "RE", "CE", "IE"];
 
+function TestCasePanel({
+  input,
+  expectedOutput,
+  actualOutput,
+}: {
+  input: string;
+  expectedOutput: string;
+  actualOutput: string | null;
+}) {
+  return (
+    <div className="grid gap-3 p-4 text-xs sm:grid-cols-3">
+      <div>
+        <p className="mb-1 text-dim">輸入</p>
+        <pre className="overflow-x-auto rounded bg-inset p-2 font-mono whitespace-pre-wrap">
+          {input}
+        </pre>
+      </div>
+      <div>
+        <p className="mb-1 text-dim">預期輸出</p>
+        <pre className="overflow-x-auto rounded bg-inset p-2 font-mono whitespace-pre-wrap">
+          {expectedOutput}
+        </pre>
+      </div>
+      <div>
+        <p className="mb-1 text-dim">你的輸出</p>
+        <pre className="overflow-x-auto rounded bg-inset p-2 font-mono whitespace-pre-wrap">
+          {actualOutput || "（無輸出）"}
+        </pre>
+      </div>
+    </div>
+  );
+}
+
 export default function SubmissionDetail({ id }: { id: number }) {
   const [data, setData] = useState<SubmissionData | null>(null);
   const [hidden, setHidden] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [expanded, setExpanded] = useState<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -169,7 +206,9 @@ export default function SubmissionDetail({ id }: { id: number }) {
                   </p>
                   <span
                     className={
-                      passed ? "text-sm text-[#4caf50]" : "text-sm text-[#ff6b6b]"
+                      passed
+                        ? "text-sm text-[#4caf50]"
+                        : "text-sm text-[#ff6b6b]"
                     }
                   >
                     {passed ? `通過，得 ${g.points} 分` : "未通過，得 0 分"}
@@ -182,24 +221,52 @@ export default function SubmissionDetail({ id }: { id: number }) {
                       <th className="table-head">結果</th>
                       <th className="table-head w-28 text-right">時間</th>
                       <th className="table-head w-28 text-right">記憶體</th>
+                      <th className="table-head w-20"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {g.results.map((r) => (
-                      <tr key={r.order}>
-                        <td className="table-cell text-dim">#{r.order}</td>
-                        <td className="table-cell">
-                          <VerdictBadge status={r.verdict} />
-                        </td>
-                        <td className="table-cell text-right text-dim">
-                          {r.timeMs != null ? `${r.timeMs} ms` : "—"}
-                        </td>
-                        <td className="table-cell text-right text-dim">
-                          {r.memoryKb != null
-                            ? `${(r.memoryKb / 1024).toFixed(1)} MB`
-                            : "—"}
-                        </td>
-                      </tr>
+                      <Fragment key={r.order}>
+                        <tr>
+                          <td className="table-cell text-dim">#{r.order}</td>
+                          <td className="table-cell">
+                            <VerdictBadge status={r.verdict} />
+                          </td>
+                          <td className="table-cell text-right text-dim">
+                            {r.timeMs != null ? `${r.timeMs} ms` : "—"}
+                          </td>
+                          <td className="table-cell text-right text-dim">
+                            {r.memoryKb != null
+                              ? `${(r.memoryKb / 1024).toFixed(1)} MB`
+                              : "—"}
+                          </td>
+                          <td className="table-cell text-right">
+                            {r.input != null && (
+                              <button
+                                className="text-xs text-blue hover:underline"
+                                onClick={() =>
+                                  setExpanded(
+                                    expanded === r.order ? null : r.order,
+                                  )
+                                }
+                              >
+                                {expanded === r.order ? "收起" : "測資"}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                        {expanded === r.order && r.input != null && (
+                          <tr>
+                            <td colSpan={5} className="border-t border-bd p-0">
+                              <TestCasePanel
+                                input={r.input}
+                                expectedOutput={r.expectedOutput!}
+                                actualOutput={r.actualOutput}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>
@@ -218,24 +285,50 @@ export default function SubmissionDetail({ id }: { id: number }) {
                 <th className="table-head">結果</th>
                 <th className="table-head w-28 text-right">時間</th>
                 <th className="table-head w-28 text-right">記憶體</th>
+                <th className="table-head w-20"></th>
               </tr>
             </thead>
             <tbody>
               {data.results.map((r) => (
-                <tr key={r.order}>
-                  <td className="table-cell text-dim">#{r.order}</td>
-                  <td className="table-cell">
-                    <VerdictBadge status={r.verdict} />
-                  </td>
-                  <td className="table-cell text-right text-dim">
-                    {r.timeMs != null ? `${r.timeMs} ms` : "—"}
-                  </td>
-                  <td className="table-cell text-right text-dim">
-                    {r.memoryKb != null
-                      ? `${(r.memoryKb / 1024).toFixed(1)} MB`
-                      : "—"}
-                  </td>
-                </tr>
+                <Fragment key={r.order}>
+                  <tr>
+                    <td className="table-cell text-dim">#{r.order}</td>
+                    <td className="table-cell">
+                      <VerdictBadge status={r.verdict} />
+                    </td>
+                    <td className="table-cell text-right text-dim">
+                      {r.timeMs != null ? `${r.timeMs} ms` : "—"}
+                    </td>
+                    <td className="table-cell text-right text-dim">
+                      {r.memoryKb != null
+                        ? `${(r.memoryKb / 1024).toFixed(1)} MB`
+                        : "—"}
+                    </td>
+                    <td className="table-cell text-right">
+                      {r.input != null && (
+                        <button
+                          className="text-xs text-blue hover:underline"
+                          onClick={() =>
+                            setExpanded(expanded === r.order ? null : r.order)
+                          }
+                        >
+                          {expanded === r.order ? "收起" : "測資"}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                  {expanded === r.order && r.input != null && (
+                    <tr>
+                      <td colSpan={5} className="border-t border-bd p-0">
+                        <TestCasePanel
+                          input={r.input}
+                          expectedOutput={r.expectedOutput!}
+                          actualOutput={r.actualOutput}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
