@@ -455,6 +455,11 @@ namespace ItouOJ
                 {
                     SampleCase s = problem.Samples[i];
                     Append(string.Format("── 範例 {0} ──", i + 1), Color.DimGray, true);
+                    // 只看有沒有過看不出錯在哪——沒把當時餵進去的測資印出來，
+                    // 對到答案錯誤時完全沒辦法比對是輸入理解錯了還是邏輯錯了
+                    Append("輸入：", Color.DimGray, false);
+                    Append(s.Input.Length == 0 ? "（空的）" : s.Input.TrimEnd(),
+                        Color.Black, false);
                     RunOutcome r = Runner.CompileAndRun(
                         compiler, sourcePath, s.Input, timeout);
                     if (ShowCompileError(r)) return;

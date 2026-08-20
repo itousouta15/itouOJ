@@ -67,9 +67,28 @@ if (Test-Path $manualSrc) {
     Write-Host "  找不到使用說明書.html，略過（不影響程式使用）" -ForegroundColor Yellow
 }
 
-# 桌面捷徑
+# 桌面捷徑：優先放「所有使用者」桌面，這樣不管誰登入這台機器都看得到
+# （機房常見做法是用管理員帳號佈署、學生用受限帳號考試）。但學校機房的
+# 受限帳號通常寫不進 C:\Users\Public\Desktop——以前只檢查資料夾存不存在，
+# 存在但沒寫入權限時 Test-Path 一樣是 true，於是照樣往共用桌面寫，
+# CreateShortcut 才在那一刻失敗，被下面的 catch 吃掉、什麼捷徑都沒建立。
+# 這裡改成實際探測寫入權限，寫不進去才退回目前使用者自己的桌面。
 $desktop = [Environment]::GetFolderPath("CommonDesktopDirectory")
-if (-not (Test-Path $desktop)) { $desktop = [Environment]::GetFolderPath("Desktop") }
+$canWriteCommon = $false
+if ($desktop -and (Test-Path $desktop)) {
+    try {
+        $probe = Join-Path $desktop ".itouoj-probe"
+        [IO.File]::WriteAllText($probe, "x")
+        Remove-Item $probe -Force
+        $canWriteCommon = $true
+    } catch {
+        $canWriteCommon = $false
+    }
+}
+if (-not $canWriteCommon) {
+    $desktop = [Environment]::GetFolderPath("Desktop")
+    Write-Host "  （沒有共用桌面的寫入權限，改把捷徑放在目前使用者的桌面）" -ForegroundColor Yellow
+}
 $lnk = Join-Path $desktop "itouOJ 收件程式.lnk"
 try {
     $shell = New-Object -ComObject WScript.Shell
