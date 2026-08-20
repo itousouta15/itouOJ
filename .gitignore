@@ -56,5 +56,10 @@ AGENTS.md
 # 題目匯出（scripts/export-problems.mjs 產出，可隨時重新產生）
 problem-docs/
 
+# 未公開比賽的出題 script：明碼版只留在本機，git 裡只放加密過的 .enc
+# （openssl enc -aes-256-cbc -pbkdf2 -iter 200000，密碼另外管道傳遞）
+scripts/add-ticket-grabbing-bot-problem.mjs
+scripts/add-volleyball-culprit-problem.mjs
+
 # 建置產物：每次重建都會變（舊版 csc 不支援 /deterministic）
 client/dist/
