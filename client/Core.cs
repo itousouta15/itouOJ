@@ -455,6 +455,13 @@ namespace ItouOJ
             p.StartInfo.RedirectStandardInput = true;
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
+            // 沒設的話 .NET 會用主控台目前的編碼（繁中 Windows 通常是 Big5）
+            // 去解讀子程式的輸出位元組。g++ 編譯出來的程式印出來的中文字面量
+            // 是原始碼檔案存的編碼（現在的編輯器多半存 UTF-8），兩邊對不上
+            // 就會整段亂碼——伺服器判題本來就是照 UTF-8 位元組比對，這裡也
+            // 該用同一個編碼讀，選手在本機看到的才會跟送出去比對的一致。
+            p.StartInfo.StandardOutputEncoding = new UTF8Encoding(false);
+            p.StartInfo.StandardErrorEncoding = new UTF8Encoding(false);
             p.StartInfo.WorkingDirectory = WorkDir;
             InheritCompilerPath(p.StartInfo, compiler);
 
@@ -1202,7 +1209,7 @@ namespace ItouOJ
     {
         // 這台編譯出來的收件程式版本。發新版、跑 client/release.ps1 -Tag vX.Y.Z
         // 時記得同步把這裡改成同一個版號，否則版本檢查會失準。
-        public const string ClientVersion = "1.3.1";
+        public const string ClientVersion = "1.3.2";
 
         // 查 GitHub 最新 release（tag 跟 itouOJ-Submit.exe 附件的下載連結）；
         // 查不到（沒有網路、API 限流等）就回傳 null，呼叫端要當作
