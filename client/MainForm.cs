@@ -67,6 +67,9 @@ namespace ItouOJ
         PasteNormalizingTextBox txtCode;
         RadioButton rbTyped, rbFile;
         ComboBox cboContest;
+        // 「直接輸入」模式要送出的語言——檔案模式靠副檔名判斷，這個下拉選單
+        // 只在直接輸入時有意義
+        ComboBox cboTypedLang;
         // 作答分頁的題目選擇：左側欄自繪清單，取代以前的下拉選單
         ListView lvProblems;
         Label lblProblemTitle;
@@ -874,7 +877,8 @@ namespace ItouOJ
             TableLayoutPanel srcTbl = Theme.Table();
             srcTbl.Dock = DockStyle.Fill;
             srcTbl.BackColor = Theme.Card;
-            srcTbl.ColumnCount = 4;
+            srcTbl.ColumnCount = 5;
+            srcTbl.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             srcTbl.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             srcTbl.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             srcTbl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
@@ -900,19 +904,29 @@ namespace ItouOJ
             rbFile.Margin = new Padding(4, 0, 8, 0);
             srcTbl.Controls.Add(rbFile, 1, 0);
 
+            // 直接輸入模式要送出的語言。檔案模式的語言是看副檔名決定的，
+            // 這個下拉選單那時候會停用，只顯示（不影響）目前的選擇。
+            cboTypedLang = new ComboBox();
+            cboTypedLang.Font = Theme.Body;
+            cboTypedLang.DropDownStyle = ComboBoxStyle.DropDownList;
+            cboTypedLang.Size = new Size(110, 26);
+            cboTypedLang.Anchor = AnchorStyles.None;
+            cboTypedLang.Margin = new Padding(0, 0, 8, 0);
+            srcTbl.Controls.Add(cboTypedLang, 2, 0);
+
             txtFile = Theme.Input();
             txtFile.ReadOnly = true;
             txtFile.BackColor = Theme.Inset;
             txtFile.Dock = DockStyle.Fill;
             txtFile.Margin = new Padding(0, 8, 8, 8);
-            srcTbl.Controls.Add(txtFile, 2, 0);
+            srcTbl.Controls.Add(txtFile, 3, 0);
 
             btnBrowse = Theme.Secondary("瀏覽…");
             btnBrowse.Size = new Size(72, 26);
             btnBrowse.Anchor = AnchorStyles.None;
             btnBrowse.Margin = new Padding(0, 0, 14, 0);
             btnBrowse.Click += OnBrowse;
-            srcTbl.Controls.Add(btnBrowse, 3, 0);
+            srcTbl.Controls.Add(btnBrowse, 4, 0);
 
             src.Controls.Add(srcTbl);
             right.Controls.Add(src, 0, 1);
@@ -1740,6 +1754,7 @@ namespace ItouOJ
             txtCode.BackColor = typed ? Theme.Card : Theme.Inset;
             txtFile.Enabled = !typed;
             btnBrowse.Enabled = !typed;
+            cboTypedLang.Enabled = typed;
             if (modeBar != null)
                 modeBar.BackColor = typed ? Theme.Card : Theme.Warn;
             if (typed && draftLabel != null)
@@ -1761,7 +1776,7 @@ namespace ItouOJ
                     Status("編輯區是空的", true);
                     return null;
                 }
-                sourceName = (draftLabel ?? "code") + ".cpp";
+                sourceName = (draftLabel ?? "code") + FileExtensionFor(SelectedTypedLanguage());
                 return txtCode.Text;
             }
 
@@ -2416,13 +2431,27 @@ namespace ItouOJ
             if (problems == null || problems.Count == 0) return;
             if (string.IsNullOrEmpty(serverUrl) || string.IsNullOrEmpty(cookie)) return;
 
+            // 在呼叫當下就把「有沒有手動資料夾」定住：背景執行緒跑的這段期間
+            // 使用者可能又改了「題目路徑與編譯器設定」，不該用下載完那一刻的
+            // cfg.ProblemDir 去判斷「當初」是不是手動指定的。
+            string manualDir = cfg.ProblemDir;
+            bool isManualDir = !string.IsNullOrEmpty(manualDir)
+                && manualDir != ProblemDoc.CacheDir(contestId);
+
             System.Threading.ThreadPool.QueueUserWorkItem(delegate
             {
                 int downloaded = 0;
+                int synced = 0;
                 foreach (ProblemEntry pe in problems)
                 {
-                    if (ProblemDoc.DownloadAndCache(serverUrl, cookie, contestId, pe.Label) != null)
-                        downloaded++;
+                    string path = ProblemDoc.DownloadAndCache(serverUrl, cookie, contestId, pe.Label);
+                    if (path == null) continue;
+                    downloaded++;
+                    // 監考手動指定過題目資料夾的話，裡面同代號的既有檔案也一併換成
+                    // 新版——「更新比賽資訊」才會真的讓選手看到最新的題目文件，
+                    // 不用監考自己重印一次、一台一台換。
+                    if (isManualDir && ProblemDoc.SyncToManualDir(manualDir, path, pe.Label))
+                        synced++;
                 }
                 if (downloaded == 0) return;
 
@@ -2438,6 +2467,8 @@ namespace ItouOJ
                             cfg.ProblemDir = ProblemDoc.CacheDir(contestId);
                             Store.SaveConfig(cfg);
                         }
+                        if (synced > 0)
+                            Status("已同步更新 " + synced + " 份題目文件到「" + manualDir + "」", false);
                         UpdateProblemButton();
                     });
                 }
@@ -2574,6 +2605,48 @@ namespace ItouOJ
             {
                 lblLangHint.Text = "";
             }
+            UpdateTypedLanguageOptions();
+        }
+
+        // 比賽的語言限制可能在中途變（監考改設定、換比賽），下拉選單的選項要
+        // 跟著換。盡量保留使用者原本選的語言，選不到了（被排除在新的限制外）
+        // 才退回第一個可用的語言。
+        void UpdateTypedLanguageOptions()
+        {
+            if (cboTypedLang == null) return;
+            string prev = cboTypedLang.SelectedItem as string;
+            List<string> eff = EffectiveLanguages();
+
+            cboTypedLang.BeginUpdate();
+            cboTypedLang.Items.Clear();
+            foreach (string l in eff) cboTypedLang.Items.Add(DisplayName(l));
+            cboTypedLang.EndUpdate();
+
+            if (prev != null && cboTypedLang.Items.Contains(prev))
+                cboTypedLang.SelectedItem = prev;
+            else if (cboTypedLang.Items.Count > 0)
+                cboTypedLang.SelectedIndex = 0;
+        }
+
+        // 目前「直接輸入」下拉選單選的語言代碼（cpp / python / …）。
+        // 選單還沒建好或找不到相符選項時退回 cpp，跟以前預設一致。
+        string SelectedTypedLanguage()
+        {
+            string name = cboTypedLang == null ? null : cboTypedLang.SelectedItem as string;
+            if (name == null) return "cpp";
+            foreach (string l in AllLanguages)
+                if (DisplayName(l) == name) return l;
+            return "cpp";
+        }
+
+        static string FileExtensionFor(string lang)
+        {
+            if (lang == "cpp") return ".cpp";
+            if (lang == "c") return ".c";
+            if (lang == "python") return ".py";
+            if (lang == "java") return ".java";
+            if (lang == "javascript") return ".js";
+            return ".txt";
         }
 
         void OnTestRun(object sender, EventArgs e)
@@ -2589,7 +2662,9 @@ namespace ItouOJ
             string sourceName;
             string code = CurrentCode(out sourceName);
             if (code == null) return;
-            if (!rbTyped.Checked && LanguageFromPath(txtFile.Text.Trim()) != "cpp")
+            string testLang = rbTyped.Checked
+                ? SelectedTypedLanguage() : LanguageFromPath(txtFile.Text.Trim());
+            if (testLang != "cpp")
             {
                 Status("測試執行目前只支援 C++（.cpp）", true);
                 return;
@@ -2653,17 +2728,9 @@ namespace ItouOJ
             string code = CurrentCode(out sourceName);
             if (code == null) return;
 
-            // 直接輸入時沒有副檔名可判，比賽限一種語言就用它，否則預設 C++
-            string lang;
-            if (rbTyped.Checked)
-            {
-                List<string> eff = EffectiveLanguages();
-                lang = eff.Count == 1 ? eff[0] : "cpp";
-            }
-            else
-            {
-                lang = LanguageFromPath(txtFile.Text.Trim());
-            }
+            // 直接輸入時沒有副檔名可判，改用「直接輸入」旁邊那個語言下拉選單
+            string lang = rbTyped.Checked
+                ? SelectedTypedLanguage() : LanguageFromPath(txtFile.Text.Trim());
             if (lang == null)
             {
                 Status("不支援的副檔名（支援 .cpp .c .py .java .js）", true);

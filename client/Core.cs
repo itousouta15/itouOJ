@@ -298,7 +298,11 @@ namespace ItouOJ
     // 能確認「有沒有編譯過」和「範例對不對」。真正的判分還是等賽後上傳。
     public static class Runner
     {
+        // Code::Blocks 內建的 MinGW 排最前面——這是主力機房實際在用的編譯器，
+        // 其他路徑當備援。
         static readonly string[] CommonPaths = {
+            @"C:\Program Files\CodeBlocks\MinGW\bin\g++.exe",
+            @"C:\Program Files (x86)\CodeBlocks\MinGW\bin\g++.exe",
             @"C:\Program Files (x86)\Dev-Cpp\MinGW64\bin\g++.exe",
             @"C:\Program Files\Dev-Cpp\MinGW64\bin\g++.exe",
             @"C:\Dev-Cpp\MinGW64\bin\g++.exe",
@@ -306,8 +310,6 @@ namespace ItouOJ
             @"C:\msys64\mingw64\bin\g++.exe",
             @"C:\msys64\ucrt64\bin\g++.exe",
             @"C:\TDM-GCC-64\bin\g++.exe",
-            @"C:\Program Files\CodeBlocks\MinGW\bin\g++.exe",
-            @"C:\Program Files (x86)\CodeBlocks\MinGW\bin\g++.exe",
         };
 
         public static string FindCompiler()
@@ -414,7 +416,7 @@ namespace ItouOJ
             Process cc = new Process();
             cc.StartInfo.FileName = compiler;
             cc.StartInfo.Arguments = string.Format(
-                "-O2 -std=c++17 -o \"{0}\" \"{1}\"", exePath, sourcePath);
+                "-O2 -o \"{0}\" \"{1}\"", exePath, sourcePath);
             cc.StartInfo.UseShellExecute = false;
             cc.StartInfo.CreateNoWindow = true;
             cc.StartInfo.RedirectStandardError = true;
@@ -777,6 +779,37 @@ namespace ItouOJ
             {
                 return null;
             }
+        }
+
+        // 監考照手冊手動指定過「題目路徑」的話，那個資料夾裡的檔案完全是自己
+        // 管理的（多半是手動 Ctrl+P 印出來的 PDF），Resolve() 也優先找那裡。
+        // 這裡只覆蓋「代號 + 副檔名都相同」的既有檔案——換過比賽或題目之後，
+        // 按「更新比賽資訊」就能讓那份手動資料夾也跟著更新，不用監考自己重印
+        // 一次、一台一台換。找不到同名檔案就當作那題本來就不歸這個資料夾管，
+        // 不會憑空新增檔案。
+        public static bool SyncToManualDir(string manualDir, string cachedPath, string label)
+        {
+            if (string.IsNullOrEmpty(manualDir) || !Directory.Exists(manualDir)) return false;
+
+            string ext = Path.GetExtension(cachedPath);
+            string[] hits;
+            try
+            {
+                hits = Directory.GetFiles(manualDir, label + ext, SearchOption.AllDirectories);
+            }
+            catch { return false; } // 資料夾在同時間被移動/移除之類的意外
+
+            bool synced = false;
+            foreach (string hit in hits)
+            {
+                try
+                {
+                    File.Copy(cachedPath, hit, true);
+                    synced = true;
+                }
+                catch { /* 檔案可能被開著鎖住，略過這一份，不擋住其他題目 */ }
+            }
+            return synced;
         }
     }
 
