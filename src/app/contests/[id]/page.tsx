@@ -7,6 +7,7 @@ import ContestStatusBadge from "@/components/ContestStatusBadge";
 import ContestCountdown from "@/components/ContestCountdown";
 import ContestJoinButton from "@/components/ContestJoinButton";
 import OpenClientButton from "@/components/OpenClientButton";
+import Markdown from "@/components/Markdown";
 
 export const dynamic = "force-dynamic";
 
@@ -81,9 +82,9 @@ export default async function ContestPage({
           )}
         </p>
         {contest.description && (
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed whitespace-pre-line text-dim">
-            {contest.description}
-          </p>
+          <div className="mt-3 max-w-2xl text-dim">
+            <Markdown>{contest.description}</Markdown>
+          </div>
         )}
       </div>
 
