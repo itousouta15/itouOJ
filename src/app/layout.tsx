@@ -34,8 +34,20 @@ export const metadata: Metadata = {
   },
 };
 
-// 在 hydration 前套用主題，避免亮→暗閃爍
-const themeInit = `(function(){try{if(localStorage.getItem("oj-theme")==="light"){document.documentElement.setAttribute("data-theme","light")}}catch(e){}})();`;
+// 在 hydration 前套用主題，避免亮→暗閃爍。
+//
+// App（Capacitor WebView）內一律深色：Capacitor 原生橋接在頁面載入前就會
+// 注入 window.Capacitor，所以在這裡就能同步判斷，data-app 設在首繪之前，
+// App 專屬樣式（見 globals.css 的 html[data-app]）不會有閃爍，瀏覽器也
+// 完全不受影響。
+const themeInit = `(function(){try{
+  var app=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform();
+  if(app){
+    document.documentElement.setAttribute("data-app","1");
+  }else if(localStorage.getItem("oj-theme")==="light"){
+    document.documentElement.setAttribute("data-theme","light");
+  }
+}catch(e){}})();`;
 
 // 辰宇落雁體走 emfont 的分塊 subset CSS（同 itousouta.me）。
 // 先 preload、等瀏覽器閒置才真正套用，首繪不會被字體檔擋住；
