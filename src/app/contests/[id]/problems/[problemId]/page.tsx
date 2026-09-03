@@ -41,9 +41,18 @@ export default async function ContestProblemPage({
   });
   if (!problem) notFound();
 
-  const contestProblem = await prisma.contestProblem.findUnique({
-    where: { contestId_problemId: { contestId, problemId } },
-  });
+  const [contestProblem, acceptedSub] = await Promise.all([
+    prisma.contestProblem.findUnique({
+      where: { contestId_problemId: { contestId, problemId } },
+    }),
+    session
+      ? prisma.submission.findFirst({
+          where: { userId: session.userId, problemId: problem.id, status: "AC" },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
+  ]);
+  const accepted = acceptedSub !== null;
 
   const phase = getContestPhase(contest);
 
@@ -101,6 +110,14 @@ export default async function ContestProblemPage({
 
       <SubmitPanel
         problemId={problem.id}
+        problem={{
+          order: problem.order,
+          title: problem.title,
+          difficulty: problem.difficulty,
+          timeLimitMs: problem.timeLimitMs,
+          memoryLimitMb: problem.memoryLimitMb,
+          accepted,
+        }}
         contestId={contest.id}
         // assertContestProblemAccess 已經擋掉 upcoming，這裡只會是 running/frozen/ended
         contestPhase={phase as "running" | "frozen" | "ended"}

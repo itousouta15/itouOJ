@@ -45,21 +45,34 @@ export default async function ProblemPage({
   if (!Number.isInteger(problemOrder)) notFound();
 
   const session = await getSession();
-  const problem = await prisma.problem.findUnique({
-    where: { order: problemOrder },
-    omit: { pdfData: true },
-    include: {
-      testCases: {
-        where: { isSample: true },
-        orderBy: [{ order: "asc" }, { id: "asc" }],
+  const [problem, acceptedSub] = await Promise.all([
+    prisma.problem.findUnique({
+      where: { order: problemOrder },
+      omit: { pdfData: true },
+      include: {
+        testCases: {
+          where: { isSample: true },
+          orderBy: [{ order: "asc" }, { id: "asc" }],
+        },
+        subtasks: { orderBy: { order: "asc" } },
+        tags: { include: { tag: true } },
       },
-      subtasks: { orderBy: { order: "asc" } },
-      tags: { include: { tag: true } },
-    },
-  });
+    }),
+    session
+      ? prisma.submission.findFirst({
+          where: {
+            userId: session.userId,
+            problem: { order: problemOrder },
+            status: "AC",
+          },
+          select: { id: true },
+        })
+      : Promise.resolve(null),
+  ]);
   if (!problem || (!problem.isPublic && session?.role !== "ADMIN")) {
     notFound();
   }
+  const accepted = acceptedSub !== null;
 
   return (
     <div className="space-y-6">
@@ -148,7 +161,17 @@ export default async function ProblemPage({
       )}
 
       {session ? (
-        <SubmitPanel problemId={problem.id} />
+        <SubmitPanel
+          problemId={problem.id}
+          problem={{
+            order: problem.order,
+            title: problem.title,
+            difficulty: problem.difficulty,
+            timeLimitMs: problem.timeLimitMs,
+            memoryLimitMb: problem.memoryLimitMb,
+            accepted,
+          }}
+        />
       ) : (
         <div className="card p-6 text-center text-sm text-dim">
           請先
