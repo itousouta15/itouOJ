@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { syncStatusBar } from "@/lib/capacitor";
 
 export default function ThemeToggle() {
   const [light, setLight] = useState(false);
 
   useEffect(() => {
-    setLight(document.documentElement.getAttribute("data-theme") === "light");
+    const isLight =
+      document.documentElement.getAttribute("data-theme") === "light";
+    setLight(isLight);
+    // App 內：啟動時讓狀態列跟上網站主題
+    syncStatusBar(!isLight);
   }, []);
 
   function toggle() {
@@ -20,6 +25,7 @@ export default function ThemeToggle() {
     try {
       localStorage.setItem("oj-theme", next ? "light" : "dark");
     } catch {}
+    syncStatusBar(!next);
   }
 
   return (

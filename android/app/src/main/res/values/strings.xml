@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">itouOJ</string>
+    <string name="title_activity_main">itouOJ</string>
+    <string name="package_name">me.itousouta.oj</string>
+    <string name="custom_url_scheme">me.itousouta.oj</string>
+</resources>

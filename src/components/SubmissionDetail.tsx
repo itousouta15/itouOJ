@@ -4,6 +4,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import VerdictBadge from "@/components/VerdictBadge";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
+import { notifyJudged } from "@/lib/capacitor";
 
 interface SubmissionData {
   id: number;
@@ -81,9 +82,12 @@ export default function SubmissionDetail({ id }: { id: number }) {
   const [notFound, setNotFound] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 判題完成只推一次通知（同一頁停留期間）
+  const notified = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
+    notified.current = false;
     async function poll() {
       try {
         const res = await fetch(`/api/submissions/${id}`, {
@@ -100,6 +104,14 @@ export default function SubmissionDetail({ id }: { id: number }) {
           return;
         }
         setData(json);
+        if (TERMINAL.includes(json.status) && !notified.current) {
+          notified.current = true;
+          notifyJudged({
+            submissionId: json.id,
+            problemTitle: json.problem.title,
+            status: json.status,
+          });
+        }
         if (!TERMINAL.includes(json.status)) {
           timer.current = setTimeout(poll, 1200);
         }

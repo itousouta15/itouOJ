@@ -1,11 +1,25 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "katex/dist/katex.min.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BottomNav from "@/components/BottomNav";
 import PageTransition from "@/components/PageTransition";
 import SiteLoader from "@/components/SiteLoader";
 import { isOfflineMode } from "@/lib/offline";
+
+// 手機瀏覽器 / Capacitor WebView 的 viewport 設定：
+// viewport-fit=cover 讓畫面延伸到瀏海/圓角底下，配合 CSS 的
+// env(safe-area-inset-*) 自行留邊（見 globals.css 的 .site-header / .bottom-nav）。
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#1b1e23" },
+    { media: "(prefers-color-scheme: light)", color: "#e9e9ee" },
+  ],
+};
 
 // metadataBase 給相對網址（OG 圖片、canonical）補齊網域用；沒設的話 Next.js
 // 只會警告，不影響功能，但社群分享預覽、搜尋結果的網址可能會是錯的相對路徑。
@@ -69,10 +83,11 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
         <SiteLoader />
         <Navbar />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-8 md:pb-8">
           <PageTransition>{children}</PageTransition>
         </main>
         <Footer />
+        <BottomNav />
       </body>
     </html>
   );
