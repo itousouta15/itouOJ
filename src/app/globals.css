@@ -1359,6 +1359,11 @@ html[data-app] [data-app-section="stats"] {
   margin-top: 1.25rem !important;
 }
 
+/* 網站版首頁：統計卡與 Hero 的間距再加大（space-y-10 之上多補 1.5rem） */
+html:not([data-app]) [data-app-section="stats"] {
+  margin-top: 4rem !important;
+}
+
 /* 最新題目 + 排行在 App 裡改為單欄堆疊 */
 html[data-app] [data-app-section="problems-ranking"] {
   grid-template-columns: minmax(0, 1fr);
