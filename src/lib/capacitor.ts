@@ -102,3 +102,14 @@ export async function notifyJudged(opts: {
     ],
   });
 }
+
+// 手機鍵盤關閉事件（App 內）：全螢幕編輯器用它偵測「收鍵盤 → 回到內嵌模式」。
+// 回傳取消訂閱函式；非 App 環境直接回傳 no-op。
+export async function onKeyboardWillHide(cb: () => void): Promise<() => void> {
+  if (!isNativeApp()) return () => {};
+  const { Keyboard } = await import("@capacitor/keyboard");
+  const handle = await Keyboard.addListener("keyboardWillHide", cb);
+  return () => {
+    void handle.remove();
+  };
+}
