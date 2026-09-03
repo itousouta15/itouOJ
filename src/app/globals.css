@@ -221,9 +221,6 @@ body.site-revealed .site-header {
   animation-play-state: running;
 }
 .logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   font-family: "ChenYuLuoYan", "Dancing Script", cursive;
   font-size: 45px;
   font-weight: 700;
@@ -232,13 +229,8 @@ body.site-revealed .site-header {
   transform: translateY(2px);
   /* ChenYuLuoYan 字面�?別小�?載入�?用 fallback ?��??�大?�縮小�?FOUT）�?
      字�?就�??��??��?，避?�出?�「�?變大?�縮小」�?跳�???*/
-  opacity: 0;
+opacity: 0;
   transition: opacity 0.2s ease;
-}
-.logo-mark {
-  width: 28px;
-  height: 28px;
-  flex: none;
 }
 .fonts-ready .logo {
   opacity: 1;
@@ -925,18 +917,10 @@ body.site-revealed .site-header {
   padding-right: 20px;
 }
 .footer-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   font-family: "ChenYuLuoYan", "Dancing Script", cursive;
   font-size: 32px;
   font-weight: 700;
   color: var(--tx);
-}
-.footer-logo-mark {
-  width: 30px;
-  height: 30px;
-  flex: none;
 }
 .footer-tagline {
   margin: 0;
