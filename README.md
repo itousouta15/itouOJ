@@ -27,6 +27,7 @@
 - 公告：置頂公告、Markdown 內容，管理員可新增 / 編輯 / 刪除
 - 管理後台：出題、測資編輯、時間 / 記憶體限制、公開 / 隱藏題目、課程與公告管理
 - 亮暗雙主題切換
+- Android App（Capacitor 包裝）：可安裝的原生 App，含開賽提醒與判題結果通知、全螢幕編輯模式、手機卡片式列表（見「手機 App（Android）」）
 
 ## 技術架構
 
@@ -34,6 +35,7 @@
 |----|------|
 | 前端 + 後端 | Next.js 16（App Router）+ TypeScript + Tailwind CSS v4 |
 | 資料庫 | SQLite + Prisma 7（better-sqlite3 driver adapter） |
+| 手機 App | Capacitor 8（`android/` 原生專案，WebView 載入正式站）+ local-notifications / status-bar / keyboard / splash-screen 外掛 |
 | 評測引擎 | [sandbox-runner](sandbox-runner/README.md)（自架，C/C++/Python/JavaScript）+ Piston（Docker，Java） |
 | 判題佇列 | in-process promise chain（`src/lib/judge.ts`），伺服器重啟自動恢復未完成的提交 |
 
@@ -82,6 +84,9 @@ deploy/                # 部署腳本與設定（見「部署」章節）
 sandbox-runner/         # 自架評測沙箱（C/C++/Python/JavaScript 用），詳見其 README
 
 client/                 # Windows 收件程式與打包工具，詳見 `client/README.md`
+
+android/                # Capacitor Android 原生專案（手機 App 用），見「手機 App（Android）」
+capacitor.config.ts     # Capacitor 設定（App 載入的網址、外掛行為）
 ```
 
 ## 本地開發
@@ -119,6 +124,43 @@ DISCORD_CLIENT_SECRET=""
 到 [Discord Developer Portal](https://discord.com/developers/applications) 建立 Application，在 OAuth2 頁籤取得 Client ID / Client Secret，並在 Redirects 加上 `http://localhost:3000/api/auth/discord/callback`。正式環境要再加一組 `https://<你的網域>/api/auth/discord/callback`，並在 `.env` 設好 `APP_URL`。第一次用 Discord 登入一樣會自動建立帳號。
 
 Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localhost:2000 user@server`。
+
+## 手機 App（Android）
+
+App 是 Capacitor 包裝的 WebView：原生殼載入正式站（`https://oj.itousouta.me`），登入、OAuth、判題全部跟瀏覽器一樣走同一個網域。手機上的優化（全螢幕編輯、卡片式列表、底部導覽、開賽提醒、判題結果通知）都是網頁端程式碼，App 與手機瀏覽器共用。
+
+### 建置
+
+需要 JDK 17+ 與 Android SDK（Android Studio 即可）：
+
+```bash
+npm install
+npx cap sync android     # 把外掛與設定同步進 android/ 專案
+npx cap open android     # 用 Android Studio 打開，可選實機或模擬器執行
+# 或純 CLI 出 APK：
+cd android && ./gradlew assembleDebug
+```
+
+### 開發流程
+
+App 預設載入正式站（`capacitor.config.ts` 的 `server.url`）。要連本機開發伺服器：
+
+```bash
+CAP_SERVER_URL=http://localhost:3000 npx cap sync android
+adb reverse tcp:3000 tcp:3000
+npx cap run android     # 或從 Android Studio 執行
+```
+
+### App 專屬功能
+
+- **開賽提醒**：在 App 內看比賽頁時，會排一個開賽前 10 分鐘的本地通知（同一場不會重複排，排程記錄在裝置的 localStorage）
+- **判題結果通知**：提交後停在判題頁，結果出爐（AC/WA/…）時推本地通知
+- **狀態列**：跟隨網站亮暗主題
+- 網頁端的手機體驗（全螢幕編輯器、吸底工具列、卡片列表、底部導覽、safe-area 適配）在一般手機瀏覽器同樣有效
+
+> 圖示與啟動畫面目前用 Capacitor 預設的，之後想換成自己的 Logo 再改 `android/app/src/main/res/` 下的 mipmap / drawable 資源。
+
+> iOS 需要 macOS + Xcode 才能建置，目前只有 Android；之後有 Mac 再用同一個 `capacitor.config.ts` 跑 `npx cap add ios`。
 
 ## 部署
 
