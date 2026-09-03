@@ -98,6 +98,7 @@ body {
 .logo-hero {
   width: 88px;
   height: 88px;
+  border-radius: 20%;
   box-shadow: 0 12px 32px var(--shadow);
 }
 
