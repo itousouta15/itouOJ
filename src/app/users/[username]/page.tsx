@@ -205,7 +205,7 @@ export default async function UserProfilePage({
       {isOwnProfile && (
         <section className="card p-6">
           <h2 className="section-title mb-4">帳號</h2>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="account-actions flex flex-wrap items-center gap-3">
             <Link href="/settings" className="btn-secondary">
               帳號設定
             </Link>

@@ -94,6 +94,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
         <SiteLoader />
+        <div className="app-top-mask" aria-hidden="true" />
         <Navbar />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-8 md:pb-8">
           <PageTransition>{children}</PageTransition>

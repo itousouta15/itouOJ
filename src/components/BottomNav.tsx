@@ -13,5 +13,10 @@ export default async function BottomNav() {
     });
     username = user?.username ?? null;
   }
-  return <BottomNavLinks username={username} />;
+  return (
+    <BottomNavLinks
+      username={username}
+      isAdmin={session?.role === "ADMIN"}
+    />
+  );
 }
