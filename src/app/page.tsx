@@ -155,6 +155,57 @@ export default async function HomePage() {
         ))}
       </section>
 
+      {/* 下載宣傳（網站版限定，App 內隱藏） */}
+      <section data-app-section="promo">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="card flex flex-col gap-4 p-6">
+            <div className="flex items-center gap-3">
+              <img src="/itouOJ.png" alt="" className="h-14 w-14 rounded-xl" />
+              <div>
+                <h2 className="section-title">itouOJ Android App</h2>
+                <p className="text-sm text-dim">手機隨時寫題・判題通知・比賽提醒</p>
+              </div>
+            </div>
+            <p className="text-sm leading-relaxed text-dim">
+              把整座線上評測裝進手機：深色介面、全螢幕程式編輯器、
+              鍵盤符號列，判題結果直接用通知推給你。
+            </p>
+            <a
+              href="https://github.com/itousouta15/itouOJ/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary mt-auto self-start"
+            >
+              下載 APK ↓
+            </a>
+          </div>
+
+          <div className="card flex flex-col gap-4 p-6">
+            <div className="flex items-center gap-3">
+              <span className="mono flex h-14 w-14 flex-none items-center justify-center rounded-xl bg-inset text-xl text-blue">
+                ⌘
+              </span>
+              <div>
+                <h2 className="section-title">收件程式（Windows）</h2>
+                <p className="text-sm text-dim">桌面端離線收題・測資上傳</p>
+              </div>
+            </div>
+            <p className="text-sm leading-relaxed text-dim">
+              在電腦上收考卷、寫程式、上傳解答；支援離線比賽與測資批次上傳，
+              適合學校資訊課與模擬考。
+            </p>
+            <a
+              href="https://github.com/itousouta15/itouOJ/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary mt-auto self-start"
+            >
+              下載收件程式 ↓
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* 公告 */}
       {announcements.length > 0 && (
         <section data-app-section="announcements">
