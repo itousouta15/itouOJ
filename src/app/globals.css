@@ -587,6 +587,23 @@ html.kbd-open .bottom-nav {
   background: var(--bg);
   padding: env(safe-area-inset-top) env(safe-area-inset-left) 0
     env(safe-area-inset-right);
+  animation: editorFullscreenIn 0.25s ease-out both;
+}
+@keyframes editorFullscreenIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* 退場：closing 期間淡出下移，180ms 後才真的卸載 */
+.editor-fullscreen--closing {
+  opacity: 0;
+  transform: translateY(24px) scale(0.98);
+  transition: opacity 0.18s ease-in, transform 0.18s ease-in;
 }
 .editor-fullscreen .editor-fullscreen-body {
   flex: 1;
@@ -652,7 +669,7 @@ html.kbd-open .bottom-nav {
   }
 }
 
-/* App 編輯器鍵盤符號列（兩排橫向捲動，點擊插入游標處） */
+/* App 編輯器鍵盤符號列（兩排各 9 鍵等寬塞滿、不捲動；鍵盤出現才顯示） */
 .editor-kbd {
   flex: none;
   display: flex;
@@ -661,23 +678,22 @@ html.kbd-open .bottom-nav {
   padding: 8px 10px;
   border-top: 1px solid var(--bd);
   background: var(--panel);
-  overflow-x: auto;
 }
 .editor-kbd-row {
   display: flex;
   gap: 6px;
 }
 .editor-kbd-key {
-  flex: none;
-  min-width: 44px;
+  flex: 1;
+  min-width: 0;
   height: 40px;
-  padding: 0 10px;
+  padding: 0 2px;
   border-radius: 8px;
   border: 1px solid var(--bd2);
   background: var(--inset);
   color: var(--tx);
   font-family: "JetBrains Mono", monospace;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
