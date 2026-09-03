@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import CodeMirror from "@uiw/react-codemirror";
@@ -9,8 +9,14 @@ import { python } from "@codemirror/lang-python";
 import { java } from "@codemirror/lang-java";
 import { javascript } from "@codemirror/lang-javascript";
 import type { Extension } from "@codemirror/state";
+import type { EditorView } from "@codemirror/view";
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
+import { isNativeApp } from "@/lib/capacitor";
 import VerdictBadge from "@/components/VerdictBadge";
+
+// App 鍵盤符號列：手機鍵盤沒有的電腦符號，點擊插入游標處（兩排橫向捲動）
+const KBD_ROW1 = ["Tab", "{", "}", "(", ")", "[", "]", ";", ":", "'", '"', "#"];
+const KBD_ROW2 = ["=", "<", ">", "|", "&", "+", "-", "_", "/", "*", "!", "%", "^", "~"];
 
 interface SampleRunResult {
   order: number;
@@ -107,6 +113,8 @@ export default function SubmitPanel({
   const [showCustom, setShowCustom] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
+  const [isApp] = useState(() => isNativeApp());
+  const viewRef = useRef<EditorView | null>(null);
 
   // 記住上次選的語言、以及每題每語言打到一半的程式碼
   useEffect(() => {
@@ -147,6 +155,19 @@ export default function SubmitPanel({
   function updateCode(value: string) {
     setCode(value);
     localStorage.setItem(draftKey(language), value);
+  }
+
+  // 鍵盤符號列：在游標處插入文字（Tab 用兩格空白）
+  function insertText(text: string) {
+    const view = viewRef.current;
+    if (!view) return;
+    const insert = text === "Tab" ? "  " : text;
+    const { from, to } = view.state.selection.main;
+    view.dispatch({
+      changes: { from, to, insert },
+      selection: { anchor: from + insert.length },
+    });
+    view.focus();
   }
 
   // 測試執行：跑範例測資（或自訂輸入），不留紀錄
@@ -223,6 +244,9 @@ export default function SubmitPanel({
       theme={darkTheme ? "dark" : "light"}
       extensions={CM_EXTENSIONS[language]}
       onChange={updateCode}
+      onCreateEditor={(view) => {
+        viewRef.current = view;
+      }}
       basicSetup={{ tabSize: 4 }}
     />
   );
@@ -426,6 +450,34 @@ export default function SubmitPanel({
                 {actionButtons}
               </div>
             </div>
+            {isApp && (
+              <div className="editor-kbd" role="toolbar" aria-label="程式符號鍵盤">
+                <div className="editor-kbd-row">
+                  {KBD_ROW1.map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      className="editor-kbd-key"
+                      onClick={() => insertText(k)}
+                    >
+                      {k}
+                    </button>
+                  ))}
+                </div>
+                <div className="editor-kbd-row">
+                  {KBD_ROW2.map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      className="editor-kbd-key"
+                      onClick={() => insertText(k)}
+                    >
+                      {k}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>,
           document.body
         )}
