@@ -533,7 +533,14 @@ opacity: 0;
   }
 }
 
-/* ---- 手機底部導覽列（App / 手機網頁共用，< 768px 顯示）---- */
+/* ---- 手機底部導覽列（App 專用，網站版不用）---- */
+html:not([data-app]) .bottom-nav {
+  display: none;
+}
+/* 手機鍵盤開啟時隱藏，避免導覽列浮到鍵盤上方（BottomNavLinks 掛 kbd-open） */
+html.kbd-open .bottom-nav {
+  display: none;
+}
 .bottom-nav {
   /* 蓋住瀏覽器底部手勢列 / iPhone 圓角：視為內容的一部分補 padding */
   padding-bottom: env(safe-area-inset-bottom);
@@ -618,6 +625,49 @@ opacity: 0;
   .oj-editor .cm-editor .cm-content {
     font-size: 16px;
   }
+}
+
+/* App 編輯器鍵盤符號列（兩排橫向捲動，點擊插入游標處） */
+.editor-kbd {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--bd);
+  background: var(--panel);
+  overflow-x: auto;
+}
+.editor-kbd-row {
+  display: flex;
+  gap: 6px;
+}
+.editor-kbd-key {
+  flex: none;
+  min-width: 44px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--bd2);
+  background: var(--inset);
+  color: var(--tx);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.editor-kbd-key:active {
+  background: var(--panel2);
+  transform: scale(0.92);
+}
+
+/* App 頂部漸層模糊遮罩（固定在最上層，內容捲動時被模糊） */
+.app-top-mask {
+  display: none;
 }
 /* 編輯器填滿包住它的容器（內嵌 380px 或全螢幕 flex 區塊） */
 .oj-editor .cm-editor {
@@ -1333,4 +1383,38 @@ html[data-app] .editor-fullscreen .theme-btn {
 }
 html[data-app] .editor-fullscreen .input {
   min-height: 44px;
+}
+
+/* App 頂部漸層模糊遮罩（layout.tsx 的 .app-top-mask） */
+html[data-app] .app-top-mask {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(env(safe-area-inset-top, 0px) + 64px);
+  z-index: 60;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    #0f1217 0%,
+    rgba(15, 18, 23, 0.55) 45%,
+    transparent 100%
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* 個人頁帳號區：App 內改直排、兩個按鈕一樣寬 */
+html[data-app] .account-actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+html[data-app] .account-actions .btn-secondary {
+  width: 100%;
+}
+
+/* 首頁下載宣傳區只在網站版顯示 */
+html[data-app] [data-app-section="promo"] {
+  display: none;
 }
