@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
 import { safeNextPath } from "@/lib/safeNext";
+import { completeAppLogin } from "@/lib/appOAuth";
 import {
   DISCORD_TOKEN_URL,
   DISCORD_USER_URL,
@@ -46,16 +47,19 @@ export async function GET(request: Request) {
 
   let savedState: string | undefined;
   let linkUserId: string | undefined;
+  let appCode: string | undefined;
   let next: string | null = null;
   if (raw) {
     try {
       const parsed = JSON.parse(raw) as {
         state?: string;
         linkUserId?: string;
+        appCode?: string;
         next?: string | null;
       };
       savedState = parsed.state;
       linkUserId = parsed.linkUserId;
+      appCode = parsed.appCode;
       next = safeNextPath(parsed.next);
     } catch {
       savedState = raw;
@@ -129,6 +133,10 @@ export async function GET(request: Request) {
           },
         });
       }
+      if (appCode) {
+        completeAppLogin(appCode, linkUserId);
+        return Response.redirect(`${appUrl(request)}/auth/app-done`, 302);
+      }
       return Response.redirect(`${appUrl(request)}/settings?linked=discord`, 302);
     }
 
@@ -162,6 +170,13 @@ export async function GET(request: Request) {
           role: userCount === 0 ? "ADMIN" : "USER",
         },
       });
+    }
+
+    // App 登入：不設 cookie（會污染瀏覽器 session），只把使用者綁到
+    // 一次性 code，App 端之後自己來領
+    if (appCode) {
+      completeAppLogin(appCode, user.id);
+      return Response.redirect(`${appUrl(request)}/auth/app-done`, 302);
     }
 
     await createSession({

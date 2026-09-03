@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { getSession } from "@/lib/auth";
 import { safeNextPath } from "@/lib/safeNext";
+import { isValidAppLogin } from "@/lib/appOAuth";
 import {
   GOOGLE_AUTH_URL,
   OAUTH_STATE_COOKIE,
@@ -11,6 +12,13 @@ import {
 
 export async function GET(request: Request) {
   if (!googleConfigured()) {
+    return Response.redirect(`${appUrl(request)}/login?error=google`, 302);
+  }
+
+  // App 登入：OAuth 在系統瀏覽器跑，session 之後由 App 用一次性 code 領回
+  const appCode = new URL(request.url).searchParams.get("code");
+  const isApp = new URL(request.url).searchParams.get("app") === "1";
+  if (isApp && !isValidAppLogin(appCode)) {
     return Response.redirect(`${appUrl(request)}/login?error=google`, 302);
   }
 
@@ -33,7 +41,7 @@ export async function GET(request: Request) {
   const cookieStore = await cookies();
   cookieStore.set(
     OAUTH_STATE_COOKIE,
-    JSON.stringify({ state, linkUserId, next }),
+    JSON.stringify({ state, linkUserId, next, appCode }),
     {
       httpOnly: true,
       sameSite: "lax",

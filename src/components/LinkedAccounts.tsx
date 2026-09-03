@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleIcon, DiscordIcon } from "@/components/OAuthIcons";
+import { isNativeApp } from "@/lib/capacitor";
 
 const ERROR_MESSAGES: Record<string, string> = {
   google: "Google 連結失敗，請再試一次",
@@ -50,6 +51,36 @@ export default function LinkedAccounts({
         : null
   );
   const [pending, setPending] = useState<string | null>(null);
+  const isApp = typeof window !== "undefined" && isNativeApp();
+
+  // App 內連結帳號：開系統瀏覽器跑 OAuth（同登入流程），
+  // 關掉分頁後用一次性 code 確認完成
+  async function linkAccount(provider: "google" | "discord") {
+    setPending(provider);
+    setMessage(null);
+    try {
+      const res = await fetch(
+        `/api/auth/app/start?provider=${provider}&link=1`
+      );
+      const data = await res.json();
+      if (!res.ok || !data.code) {
+        setMessage({ type: "err", text: data.error ?? "無法開始連結" });
+        return;
+      }
+      const { Browser } = await import("@capacitor/browser");
+      const handle = await Browser.addListener("browserFinished", async () => {
+        handle.remove();
+        setPending(null);
+        router.refresh();
+      });
+      await Browser.open({
+        url: new URL(data.url, window.location.origin).toString(),
+      });
+    } catch {
+      setMessage({ type: "err", text: "發生錯誤，請稍後再試" });
+      setPending(null);
+    }
+  }
 
   const providers: Provider[] = [
     {
@@ -111,9 +142,17 @@ export default function LinkedAccounts({
               {pending === p.key ? "處理中…" : "解除連結"}
             </button>
           ) : p.enabled ? (
-            <a href={`/api/auth/${p.key}?link=1`} className="btn-secondary">
-              連結
-            </a>
+            <button
+              className="btn-secondary"
+              disabled={pending === p.key}
+              onClick={
+                isApp
+                  ? () => linkAccount(p.key)
+                  : () => router.push(`/api/auth/${p.key}?link=1`)
+              }
+            >
+              {pending === p.key ? "處理中…" : "連結"}
+            </button>
           ) : null}
         </div>
       ))}

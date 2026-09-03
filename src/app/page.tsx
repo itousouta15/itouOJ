@@ -176,15 +176,13 @@ export default async function HomePage() {
               rel="noopener noreferrer"
               className="btn-primary mt-auto self-start"
             >
-              下載 APK ↓
+              下載 APK
             </a>
           </div>
 
           <div className="card flex flex-col gap-4 p-6">
             <div className="flex items-center gap-3">
-              <span className="mono flex h-14 w-14 flex-none items-center justify-center rounded-xl bg-inset text-xl text-blue">
-                ⌘
-              </span>
+              <img src="/port.png" alt="" className="h-14 w-14 rounded-xl" />
               <div>
                 <h2 className="section-title">收件程式（Windows）</h2>
                 <p className="text-sm text-dim">桌面端離線收題・測資上傳</p>
@@ -200,7 +198,7 @@ export default async function HomePage() {
               rel="noopener noreferrer"
               className="btn-primary mt-auto self-start"
             >
-              下載收件程式 ↓
+              下載收件程式
             </a>
           </div>
         </div>
