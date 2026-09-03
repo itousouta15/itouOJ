@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from "@capacitor/cli";
+import { KeyboardResize } from "@capacitor/keyboard";
 
 // 預設載入正式站；開發時用 CAP_SERVER_URL 指到本機（例如
 // CAP_SERVER_URL=http://localhost:3000 npx cap sync android && adb reverse tcp:3000 tcp:3000）
@@ -30,7 +31,7 @@ const config: CapacitorConfig = {
     },
     Keyboard: {
       // body resize：鍵盤彈出時 WebView 高度跟著縮，編輯器不會被蓋住
-      resize: "body",
+      resize: KeyboardResize.Body,
       resizeOnFullScreen: true,
     },
   },

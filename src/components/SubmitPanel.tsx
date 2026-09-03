@@ -11,7 +11,8 @@ import { javascript } from "@codemirror/lang-javascript";
 import type { Extension } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
-import { isNativeApp } from "@/lib/capacitor";
+import { isNativeApp, onKeyboardWillHide } from "@/lib/capacitor";
+import DifficultyBadge from "@/components/DifficultyBadge";
 import VerdictBadge from "@/components/VerdictBadge";
 
 // App 鍵盤符號列：手機鍵盤沒有的電腦符號，點擊插入游標處（兩排橫向捲動）
@@ -81,6 +82,15 @@ public class Main {
 interface SubmitPanelProps {
   problemId: number;
   contestId?: number;
+  // 全螢幕編輯器題目頭顯示用（App 寫程式時）
+  problem?: {
+    order: number;
+    title: string;
+    difficulty: string;
+    timeLimitMs: number;
+    memoryLimitMb: number;
+    accepted: boolean;
+  };
   // 只有透過比賽內題目頁才會傳這個；ended 時停用送出/測試執行
   contestPhase?: "running" | "frozen" | "ended";
   // 比賽限定語言時只列出這些；null = 不限制
@@ -90,6 +100,7 @@ interface SubmitPanelProps {
 export default function SubmitPanel({
   problemId,
   contestId,
+  problem,
   contestPhase,
   allowedLanguages,
 }: SubmitPanelProps) {
@@ -115,6 +126,38 @@ export default function SubmitPanel({
   const [fullscreen, setFullscreen] = useState(false);
   const [isApp] = useState(() => isNativeApp());
   const viewRef = useRef<EditorView | null>(null);
+  // 這次全螢幕是不是「點編輯器自動開」的：自動開的才在收鍵盤時自動關
+  const autoOpenedRef = useRef(false);
+
+  // 全螢幕開啟後把焦點移到編輯器（鍵盤隨之彈出）
+  useEffect(() => {
+    if (fullscreen) viewRef.current?.focus();
+  }, [fullscreen]);
+
+  // App 內：手機鍵盤關閉時，自動開的全螢幕編輯器回到內嵌模式
+  useEffect(() => {
+    if (!isApp) return;
+    let cleanup: () => void = () => {};
+    onKeyboardWillHide(() => {
+      if (autoOpenedRef.current) {
+        autoOpenedRef.current = false;
+        setFullscreen(false);
+      }
+    }).then((unsub) => {
+      cleanup = unsub;
+    });
+    return () => cleanup();
+  }, [isApp]);
+
+  function openFullscreen(manual: boolean) {
+    autoOpenedRef.current = !manual;
+    setFullscreen(true);
+  }
+
+  function closeFullscreen() {
+    autoOpenedRef.current = false;
+    setFullscreen(false);
+  }
 
   // 記住上次選的語言、以及每題每語言打到一半的程式碼
   useEffect(() => {
@@ -247,6 +290,12 @@ export default function SubmitPanel({
       onCreateEditor={(view) => {
         viewRef.current = view;
       }}
+      onFocus={() => {
+        // App 手機上點程式區塊 → 自動進全螢幕編輯（鍵盤符號列才會出現）
+        if (isApp && !fullscreen && window.innerWidth < 768) {
+          openFullscreen(false);
+        }
+      }}
       basicSetup={{ tabSize: 4 }}
     />
   );
@@ -278,7 +327,7 @@ export default function SubmitPanel({
           {langSelect}
           <button
             className="theme-btn"
-            onClick={() => setFullscreen(true)}
+            onClick={() => openFullscreen(true)}
             aria-label="全螢幕編輯"
             title="全螢幕編輯"
           >
@@ -286,11 +335,11 @@ export default function SubmitPanel({
           </button>
         </div>
       </div>
-      <div className="oj-editor overflow-hidden rounded-md border border-bd">
-        <div className={fullscreen ? "hidden" : ""} style={{ height: "380px" }}>
-          {editor}
+      {!fullscreen && (
+        <div className="oj-editor overflow-hidden rounded-md border border-bd">
+          <div style={{ height: "380px" }}>{editor}</div>
         </div>
-      </div>
+      )}
       {showCustom && (
         <div className="mt-3">
           <label className="mb-1 block text-sm font-medium">
@@ -402,23 +451,37 @@ export default function SubmitPanel({
       )}
 
       {/* 全螢幕編輯模式（手機為主）：portal 掛到 body，佔滿整支螢幕，
-          工具列吸底，送出/測試執行不用捲回頁尾 */}
+          工具列吸底，送出/測試執行不用捲回頁尾。
+          App 內點編輯器會自動進來（openFullscreen(false)），收鍵盤自動離開 */}
       {typeof document !== "undefined" &&
         fullscreen &&
         createPortal(
           <div className="editor-fullscreen">
-            <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-              <div className="flex min-w-0 items-center gap-3">
-                <h2 className="section-title flex-none">提交</h2>
-                <span className="truncate text-xs text-mute">
-                  題目 #{problemId}
-                </span>
+            <div className="editor-fullscreen-head">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  {problem && (
+                    <DifficultyBadge difficulty={problem.difficulty} />
+                  )}
+                  <h2 className="min-w-0 flex-1 truncate text-[15px] font-bold leading-tight">
+                    {problem ? problem.title : `題目 #${problemId}`}
+                  </h2>
+                  {problem?.accepted && (
+                    <span className="editor-ac-pill">已 AC</span>
+                  )}
+                </div>
+                {problem && (
+                  <p className="mono pl-1 text-[11px] text-mute">
+                    #{problem.order} ・ 時間 {problem.timeLimitMs} ms ・ 記憶體{" "}
+                    {problem.memoryLimitMb} MB
+                  </p>
+                )}
               </div>
               <div className="flex flex-none items-center gap-2">
                 {langSelect}
                 <button
                   className="theme-btn"
-                  onClick={() => setFullscreen(false)}
+                  onClick={closeFullscreen}
                   aria-label="離開全螢幕編輯"
                   title="離開全螢幕"
                 >
