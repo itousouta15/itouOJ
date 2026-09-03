@@ -587,22 +587,26 @@ html.kbd-open .bottom-nav {
   background: var(--bg);
   padding: env(safe-area-inset-top) env(safe-area-inset-left) 0
     env(safe-area-inset-right);
-  animation: editorFullscreenIn 0.25s ease-out both;
+  animation: editorFullscreenIn 0.2s ease-out both;
+  will-change: opacity, transform;
 }
 @keyframes editorFullscreenIn {
   from {
     opacity: 0;
-    transform: translateY(24px) scale(0.98);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
-/* 退場：closing 期間淡出下移，180ms 後才真的卸載 */
+/* 退場：closing 期間淡出下移，180ms 後才真的卸載。
+   注意要先 animation: none —— fill-mode both 會把進場動畫的最終值鎖住，
+   不關掉的話 transition 永遠被蓋掉，退場動畫不會播。 */
 .editor-fullscreen--closing {
+  animation: none;
   opacity: 0;
-  transform: translateY(24px) scale(0.98);
+  transform: translateY(14px);
   transition: opacity 0.18s ease-in, transform 0.18s ease-in;
 }
 .editor-fullscreen .editor-fullscreen-body {
