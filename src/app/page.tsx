@@ -74,7 +74,7 @@ export default async function HomePage() {
       <section className="pt-4" data-app-section="hero">
         <div className="flex flex-col items-center text-center">
           <img
-            src="/itouOJ.svg"
+            src="/itouOJ.png"
             alt="itouOJ"
             className="logo-hero"
             width={88}
