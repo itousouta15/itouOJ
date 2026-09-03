@@ -65,7 +65,6 @@ export default function Footer() {
         <div className="footer-grid">
           <div className="footer-brand">
             <Link href="/" className="footer-logo">
-              <img src="/itouOJ.svg" alt="" className="footer-logo-mark" />
               itouOJ
             </Link>
             <p className="footer-tagline">

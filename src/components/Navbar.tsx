@@ -22,7 +22,6 @@ export default async function Navbar() {
     <header className="site-header">
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center gap-3 px-4">
         <Link href="/" className="logo">
-          <img src="/itouOJ.svg" alt="" className="logo-mark" />
           itouOJ
         </Link>
         <div className="hidden min-w-0 flex-1 md:flex">
