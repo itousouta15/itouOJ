@@ -611,6 +611,31 @@ html.kbd-open .bottom-nav {
   border-top: 1px solid var(--bd2);
   background: var(--panel);
 }
+
+/* 全螢幕編輯器題目頭（App 寫程式時顯示題目資訊） */
+.editor-fullscreen-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--bd);
+  background: linear-gradient(to bottom, var(--panel2), var(--panel));
+}
+.editor-ac-pill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(76, 175, 80, 0.14);
+  border: 1px solid rgba(76, 175, 80, 0.45);
+  color: #4caf50;
+  font-size: 11px;
+  font-weight: 700;
+}
 @media (min-width: 768px) {
   .editor-fullscreen {
     position: relative;
@@ -663,6 +688,9 @@ html.kbd-open .bottom-nav {
 .editor-kbd-key:active {
   background: var(--panel2);
   transform: scale(0.92);
+}
+.editor-kbd-key:hover {
+  background: var(--panel2);
 }
 
 /* App 頂部漸層模糊遮罩（固定在最上層，內容捲動時被模糊） */
@@ -1361,7 +1389,7 @@ html[data-app] [data-app-section="stats"] {
 
 /* 網站版首頁：統計卡與 Hero 的間距再加大（space-y-10 之上多補 1.5rem） */
 html:not([data-app]) [data-app-section="stats"] {
-  margin-top: 4rem !important;
+  margin-top: 6rem !important;
 }
 
 /* 最新題目 + 排行在 App 裡改為單欄堆疊 */
@@ -1380,6 +1408,10 @@ html[data-app] .editor-fullscreen-toolbar .btn-secondary {
   min-height: 48px;
   padding: 0 22px;
   font-size: 15px;
+}
+/* App 全螢幕：送出解答撐開成為主要按鈕 */
+html[data-app] .editor-fullscreen-toolbar .btn-primary {
+  flex: 1;
 }
 html[data-app] .editor-fullscreen-toolbar .pill {
   min-height: 44px;
