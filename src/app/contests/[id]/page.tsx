@@ -92,6 +92,8 @@ export default async function ContestPage({
         <ContestCountdown
           startTime={contest.startTime.toISOString()}
           endTime={contest.endTime.toISOString()}
+          contestId={contest.id}
+          contestTitle={contest.title}
         />
         {session ? (
           !isAdmin && (

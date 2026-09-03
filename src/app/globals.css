@@ -139,6 +139,8 @@ body {
   border-bottom: 1px solid var(--bd2);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  /* viewport-fit=cover 下讓內容避開瀏海 / 圓角 */
+  padding-top: env(safe-area-inset-top);
   /* 停在 itHeaderDrop 的 0% 幀（via "both"），等 loader 滑出畫面後
      才落下進場——見下方 body.site-revealed 規則。 */
   animation: itHeaderDrop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -276,7 +278,8 @@ body.site-revealed .site-header {
 .nav-overlay {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  /* 高於底部導覽列（z-70），選單展開時蓋住整支螢幕 */
+  z-index: 75;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -456,6 +459,100 @@ body.site-revealed .site-header {
   .nav-overlay-face {
     animation: none !important;
   }
+}
+
+/* ---- 手機底部導覽列（App / 手機網頁共用，< 768px 顯示）---- */
+.bottom-nav {
+  /* 蓋住瀏覽器底部手勢列 / iPhone 圓角：視為內容的一部分補 padding */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.bottom-nav-link {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 52px;
+  color: var(--mute);
+  transition: color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav-link:active {
+  transform: scale(0.94);
+}
+.bottom-nav-glyph {
+  font-size: 18px;
+  line-height: 1;
+}
+.bottom-nav-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+.bottom-nav-link.active {
+  color: var(--blue);
+  font-weight: 700;
+}
+.bottom-nav-link.active .bottom-nav-label {
+  color: var(--tx);
+}
+
+/* 全螢幕編輯器模式（手機）：蓋住頂部 header，佔滿整支螢幕 */
+.editor-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  padding: env(safe-area-inset-top) env(safe-area-inset-left) 0
+    env(safe-area-inset-right);
+}
+.editor-fullscreen .editor-fullscreen-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.editor-fullscreen .editor-fullscreen-body .cm-editor {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+.editor-fullscreen .editor-fullscreen-body .cm-scroller {
+  overflow: auto;
+}
+.editor-fullscreen-toolbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--bd2);
+  background: var(--panel);
+}
+@media (min-width: 768px) {
+  .editor-fullscreen {
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    padding: 0;
+  }
+}
+
+/* 手機上編輯器字級調到 16px：太小 iOS 聚焦會自動放大縮放整個頁面 */
+@media (max-width: 767px) {
+  .oj-editor .cm-editor .cm-content {
+    font-size: 16px;
+  }
+}
+/* 編輯器填滿包住它的容器（內嵌 380px 或全螢幕 flex 區塊） */
+.oj-editor .cm-editor {
+  height: 100%;
+}
+.oj-editor .cm-scroller {
+  overflow: auto;
 }
 
 /* ---- 帳號下拉選單 ---- */
@@ -932,6 +1029,13 @@ body.site-revealed .site-header {
   }
   .marquee-group {
     font-size: 22px;
+  }
+}
+
+/* 手機上 footer 要留出底部導覽列的高度，不然最下面的內容會被蓋住 */
+@media (max-width: 767px) {
+  .footer-inner {
+    padding-bottom: calc(36px + env(safe-area-inset-bottom) + 56px);
   }
 }
 

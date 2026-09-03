@@ -59,6 +59,8 @@ export default async function ContestProblemPage({
         <ContestCountdown
           startTime={contest.startTime.toISOString()}
           endTime={contest.endTime.toISOString()}
+          contestId={contest.id}
+          contestTitle={contest.title}
         />
       </div>
 
