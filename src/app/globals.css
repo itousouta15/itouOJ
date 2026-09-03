@@ -98,8 +98,6 @@ body {
 .logo-hero {
   width: 88px;
   height: 88px;
-  border-radius: 20px;
-  border: 1px solid var(--bd2);
   box-shadow: 0 12px 32px var(--shadow);
 }
 
@@ -240,8 +238,6 @@ body.site-revealed .site-header {
 .logo-mark {
   width: 28px;
   height: 28px;
-  border-radius: 7px;
-  border: 1px solid var(--bd2);
   flex: none;
 }
 .fonts-ready .logo {
@@ -940,8 +936,6 @@ body.site-revealed .site-header {
 .footer-logo-mark {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
-  border: 1px solid var(--bd2);
   flex: none;
 }
 .footer-tagline {
