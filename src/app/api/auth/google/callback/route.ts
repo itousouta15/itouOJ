@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
 import { safeNextPath } from "@/lib/safeNext";
+import { completeAppLogin } from "@/lib/appOAuth";
 import {
   GOOGLE_TOKEN_URL,
   OAUTH_STATE_COOKIE,
@@ -41,19 +42,22 @@ export async function GET(request: Request) {
   const raw = cookieStore.get(OAUTH_STATE_COOKIE)?.value;
   cookieStore.delete(OAUTH_STATE_COOKIE);
 
-  let savedState: string | undefined;
+let savedState: string | undefined;
   let linkUserId: string | undefined;
+  let appCode: string | undefined;
   let next: string | null = null;
   if (raw) {
     try {
       const parsed = JSON.parse(raw) as {
         state?: string;
         linkUserId?: string;
+        appCode?: string;
         next?: string | null;
       };
       savedState = parsed.state;
       linkUserId = parsed.linkUserId;
-      // 存進來時已經驗過，這裡再驗一次：cookie 內容不該無條件信任
+      appCode = parsed.appCode;
+      // 存進來的已經是 safeNextPath 過濾過的，但 cookie 內容不該被當成可信資料
       next = safeNextPath(parsed.next);
     } catch {
       savedState = raw;
@@ -120,6 +124,10 @@ export async function GET(request: Request) {
           },
         });
       }
+      if (appCode) {
+        completeAppLogin(appCode, linkUserId);
+        return Response.redirect(`${appUrl(request)}/auth/app-done`, 302);
+      }
       return Response.redirect(`${appUrl(request)}/settings?linked=google`, 302);
     }
 
@@ -149,6 +157,13 @@ export async function GET(request: Request) {
           role: userCount === 0 ? "ADMIN" : "USER",
         },
       });
+    }
+
+    // App 登入：不設 cookie（會污染瀏覽器 session），只把使用者綁到
+    // 一次性 code，App 端之後自己來領
+    if (appCode) {
+      completeAppLogin(appCode, user.id);
+      return Response.redirect(`${appUrl(request)}/auth/app-done`, 302);
     }
 
     await createSession({
