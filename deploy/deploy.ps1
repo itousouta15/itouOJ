@@ -1,6 +1,4 @@
-﻿# One-click deploy to 23.146.248.176
-# 2026-07-20 migrated to a new server (old one's disk filled up), old server
-# 23.146.248.51 has online-judge disabled now.
+﻿# One-click deploy（伺服器位址從 .env 的 DEPLOY_SERVER 讀，不寫死在腳本裡）
 # Note: deploys "committed" content (git archive HEAD) - commit first.
 #
 #   .\deploy\deploy.ps1          互動式（有未 commit 改動時會詢問）
@@ -11,7 +9,23 @@ param([switch]$Yes)
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
-$Server = "root@23.146.248.176"
+# 伺服器位址：環境變數優先，再來是 .env 的 DEPLOY_SERVER，都沒有就報錯。
+# 舊伺服器 23.146.248.51 的 online-judge 已停用，別再改回去。
+function Get-DeployServer {
+    if ($env:DEPLOY_SERVER) { return $env:DEPLOY_SERVER }
+    $envFile = Join-Path (Split-Path $PSScriptRoot -Parent) ".env"
+    if (Test-Path $envFile) {
+        $line = Get-Content $envFile |
+            Where-Object { $_ -match '^\s*(?:export\s+)?DEPLOY_SERVER\s*=' } |
+            Select-Object -First 1
+        if ($line) {
+            return ($line -replace '^\s*(?:export\s+)?DEPLOY_SERVER\s*=\s*', "").Trim().Trim('"').Trim("'")
+        }
+    }
+    throw "找不到伺服器位址：請在 .env 設定 DEPLOY_SERVER（例如 DEPLOY_SERVER=""root@23.146.248.176""）或設環境變數 DEPLOY_SERVER"
+}
+
+$Server = Get-DeployServer
 $AppDir = "/opt/online-judge"
 
 # PowerShell 5.1 把原生指令寫到 stderr 的每一行都包成 ErrorRecord，配上
