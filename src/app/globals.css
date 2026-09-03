@@ -94,6 +94,79 @@ body {
   animation: itFade 0.45s ease both;
 }
 
+/* ---- 首頁 GitHub 風格（LOGO + 程式碼視窗）---- */
+.logo-hero {
+  width: 88px;
+  height: 88px;
+  border-radius: 20px;
+  border: 1px solid var(--bd2);
+  box-shadow: 0 12px 32px var(--shadow);
+}
+
+.code-window {
+  border: 1px solid var(--bd2);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--inset);
+  box-shadow: 0 18px 44px var(--shadow);
+}
+.code-window-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--bd);
+  background: var(--panel);
+}
+.code-window-dots {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+.code-window-dots .dot {
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+.dot-red {
+  background: #ff5f57;
+}
+.dot-amber {
+  background: #febc2e;
+}
+.dot-green {
+  background: #28c840;
+}
+.code-window-title {
+  font-size: 12.5px;
+  color: var(--dim);
+}
+.code-window-verdict {
+  margin-left: auto;
+}
+.code-window-body {
+  margin: 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--tx);
+}
+.code-window-body .cw-kw {
+  color: var(--purple);
+  font-weight: 700;
+}
+.code-window-body .cw-inc {
+  color: var(--blue);
+}
+.code-window-body .cw-fn {
+  color: var(--blue);
+}
+.code-window-body .cw-num {
+  color: #7ee787;
+}
+
 /* ---- Site loader：window load 前的全頁遮罩（同 itousouta.me）---- */
 .site-loader {
   position: fixed;
@@ -150,16 +223,26 @@ body.site-revealed .site-header {
   animation-play-state: running;
 }
 .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: "ChenYuLuoYan", "Dancing Script", cursive;
   font-size: 45px;
   font-weight: 700;
   color: var(--tx);
   white-space: nowrap;
   transform: translateY(2px);
-  /* ChenYuLuoYan 字面特別小，載入前用 fallback 會先放大再縮小（FOUT）。
-     字體就緒前先隱藏，避免出現「先變大再縮小」的跳動。 */
+  /* ChenYuLuoYan 字面�?別小�?載入�?用 fallback ?��??�大?�縮小�?FOUT）�?
+     字�?就�??��??��?，避?�出?�「�?變大?�縮小」�?跳�???*/
   opacity: 0;
   transition: opacity 0.2s ease;
+}
+.logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--bd2);
+  flex: none;
 }
 .fonts-ready .logo {
   opacity: 1;
@@ -846,10 +929,20 @@ body.site-revealed .site-header {
   padding-right: 20px;
 }
 .footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: "ChenYuLuoYan", "Dancing Script", cursive;
   font-size: 32px;
   font-weight: 700;
   color: var(--tx);
+}
+.footer-logo-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--bd2);
+  flex: none;
 }
 .footer-tagline {
   margin: 0;
@@ -1220,8 +1313,7 @@ html[data-app] [data-app-section="root"] > * {
   margin-top: 0 !important;
 }
 
-/* 品牌 Hero 與評測環境資訊在 App 首頁不需要 */
-html[data-app] [data-app-section="hero"],
+/* 評測環境資訊在 App 首頁不需要 */
 html[data-app] [data-app-section="env-info"] {
   display: none;
 }
