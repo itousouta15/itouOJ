@@ -52,6 +52,17 @@ contest-accounts-*.csv
 client/*.exe
 client/*.pdb
 
+# Capacitor 原生專案建置產物（用 npx cap sync android 重建）
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+android/local.properties
+android/capacitor-cordova-android-plugins/build/
+android/app/src/main/assets/
+*.apk
+*.aab
+
 AGENTS.md
 # 題目匯出（scripts/export-problems.mjs 產出，可隨時重新產生）
 problem-docs/

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";
@@ -105,6 +106,7 @@ export default function SubmitPanel({
   const [runResult, setRunResult] = useState<RunResponse | null>(null);
   const [showCustom, setShowCustom] = useState(false);
   const [customInput, setCustomInput] = useState("");
+  const [fullscreen, setFullscreen] = useState(false);
 
   // 記住上次選的語言、以及每題每語言打到一半的程式碼
   useEffect(() => {
@@ -123,6 +125,14 @@ export default function SubmitPanel({
     observer.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
     return () => observer.disconnect();
   }, []);
+
+  // 全螢幕編輯時鎖住頁面捲動
+  useEffect(() => {
+    document.body.style.overflow = fullscreen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [fullscreen]);
 
   function draftKey(lang: LanguageKey) {
     return `oj-draft-${problemId}-${lang}`;
@@ -193,31 +203,69 @@ export default function SubmitPanel({
     }
   }
 
+  const langSelect = (
+    <select
+      className="input w-auto"
+      value={language}
+      onChange={(e) => switchLanguage(e.target.value as LanguageKey)}
+    >
+      {languageOptions.map((key) => (
+        <option key={key} value={key}>
+          {LANGUAGES[key].label}
+        </option>
+      ))}
+    </select>
+  );
+
+  const editor = (
+    <CodeMirror
+      value={code}
+      theme={darkTheme ? "dark" : "light"}
+      extensions={CM_EXTENSIONS[language]}
+      onChange={updateCode}
+      basicSetup={{ tabSize: 4 }}
+    />
+  );
+
+  const actionButtons = (
+    <>
+      <button
+        className="btn-secondary"
+        onClick={runTest}
+        disabled={running || submitting || locked}
+      >
+        {running ? "執行中…" : "測試執行"}
+      </button>
+      <button
+        className="btn-primary"
+        onClick={submit}
+        disabled={running || submitting || locked}
+      >
+        {submitting ? "送出中…" : "送出解答"}
+      </button>
+    </>
+  );
+
   return (
     <div className="card p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="section-title">提交</h2>
-        <select
-          className="input w-auto"
-          value={language}
-          onChange={(e) => switchLanguage(e.target.value as LanguageKey)}
-        >
-          {languageOptions.map((key) => (
-            <option key={key} value={key}>
-              {LANGUAGES[key].label}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          {langSelect}
+          <button
+            className="theme-btn"
+            onClick={() => setFullscreen(true)}
+            aria-label="全螢幕編輯"
+            title="全螢幕編輯"
+          >
+            ⛶
+          </button>
+        </div>
       </div>
-      <div className="overflow-hidden rounded-md border border-bd">
-        <CodeMirror
-          value={code}
-          height="380px"
-          theme={darkTheme ? "dark" : "light"}
-          extensions={CM_EXTENSIONS[language]}
-          onChange={updateCode}
-          basicSetup={{ tabSize: 4 }}
-        />
+      <div className="oj-editor overflow-hidden rounded-md border border-bd">
+        <div className={fullscreen ? "hidden" : ""} style={{ height: "380px" }}>
+          {editor}
+        </div>
       </div>
       {showCustom && (
         <div className="mt-3">
@@ -245,22 +293,7 @@ export default function SubmitPanel({
         >
           自訂輸入
         </button>
-        <div className="flex gap-3">
-          <button
-            className="btn-secondary"
-            onClick={runTest}
-            disabled={running || submitting || locked}
-          >
-            {running ? "執行中…" : "測試執行"}
-          </button>
-          <button
-            className="btn-primary"
-            onClick={submit}
-            disabled={running || submitting || locked}
-          >
-            {submitting ? "送出中…" : "送出解答"}
-          </button>
-        </div>
+        <div className="flex gap-3">{actionButtons}</div>
       </div>
 
       {runResult && (
@@ -343,6 +376,59 @@ export default function SubmitPanel({
           )}
         </div>
       )}
+
+      {/* 全螢幕編輯模式（手機為主）：portal 掛到 body，佔滿整支螢幕，
+          工具列吸底，送出/測試執行不用捲回頁尾 */}
+      {typeof document !== "undefined" &&
+        fullscreen &&
+        createPortal(
+          <div className="editor-fullscreen">
+            <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+              <div className="flex min-w-0 items-center gap-3">
+                <h2 className="section-title flex-none">提交</h2>
+                <span className="truncate text-xs text-mute">
+                  題目 #{problemId}
+                </span>
+              </div>
+              <div className="flex flex-none items-center gap-2">
+                {langSelect}
+                <button
+                  className="theme-btn"
+                  onClick={() => setFullscreen(false)}
+                  aria-label="離開全螢幕編輯"
+                  title="離開全螢幕"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="editor-fullscreen-body oj-editor overflow-hidden">
+              {editor}
+            </div>
+            {showCustom && (
+              <div className="flex-none px-4 pb-2">
+                <textarea
+                  className="input mono min-h-20 resize-y text-[13px]"
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  placeholder="自訂輸入（stdin），測試執行時會用這裡的內容"
+                />
+              </div>
+            )}
+            <div className="editor-fullscreen-toolbar">
+              <button
+                className={`pill flex-none ${showCustom ? "pill-active" : ""}`}
+                onClick={() => setShowCustom((v) => !v)}
+              >
+                自訂輸入
+              </button>
+              <div className="flex flex-1 items-center justify-end gap-3">
+                {actionButtons}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
