@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import HomeSubmissionRow from "@/components/HomeSubmissionRow";
+import VerdictBadge from "@/components/VerdictBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -69,30 +70,78 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-10" data-app-section="root">
-      {/* Hero */}
+      {/* Hero（GitHub 風格：置中 LOGO + 標語 + CTA） */}
       <section className="pt-4" data-app-section="hero">
-        <p className="page-kicker mb-3">Competitive Programming · Online Judge</p>
-        <h1 className="serif text-3xl font-bold leading-tight sm:text-4xl md:text-6xl">
-          itouOJ (ゝ∀･)⌒☆
-        </h1>
-        <p className="mt-4 max-w-xl leading-relaxed text-dim">
-          挑一題、寫程式、送出，逐筆測資即時回饋
-        <br></br>
-          —— 從第一個 AC 開始累積實力
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/problems" className="btn-primary">
-            開始解題
-          </Link>
-          {session ? (
-            <Link href="/submissions?mine=1" className="btn-secondary">
-              我的提交
+        <div className="flex flex-col items-center text-center">
+          <img
+            src="/itouOJ.svg"
+            alt="itouOJ"
+            className="logo-hero"
+            width={88}
+            height={88}
+          />
+          <h1 className="serif mt-6 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
+            寫程式、送出、拿下 AC
+          </h1>
+          <p className="mt-4 max-w-xl leading-relaxed text-dim">
+            挑一題、寫程式、送出，逐筆測資即時回饋
+            <br />
+            —— 從第一個 AC 開始累積實力
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link href="/problems" className="btn-primary">
+              開始解題
             </Link>
-          ) : (
-            <Link href="/register" className="btn-secondary">
-              註冊帳號
-            </Link>
-          )}
+            {session ? (
+              <Link href="/submissions?mine=1" className="btn-secondary">
+                我的提交
+              </Link>
+            ) : (
+              <Link href="/register" className="btn-secondary">
+                註冊帳號
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 程式碼視窗（GitHub 風格的招牌元素） */}
+      <section data-app-section="code-window">
+        <div className="code-window mx-auto max-w-2xl">
+          <div className="code-window-bar">
+            <span className="code-window-dots" aria-hidden="true">
+              <i className="dot dot-red" />
+              <i className="dot dot-amber" />
+              <i className="dot dot-green" />
+            </span>
+            <span className="code-window-title mono">a+b.cpp</span>
+            <span className="code-window-verdict">
+              <VerdictBadge status="AC" short />
+            </span>
+          </div>
+          <pre className="code-window-body mono">
+            <code>
+              <span className="cw-kw">#include</span>{" "}
+              <span className="cw-inc">&lt;iostream&gt;</span>
+              {"\n"}
+              <span className="cw-kw">using namespace</span> std;
+              {"\n\n"}
+              <span className="cw-kw">int</span> <span className="cw-fn">main</span>()
+              {"{"}
+              {"\n"}
+              {"  "}
+              <span className="cw-kw">int</span> a, b;
+              {"\n"}
+              {"  "}cin &gt;&gt; a &gt;&gt; b;
+              {"\n"}
+              {"  "}cout &lt;&lt; a + b &lt;&lt; endl;
+              {"\n"}
+              {"  "}
+              <span className="cw-kw">return</span> <span className="cw-num">0</span>;
+              {"\n"}
+              {"}"}
+            </code>
+          </pre>
         </div>
       </section>
 
