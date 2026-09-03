@@ -68,9 +68,9 @@ export default async function HomePage() {
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10" data-app-section="root">
       {/* Hero */}
-      <section className="pt-4">
+      <section className="pt-4" data-app-section="hero">
         <p className="page-kicker mb-3">Competitive Programming · Online Judge</p>
         <h1 className="serif text-3xl font-bold leading-tight sm:text-4xl md:text-6xl">
           itouOJ (ゝ∀･)⌒☆
@@ -97,7 +97,7 @@ export default async function HomePage() {
       </section>
 
       {/* 統計數據 */}
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4" data-app-section="stats">
         {stats.map((s) => (
           <div key={s.label} className="card p-5">
             <p className="page-kicker">{s.label}</p>
@@ -108,7 +108,7 @@ export default async function HomePage() {
 
       {/* 公告 */}
       {announcements.length > 0 && (
-        <section>
+        <section data-app-section="announcements">
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="section-title">公告</h2>
             <Link
@@ -141,7 +141,7 @@ export default async function HomePage() {
       )}
 
       {/* 最新題目 + 排行 */}
-      <section className="grid gap-6 md:grid-cols-2">
+      <section className="grid gap-6 md:grid-cols-2" data-app-section="problems-ranking">
         <div>
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="section-title">最新題目</h2>
@@ -211,7 +211,7 @@ export default async function HomePage() {
       </section>
 
       {/* 最新提交 */}
-      <section>
+      <section data-app-section="submissions">
         <div className="mb-3 flex items-baseline justify-between">
           <h2 className="section-title">最新提交</h2>
           <Link
@@ -269,7 +269,7 @@ export default async function HomePage() {
       </section>
 
       {/* 系統資訊 */}
-      <section className="card p-5">
+      <section className="card p-5" data-app-section="env-info">
         <h2 className="section-title mb-3">評測環境</h2>
         <div className="flex flex-wrap gap-2">
           {Object.keys(LANGUAGES).map(
