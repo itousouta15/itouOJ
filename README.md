@@ -2,7 +2,7 @@
 
 # itouOJ
 
-<img width="1595" alt="image" src="https://github.com/user-attachments/assets/4c0bf0dd-0cb8-46b6-b7eb-fba8fa287655" />
+<img width="1595" alt="image" src="Hero.png" />
 
 自架的程式解題系統（OJ）。前後端用 Next.js 一體開發，評測引擎依語言分兩條路：C/C++/Python/JavaScript 走自架的 [sandbox-runner](sandbox-runner/README.md)（Linux namespaces + cgroup v2 + seccomp-bpf 從零刻的沙箱），Java 暫時繼續走 [Piston](https://github.com/engineer-man/piston)。
 
