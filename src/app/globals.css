@@ -1185,7 +1185,7 @@ html[data-app] .footer {
 
 /* Navbar 拿掉後主內容的頂部留白跟著縮小 */
 html[data-app] main {
-  padding-top: 1.25rem;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 2rem);
 }
 
 /* 手機化細節：底部導覽增高、圖示放大、點擊不閃灰塊 */
@@ -1205,5 +1205,61 @@ html[data-app] .bottom-nav-label {
 /* 主要按鈕在 App 裡統一加大觸控目標（手指友善） */
 html[data-app] .btn-primary,
 html[data-app] .btn-secondary {
+  min-height: 44px;
+}
+
+/* ---- 首頁 App 化（page.tsx 各區塊掛 data-app-section）---- */
+
+/* 區塊間距收緊，版面更接近原生 App */
+html[data-app] [data-app-section="root"] {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+html[data-app] [data-app-section="root"] > * {
+  margin-top: 0 !important;
+}
+
+/* 品牌 Hero 與評測環境資訊在 App 首頁不需要 */
+html[data-app] [data-app-section="hero"],
+html[data-app] [data-app-section="env-info"] {
+  display: none;
+}
+
+/* 統計卡片改為緊湊的 2×2 小卡 */
+html[data-app] [data-app-section="stats"] .card {
+  padding: 0.875rem 1rem;
+}
+html[data-app] [data-app-section="stats"] .card .mono {
+  font-size: 1.5rem;
+}
+
+/* 最新題目 + 排行在 App 裡改為單欄堆疊 */
+html[data-app] [data-app-section="problems-ranking"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* ---- App 全螢幕編輯器：按鈕加大、鍵盤上方的安全區 ---- */
+html[data-app] .editor-fullscreen-toolbar {
+  gap: 12px;
+  padding: 12px 14px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+html[data-app] .editor-fullscreen-toolbar .btn-primary,
+html[data-app] .editor-fullscreen-toolbar .btn-secondary {
+  min-height: 48px;
+  padding: 0 22px;
+  font-size: 15px;
+}
+html[data-app] .editor-fullscreen-toolbar .pill {
+  min-height: 44px;
+  padding: 0 18px;
+}
+html[data-app] .editor-fullscreen .theme-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 17px;
+}
+html[data-app] .editor-fullscreen .input {
   min-height: 44px;
 }

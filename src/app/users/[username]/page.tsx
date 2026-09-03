@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import SubmissionRow from "@/components/SubmissionRow";
 import Avatar from "@/components/Avatar";
+import LogoutButton from "@/components/LogoutButton";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +37,9 @@ export default async function UserProfilePage({
   const { username } = await params;
   const user = await getUser(username);
   if (!user) notFound();
+
+  const session = await getSession();
+  const isOwnProfile = session?.username === user.username;
 
   const [acDistinct, totalSubmissions, acSubmissions, publicTotals, recent] =
     await Promise.all([
@@ -195,6 +201,18 @@ export default async function UserProfilePage({
           </tbody>
         </table>
       </section>
+
+      {isOwnProfile && (
+        <section className="card p-6">
+          <h2 className="section-title mb-4">帳號</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/settings" className="btn-secondary">
+              帳號設定
+            </Link>
+            <LogoutButton />
+          </div>
+        </section>
+      )}
     </div>
   );
 }
