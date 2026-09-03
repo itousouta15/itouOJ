@@ -1127,3 +1127,83 @@ body.site-revealed .site-header {
   overflow-x: auto;
   padding: 4px 0;
 }
+
+/* ---- App 專屬外觀（Capacitor 內才套用，瀏覽器完全不變）----
+   html[data-app] 由 layout.tsx 的 themeInit 在首繪前設上，只會在
+   Capacitor WebView 裡成立。App 固定深色、隱藏網站頂部導覽列與
+   Footer、只留底部導覽，並加大手機上的觸控目標。 */
+
+html[data-app] {
+  --bg: #0f1217;
+  --panel: #171a20;
+  --panel2: #1b1e24;
+  --panel2-a: rgba(27, 30, 36, 0.88);
+  --inset: #0d0f13;
+  --bd: rgba(255, 255, 255, 0.09);
+  --bd2: rgba(255, 255, 255, 0.18);
+  --tx: #e8ebf2;
+  --dim: #9aa1ad;
+  --mute: #6a7280;
+  --blue: #a9b8f2;
+  --purple: #9fa9df;
+  --btn: #94a6cc;
+  --btntx: #21252b;
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* 就算網站主題被切到 light，App 也維持深色系 */
+html[data-app][data-theme="light"] {
+  --bg: #0f1217;
+  --panel: #171a20;
+  --panel2: #1b1e24;
+  --panel2-a: rgba(27, 30, 36, 0.88);
+  --inset: #0d0f13;
+  --bd: rgba(255, 255, 255, 0.09);
+  --bd2: rgba(255, 255, 255, 0.18);
+  --tx: #e8ebf2;
+  --dim: #9aa1ad;
+  --mute: #6a7280;
+  --blue: #a9b8f2;
+  --purple: #9fa9df;
+  --btn: #94a6cc;
+  --btntx: #21252b;
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* 簡化導覽列：頂部 Navbar 與主題切換在 App 裡不需要 */
+html[data-app] .site-header {
+  display: none;
+}
+html[data-app] .theme-btn {
+  display: none;
+}
+
+/* 手機板不用 Footer */
+html[data-app] .footer {
+  display: none;
+}
+
+/* Navbar 拿掉後主內容的頂部留白跟著縮小 */
+html[data-app] main {
+  padding-top: 1.25rem;
+}
+
+/* 手機化細節：底部導覽增高、圖示放大、點擊不閃灰塊 */
+html[data-app] * {
+  -webkit-tap-highlight-color: transparent;
+}
+html[data-app] .bottom-nav-link {
+  height: 60px;
+}
+html[data-app] .bottom-nav-glyph {
+  font-size: 20px;
+}
+html[data-app] .bottom-nav-label {
+  font-size: 11px;
+}
+
+/* 主要按鈕在 App 裡統一加大觸控目標（手指友善） */
+html[data-app] .btn-primary,
+html[data-app] .btn-secondary {
+  min-height: 44px;
+}
