@@ -119,6 +119,7 @@ DISCORD_CLIENT_ID=""
 DISCORD_CLIENT_SECRET=""
 
 # APP_URL="https://oj.example.tw"    # 正式環境對外網址（組 OAuth redirect 用）
+# DEPLOY_SERVER="root@<伺服器IP>"   # 部署目標（deploy/deploy.ps1 讀這個；IP 不寫死在腳本）
 ```
 
 ### Google 登入設定

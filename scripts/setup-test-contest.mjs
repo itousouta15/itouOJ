@@ -16,8 +16,10 @@ import crypto from "node:crypto";
 import Database from "better-sqlite3";
 import bcrypt from "bcryptjs";
 
-const USERNAME = "testplayer";
-const PASSWORD = "test1234";
+// 本機測試用帳號（只在 test.db 裡，不會碰正式庫）。
+// 可用 TEST_PASSWORD 環境變數覆蓋預設值。
+const USERNAME = process.env.TEST_USERNAME ?? "testplayer";
+const PASSWORD = process.env.TEST_PASSWORD ?? "test1234";
 const PORT = 3999;
 
 const devPath = (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, "");
