@@ -11,13 +11,18 @@ import { javascript } from "@codemirror/lang-javascript";
 import type { Extension } from "@codemirror/state";
 import type { EditorView } from "@codemirror/view";
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
-import { isNativeApp, onKeyboardWillHide } from "@/lib/capacitor";
+import {
+  isNativeApp,
+  onKeyboardWillHide,
+  onKeyboardWillShow,
+} from "@/lib/capacitor";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import VerdictBadge from "@/components/VerdictBadge";
 
-// App 鍵盤符號列：手機鍵盤沒有的電腦符號，點擊插入游標處（兩排橫向捲動）
-const KBD_ROW1 = ["Tab", "{", "}", "(", ")", "[", "]", ";", ":", "'", '"', "#"];
-const KBD_ROW2 = ["=", "<", ">", "|", "&", "+", "-", "_", "/", "*", "!", "%", "^", "~"];
+// App 鍵盤符號列：手機鍵盤要翻符號頁才打得出來的按鍵，點擊插入游標處。
+// 兩排各 9 鍵（共 18），等寬塞滿螢幕不捲動；只在手機鍵盤出現時顯示。
+const KBD_ROW1 = ["Tab", "{", "}", "(", ")", "[", "]", ";", ":"];
+const KBD_ROW2 = ["'", '"', "#", "|", "&", "_", "*", "%", "^"];
 
 interface SampleRunResult {
   order: number;
@@ -124,6 +129,8 @@ export default function SubmitPanel({
   const [showCustom, setShowCustom] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const [fullscreen, setFullscreen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [kbdVisible, setKbdVisible] = useState(false);
   const [isApp] = useState(() => isNativeApp());
   const viewRef = useRef<EditorView | null>(null);
   // 這次全螢幕是不是「點編輯器自動開」的：自動開的才在收鍵盤時自動關
@@ -134,29 +141,44 @@ export default function SubmitPanel({
     if (fullscreen) viewRef.current?.focus();
   }, [fullscreen]);
 
-  // App 內：手機鍵盤關閉時，自動開的全螢幕編輯器回到內嵌模式
+  // App 內：手機鍵盤開/關事件 —— 關閉時自動開的全螢幕編輯器回到內嵌模式；
+  // 符號列只在鍵盤出現時顯示
   useEffect(() => {
     if (!isApp) return;
     let cleanup: () => void = () => {};
-    onKeyboardWillHide(() => {
-      if (autoOpenedRef.current) {
-        autoOpenedRef.current = false;
-        setFullscreen(false);
-      }
-    }).then((unsub) => {
-      cleanup = unsub;
+    Promise.all([
+      onKeyboardWillHide(() => {
+        setKbdVisible(false);
+        if (autoOpenedRef.current) {
+          autoOpenedRef.current = false;
+          closeFullscreen();
+        }
+      }),
+      onKeyboardWillShow(() => setKbdVisible(true)),
+    ]).then(([unsubHide, unsubShow]) => {
+      cleanup = () => {
+        unsubHide();
+        unsubShow();
+      };
     });
     return () => cleanup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isApp]);
 
   function openFullscreen(manual: boolean) {
+    setClosing(false);
     autoOpenedRef.current = !manual;
     setFullscreen(true);
   }
 
   function closeFullscreen() {
-    autoOpenedRef.current = false;
-    setFullscreen(false);
+    // 先播退場動畫（180ms）再真的卸載 portal
+    if (closing) return;
+    setClosing(true);
+    setTimeout(() => {
+      setClosing(false);
+      setFullscreen(false);
+    }, 180);
   }
 
   // 記住上次選的語言、以及每題每語言打到一半的程式碼
@@ -456,7 +478,9 @@ export default function SubmitPanel({
       {typeof document !== "undefined" &&
         fullscreen &&
         createPortal(
-          <div className="editor-fullscreen">
+          <div
+            className={`editor-fullscreen${closing ? " editor-fullscreen--closing" : ""}`}
+          >
             <div className="editor-fullscreen-head">
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex items-center gap-2">
@@ -513,7 +537,7 @@ export default function SubmitPanel({
                 {actionButtons}
               </div>
             </div>
-            {isApp && (
+            {isApp && kbdVisible && (
               <div className="editor-kbd" role="toolbar" aria-label="程式符號鍵盤">
                 <div className="editor-kbd-row">
                   {KBD_ROW1.map((k) => (

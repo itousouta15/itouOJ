@@ -113,3 +113,13 @@ export async function onKeyboardWillHide(cb: () => void): Promise<() => void> {
     void handle.remove();
   };
 }
+
+// 手機鍵盤顯示事件（App 內）：符號列只在鍵盤出現時顯示
+export async function onKeyboardWillShow(cb: () => void): Promise<() => void> {
+  if (!isNativeApp()) return () => {};
+  const { Keyboard } = await import("@capacitor/keyboard");
+  const handle = await Keyboard.addListener("keyboardWillShow", cb);
+  return () => {
+    void handle.remove();
+  };
+}
