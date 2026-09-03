@@ -1354,6 +1354,10 @@ html[data-app] [data-app-section="stats"] .card {
 html[data-app] [data-app-section="stats"] .card .mono {
   font-size: 1.5rem;
 }
+/* 統計卡與上方 Hero 分開一點（root 的 gap 之外再補上邊距） */
+html[data-app] [data-app-section="stats"] {
+  margin-top: 1.25rem !important;
+}
 
 /* 最新題目 + 排行在 App 裡改為單欄堆疊 */
 html[data-app] [data-app-section="problems-ranking"] {
