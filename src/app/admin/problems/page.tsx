@@ -65,6 +65,12 @@ export default async function AdminProblemsPage() {
           >
             標籤管理 →
           </Link>
+          <Link
+            href="/admin/users"
+            className="text-sm text-blue hover:underline"
+          >
+            使用者 →
+          </Link>
         </div>
         <Link href="/admin/problems/new" className="btn-primary">
           ＋ 新增題目
