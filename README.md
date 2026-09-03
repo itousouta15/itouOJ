@@ -6,7 +6,7 @@
 
 自架的程式解題系統（OJ）。前後端用 Next.js 一體開發，評測引擎依語言分兩條路：C/C++/Python/JavaScript 走自架的 [sandbox-runner](sandbox-runner/README.md)（Linux namespaces + cgroup v2 + seccomp-bpf 從零刻的沙箱），Java 暫時繼續走 [Piston](https://github.com/engineer-man/piston)。
 
-正式站：[oj.itousouta.me](https://oj.itousouta.me)
+正式站：[oj.itousouta.me](https://oj.itousouta.me) ・ Android App：[app-v1.2.0](https://github.com/itousouta15/itouOJ/releases/tag/app-v1.2.0) ・ Windows 收件程式：[v1.3.2](https://github.com/itousouta15/itouOJ/releases/tag/v1.3.2)
 
 ## 目錄
 
@@ -14,6 +14,7 @@
 - [技術架構](#技術架構)
 - [專案結構](#專案結構)
 - [本地開發](#本地開發)
+- [手機 App（Android）](#手機-appandroid)
 - [部署](#部署)
 - [日常更新（改完程式碼後）](#日常更新改完程式碼後)
 - [新增語言](#新增語言)
@@ -21,15 +22,15 @@
 ## 功能
 
 - 帳號註冊 / 登入（第一個註冊的使用者自動成為管理員），支援 Google / Discord 登入
-- 題目列表、Markdown + KaTeX 數學式題敘、範例測資
+- 題目列表、Markdown + KaTeX 數學式題敘、範例測資、子題配分
 - CodeMirror 程式碼編輯器（C++ / C / Python / Java / JavaScript），自動保存草稿
 - 即時判題：AC / WA / TLE / MLE / RE / CE，逐筆測資顯示時間與記憶體
 - 提交紀錄、排行榜、個人頁面
 - 課程（題單）：一組題目 + 說明，使用者加入後追蹤解題進度，可設公開加入或加入代碼
 - 公告：置頂公告、Markdown 內容，管理員可新增 / 編輯 / 刪除
-- 管理後台：出題、測資編輯、時間 / 記憶體限制、公開 / 隱藏題目、課程與公告管理
+- 管理後台：出題、測資編輯、時間 / 記憶體限制、公開 / 隱藏題目、課程與公告管理、**使用者管理（賦予 / 收回管理員身分）**
 - 亮暗雙主題切換
-- Android App（Capacitor 包裝）：可安裝的原生 App，含開賽提醒與判題結果通知、全螢幕編輯模式、手機卡片式列表（見「手機 App（Android）」）
+- Android App（Capacitor 包裝）：可安裝的原生 App，App 內固定深色、與網站截然不同的版面與體驗（見「手機 App（Android）」）
 
 ## 技術架構
 
@@ -37,7 +38,7 @@
 |----|------|
 | 前端 + 後端 | Next.js 16（App Router）+ TypeScript + Tailwind CSS v4 |
 | 資料庫 | SQLite + Prisma 7（better-sqlite3 driver adapter） |
-| 手機 App | Capacitor 8（`android/` 原生專案，WebView 載入正式站）+ local-notifications / status-bar / keyboard / splash-screen 外掛 |
+| 手機 App | Capacitor 8（`android/` 原生專案，WebView 載入正式站）+ browser / local-notifications / status-bar / keyboard / splash-screen 外掛 |
 | 評測引擎 | [sandbox-runner](sandbox-runner/README.md)（自架，C/C++/Python/JavaScript）+ Piston（Docker，Java） |
 | 判題佇列 | in-process promise chain（`src/lib/judge.ts`），伺服器重啟自動恢復未完成的提交 |
 
@@ -65,7 +66,7 @@
 ```
 src/
 ├─ app/               # Next.js App Router 頁面與 API routes
-│  ├─ admin/          # 管理後台（題目、課程、公告）
+│  ├─ admin/          # 管理後台（題目、課程、公告、使用者）
 │  ├─ api/            # 後端 API（auth、courses、submissions、run...）
 │  ├─ problems/       # 題目列表 / 詳情
 │  ├─ courses/        # 課程列表 / 詳情
@@ -88,6 +89,7 @@ sandbox-runner/         # 自架評測沙箱（C/C++/Python/JavaScript 用），
 client/                 # Windows 收件程式與打包工具，詳見 `client/README.md`
 
 android/                # Capacitor Android 原生專案（手機 App 用），見「手機 App（Android）」
+android/scripts/        # 圖示產生腳本（generate-icons.mjs，sharp 把 itouOJ.svg 轉成各密度 mipmap）
 capacitor.config.ts     # Capacitor 設定（App 載入的網址、外掛行為）
 ```
 
@@ -129,7 +131,14 @@ Piston 不在本機時，可用 SSH tunnel 接遠端的：`ssh -N -L 2000:localh
 
 ## 手機 App（Android）
 
-App 是 Capacitor 包裝的 WebView：原生殼載入正式站（`https://oj.itousouta.me`），登入、OAuth、判題全部跟瀏覽器一樣走同一個網域。手機上的優化（全螢幕編輯、卡片式列表、底部導覽、開賽提醒、判題結果通知）都是網頁端程式碼，App 與手機瀏覽器共用。
+App 是 Capacitor 包裝的 WebView：原生殼載入正式站（`https://oj.itousouta.me`），登入、OAuth、判題全部跟瀏覽器一樣走同一個網域。網頁端偵測到原生環境（`html[data-app]`，由 `src/app/layout.tsx` 的 themeInit 在首繪前設上）會套用 App 專屬外觀——**App 與網站是兩種不同的介面**：
+
+| | 網站 | App |
+|----|----|----|
+| 主題 | 亮 / 暗可切換 | 固定深色 |
+| 導覽 | 頂部 Navbar + Footer | 只留底部導覽列 |
+| 首頁 | Hero + 程式碼視窗 + 宣傳區 | 精簡版面（隱藏 Hero 裝飾、宣傳區） |
+| 寫程式 | 內嵌編輯器 | 點編輯器自動進全螢幕，收鍵盤自動變回 |
 
 ### 建置
 
@@ -140,8 +149,10 @@ npm install
 npx cap sync android     # 把外掛與設定同步進 android/ 專案
 npx cap open android     # 用 Android Studio 打開，可選實機或模擬器執行
 # 或純 CLI 出 APK：
-cd android && ./gradlew assembleDebug
+cd android && ./gradlew assembleRelease
 ```
+
+Release 簽署走 `android/keystore.properties`（不入庫）；沒有它照樣能建 `assembleDebug`。圖示是 `android/scripts/generate-icons.mjs` 用 sharp 把 `itouOJ.svg` 轉成各密度的 launcher / round / adaptive foreground，改 LOGO 後重跑該腳本即可。
 
 ### 開發流程
 
@@ -155,12 +166,13 @@ npx cap run android     # 或從 Android Studio 執行
 
 ### App 專屬功能
 
+- **登入**：Google / Discord 登入在 App 內會開系統瀏覽器（Custom Tab）跑 OAuth，完成後關掉分頁自動登入——session 只寫進 App 自己的 WebView，不會污染手機瀏覽器裡網站的登入狀態（流程見 `src/lib/appOAuth.ts` 與 `/api/auth/app/*`）
+- **鍵盤符號列**：全螢幕編輯器在手機鍵盤上方顯示兩排程式符號按鈕（`{ } ( ) [ ] ; : ' " # | & _ * % ^` 等 18 鍵），點擊插入游標處；鍵盤收起來自動隱藏
 - **開賽提醒**：在 App 內看比賽頁時，會排一個開賽前 10 分鐘的本地通知（同一場不會重複排，排程記錄在裝置的 localStorage）
 - **判題結果通知**：提交後停在判題頁，結果出爐（AC/WA/…）時推本地通知
-- **狀態列**：跟隨網站亮暗主題
-- 網頁端的手機體驗（全螢幕編輯器、吸底工具列、卡片列表、底部導覽、safe-area 適配）在一般手機瀏覽器同樣有效
-
-> 圖示與啟動畫面目前用 Capacitor 預設的，之後想換成自己的 Logo 再改 `android/app/src/main/res/` 下的 mipmap / drawable 資源。
+- **狀態列**：跟隨 App 固定深色主題；頂部有漸層模糊遮罩
+- **管理員**：底部導覽多一個「管理」入口
+- 網頁端的手機體驗（全螢幕編輯器、吸底工具列、卡片列表、safe-area 適配）在一般手機瀏覽器同樣有效，但 App 專屬外觀只會在原生環境套用
 
 > iOS 需要 macOS + Xcode 才能建置，目前只有 Android；之後有 Mac 再用同一個 `capacitor.config.ts` 跑 `npx cap add ios`。
 
@@ -193,14 +205,14 @@ npx cap run android     # 或從 Android Studio 執行
    docker exec piston_api sed -i \
      "s/body_parser.json()/body_parser.json({ limit: '16mb' })/; s/body_parser.urlencoded({ extended: true })/body_parser.urlencoded({ extended: true, limit: '16mb' })/" \
      /piston_api/src/index.js
-  
+ 
    # 2) stdin 寫入後立刻 destroy()，緩衝區沒寫完就被丟掉，程式只收得到前 ~200KB → 拿掉那行
 
    docker exec piston_api sed -i '/proc.stdin.destroy();/d' /piston_api/src/job.js
 
    # 3) 使用者程式在 stdin 還沒寫完前就結束（提早 return / RE），父行程繼續寫入已關閉的 pipe
    #    會噴未捕捉的 EPIPE，整個 Piston process 直接崩潰（影響當下所有人的提交）→ 補一個空的 error handler
-   
+ 
    docker exec piston_api sed -i \
      "s/proc.stdin.write(this.stdin);/proc.stdin.on('error', () => {}); proc.stdin.write(this.stdin);/" \
      /piston_api/src/job.js
@@ -269,6 +281,16 @@ git push
 - 想先在本地看效果：`npm run dev` 開 http://localhost:3000
 - 評測功能要先接上伺服器：`ssh -N -L 2000:localhost:2000 -L 8090:localhost:8090 root@<server>`（2000 是 Piston、Java 用；8090 是 sandbox-runner，其他語言用）
 - 改了 `prisma/schema.prisma` 的話，先在本地跑 `npx prisma migrate dev --name <名稱>` 產生 migration 再 commit，部署腳本會自動在伺服器套用
+
+### App 更新流程
+
+網頁端改動（App 外觀、鍵盤符號列、登入流程等）部署網站後 App 重開即生效，不用重裝。只有改到原生端（新增 Capacitor 外掛、圖示、版本號）才需要：
+
+```powershell
+npx cap sync android
+cd android && .\gradlew.bat assembleRelease   # 產出 app/build/outputs/apk/release/app-release.apk
+gh release create app-vX.Y.Z app-release.apk --title "itouOJ Android App X.Y" --notes "更新內容"
+```
 
 ## 新增語言
 

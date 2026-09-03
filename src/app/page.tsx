@@ -170,13 +170,13 @@ export default async function HomePage() {
               把整座線上評測裝進手機：深色介面、全螢幕程式編輯器、
               鍵盤符號列，判題結果直接用通知推給你。
             </p>
-            <a
-              href="https://github.com/itousouta15/itouOJ/releases"
+<a
+              href="https://github.com/itousouta15/itouOJ/releases/tag/app-v1.2.0"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-primary mt-auto self-start"
             >
-              下載 APK
+              下載 APK ↓
             </a>
           </div>
 
@@ -192,13 +192,13 @@ export default async function HomePage() {
               在電腦上收考卷、寫程式、上傳解答；支援離線比賽與測資批次上傳，
               適合學校資訊課與模擬考。
             </p>
-            <a
-              href="https://github.com/itousouta15/itouOJ/releases"
+<a
+              href="https://github.com/itousouta15/itouOJ/releases/tag/v1.3.2"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-primary mt-auto self-start"
             >
-              下載收件程式
+              下載收件程式 ↓
             </a>
           </div>
         </div>
