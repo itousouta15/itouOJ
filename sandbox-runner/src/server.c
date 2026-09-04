@@ -421,33 +421,24 @@ static void cleanup_workdir(const char *workdir) {
 // satisfy the dynamic linker -- no need to separately mount /lib, /lib64,
 // and /usr/lib/x86_64-linux-gnu as three different bind mounts.
 
-static int bind_mount_ro(const char *src, const char *dst) {
-  if (mkdir(dst, 0755) == -1 && errno != EEXIST) {
-    fprintf(stderr, "[server] mkdir %s: %s\n", dst, strerror(errno));
-    return -1;
-  }
-  if (mount(src, dst, NULL, MS_BIND | MS_REC, NULL) == -1) {
-    fprintf(stderr, "[server] bind mount %s -> %s: %s\n", src, dst,
-            strerror(errno));
-    return -1;
-  }
-  return 0;
-}
-
-// Generic across interpreted languages: mounts the given runtime package
-// (Python's or Node's piston-data tree) at /opt/runtime, plus host /usr for
-// shared libs, replicating the merged-/usr symlinks so the dynamic linker
-// resolves them normally inside the pivot_root'd rootfs.
+// Generic across interpreted languages: the runtime package (Python's or
+// Node's piston-data tree) gets bind-mounted at /opt/runtime and host /usr
+// for shared libs by jail itself (inside its own user namespace -- mounts
+// created here in the host namespace can't be remounted read-only by the
+// child, which would break jail's final recursive lockdown; see jail.c's
+// setup_rootfs_mounts). This function only prepares the directories and
+// replicates the merged-/usr symlinks so the dynamic linker resolves them
+// normally inside the pivot_root'd rootfs.
 static void setup_interpreter_rootfs(const char *rootfs_dir,
                                       const char *runtime_home) {
   char dst[400];
   snprintf(dst, sizeof(dst), "%s/opt", rootfs_dir);
   mkdir(dst, 0755);
   snprintf(dst, sizeof(dst), "%s/opt/runtime", rootfs_dir);
-  bind_mount_ro(runtime_home, dst);
+  mkdir(dst, 0755);
 
   snprintf(dst, sizeof(dst), "%s/usr", rootfs_dir);
-  bind_mount_ro("/usr", dst);
+  mkdir(dst, 0755);
 
   char link[400];
   snprintf(link, sizeof(link), "%s/lib", rootfs_dir);
@@ -460,15 +451,7 @@ static void setup_interpreter_rootfs(const char *rootfs_dir,
   }
 }
 
-static void teardown_interpreter_rootfs(const char *rootfs_dir) {
-  char dst[400];
-  snprintf(dst, sizeof(dst), "%s/usr", rootfs_dir);
-  umount2(dst, MNT_DETACH);
-  snprintf(dst, sizeof(dst), "%s/opt/runtime", rootfs_dir);
-  umount2(dst, MNT_DETACH);
-}
-
-// ---- compiler rootfs bind mounts ----
+// ---- compiler rootfs preparation ----
 //
 // Same merged-/usr trick as the interpreter rootfs above, but without a
 // /opt/runtime package tree: gcc/g++ and their whole toolchain (cc1/
@@ -482,10 +465,13 @@ static void teardown_interpreter_rootfs(const char *rootfs_dir) {
 // directly on the host with the real filesystem visible, so a
 // submission's #include could pull in and echo back any file the
 // sandbox-server process (root) could read.
+//
+// The /usr bind itself is done by jail inside its user namespace (see
+// setup_rootfs_mounts); here we only prepare the directory and symlinks.
 static void setup_compiler_rootfs(const char *rootfs_dir) {
   char dst[400];
   snprintf(dst, sizeof(dst), "%s/usr", rootfs_dir);
-  bind_mount_ro("/usr", dst);
+  mkdir(dst, 0755);
 
   char link[400];
   snprintf(link, sizeof(link), "%s/lib", rootfs_dir);
@@ -514,12 +500,6 @@ static void setup_compiler_rootfs(const char *rootfs_dir) {
   snprintf(dst, sizeof(dst), "%s/tmp", rootfs_dir);
   mkdir(dst, 01777);
   chmod(dst, 01777);
-}
-
-static void teardown_compiler_rootfs(const char *rootfs_dir) {
-  char dst[400];
-  snprintf(dst, sizeof(dst), "%s/usr", rootfs_dir);
-  umount2(dst, MNT_DETACH);
 }
 
 // ---- HTTP layer ----
@@ -764,6 +744,7 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
                                   (char *)COMPILE_PIDS_MAX,
                                   compile_to_s,
                                   "compile",
+                                  "-",
                                   (char *)lang->compiler,
                                   "-O2",
                                   "-static",
@@ -790,7 +771,6 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
         build_phase_json(&compile_out, compile_exit, compile_sig, 0, 0));
     compile_failed = compile_sig >= 0 || compile_exit != 0;
     free_captured(&compile_out);
-    teardown_compiler_rootfs(rootfs_dir);
 
     // 編譯成功就把執行檔位元組回傳給呼叫端快取，下一筆測資才能省掉
     // 重新編譯——只有「這次真的重新編譯」才回傳，呼叫端已經有的話
@@ -828,7 +808,7 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
     snprintf(mem_s, sizeof(mem_s), "%ld", run_mem_mb);
     snprintf(to_s, sizeof(to_s), "%ld", run_timeout_ms);
 
-    char *jail_argv[10];
+    char *jail_argv[11];
     int n = 0;
     jail_argv[n++] = JAIL_BIN;
     jail_argv[n++] = rootfs_dir;
@@ -836,6 +816,8 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
     jail_argv[n++] = (char *)DEFAULT_PIDS_MAX;
     jail_argv[n++] = to_s;
     jail_argv[n++] = (char *)lang->seccomp_profile;
+    // 解釋型語言要綁 runtime package；編譯型語言不用（"-"）
+    jail_argv[n++] = lang->runtime_home ? (char *)lang->runtime_home : (char *)"-";
     for (int i = 0; i < run_program_argc; i++) jail_argv[n++] = run_program_argv[i];
     jail_argv[n] = NULL;
 
@@ -867,10 +849,6 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
         resp, "run",
         build_phase_json(&run_out, run_code, run_signal, mem_peak, (double)wall_ms));
     free_captured(&run_out);
-  }
-
-  if (is_interpreted) {
-    teardown_interpreter_rootfs(rootfs_dir);
   }
   cJSON_Delete(req);
   cleanup_workdir(workdir);
