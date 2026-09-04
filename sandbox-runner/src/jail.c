@@ -47,6 +47,14 @@ struct child_args {
   const char *seccomp_profile;
   int sync_read_fd;
   char *const *argv;
+  // Host path of an interpreter runtime package (Piston's python/node
+  // tree) to bind-mount read-only at /opt/runtime inside the rootfs.
+  // NULL for compiled languages and for the compile phase. Bind + RO
+  // remount happen inside the child's own user namespace -- mounts created
+  // by the parent (host user namespace) can't be remounted by the child
+  // (ns_capable check on the mount's owning userns), which is what the
+  // final recursive read-only lockdown depends on.
+  const char *runtime_home;
   // See pivot_into_rootfs(): the compile phase needs to write its output
   // binary (and scratch files) inside this rootfs, so it can't get the
   // same "whole tree read-only" lockdown the run phase gets. Derived from
@@ -165,6 +173,65 @@ static int pivot_into_rootfs(const char *rootfs, int compile_mode) {
   return 0;
 }
 
+static int bind_ro(const char *src, const char *dst) {
+  if (mount(src, dst, NULL, MS_BIND, NULL) == -1) {
+    perror("bind mount");
+    return -1;
+  }
+  // A plain MS_BIND mount ignores MS_RDONLY; make it stick with a second
+  // MS_REMOUNT pass. Both calls run inside the child's own user namespace
+  // so the resulting mount is owned by it and can be covered by the final
+  // recursive read-only lockdown.
+  if (mount(NULL, dst, NULL, MS_BIND | MS_REMOUNT | MS_RDONLY, NULL) == -1) {
+    perror("remount bind read-only");
+    return -1;
+  }
+  return 0;
+}
+
+// Bind host /usr (shared libs / dynamic linker / toolchain) and, for
+// interpreted languages, the runtime package at /opt/runtime -- both
+// read-only, created inside this user namespace (see the runtime_home
+// comment in child_args for why ownership matters).
+static int setup_rootfs_mounts(const char *rootfs, const char *runtime_home) {
+  char dst[400];
+  snprintf(dst, sizeof(dst), "%s/usr", rootfs);
+  if (mkdir(dst, 0755) == -1 && errno != EEXIST) {
+    perror("mkdir rootfs/usr");
+    return -1;
+  }
+  if (bind_ro("/usr", dst) == -1) return -1;
+
+  if (runtime_home) {
+    snprintf(dst, sizeof(dst), "%s/opt", rootfs);
+    if (mkdir(dst, 0755) == -1 && errno != EEXIST) {
+      perror("mkdir rootfs/opt");
+      return -1;
+    }
+    snprintf(dst, sizeof(dst), "%s/opt/runtime", rootfs);
+    if (mkdir(dst, 0755) == -1 && errno != EEXIST) {
+      perror("mkdir rootfs/opt/runtime");
+      return -1;
+    }
+    if (bind_ro(runtime_home, dst) == -1) return -1;
+  }
+
+  // Replicate the merged-/usr symlinks so the dynamic linker resolves
+  // /lib64/ld-linux-x86-64.so.2 normally inside the pivot_root'd rootfs.
+  char link[400];
+  snprintf(link, sizeof(link), "%s/lib", rootfs);
+  if (symlink("usr/lib", link) == -1 && errno != EEXIST) {
+    fprintf(stderr, "[jail] symlink %s: %s\n", link, strerror(errno));
+    return -1;
+  }
+  snprintf(link, sizeof(link), "%s/lib64", rootfs);
+  if (symlink("usr/lib64", link) == -1 && errno != EEXIST) {
+    fprintf(stderr, "[jail] symlink %s: %s\n", link, strerror(errno));
+    return -1;
+  }
+  return 0;
+}
+
 static int child_main(void *arg) {
   struct child_args *a = (struct child_args *)arg;
 
@@ -192,6 +259,9 @@ static int child_main(void *arg) {
   // ns-root at this point -- must happen BEFORE dropping to an unprivileged
   // uid below, since setuid() away from 0 clears the effective capability
   // set immediately.
+  if (setup_rootfs_mounts(a->rootfs, a->runtime_home) == -1) {
+    _exit(127);
+  }
   if (pivot_into_rootfs(a->rootfs, a->compile_mode) == -1) {
     _exit(127);
   }
@@ -286,10 +356,11 @@ static int write_id_map(pid_t pid, const char *map_name) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 7) {
+  if (argc < 8) {
     fprintf(stderr,
             "usage: %s <rootfs-dir> <mem-limit-mb> <pids-max> <timeout-ms> "
-            "<seccomp-profile> <program-path-in-rootfs> [args...]\n",
+            "<seccomp-profile> <runtime-home|-> <program-path-in-rootfs> "
+            "[args...]\n",
             argv[0]);
     return 2;
   }
@@ -299,6 +370,7 @@ int main(int argc, char *argv[]) {
   long pids_max = atol(argv[3]);
   long timeout_ms = atol(argv[4]);
   const char *seccomp_profile = argv[5];
+  const char *runtime_home = strcmp(argv[6], "-") == 0 ? NULL : argv[6];
 
   if (cg_ensure_parent() == -1) {
     return 1;
@@ -322,7 +394,8 @@ int main(int argc, char *argv[]) {
       .cgroup_path = cgroup_path,
       .seccomp_profile = seccomp_profile,
       .sync_read_fd = sync_pipe[0],
-      .argv = &argv[6],
+      .argv = &argv[7],
+      .runtime_home = runtime_home,
       .compile_mode = strcmp(seccomp_profile, "compile") == 0,
   };
 
