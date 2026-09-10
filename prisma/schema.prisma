@@ -113,6 +113,21 @@ model Tag {
   problems ProblemTag[]
 }
 
+// 「程式識別」練習題：秀一段程式碼，讓使用者判斷輸出或判斷這支程式在做什麼。
+// 管理員在後台維護，學生在 /recognition 練習頁作答（作答結果不存庫）。
+model RecognitionQuestion {
+  id          Int      @id @default(autoincrement())
+  code        String // 程式碼片段
+  question    String // 題目文字（例如「這個程式輸出什麼？」）
+  category    String   @default("C") // C | Python，練習頁可依類別篩選
+  options     String // JSON 陣列字串，例如 ["10","11","12"]
+  answerIndex Int // 正確選項的索引（0-based）
+  explanation String? // 作答後顯示的說明
+  isPublic    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
 model ProblemTag {
   problemId Int
   problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)

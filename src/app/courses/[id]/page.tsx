@@ -175,7 +175,6 @@ export default async function CoursePage({
         <table className="w-full">
           <thead>
             <tr>
-              <th className="table-head w-12 text-center">狀態</th>
               <th className="table-head w-16">#</th>
               <th className="table-head">標題</th>
               <th className="table-head w-24">難度</th>
@@ -185,7 +184,7 @@ export default async function CoursePage({
             {entries.length === 0 && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={3}
                   className="table-cell py-10 text-center text-mute"
                 >
                   這門課還沒有題目
@@ -193,10 +192,12 @@ export default async function CoursePage({
               </tr>
             )}
             {entries.map((e) => (
-              <tr key={e.id} className="hover:bg-panel2">
-                <td className="table-cell text-center text-[#4caf50]">
-                  {solvedSet.has(e.problemId) ? "✓" : ""}
-                </td>
+              <tr
+                key={e.id}
+                className={
+                  solvedSet.has(e.problemId) ? "row-solved" : "hover:bg-panel2"
+                }
+              >
                 <td className="table-cell text-dim">{e.problem.order}</td>
                 <td className="table-cell">
                   <Link

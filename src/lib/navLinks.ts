@@ -5,8 +5,8 @@ export interface NavLinkItem {
 
 const BASE_NAV_LINKS: NavLinkItem[] = [
   { href: "/", label: "首頁" },
-  { href: "/announcements", label: "公告" },
   { href: "/problems", label: "題目" },
+  { href: "/recognition", label: "程式識別" },
   { href: "/courses", label: "課程" },
   { href: "/contests", label: "比賽" },
   { href: "/submissions", label: "紀錄" },

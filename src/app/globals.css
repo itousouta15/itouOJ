@@ -943,6 +943,13 @@ html.kbd-open .bottom-nav {
     background: rgba(76, 175, 80, 0.1);
     border-color: rgba(76, 175, 80, 0.25);
   }
+  /* 題目已通過時整列淡淡的綠色底（深/淺色主題通用） */
+  .row-solved {
+    background: rgba(76, 175, 80, 0.09);
+  }
+  .row-solved:hover {
+    background: rgba(76, 175, 80, 0.15);
+  }
   .vbadge-red {
     color: #ff6b6b;
     background: rgba(237, 66, 69, 0.1);

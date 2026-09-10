@@ -71,6 +71,12 @@ export default async function AdminProblemsPage() {
           >
             使用者 →
           </Link>
+          <Link
+            href="/admin/recognition"
+            className="text-sm text-blue hover:underline"
+          >
+            程式識別 →
+          </Link>
         </div>
         <Link href="/admin/problems/new" className="btn-primary">
           ＋ 新增題目
