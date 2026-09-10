@@ -25,14 +25,14 @@ Live site: [oj.itousouta.me](https://oj.itousouta.me) ・ Android App: [app-v1.2
 - Problem list with tags, Markdown + KaTeX math statements, sample test cases, subtask scoring
 - CodeMirror code editor (C++ / C / Python / Java / JavaScript) with automatic draft autosave
 - Real-time judging: AC / WA / TLE / MLE / RE / CE, with per-test-case time and memory display
-- **Code Recognition practice**: multiple-choice questions showing a C or Python snippet ("what does this program output / do?"), with instant answer checking and explanations; admin CRUD at `/admin/recognition`
+- **Code Recognition practice (識讀)**: multiple-choice questions showing a C or Python snippet ("what does this program output / do?"), organized into clusters (e.g. APCS past exam papers — 141 questions in 13 papers already imported); practice one at a time with instant answer checking and explanations. Answers are recorded separately (`RecognitionAnswer`, not submissions), with per-cluster progress and a reviewable answer history
 - **Contests**: ICPC / IOI scoring modes, scoreboard freeze + admin-controlled reveal, join codes, per-contest language restrictions, PDF problem statements (optionally AES-256 encrypted for pre-deployment), participant readiness tracking, and an offline mode for no-network contest rooms
 - Submission history, leaderboard, user profiles, account settings (linked OAuth accounts, password, delete account)
 - Courses (problem lists): a set of problems + description; members track their solving progress; public join or join-by-code
 - Announcements: pinned announcements with Markdown content, admin can create / edit / delete (at `/announcements`)
 - Problem discussions: comments with one level of replies, plus user-published solutions (title + explanation + optional code) that require an AC on the problem first
 - Problem proposals: users can submit a problem (statement, limits, sample test cases) for admin review and approval
-- Admin panel: problems, proposal review, contests, courses, recognition questions, tags, announcements, and **user management (grant / revoke admin role)**
+- Admin panel: problems (both programming and recognition types), proposal review, contests, courses, recognition clusters, tags, announcements, and **user management (grant / revoke admin role)**
 - Light / dark theme toggle
 - Android App (Capacitor wrapper): installable native app with a fixed dark theme and a layout distinct from the website (see "Android App")
 - Windows offline client: `itouOJ-Submit.exe` (~23 KB, no install) for offline contests, with local spooling, batch upload, local test runs, and clock calibration (see `client/README.md`)
@@ -75,11 +75,11 @@ src/
 │  ├─ admin/          # admin panel (problems, proposals, contests, courses, recognition, tags, users, announcements)
 │  ├─ api/            # backend API (auth, contests, submissions, run, recognition, tags...)
 │  ├─ problems/       # problem list / detail, proposals
-│  ├─ recognition/    # code recognition practice
+│  ├─ recognition/    # code recognition practice (cluster list, cluster practice, single question)
 │  ├─ contests/       # contest list / detail
 │  ├─ courses/        # course list / detail
 │  ├─ announcements/  # announcement list / detail
-│  ├─ submissions/    # submission history
+│  ├─ submissions/    # submission history (incl. recognition answer history)
 │  ├─ ranking/        # leaderboard
 │  ├─ settings/       # account settings
 │  ├─ users/          # user profiles
@@ -90,9 +90,10 @@ src/
 
 prisma/
 ├─ schema.prisma      # database schema
+├─ seed-data/         # bundled seed data (e.g. recognition/ — APCS past exam papers)
 └─ migrations/        # migration history
 
-scripts/               # seed & maintenance scripts (contest accounts, recognition questions, tags, mock judge...)
+scripts/               # seed & maintenance scripts (contest accounts, recognition import, tags, mock judge...)
 
 deploy/                # deployment scripts and config (see "Deployment")
 
@@ -116,7 +117,7 @@ npm run dev
 Optional seeds and helpers:
 
 ```bash
-node scripts/seed-recognition-questions.mjs   # seed sample recognition questions (idempotent)
+node scripts/import-recognition-questions.mjs  # import the bundled APCS recognition papers (idempotent, --dry-run to validate)
 node scripts/tag-problems.mjs                 # seed the tag library and assign tags by title (idempotent)
 node scripts/setup-test-contest.mjs           # build a disposable test.db with a running IOI-mode C++-only contest
 node scripts/mock-judge.mjs                   # fill test.db submission results (for Windows dev without a Linux sandbox)
