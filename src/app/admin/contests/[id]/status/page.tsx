@@ -102,7 +102,7 @@ export default async function ContestStatusPage({
           <p
             className={`mt-1 text-2xl font-bold ${
               ready === rows.length && rows.length > 0
-                ? "text-[#4caf50]"
+                ? "text-[var(--green)]"
                 : "text-[#faa81a]"
             }`}
           >

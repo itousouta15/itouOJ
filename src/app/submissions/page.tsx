@@ -36,11 +36,94 @@ export default async function SubmissionsPage({
     take: 100,
     include: {
       user: { select: { username: true, displayName: true } },
-      problem: { select: { id: true, order: true, title: true } },
+      problem: { select: { id: true, order: true, title: true, type: true } },
       contest: true,
     },
   });
   const isAdmin = session?.role === "ADMIN";
+
+  // 我的識讀練習紀錄：以群集為單位（資料在 RecognitionAnswer，不是 Submission）
+  let recognitionRows: {
+    id: number | null; // null = 未分類
+    title: string;
+    total: number;
+    solved: number;
+    answered: number;
+    lastAt: Date | null;
+  }[] = [];
+  if (session) {
+    const [clusters, allProblems, answers] = await Promise.all([
+      prisma.recognitionCluster.findMany({
+        where: { isPublic: true },
+        orderBy: [{ order: "asc" }, { id: "asc" }],
+        include: {
+          _count: {
+            select: {
+              problems: { where: { isPublic: true, type: "RECOGNITION" } },
+            },
+          },
+        },
+      }),
+      prisma.problem.findMany({
+        where: { type: "RECOGNITION", isPublic: true },
+        select: { id: true, clusterId: true },
+      }),
+      prisma.recognitionAnswer.findMany({
+        where: { userId: session.userId },
+        select: { problemId: true, isCorrect: true, updatedAt: true },
+      }),
+    ]);
+    const answerByProblem = new Map<
+      number,
+      { isCorrect: boolean; updatedAt: Date }
+    >();
+    for (const a of answers) answerByProblem.set(a.problemId, a);
+
+    recognitionRows = clusters.map((c) => {
+      let solved = 0;
+      let answered = 0;
+      let lastAt: Date | null = null;
+      for (const p of allProblems) {
+        if (p.clusterId !== c.id) continue;
+        const a = answerByProblem.get(p.id);
+        if (!a) continue;
+        answered++;
+        if (a.isCorrect) solved++;
+        if (!lastAt || a.updatedAt > lastAt) lastAt = a.updatedAt;
+      }
+      return {
+        id: c.id,
+        title: c.title,
+        total: c._count.problems,
+        solved,
+        answered,
+        lastAt,
+      };
+    });
+
+    let ucAnswered = 0;
+    let ucSolved = 0;
+    let ucLast: Date | null = null;
+    for (const p of allProblems) {
+      if (p.clusterId != null) continue;
+      const a = answerByProblem.get(p.id);
+      if (!a) continue;
+      ucAnswered++;
+      if (a.isCorrect) ucSolved++;
+      if (!ucLast || a.updatedAt > ucLast) ucLast = a.updatedAt;
+    }
+    if (ucAnswered > 0) {
+      recognitionRows.push({
+        id: null,
+        title: "未分類",
+        total: allProblems.filter((p) => p.clusterId == null).length,
+        solved: ucSolved,
+        answered: ucAnswered,
+        lastAt: ucLast,
+      });
+    }
+    recognitionRows = recognitionRows.filter((r) => r.total > 0);
+  }
 
   return (
     <div>
@@ -143,6 +226,65 @@ export default async function SubmissionsPage({
           </tbody>
         </table>
       </div>
+
+      {session && recognitionRows.length > 0 && (
+        <div className="mt-8">
+          <h2 className="mb-3 section-title">我的識讀練習紀錄</h2>
+          <div className="card overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="table-head w-16">#</th>
+                  <th className="table-head">群集</th>
+                  <th className="table-head w-20 text-right">題數</th>
+                  <th className="table-head w-28 text-right">答對</th>
+                  <th className="table-head w-24 text-right">已答</th>
+                  <th className="table-head w-40">上次作答</th>
+                  <th className="table-head w-20"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {recognitionRows.map((r, i) => (
+                  <tr key={r.id ?? "uncategorized"} className="hover:bg-panel2">
+                    <td className="table-cell text-dim">{i + 1}</td>
+                    <td className="table-cell font-medium">{r.title}</td>
+                    <td className="table-cell text-right text-dim">{r.total}</td>
+                    <td className="table-cell text-right font-semibold text-[var(--green)]">
+                      {r.solved} / {r.total}
+                    </td>
+                    <td className="table-cell text-right text-dim">
+                      {r.answered}
+                    </td>
+                    <td className="table-cell text-dim">
+                      {r.lastAt
+                        ? r.lastAt.toLocaleString("zh-TW", {
+                            timeZone: "Asia/Taipei",
+                            hour12: false,
+                          })
+                        : "—"}
+                    </td>
+                    <td className="table-cell">
+                      <Link
+                        href={
+                          r.id == null
+                            ? "/submissions/recognition/uncategorized"
+                            : `/submissions/recognition/${r.id}`
+                        }
+                        className="text-sm text-blue hover:underline"
+                      >
+                        檢視 →
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-xs text-mute">
+            識讀作答以群集為單位記錄，不列入提交紀錄與排行；重新作答會更新該題狀態。
+          </p>
+        </div>
+      )}
     </div>
   );
 }

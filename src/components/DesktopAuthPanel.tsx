@@ -66,8 +66,8 @@ export default function DesktopAuthPanel({
         </div>
 
         {status === "done" ? (
-          <div className="rounded-lg border border-[rgba(76,175,80,0.35)] bg-inset p-4 text-sm">
-            <p className="font-medium text-[#4caf50]">已授權</p>
+          <div className="rounded-lg border border-[rgba(129,199,132,0.35)] bg-inset p-4 text-sm">
+            <p className="font-medium text-[var(--green)]">已授權</p>
             <p className="mt-1 text-dim">
               請回到收件程式，它應該已經登入完成。這個分頁可以關閉了。
             </p>

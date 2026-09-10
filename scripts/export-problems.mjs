@@ -97,7 +97,7 @@ async function markdownToHtml(md) {
 }
 
 // ── 版面 ────────────────────────────────────────────
-function page({ contestTitle, label, title, timeLimitMs, memoryLimitMb, body, samples, katexCss }) {
+function page({ contestTitle, label, title, timeLimitMs, memoryLimitMb, body, samples, katexCss, code, options }) {
   const sampleRows = samples
     .map(
       (s, i) => `
@@ -110,6 +110,21 @@ function page({ contestTitle, label, title, timeLimitMs, memoryLimitMb, body, sa
       </section>`
     )
     .join("");
+
+  const recognitionRows = (options ?? [])
+    .map(
+      (opt, i) =>
+        `<div class="choice"><span class="choice-mark">(${String.fromCharCode(65 + i)})</span><span class="choice-text">${esc(opt)}</span></div>`
+    )
+    .join("");
+  const recognitionBlock =
+    code || recognitionRows
+      ? `
+      <h2>程式與選項</h2>
+      ${code ? `<pre>${esc(code)}</pre>` : ""}
+      ${recognitionRows}`
+      : "";
+  const isRecognition = code != null || options != null;
 
   return `<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -145,17 +160,22 @@ th, td { border: 1px solid #ccc; padding: 4px 10px; }
 .io { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .io-h { font-size: 9.5pt; color: #666; margin-bottom: 3px; }
 .sample { margin: 12px 0; page-break-inside: avoid; }
+.choice { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0;
+          page-break-inside: avoid; }
+.choice-mark { font-weight: 700; flex: none; }
+.choice-text { white-space: pre-wrap; word-break: break-all; font-family: Consolas, "Courier New", monospace; }
 @media print { body { padding: 0; } }
 </style>
 </head>
 <body>
 <div class="contest">${esc(contestTitle)}</div>
 <h1>${esc(label)}. ${esc(title)}</h1>
-<div class="limits">
+${isRecognition ? "" : `<div class="limits">
   <span>時間限制：${(timeLimitMs / 1000).toFixed(timeLimitMs % 1000 ? 1 : 0)} 秒</span>
   <span>記憶體限制：${memoryLimitMb} MB</span>
-</div>
+</div>`}
 ${body}
+${recognitionBlock}
 ${samples.length ? "<h2>範例測資</h2>" + sampleRows : ""}
 </body>
 </html>`;
@@ -175,7 +195,8 @@ if (!contest) {
 
 const problems = db
   .prepare(
-    `SELECT cp.label, p.id, p.title, p.statement, p.timeLimitMs, p.memoryLimitMb
+    `SELECT cp.label, p.id, p.title, p.statement, p.timeLimitMs, p.memoryLimitMb,
+            p.code, p.options
      FROM ContestProblem cp JOIN Problem p ON p.id = cp.problemId
      WHERE cp.contestId = ? ORDER BY cp."order", cp.id`
   )
@@ -211,6 +232,12 @@ console.log(`\n比賽 #${contest.id}　${contest.title}\n`);
 for (const p of problems) {
   const body = await markdownToHtml(p.statement);
   const samples = sampleStmt.all(p.id);
+  let options = null;
+  try {
+    options = p.options ? JSON.parse(p.options) : null;
+  } catch {
+    options = null;
+  }
   const html = page({
     contestTitle: contest.title,
     label: p.label,
@@ -220,6 +247,8 @@ for (const p of problems) {
     body,
     samples,
     katexCss,
+    code: p.code ?? null,
+    options,
   });
   const file = path.join(outDir, `${p.label}.html`);
   fs.writeFileSync(file, html, "utf8");

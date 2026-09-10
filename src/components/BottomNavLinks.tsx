@@ -16,8 +16,8 @@ const ITEMS: {
   adminOnly?: boolean;
 }[] = [
   { href: "/", label: "首頁", glyph: "⌂" },
-  { href: "/problems", label: "題目", glyph: "▤" },
-  { href: "/recognition", label: "識別", glyph: "◈" },
+  { href: "/problems", label: "實作", glyph: "▤" },
+  { href: "/recognition", label: "識讀", glyph: "◈" },
   { href: "/submissions", label: "紀錄", glyph: "≣" },
   { href: "/ranking", label: "排行", glyph: "▥" },
   { href: "/admin/problems", label: "管理", glyph: "⚙", adminOnly: true },

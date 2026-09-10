@@ -9,6 +9,7 @@ interface ProblemOption {
   id: number;
   title: string;
   isPublic: boolean;
+  type: string;
 }
 
 interface ContestProblemEntry {
@@ -355,6 +356,7 @@ export default function ContestForm({
             {available.map((p) => (
               <option key={p.id} value={p.id}>
                 #{p.id} {p.title}
+                {p.type === "RECOGNITION" ? "（選擇題）" : ""}
                 {!p.isPublic ? "（未公開）" : ""}
               </option>
             ))}

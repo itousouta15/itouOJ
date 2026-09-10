@@ -1,0 +1,131 @@
+{
+  "source": "APCS 2016/03",
+  "questions": [
+    {
+      "number": 1,
+      "category": "C",
+      "question": "以下程式正確的輸出應該如下：\n```\n    *\n   ***\n  *****\n *******\n*********\n```\n在不修改程式之第 4 行及第 7 行程式碼的前提下，最少須修改幾行程式碼以得到正確輸出？",
+      "code": "int k = 4;\nint m = 1;\nfor (int i=1; i<=5; i=i+1){\n    for (int j=1; j<=k; j=j+1){\n        printf(\" \");\n    }\n    for (int j=1; j<=m; j=j+1){\n        printf(\"*\");\n    }\n    printf(\"\\n\");\n    k = k - 1;\n    m = m + 1;\n}",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answerIndex": 0,
+      "explanation": "第 3 行迴圈設定星號列數：i = 1~5共 5 列 -> 與輸出相符。\n\n第 4~6 及 11 行設定每列空白數：第 1 列 4 個空白，第 2 列 3 個空白，……，第 5 列 0 個空白（沒有空白） -> 與輸出相符。\n\n第 7~9 及 12 行設定每列星號數：第 1 列 1 個星號，第 2 列 2 個星號，……，第 5 列 5 個星號 -> 與輸出不相符（輸出為第 1 列 1 個星號，第 2 列 3 個星號，……，第 5 列 9 個星號）\n\n正確程式：第 12 行改為「m = m + 2;」，如此就會每列增加 2 個星號。"
+    },
+    {
+      "number": 3,
+      "category": "C",
+      "question": "給定一整數陣列 a[0]、a[1]、⋯、a[99] 且 a[k]=3k+1，以 value = 100 呼叫以下兩函式，假設函式 f1 及 f2 之 while 迴圈主體分別執行 n1 與 n2 次（i.e, 計算if敘述執行次數，不包含else if敘述），請問 n1 與 n2 之值為何？註：(1ow + high)/2 只取整數部分。",
+      "code": "// f1\nint f1(int a[], int value) {\n   int r_value = -1;\n   int i = 0;\n   while (i < 100) {\n      if (a[i] == value) {\n         r_value = i;\n         break;\n      }\n      i = i + 1;\n   }\n   return r_value;\n}\n\n// f2\nint f2(int a[], int value) {\n   int r_value = -1;\n   int low = 0, high = 99;\n   int mid;\n   while (low <= high) {\n      mid = (low + high)/2;\n      if (a[mid] == value) {\n         r_value = mid;\n         break;\n      }\n      else if (a[mid] < value) {\n         low = mid + 1;\n      }\n      else {\n         high = mid - 1;\n      }\n   }\n   return r_value;\n}",
+      "options": [
+        "n1=33, n2=4",
+        "n1=33, n2=5",
+        "n1=34, n2=4",
+        "n1=34, n2=5"
+      ],
+      "answerIndex": 3,
+      "explanation": "本題是循序搜尋（f1）與二分搜尋（f2）的搜尋次數比較。\n答案 100 = 3 * 33 + 1，即 k = 33，所以 100 = a[33]。\nf1 循序由 0 到 33 共執行 34 次（n1=34）。\nf2 各項變數的值，第 5 次找到，n2=5。\n\n\n\n|            | low | high | mid |\n| ---------- | --- | ---- | --- |\n| 執行第一次 | 0   | 99   | 49  |\n| 執行第二次 | 0   | 48   | 24  |\n| 執行第三次 | 25  | 48   | 36  |\n| 執行第四次 | 25  | 35   | 30  |\n| 執行第五次 | 31  | 35   | 33  |"
+    },
+    {
+      "number": 4,
+      "category": "C",
+      "question": "經過運算後，下方程式的輸出為何？",
+      "code": "for (i=1; i<=100; i=i+1) {\n   b[i] = i;\n}\na[0] = 0;\nfor (i=1; i<=100; i=i+1) {\n   a[i] = b[i] + a[i-1];\n}\nprintf (\"%d\\n\", a[50]-a[30]);",
+      "options": [
+        "1275",
+        "20",
+        "1000",
+        "810"
+      ],
+      "answerIndex": 3,
+      "explanation": "a[1] = b[1] + a[0] = 1 + 0 = 1，\na[2] = b[2] + a[1] = 2 + 1 = 3，\na[3] = b[3] + a[2] = 3 + 3 = 6，\na[4] = b[4] + a[3] = 4 + 6 = 10，\n……\n推論：a[n] = 1 + 2 + 3 + …… + n。\n\na[50] - a[30] \n= (1 + 2 + 3 + …… + 50) - (1 + 2 + 3 + …… + 30)\n= 31 + 32 + 33 + …… + 50\n= (31 + 50) * 20 / 2\n= 810"
+    },
+    {
+      "number": 5,
+      "category": "C",
+      "question": "函數 f 定義如下，如果呼叫 f(1000)，指令 sum=sum+i 被執行的次數最接近下列何者？",
+      "code": "int f (int n) {\n   int sum=0;\n   if (n<2) {\n      return 0;\n   }\n   for (int i=1; i<=n; i=i+1) {\n      sum = sum + i;\n   }\n   sum = sum + f(2*n/3);\n   return sum;\n}",
+      "options": [
+        "1000",
+        "3000",
+        "5000",
+        "10000"
+      ],
+      "answerIndex": 1,
+      "explanation": "當參數 n 小於 2 時結束遞迴。\n本題為等比級數遞迴題目，「sum = sum + f(2 * n/3);」遞迴結果：\nf(1000) = $1000 + 1000*(2/3) + 1000*(2/3)^2 + 1000*(2/3)^3 + ⋯⋯$\n\n等比級數公式:\n$\\dfrac{a*(1-r^n)}{1-r}$。此處 a=1000、r=2/3、n 趨近於無窮大。\n$r^n$ 接近 0：答案 = $\\dfrac{1000 * 1}{1-2/3} = 3000$。\n（此程式跑的答案為2980）"
+    },
+    {
+      "number": 6,
+      "category": "C",
+      "question": "List 是一個陣列，裡面的元素是 element，它的定義如下。\nList 中的每一個 element 利用 next 這個整數變數來記錄下一個 element 在陣列中的位置，如果沒有下一個 element，next 就會記錄 -1。所有的 element 串成了一個串列 (linked list)。例如在 list 中有三筆資料：\n\n| 1                    | 2                    | 3                   |\n| -------------------- | -------------------- | ------------------- |\n| data='a'<br>next='2' | data='b'<br>next='-1' | data='c'<br>next='1' |\n\n它所代表的串列如下圖：\n![image](https://hackmd.io/_uploads/SJb7OSRJ0.png)\nRemoveNextElement 是一個程序，用來移除串列中 current 所指向的下一個元素，但是必須保持原始串列的順序。例如，若 current 為 3 （對應到 list[3]），呼叫完 RemoveNextElement 後，串列應為：\n![image](https://hackmd.io/_uploads/r17V_BRJR.png)\n請問在空格中應該填入的程式碼為何？",
+      "code": "struct element {\n   char data;\n   int next;\n}\n\nvoid RemoveNextElement (element list[], int current) {\n   if (list[current].next != -1) {\n   /*移除 current 的下一個 element*/\n   ________________________________\n    }\n}",
+      "options": [
+        "list[current].next = current ;",
+        "list[current].next = list[list[current].next].next ;",
+        "current = list[list[current].next].next ;",
+        "list[list[current].next].next = list[current].next ;"
+      ],
+      "answerIndex": 1,
+      "explanation": "將 current 的下一個元素（list[current].next） 設為「下一個元素（list[current].next）的下一個元素」：list[list[current.next].next 即可。\n\n以題目中的例子說明：current 為 3（list[3]），list[3].next 為 1，則：\n    list[list[3].next].next = list[1].next = 2\n![image](https://hackmd.io/_uploads/rJDpYSRkC.png)\n（這只是移動串列的指標跳過 list[1]，實際上資料並未移除。）"
+    },
+    {
+      "number": 12,
+      "category": "C",
+      "question": "給定下方函式 f1( ) 及 f2( )。\nf1(1)運算過程中，以下敘述何者為錯？",
+      "code": "void f1 (int m) {\n   if (m > 3) {\n      printf (\"%d\\n\", m);\n      return;\n   }\n   else {\n      printf (\"%d\\n\", m);\n      f2(m+2);\n      printf (\"%d\\n\", m);\n   }\n}\n\nvoid f2 (int n) {\n   if (n > 3) {\n      printf (\"%d\\n\", n);\n      return;\n   }\n   else {\n      printf (\"%d\\n\", n);\n      f1(n-1);\n      printf (\"%d\\n\", n);\n   }\n}",
+      "options": [
+        "印出的數字最大的是 4",
+        "f1 一共被呼叫二次",
+        "f2 一共被呼叫三次",
+        "數字 2 被印出兩次"
+      ],
+      "answerIndex": 2,
+      "explanation": "f1(1) 印出 1 ，進入 f2(3)，將「printf(\"%d\\n\",m)」放入第 1 個堆疊 ->\nf2(3) 印出 3 ，進入 f1(2)，將「printf(\"%d\\n\",n)」放入第 2 個堆疊 ->\nf1(2) 印出 2 ，進入 f2(4)，將「printf(\"%d\\n\",m)」放入第 3 個堆疊 ->\nf2(4) 印出 4 ，return ->\n取出第 3 個堆疊：印出 f1(2) 中的 2 ->\n取出第 2 個堆疊：印出 f2(3) 中的 3 ->\n取出第 1 個堆疊：印出 f1(1) 中的 1，結束。\n答案：（C），f2 一共被呼叫三次。"
+    },
+    {
+      "number": 13,
+      "category": "C",
+      "question": "下方程式片段擬以輾轉除法求 i 與 j 的最大公因數。\n請問 while 迴圈內容何者正確？",
+      "code": "i = 76;\nj = 48;\nwhile ((i % j) != 0) {\n ________________\n ________________\n ________________\n}\nprintf (\"%d\\n\", j);",
+      "options": [
+        "k = i % j;\ni = j;\nj = k;",
+        "i = j;\nj = k;\nk = i % j;",
+        "i = j;\nj = i % k;\nk = i;",
+        "k = i;\ni = j;\nj = i % k;"
+      ],
+      "answerIndex": 0,
+      "explanation": "輾轉除法：以大數做為除數，小數做為被除數，若整除則小數就是最大公因數；若未整除就以原來的被除數（小數）做為除數，相除的餘數做為被除數，繼續做除法運算，直到整除為止。\n\n以題目中的數值為例：第一次除法「76/48」未整除數，餘數為28；第二次除法「48/28」未整除，餘數為20；……；第五次除法「8/4」整除，最大公因數為 4。\n\n程式碼中「while((i%j)!=0)」表示 i 為除數，j 為被除數，迴圈中為未整除時的處理程式碼，故其程序應為：\n(1) 求餘數 -> k = i % j;（第一個空格）\n(2) 以原來的被除數（小數）做為除數 -> i = j;（第二個空格）\n(3) 以相除的餘數做為被除數 -> j = k;（第三個空格）"
+    },
+    {
+      "number": 14,
+      "category": "C",
+      "question": "下方程式輸出為何？",
+      "code": "void foo (int i) {\n   if (i <= 5) {\n      printf (\"foo: %d\\n\", i);\n   }\n   else {\n      bar(i - 10);\n   }\n}\n\nvoid bar (int i) {\n   if (i <= 10) {\n      printf (\"bar: %d\\n\", i);\n   }\n   else {\n      foo(i - 5);\n   }\n}\n\nvoid main() {\n   foo(15106);\n   bar(3091);\n   foo(6693);\n}",
+      "options": [
+        "bar: 6\nbar: 1\nbar: 8",
+        "bar: 6\nfoo: 1\nbar: 3",
+        "bar: 1\nfoo: 1\nbar: 8",
+        "bar: 6\nfoo: 1\nfoo: 3"
+      ],
+      "answerIndex": 0,
+      "explanation": "這是兩個遞迴函式彼此呼叫的問題：foo 函式在參數 i 小於等於 5 時結束遞迴，同時呼叫 bar 函式時 i 值會減少 10；bar 函式在参數 i 小於等於 10 時結束遞迴，同時呼叫 foo 函式時 i 值會減少 5。兩者彼此呼叫一次時 i 值會減少 5 + 10 = 15。\n\nfoo(15106) = foo(15* 1006+16) -> 呼叫 foo(16) -> 呼叫 bar(6)，\ni <= 10 結束遞迴，印出「bar: 6」。\n\nbar(3091) = bar(15* 205+16) -> 呼叫 bar(16) -> 呼叫 foo(11) -> 呼叫 bar(1)，\ni <= 10 結束遞迴，印出「bar: 1」。\n\nfoo(6693) = foo(15* 445+18) -> 呼叫 foo(18) -> 呼叫 bar(8)，\ni <= 10 結束遞迴，印出「bar: 8」。"
+    },
+    {
+      "number": 17,
+      "category": "C",
+      "question": "下方程式片段主要功能為：輸入六個整數，檢測並印出最後一個數字是否為六個數字中最小的值。然而，這個程式是錯誤的。\n請問以下哪一組測試資料可以測試出程式有誤？",
+      "code": "#define TRUE 1\n#define FALSE 0\nint d[6], val, allBig;\n …\nfor (int i=1; i<=5; i=i+1) {\n   scanf (\"%d\", &d[i]);\n}\nscanf (\"%d\", &val);\nallBig = TRUE;\nfor (int i=1; i<=5; i=i+1) {\n   if (d[i] > val) {\n      allBig = TRUE;\n   }\n   else {\n      allBig = FALSE;\n   }\n}\nif (allBig == TRUE) {\n   printf (\"%d is the smallest.\\n\", val);\n}\nelse {\n   printf (\"%d is not the smallest.\\n\", val);\n}",
+      "options": [
+        "11 12 13 14 15 3",
+        "11 12 13 14 25 20",
+        "23 15 18 20 11 12",
+        "18 17 19 24 15 16"
+      ],
+      "answerIndex": 1,
+      "explanation": "前 5 個輸入數值為 d[1]~d[5]，第 6 個輸入數值為 val 變數值。\n\n第二個 for 迴圈程式錯誤。i=1 到 i=4 的結果會被 i=5 覆蓋，也就是 allBig 變數值由 i=5 決定：\n（A）「15 > 3」，allBig = TRUE，所以將 3 視為最小數，正確。\n（B）「25 > 20」，allBig = TRUE，所以將 20 視為最小數，錯誤。\n（C）「11 < 12」，allBig = FALSE，所以 12 不是最小數，正確。\n（D）「15 < 16」，allBig = FALSE，所以 16 不是最小數，正確。\n\n程式修正：第二個 for 迴圈的 else 敘述，在 allBig = FALSE; 後面加上「break;」。\n```c=\nfor (int i=1; i<=5; i=i+1) {\n......\n   else {\n      allBig = FALSE;\n      break;\n   }\n}\n```"
+    }
+  ]
+}

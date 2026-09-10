@@ -8,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const [problems, announcements] = await Promise.all([
     prisma.problem.findMany({
-      where: { isPublic: true },
+      where: { isPublic: true, type: "PROGRAMMING" },
       select: { order: true, createdAt: true },
       orderBy: { order: "asc" },
     }),

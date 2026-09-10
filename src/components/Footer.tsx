@@ -15,8 +15,10 @@ const MARQUEE = [
 
 const NAV_LINKS = [
   { label: "首頁", href: "/" },
-  { label: "題目", href: "/problems" },
+  { label: "實作", href: "/problems" },
+  { label: "識讀", href: "/recognition" },
   { label: "課程", href: "/courses" },
+  { label: "比賽", href: "/contests" },
   { label: "紀錄", href: "/submissions" },
   { label: "排行", href: "/ranking" },
 ];

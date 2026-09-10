@@ -24,6 +24,7 @@ export default async function ProblemListPage({
 
   const problems = await prisma.problem.findMany({
     where: {
+      type: "PROGRAMMING",
       ...(isAdmin ? {} : { isPublic: true }),
       ...(tag ? { tags: { some: { tag: { name: tag } } } } : {}),
     },

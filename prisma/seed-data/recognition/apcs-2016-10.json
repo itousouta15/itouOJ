@@ -1,0 +1,103 @@
+{
+  "source": "APCS 2016/10",
+  "questions": [
+    {
+      "number": 6,
+      "category": "C",
+      "question": "下方函式以 F(7) 呼叫後回傳值為 12，則 `<condition>` 應為何？",
+      "code": "int F(int a) {\n   if ( <condition> )\n      return 1;\n   else\n      return F(a-2) + F(a-3);\n}",
+      "options": [
+        "a < 3",
+        "a < 2",
+        "a < 1",
+        "a < 0"
+      ],
+      "answerIndex": 3,
+      "explanation": "+ （A） a < 3：（參數小於 3 傳回 1）\n    ```\n    F(7) = F(5) + F(4)\n         = F(3) + F(2) + F(2) + F(1)\n         = F(1) + F(0) + 1 + 1 + 1\n         = 1 + 1 + 3\n         = 5\n    ```\n\n    下圖黑框部分傳回 1 ，共計 5 個黑框，故傳回 5。\n```graphviz\ndigraph tree {\n    nodesep=0.5 // increases the separation between nodes\n\n    node [color=Red,fontname=Courier,shape=box] //All nodes will this shape and colour\n    edge [color=Blue, style=dashed] //All the lines look like this\n\n    {F（7）}->{F（5） F（4）}\n    F（5）->{F（3） F（2）[color=Black]}\n    F（3）->{F（1）[color=Black] F（0）[color=Black]}\n    F（4）->{˙F（2）[color=Black] ˙F（1）[color=Black]}\n}\n```\n\n+ （B） a < 2：（參數小於 2 傳回 1）\n    ```\n    F(7) = F(5) + F(4)\n         = F(3) + F(2) + F(2) + F(1)\n         = F(1) + F(0) + F(0) + F(-1) + F(0) + F(-1) + 1\n         = 7\n    ```\n\n    黑框 5 個 + 2 = 7。\n```graphviz\ndigraph tree {\n    nodesep=0.5 // increases the separation between nodes\n\n    node [color=Red,fontname=Courier,shape=box] //All nodes will this shape and colour\n    edge [color=Blue, style=dashed] //All the lines look like this\n\n    {F（7）}->{F（5） F（4）}\n    F（5）->{F（3） F（2）}\n    F（3）->{F（1）[color=Black] F（0）[color=Black]}\n    F（2）->{˙F（0）[color=Black] \"F（-1）\"[color=Black]}\n    F（4）->{\"˙F（2）\" ˙F（1）[color=Black]}\n    ˙F（2）->{\"見左方傳回2\"}\n}\n```\n\n+ （C） a < 1：（參數小於 1 傳回 1）\n    ```\n    F(7) = F(5) + F(4)\n         = F(3) + F(2) + F(2) + F(1)\n         = F(1) + F(0) + F(0) + F(-1) + F(0) + F(-1) + F(-1) + F(-2)\n         = F(-1) + F(-2) + 1 + 1 + 1 + 1 + 1 + 1 + 1\n         = 1 + 1 + 7\n         = 9\n    ```\n\n    黑框 5 個 + 2 + 2 = 9。\n```graphviz\ndigraph tree {\n    nodesep=0.5 // increases the separation between nodes\n\n    node [color=Red,fontname=Courier,shape=box] //All nodes will this shape and colour\n    edge [color=Blue, style=dashed] //All the lines look like this\n\n    {F（7）}->{F（5） F（4）}\n    F（5）->{F（3） F（2）}\n    F（3）->{F（1） F（0）[color=Black]}\n    F（1）->{\"F（-1）\"[color=Black] \"F（-2）\"[color=Black]}\n    F（2）->{˙F（0）[color=Black] \"˙F（-1）\"[color=Black]}\n    F（4）->{\"˙F（2）\" ˙F（1）}\n    ˙F（1）->{\"見左方傳回2\"}\n    ˙F（2）->{\"見左方傳回2\"}\n}\n```\n\n+ （D） a < 0：（參數小於 0 傳回 1）\n    黑框 5 個 + 2 + 3 + 2 = 12。\n```graphviz\ndigraph tree {\n    nodesep=0.1 // increases the separation between nodes\n\n    node [color=Red,fontname=Courier,shape=box] //All nodes will this shape and colour\n    edge [color=Blue, style=dashed] //All the lines look like this\n\n    {F（7）}->{F（5） F（4）}\n    F（5）->{F（3） F（2）}\n    F（3）->{F（1） F（0）}\n    F（1）->{\"F（-1）\"[color=Black] \"F（-2）\"[color=Black]}\n    F（0）->{\"˙F（-2）\"[color=Black] \"F（-3）\"[color=Black]}\n    F（2）->{\"˙F（-1）\"[color=Black] ˙F（0）}\n    ˙F（0）->{\"見左方傳回2\"}\n    F（4）->{˙F（1） \"˙F（2）\"}\n    ˙F（2）->{\"見左方傳回3\"}\n    ˙F（1）->{\"見左方傳回2\"}\n}\n```"
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "若 n 為正整數，下方程式三個迴圈執行完畢後 a 值將為何？",
+      "code": "int a=0, n;\n …\nfor (int i=1; i<=n; i=i+1)\n   for (int j=i; j<=n; j=j+1)\n      for (int k=1; k<=n; k=k+1)\n         a = a + 1;",
+      "options": [
+        "$n(n+1)/2$",
+        "$n^3/2$",
+        "$n(n-1)/2$",
+        "$n^2(n+1)/2$"
+      ],
+      "answerIndex": 3,
+      "explanation": "前兩個迴圈：i = 1 時 j 執行 n 次，i = 2 時 j 執行 n-1 次，......，i = n 時 j 執行 1 次，所以前兩個迴圈執行次數為：\n$n + (n-1) + (n-2) + ...... + 1 = n(n+1)/2$\n\n第三個迴圈執行次數：n。\n解答：$n*n(n+1)/2 = n^2(n+1)/2$"
+    },
+    {
+      "number": 11,
+      "category": "C",
+      "question": "下方程式片段執行後，count 的值為何？",
+      "code": "int maze[5][5]= {{1, 1, 1, 1, 1},\n                 {1, 0, 1, 0, 1},\n                 {1, 1, 0, 0, 1},\n                 {1, 0, 0, 1, 1},\n                 {1, 1, 1, 1, 1} };\nint count=0;\nfor (int i=1; i<=3; i=i+1) {\n   for (int j=1; j<=3; j=j+1) {\n      int dir[4][2] = {{-1,0}, {0,1}, {1,0}, {0,-1}};\n      for (int d=0; d<4; d=d+1) {\n         if (maze[i+dir[d][0]][j+dir[d][1]]==1) {\n            count = count + 1;\n         }\n      }\n   }\n}",
+      "options": [
+        "36",
+        "20",
+        "12",
+        "3"
+      ],
+      "answerIndex": 1,
+      "explanation": "這是迷宫矩陣。前兩個迴圈：i 是 maze 二維陣列的列，j 是 maze 陣列的行。\ndir 陣列表示位置：上、右、下、左。\n\n+ i=1 時：下圖\n![image](https://hackmd.io/_uploads/rk3_aTCyR.png)\n實線為 j=1 (值為 1+1+1+1=4)，\n虛線為 j=2 (值為 1+0+0+0=1)，\n點線為 j=3 (值為 1+1+0+1=3)。\n故 i=1 的總和為 4+1+3=8。\n\n+ i=2 時：下圖\n![image](https://hackmd.io/_uploads/ryoXATC10.png)\n實線值為 1，\n虛線值為 2，\n點線值為 2。\n故 i=2 的總和為 1+2+2=5。\n\n+ i=3 時：下圖\n![image](https://hackmd.io/_uploads/r1QER6CyR.png)\n實線值為 3，\n虛線值為 2，\n點線值為 2。\n故 i=3 的總和為 3+2+2=7。\n\n解答：8 + 5 + 7 = 20"
+    },
+    {
+      "number": 15,
+      "category": "C",
+      "question": "下方程式片段執行過程的輸出為何？",
+      "code": "int i, sum, arr[10];\n\nfor (int i=0; i<10; i=i+1)\n   arr[i] = i;\n\nsum = 0;\nfor (int i=1; i<9; i=i+1)\n   sum = sum - arr[i-1] + arr[i] + arr[i+1];\nprintf (\"%d\", sum);",
+      "options": [
+        "44",
+        "52",
+        "54",
+        "63"
+      ],
+      "answerIndex": 1,
+      "explanation": "+ 第一個迴圈：arr = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}\n+ 第二個迴圈：\n    i = 1：sum = sum - 0 + 1 + 2 = sum + 3。\n    i = 2：sum = sum - 1 + 2 + 3 = sum + 4。\n    ......\n    i = 8：sum = sum - 7 + 8 + 9 = sum + 10。\n\n答案：3 + 4 + 5 + ...... + 10 = (3 + 10) * 8 / 2 = 52。"
+    },
+    {
+      "number": 16,
+      "category": "C",
+      "question": "下方程式片段中，假設 a, a_ptr 和 a_ptrptr 這三個變數都有被正確宣告，且呼叫 G( ) 函式時的參數為 a_ptr 及 a_ptrptr。\n\nG( ) 函式的兩個參數型態該如何宣告？",
+      "code": "void G ( (a) a_ptr, (b) a_ptrptr) {\n …\n}\nvoid main () {\n   int a = 1;\n   // 加入 a_ptr, a_ptrptr 變數的宣告\n   …\n   a_ptr = &a;\n   a_ptrptr = &a_ptr;\n   G (a_ptr, a_ptrptr);\n}",
+      "options": [
+        "(a) *int ,(b) *int",
+        "(a) *int ,(b) **int",
+        "(a) int* ,(b) int*",
+        "(a) int* ,(b) int**"
+      ],
+      "answerIndex": 3,
+      "explanation": "因 a_ptr 為位址「&a」，故參數資料型態為「int*」。\n因 a_ptrptr 為位址的位址「&a_ptr」，故參數資料型態為「int**」。"
+    },
+    {
+      "number": 18,
+      "category": "C",
+      "question": "給定下方 G( )函式。\n\n執行 G(1)後所輸出的值為何？",
+      "code": "void G (int a){\n   printf (\"%d \", a);\n   if (a>=3)\n      return;\n   else\n      G(a+1);\n   printf (\"%d \", a);\n}",
+      "options": [
+        "1 2 3",
+        "1 2 3 2 1",
+        "1 2 3 3 2 1",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "執行 G(1)：印「1」，因「a>=3」為「假」故執行 G(2)，將 G(1) 最後一列存入堆疊。\n執行 G(2)：印「2」，因「a>=3」為「假」故執行 G(3)，將 G(2) 最後一列存入堆疊。\n執行 G(3)：印「3」，因「a>=3」為「真」故 return。\n取出第一個堆疊，執行 G(2) 最後一列印「2」。\n取出第二個堆疊，執行 G(1) 最後一列印「1」。\n所以答案為「1 2 3 2 1」。"
+    },
+    {
+      "number": 25,
+      "category": "C",
+      "question": "下方函式若以 search (1, 10, 3) 呼叫時，search 函式總共會被執行幾次？",
+      "code": "void search (int x, int y, int z) {\n   if (x < y) {\n      t = ceiling ((x + y)/2);\n      if (z >= t)\n         search(t, y, z);\n      else\n         search(x, t - 1, z);\n   }\n}\n註：ceiling()為無條件進位至整數位。例如：\nceiling(3.1)=4，ceiling(3.9)=4。",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "answerIndex": 2,
+      "explanation": "當「x>=y」時結束遞迴。\n\n第一次執行：search(1, 10, 3)，t = ceiling((1+10)/2) = 6；\n因「z<t」故執行 search(x, t - 1, z) = search(1, 5, 3)。\n\n第二次執行：search(1, 5, 3)，t = ceiling((1+5)/2) = 3；\n因「z=t」故執行 search(t, y, z) = search(3, 5, 3)。\n\n第三次執行：search(3, 5, 3)，t = ceiling((3+5)/2) = 4；\n因「z<t」故執行 search(x, t - 1, z) = search(3, 3, 3)。\n\n第四次執行：search(3, 3, 3)；\n因 x=y，程式結束。"
+    }
+  ]
+}

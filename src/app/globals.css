@@ -11,38 +11,42 @@
 
 /* ---- Theme tokens（同 itousouta.me，[data-theme] 切換）---- */
 :root {
-  --bg: #1b1e23;
-  --panel: #24262b;
-  --panel2: #27292e;
-  --panel2-a: rgba(39, 41, 46, 0.82);
-  --inset: #181b20;
+  --bg: #18191c;
+  --panel: #232426;
+  --panel2: #232426;
+  --panel2-a: rgba(36, 37, 41, 0.82);
+  --frost: #23242b73;
+  --inset: #1b1d20;
   --bd: rgba(255, 255, 255, 0.07);
   --bd2: rgba(255, 255, 255, 0.14);
   --tx: #e8ebf2;
   --dim: #9aa1ad;
   --mute: #6a7280;
-  --blue: #b0bdf7;
+  --blue: #b8c4f8;
   --purple: #a1ade0;
+  --green: #81c784;
   --btn: #94a6cc;
-  --btntx: #21252b;
+  --btntx: #24272c;
   --shadow: rgba(0, 0, 0, 0.45);
 
   background: var(--bg);
 }
 
 :root[data-theme="light"] {
-  --bg: #e9e9eef1;
-  --panel: #ebecf3;
-  --panel2: #ebecf3;
+  --bg: #dadadd;
+  --panel: #f0f0f5;
+  --panel2: #f0f0f5;
   --panel2-a: rgba(227, 228, 233, 0.82);
-  --inset: #d2d5db;
+  --frost: rgba(224, 225, 235, 0.45);
+  --inset: #e1e3ec;
   --bd: rgba(6, 6, 7, 0.08);
   --bd2: rgba(20, 24, 40, 0.16);
   --tx: #22262d;
-  --dim: #494f59;
-  --mute: #6b7280;
+  --dim: #494f59; /* was #5b626d — darkened for WCAG AA contrast on panel bg */
+  --mute: #6b7280; /* was #8a909b — darkened to improve readability */
   --blue: #364a7c;
   --purple: #5c7cbf;
+  --green: #3f7d4f;
   --btn: #2b2f36;
   --btntx: #f2f4f9;
   --shadow: rgba(60, 70, 90, 0.16);
@@ -651,9 +655,9 @@ html.kbd-open .bottom-nav {
   gap: 4px;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(76, 175, 80, 0.14);
-  border: 1px solid rgba(76, 175, 80, 0.45);
-  color: #4caf50;
+  background: rgba(129, 199, 132, 0.14);
+  border: 1px solid rgba(129, 199, 132, 0.45);
+  color: var(--green);
   font-size: 11px;
   font-weight: 700;
 }
@@ -939,16 +943,16 @@ html.kbd-open .bottom-nav {
     border-color: var(--bd2);
   }
   .vbadge-green {
-    color: #4caf50;
-    background: rgba(76, 175, 80, 0.1);
-    border-color: rgba(76, 175, 80, 0.25);
+    color: var(--green);
+    background: rgba(129, 199, 132, 0.1);
+    border-color: rgba(129, 199, 132, 0.25);
   }
   /* 題目已通過時整列淡淡的綠色底（深/淺色主題通用） */
   .row-solved {
-    background: rgba(76, 175, 80, 0.09);
+    background: rgba(129, 199, 132, 0.09);
   }
   .row-solved:hover {
-    background: rgba(76, 175, 80, 0.15);
+    background: rgba(129, 199, 132, 0.15);
   }
   .vbadge-red {
     color: #ff6b6b;
@@ -1303,6 +1307,22 @@ html.kbd-open .bottom-nav {
 .prose-oj .katex-display {
   overflow-x: auto;
   padding: 4px 0;
+}
+.prose-oj img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+/* 程式識別練習卡片裡的題目／說明：Markdown 排版但收緊間距 */
+.prose-oj.prose-compact {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.prose-oj.prose-compact p {
+  margin: 4px 0;
+}
+.prose-oj.prose-compact pre {
+  margin: 8px 0;
 }
 
 /* ---- App 專屬外觀（Capacitor 內才套用，瀏覽器完全不變）----

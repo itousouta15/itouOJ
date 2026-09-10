@@ -31,8 +31,8 @@ export default async function EditContestPage({
   if (!contest) notFound();
 
   const problems = await prisma.problem.findMany({
-    orderBy: { order: "asc" },
-    select: { id: true, title: true, isPublic: true },
+    orderBy: [{ type: "asc" }, { order: "asc" }],
+    select: { id: true, title: true, isPublic: true, type: true },
   });
 
   const phase = getContestPhase(contest);

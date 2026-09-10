@@ -12,8 +12,8 @@ export default async function NewCoursePage() {
   if (session?.role !== "ADMIN") redirect("/");
 
   const problems = await prisma.problem.findMany({
-    orderBy: { order: "asc" },
-    select: { id: true, title: true, isPublic: true },
+    orderBy: [{ type: "asc" }, { order: "asc" }],
+    select: { id: true, title: true, isPublic: true, type: true },
   });
 
   return (
