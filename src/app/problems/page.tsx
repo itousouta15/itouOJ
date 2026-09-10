@@ -91,7 +91,6 @@ export default async function ProblemListPage({
         <table className="w-full">
           <thead>
             <tr>
-              <th className="table-head w-12 text-center">狀態</th>
               <th className="table-head w-16">#</th>
               <th className="table-head">標題</th>
               <th className="table-head">標籤</th>
@@ -103,7 +102,7 @@ export default async function ProblemListPage({
             {problems.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="table-cell py-10 text-center text-mute"
                 >
                   {tag ? "這個標籤下還沒有題目" : "還沒有題目"}
@@ -122,10 +121,12 @@ export default async function ProblemListPage({
               </tr>
             )}
             {problems.map((p) => (
-              <tr key={p.id} className="hover:bg-panel2">
-                <td className="table-cell text-center text-[#4caf50]">
-                  {solvedSet.has(p.id) ? "✓" : ""}
-                </td>
+              <tr
+                key={p.id}
+                className={
+                  solvedSet.has(p.id) ? "row-solved" : "hover:bg-panel2"
+                }
+              >
                 <td className="table-cell text-dim">{p.order}</td>
                 <td className="table-cell">
                   <Link
