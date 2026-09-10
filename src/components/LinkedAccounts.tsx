@@ -157,7 +157,7 @@ export default function LinkedAccounts({
         </div>
       ))}
       {message && (
-        <p className={`text-sm ${message.type === "err" ? "text-[#ff6b6b]" : "text-[#4caf50]"}`}>
+        <p className={`text-sm ${message.type === "err" ? "text-[#ff6b6b]" : "text-[var(--green)]"}`}>
           {message.text}
         </p>
       )}

@@ -27,17 +27,33 @@ model User {
   problemProposals ProblemProposal[]
   problemComments  ProblemComment[]
   problemSolutions ProblemSolution[]
+  recognitionAnswers RecognitionAnswer[]
 }
 
 model Problem {
   id              Int              @id @default(autoincrement())
   title           String
   statement       String // Markdown，支援數學式
+  // 題目類型：PROGRAMMING = 實作題（寫程式交答案）；RECOGNITION = 識別題（選擇題）。
+  // 兩種題型共用 Problem，課程/比賽/提交/進度都走同一套。識別題欄位只在 RECOGNITION 有值。
+  type            String           @default("PROGRAMMING") // PROGRAMMING | RECOGNITION
+  // 識別題專用欄位（type = RECOGNITION 才有值）：
+  code            String? // 程式碼片段
+  options         String? // JSON 陣列字串，例如 ["10","11","12"]
+  answerIndex     Int? // 正確選項的索引（0-based）
+  explanation     String? // 作答後顯示的說明
+  paper           String? // 卷別（A 卷 / B 卷 / 第一場 / 第二場；單卷場次為 null）
+  sourceNumber    Int? // 原題號
+  category        String? // C | Python（識別題練習頁的分類）
+  // 識讀群集：一題最多屬於一個群集（例如「APCS 2021/01」）。群集刪除時
+  // 題目保留、clusterId 變 null（未分類），見 RecognitionCluster。
+  clusterId       Int?
+  cluster         RecognitionCluster? @relation(fields: [clusterId], references: [id], onDelete: SetNull)
   difficulty      String           @default("medium") // easy | medium | hard
   timeLimitMs     Int              @default(1000)
   memoryLimitMb   Int              @default(256)
   isPublic        Boolean          @default(true)
-  order           Int              @default(0) @unique // 題目列表顯示順序；同時是對外題號（網址 /problems/{order}）
+  order           Int              @default(0) // 題型內排序；實作題同時是對外題號（網址 /problems/{order}）
   // 管理員自製的正式題目檔（通常是排版過的 PDF）。沒有上傳的話，下載題目文件時
   // 會退回用 statement 現場產生的 HTML（見 lib/renderProblemDoc.ts）。
   // 掛在 Problem 而不是 ContestProblem：後者每次比賽編輯存檔都會整批刪除重建
@@ -59,6 +75,51 @@ model Problem {
   tags            ProblemTag[]
   comments        ProblemComment[]
   solutions       ProblemSolution[]
+  recognitionAnswers RecognitionAnswer[]
+
+  @@unique([type, order])
+  @@index([clusterId])
+}
+
+// 識讀群集：一組識別題（例如「APCS 2021/01」）。
+// 管理員在 /admin/recognition 建立群集並勾選題目加入；前台 /recognition
+// 列出群集，點進去是該群集的單題練習。一題最多屬於一個群集。
+model RecognitionCluster {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String    @default("")
+  isPublic    Boolean   @default(true)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  problems    Problem[]
+  tags        RecognitionClusterTag[]
+}
+
+// 群集標籤：沿用全站 Tag 庫（跟題目標籤同一份），管理員在群集表單勾選。
+model RecognitionClusterTag {
+  clusterId Int
+  cluster   RecognitionCluster @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  tagId     Int
+  tag       Tag                @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([clusterId, tagId])
+}
+
+// 識別題練習的作答狀態：只保留每位使用者每題「最新一次」的作答，
+// 用來在練習頁還原上次的答對/答錯（題號格子與題目上顯示）。
+// 刻意不寫進 Submission：識別題是練習，不進提交紀錄、不計排行。
+model RecognitionAnswer {
+  id            Int      @id @default(autoincrement())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId     Int
+  problem       Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  selectedIndex Int
+  isCorrect     Boolean
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, problemId])
+  @@index([problemId])
 }
 
 // 題目討論區的一則留言（提問、給提示、賽後檢討）。
@@ -111,21 +172,7 @@ model Tag {
   id       Int          @id @default(autoincrement())
   name     String       @unique
   problems ProblemTag[]
-}
-
-// 「程式識別」練習題：秀一段程式碼，讓使用者判斷輸出或判斷這支程式在做什麼。
-// 管理員在後台維護，學生在 /recognition 練習頁作答（作答結果不存庫）。
-model RecognitionQuestion {
-  id          Int      @id @default(autoincrement())
-  code        String // 程式碼片段
-  question    String // 題目文字（例如「這個程式輸出什麼？」）
-  category    String   @default("C") // C | Python，練習頁可依類別篩選
-  options     String // JSON 陣列字串，例如 ["10","11","12"]
-  answerIndex Int // 正確選項的索引（0-based）
-  explanation String? // 作答後顯示的說明
-  isPublic    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
+  clusters RecognitionClusterTag[]
 }
 
 model ProblemTag {
@@ -303,8 +350,10 @@ model Submission {
   problem      Problem      @relation(fields: [problemId], references: [id], onDelete: Cascade)
   contestId    Int? // 有值 = 這是比賽期間的提交，計入該比賽罰時排名
   contest      Contest?     @relation(fields: [contestId], references: [id], onDelete: SetNull)
-  language     String // cpp | c | python | java | javascript
+  language     String // cpp | c | python | java | javascript | choice（choice = 識別題選擇題作答）
   code         String
+  // 識別題作答：選擇的選項索引（0-based）。實作題提交為 null。
+  selectedIndex Int? 
   status       String       @default("PENDING") // PENDING JUDGING AC WA TLE MLE RE CE IE
   compileError String?
   timeMs       Int? // 所有測資的最大值

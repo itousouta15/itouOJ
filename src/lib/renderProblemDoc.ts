@@ -104,6 +104,9 @@ export interface ProblemDocInput {
   memoryLimitMb: number;
   statement: string;
   samples: { input: string; output: string }[];
+  // 識別題（選擇題）才有值：程式碼片段與選項，會印在題敘後面
+  code?: string | null;
+  options?: string[] | null;
 }
 
 export async function renderProblemDocHtml(p: ProblemDocInput): Promise<string> {
@@ -120,6 +123,21 @@ export async function renderProblemDocHtml(p: ProblemDocInput): Promise<string> 
       </section>`
     )
     .join("");
+
+  const recognitionRows = (p.options ?? [])
+    .map(
+      (opt, i) =>
+        `<div class="choice"><span class="choice-mark">(${String.fromCharCode(65 + i)})</span><span class="choice-text">${esc(opt)}</span></div>`
+    )
+    .join("");
+  const recognitionBlock =
+    p.code || recognitionRows
+      ? `
+      <h2>程式與選項</h2>
+      ${p.code ? `<pre>${esc(p.code)}</pre>` : ""}
+      ${recognitionRows}`
+      : "";
+  const isRecognition = p.code != null || p.options != null;
 
   return `<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -155,17 +173,22 @@ th, td { border: 1px solid #ccc; padding: 4px 10px; }
 .io { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .io-h { font-size: 9.5pt; color: #666; margin-bottom: 3px; }
 .sample { margin: 12px 0; page-break-inside: avoid; }
+.choice { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0;
+          page-break-inside: avoid; }
+.choice-mark { font-weight: 700; flex: none; }
+.choice-text { white-space: pre-wrap; word-break: break-all; font-family: Consolas, "Courier New", monospace; }
 @media print { body { padding: 0; } }
 </style>
 </head>
 <body>
 <div class="contest">${esc(p.contestTitle)}</div>
 <h1>${esc(p.label)}. ${esc(p.title)}</h1>
-<div class="limits">
+${isRecognition ? "" : `<div class="limits">
   <span>時間限制：${(p.timeLimitMs / 1000).toFixed(p.timeLimitMs % 1000 ? 1 : 0)} 秒</span>
   <span>記憶體限制：${p.memoryLimitMb} MB</span>
-</div>
+</div>`}
 ${body}
+${recognitionBlock}
 ${p.samples.length ? "<h2>範例測資</h2>" + sampleRows : ""}
 </body>
 </html>`;

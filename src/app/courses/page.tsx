@@ -119,7 +119,7 @@ export default async function CoursesPage() {
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-inset">
                       <div
-                        className="h-full rounded-full bg-[#4caf50]"
+                        className="h-full rounded-full bg-[var(--green)]"
                         style={{ width: `${pct}%` }}
                       />
                     </div>

@@ -1,0 +1,174 @@
+{
+  "source": "APCS 2021/11",
+  "questions": [
+    {
+      "number": 1,
+      "category": "C",
+      "question": "執行函數時若搜尋的數字 x 不存在時會回傳位置-1，否則就會回傳數字代表他在ａ陣列中的位置。請問傳入哪組參數會出現錯誤的答案？",
+      "code": "int a[8] = { 2, 4, 7, 10, 40 } ;\nint binary_search( int a[] , int le , int r, int x) {\n    if( le < r ) {\n        int mid = ( le + r ) / 2 ;\n        if(a[ mid ] == x)\n            return mid ;\n        else if( x < a[ mid ] )\n            return binary_search( a, le, mid, x) ;\n        return binary_search( a, mid+1, r, x) ;\n    }\n    return -1 ;\n}",
+      "options": [
+        "binary_search(a, 0, 4, 1)",
+        "binary_search(a, 0, 4, 2)",
+        "binary_search(a, 0, 4,10)",
+        "binary_search(a, 0, 4,40)"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 2,
+      "category": "C",
+      "question": "下列敘述何者錯誤？",
+      "code": "int bubble_sort( int a[] , int len) {\n    int count = 0;\n    for(int i = 0 ; i < len ; i = i + 1 )\n        for(int j = 0 ; j < len-1 ; j = j + 1 )\n            if( a[j]>a[j+1] ){\n                int tmp = a[j] ;\n                a[j] = a[j+1] ;\n                a[j+1] = tmp ;\n                count = count + 1 ;\n            }\n    return count;\n}\nint a1[5] = { 5, 1, 2, 4, 3 };\nint a2[5] = { 5, 4, 1, 2, 3 };\nint a3[5] = { 1, 5, 4, 2, 3 };\nint a4[5] = { 5, 3, 1, 2, 4 };",
+      "options": [
+        "數列１的交換次數大於數列２",
+        "數列１的交換次數等於數列３",
+        "數列４的交換次數小於數列２",
+        "數列４的交換次數大於數列１"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 3,
+      "category": "C",
+      "question": "上述的程式碼在實作最大公因數，請問判斷式該如何填入？",
+      "code": "int func( int m, int n){\n    int r = n;\n    while( _____ ){\n        r = m%n;\n        m = n;\n        n = r;\n    }\n    return m;\n}",
+      "options": [
+        "m != 0",
+        "m != 1",
+        "r != 0",
+        "r != 1"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 4,
+      "category": "C",
+      "question": "上述的函數可以判斷字串ｓ是不是屬於迴文？試問該填入哪個選項？",
+      "code": "bool isPalindrome(char *s, int i, int len) {\n    if (len == 0 or len == 1)\n        return 1;\n    if (s[i] != s[len - 1])\n        return 0;\n    return ___ ;\n}",
+      "options": [
+        "isPalindrome(s,   i  , len - 1)",
+        "isPalindrome(s, i + 1, len - 1)",
+        "isPalindrome(s, i + 2, len - 2)",
+        "isPalindrome(s, i + 1, len - 2)"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 5,
+      "category": "C",
+      "question": "上述函數的目的是計算 a^p^，但回傳的結果是錯誤的，該如何改正？",
+      "code": "int f(int a, int p) {\n    int ans = 1;\n    while (p >= 0) {\n      ans = ans * a;\n      p = p - 1;\n    }\n    return ans ;\n}",
+      "options": [
+        "line 1 修改為 ans = 0",
+        "line 3 修改為 while (p > 0)",
+        "line 3 修改為 for(int i = 0; i < p; i = i + 1)",
+        "在 while 迴圈內加入 a = a * a ;"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 6,
+      "category": "C",
+      "question": "上述程式碼執行後的結果為下列哪個選項？",
+      "code": "int ch = 2 ;\nswitch(ch) {\n    case 1+1 :\n        printf(\"A\") ;\n        break ;\n    case 1+2 :\n        printf(\"B\") ;\n        break ;\n    case 1+3 :\n        printf(\"C\") ;\n        break ;\n    default :\n        printf(\"D\") ;\n}",
+      "options": [
+        "A",
+        "AB",
+        "AD",
+        "ABCD"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "考拉茲猜想是個有名的數學問題，也被稱為奇偶歸一猜想或是 3n+1 猜想。對於每一個正整數，如果它是奇數，則對它乘3再加1，如果它是偶數，則對它除以2，如此循環，最終都能夠得到１，而上述的程式碼可以算出輸入的ｎ需要經過幾次轉變才會得到１，這樣空格處該如何填寫？",
+      "code": "int f(int n) {\n    if (n == 1)\n        return 0 ;\n    if (n % 2)\n        return __I__ ;\n    else\n        return __II__ ;\n}",
+      "options": [
+        "$I = f(3n+1)\\ \\ \\ \\ \\ \\ \\ \\ \\ \\ II = f(\\frac{n}{2})$",
+        "$I = f(\\frac{n}{2})\\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ II = f(3n+1)$",
+        "$I = f(3n+1)+1\\ \\ \\ \\ II = f(\\frac{n}{2})+1$",
+        "$I = f(\\frac{n}{2})+1\\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ II = f(3n+1)+1$"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 8,
+      "category": "C",
+      "question": "執行上述的程式Ａ和程式Ｂ，ｎ相同時執行速度誰比較快？",
+      "code": "// 程式Ａ\ndouble f(int n) {\n    long long mul = 1 ; \n    double ret = 0 ;\n    for (int i = 1 ; i <= n ; i = i + 1) {\n        mul = mul * i ;\n        ret += 1.0 / mul ;\n    }\n    return ret;\n}\n\n// 程式Ｂ\ndouble q(int n) {\n    long long ret = 1 ;\n    for (int i = 1; i <= n; i = i + 1){\n        ret = ret * i ;\n    }\n    return 1.0 / ret;\n}\n\ndouble g(int n) {\n    double ret = 0;;\n    for (int i = 1; i <= n; i = i + 1){\n        ret += q(i);\n    }\n    return ret;\n}",
+      "options": [
+        "程式Ａ",
+        "程式Ｂ",
+        "一樣快",
+        "當ｎ很小時程式Ａ較快，但ｎ很大時則是程式Ｂ"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 9,
+      "category": "C",
+      "question": "執行上述的程式碼後，輸出的答案應該是下列哪個選項呢？",
+      "code": "int f(int n, int a[]) {\n    if (n < 1) \n        return 1 ;\n    if (a[n] == 0) \n        a[n] = 2 * f(n - 1, a) + f(n - 2, a);\n    return a[n] ;\n}\nint main() {\n    int a[10] ;\n    for (int i = 0; i < 10; i = i + 1){\n        a[i] = 0 ;\n    }\n    printf(\"%d \",f(4, a)) ;\n}",
+      "options": [
+        "41",
+        "34",
+        "27",
+        "20"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 10,
+      "category": "C",
+      "question": "執行上述函數時根據情況已知 $f(7)=19 \\ \\ \\ f(8)=26$，請問判斷式該填入哪個選項，才能符合輸出的情況？",
+      "code": "int f( int a ) {\n    if( _____ )\n        return 3*a+2;\n    else\n        return 2*a+5;\n}",
+      "options": [
+        "$5a < 43$",
+        "$a^2 < 62$",
+        "$a$ / $3$ >= $21$",
+        "$a$ % $2$ == $0$"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 11,
+      "category": "C",
+      "question": "上述的程式碼透過資料結構Ｘ實作，可以判斷傳入的字串ｓ是不是迴文的結構，以下是資料結構Ｘ支援的功能，請問哪個選項最符合資料結構Ｘ：\n\n- Init(&X): 初始化資料結構Ｘ\n- Clear(&X): 清除資料結構Ｘ\n- Add(X, d): 將資料ｄ放入Ｘ內\n- getFirst(X): 將Ｘ第一個資料回傳並從中移除\n- getLast(X): 將Ｘ最後一個資料回傳並從中移除",
+      "code": "bool isPalindrome(char *s, int len) {\n\tInit(&X);\n\tfor (int i = 0; i < len; i = i + 1)\n\t\tAdd(X, s[i]);\n\t\n\tint n = len;\n\twhile (n > 1) {\n\t\tif (getFirst(X) != getLast(X)))\n\t\t\treturn 0;\n\t\tn = n - 2;\n\t}\n\tClear(&X);\n\treturn 1;\n}",
+      "options": [
+        "堆疊( stack )",
+        "佇列( queue )",
+        "雙向佇列( double ended queue )",
+        "優先佇列( priority_queue )"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 12,
+      "category": "C",
+      "question": "如果想要完成上述二分搜尋的程式碼， m + 1 應該填寫到哪個空格？",
+      "code": "int binary_search(int *a, int s, int e, int key) {\n    while (s < e) {\n        int m = s + (e - s) / 2 ;\n        if (a[m] < key)\n            s = __A__ ;\n        else if (a[m] > key)\n            e = __B__ ;\n        else\n            return __C__ ;\n    }\n    return __D__ ;\n}\nint main() {\n    int a[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};\n    binary_search(a, 0, 9, 5);\n}",
+      "options": [
+        "",
+        "",
+        "",
+        ""
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    }
+  ],
+  "paper": "A 卷"
+}

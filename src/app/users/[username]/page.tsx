@@ -10,7 +10,7 @@ import LogoutButton from "@/components/LogoutButton";
 export const dynamic = "force-dynamic";
 
 const DIFFICULTY_META = [
-  { key: "easy", label: "簡單", color: "#4caf50" },
+  { key: "easy", label: "簡單", color: "var(--green)" },
   { key: "medium", label: "中等", color: "#faa81a" },
   { key: "hard", label: "困難", color: "#ff6b6b" },
 ] as const;
@@ -44,7 +44,12 @@ export default async function UserProfilePage({
   const [acDistinct, totalSubmissions, acSubmissions, publicTotals, recent] =
     await Promise.all([
       prisma.submission.findMany({
-        where: { userId: user.id, status: "AC" },
+        where: {
+          userId: user.id,
+          status: "AC",
+          // 解題統計只算實作題，識別題不算進難度統計
+          problem: { type: "PROGRAMMING" },
+        },
         distinct: ["problemId"],
         select: { problem: { select: { difficulty: true } } },
       }),
@@ -52,14 +57,16 @@ export default async function UserProfilePage({
       prisma.submission.count({ where: { userId: user.id, status: "AC" } }),
       prisma.problem.groupBy({
         by: ["difficulty"],
-        where: { isPublic: true },
+        where: { isPublic: true, type: "PROGRAMMING" },
         _count: { _all: true },
       }),
       prisma.submission.findMany({
         where: { userId: user.id },
         orderBy: { id: "desc" },
         take: 20,
-        include: { problem: { select: { id: true, order: true, title: true } } },
+        include: {
+          problem: { select: { id: true, order: true, title: true, type: true } },
+        },
       }),
     ]);
 

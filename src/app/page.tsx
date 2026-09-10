@@ -13,19 +13,14 @@ export default async function HomePage() {
 
   const [problemCount, userCount, submissionCount, acCount] =
     await Promise.all([
-      prisma.problem.count({ where: { isPublic: true } }),
+      prisma.problem.count({ where: { isPublic: true, type: "PROGRAMMING" } }),
       prisma.user.count(),
       prisma.submission.count(),
       prisma.submission.count({ where: { status: "AC" } }),
     ]);
 
-  const announcements = await prisma.announcement.findMany({
-    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
-    take: 3,
-  });
-
   const latestProblems = await prisma.problem.findMany({
-    where: { isPublic: true },
+    where: { isPublic: true, type: "PROGRAMMING" },
     orderBy: { id: "desc" },
     take: 5,
     select: { id: true, order: true, title: true, difficulty: true },
@@ -36,7 +31,7 @@ export default async function HomePage() {
     take: 8,
     include: {
       user: { select: { username: true, displayName: true } },
-      problem: { select: { id: true, order: true, title: true } },
+      problem: { select: { id: true, order: true, title: true, type: true } },
     },
   });
 
@@ -204,40 +199,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 公告 */}
-      {announcements.length > 0 && (
-        <section data-app-section="announcements">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="section-title">公告</h2>
-            <Link
-              href="/announcements"
-              className="mono text-xs text-blue hover:underline"
-            >
-              全部公告 →
-            </Link>
-          </div>
-          <div className="card">
-            {announcements.map((a) => (
-              <Link
-                key={a.id}
-                href={`/announcements/${a.id}`}
-                className="flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
-              >
-                {a.isPinned && <span className="vbadge vbadge-green">置頂</span>}
-                <span className="flex-1 truncate font-medium text-blue">
-                  {a.title}
-                </span>
-                <span className="mono text-xs text-mute">
-                  {a.createdAt.toLocaleDateString("zh-TW", {
-                    timeZone: "Asia/Taipei",
-                  })}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* 最新題目 + 排行 */}
       <section className="grid gap-6 md:grid-cols-2" data-app-section="problems-ranking">
         <div>
@@ -299,7 +260,7 @@ export default async function HomePage() {
                 <span className="flex-1 truncate font-medium">
                   {u.displayName || u.username}
                 </span>
-                <span className="mono text-sm font-semibold text-[#4caf50]">
+                <span className="mono text-sm font-semibold text-[var(--green)]">
                   {u.solved} 題
                 </span>
               </div>
