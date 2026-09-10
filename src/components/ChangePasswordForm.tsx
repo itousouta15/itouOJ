@@ -93,7 +93,7 @@ export default function ChangePasswordForm({
       </div>
       {error && <p className="text-sm text-[#ff6b6b]">{error}</p>}
       {done && (
-        <p className="text-sm text-[#4caf50]">
+        <p className="text-sm text-[var(--green)]">
           {hasPassword ? "密碼已更新" : "密碼已設定，之後可以用帳號密碼登入"}
         </p>
       )}

@@ -1,0 +1,202 @@
+{
+  "source": "APCS 2022/06",
+  "questions": [
+    {
+      "number": 1,
+      "category": "C",
+      "question": "買5送1，每買五瓶可以多得到一瓶可樂，這是一個回傳最少要買幾瓶可樂才可以得到至少 n 瓶的的程式碼，例如要拿到49瓶可樂，最少要買41瓶，因此`func(49) = 41`，請問空格中應該填入的程式碼為何？",
+      "code": "int func(int n) {\n    for (int i = 1; ; i++) {\n        int total = i;    // 總共有幾罐\n        int current = i;  // 目前手上有幾罐\n        total = ____________;\n        if (total >= n) return i;\n    }\n}",
+      "options": [
+        "total + current % 5",
+        "total + current / 5",
+        "total - current % 5",
+        "total - current / 5"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 2,
+      "category": "C",
+      "question": "請問 `f(6)` 的回傳值為何？",
+      "code": "int f(int n) {\n    if (n <= 2)\n        return 1;\n    return f(n - 1) + f(n - 2);\n}",
+      "options": [
+        "3",
+        "5",
+        "8",
+        "13"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 3,
+      "category": "C",
+      "question": "已知 `f(4) = 12` 且 `f(5) = 60`，請問空格中應該填入的程式碼為何？",
+      "code": "int f(int n) {\n    if (____)\n        return n * f(n - 1);\n    return 1;\n}",
+      "options": [
+        "n > 2",
+        "n >= 2",
+        "n == 0",
+        "n == 1"
+      ],
+      "answerIndex": 0,
+      "explanation": "$\\cfrac{n!}{2}$"
+    },
+    {
+      "number": 4,
+      "category": "C",
+      "question": "請問下列四個選項哪一個正確？",
+      "code": "// 程式碼1\n#define NUM 13\nint main(){\n    int i = 0, sum = 0;\n    while (i < NUM) {\n        i = i + 1;\n        if (i % 6 == 0)\n            continue;\n        sum = sum + i;\n    }\n    printf(\"%d\\n\", sum);\n    return 0;\n}\n\n// 程式碼2\n#define NUM 13\nint main(){\n    int i = 0, sum = 0;\n    do {\n        i = i + 1;\n        if (!(i == 2 || i == 3))\n            continue;\n        sum = sum + i;\n    } while (i < NUM);\n    printf(\"%d\\n\", sum);\n    return 0;\n}\n\n// 程式碼3\n#define NUM 13\nint main(){\n    int i = 0, sum = 0;\n    while (i < NUM) {\n        i = i + 1;\n        if (!(i == 2) && !(i == 3))\n            continue;\n        sum = sum + i;\n    }\n    printf(\"%d\\n\", sum);\n    return 0;\n}",
+      "options": [
+        "程式碼1 和 程式碼2 輸出一樣",
+        "程式碼1 和 程式碼3 輸出一樣",
+        "程式碼2 和 程式碼3 輸出一樣",
+        "三個程式碼輸出都不一樣"
+      ],
+      "answerIndex": 2,
+      "explanation": "`!(A or B) = !A and !B`"
+    },
+    {
+      "number": 5,
+      "category": "C",
+      "question": "請問呼叫 `h(20)` 後，輸出為何？",
+      "code": "int f(int *x, int *y) {\n    return (*y) * 3 - (*x) * 2;\n}\nint g(int *x, int *y) {\n    return (*x) * (*y);\n}\nvoid h(int n) {\n    int a = n;\n    int b = a % 2;\n    f(&a, &b);\n    printf(\"%d %d\\n\", a, b);\n}",
+      "options": [
+        "20 0",
+        "18 2",
+        "2 18",
+        "15 2"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 6,
+      "category": "C",
+      "question": "請問 `f(50)` 的回傳值為何？",
+      "code": "int f(int n) {\n    int count = 0;\n    for (int i = 10; i < n; i += 3){\n        count = count + 1;\n    }\n    return count;\n}",
+      "options": [
+        "13",
+        "14",
+        "15",
+        "16"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "該程式碼想要計算 $(1\\times2) + (2\\times3) + (3\\times4)\\ +\\ ...\\ + \\ (9\\times10)$， 但程式碼有錯，請問下列除錯方法何者正確？",
+      "code": "int sum(int n) {\n    if (n == 1)\n        return 1;\n    return n * (n - 1) + sum(n - 1);\n}\n\nint main() {\n    sum(10);\n}",
+      "options": [
+        "第 2 行要改成 return 0;",
+        "第 3 行要改成 return (n - 1) * n + sum(n - 1);",
+        "第 1 行要改成 if (n == 2)",
+        "程式碼沒有錯"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 8,
+      "category": "C",
+      "question": "想要讓 `a = a[0] + a[2] + a[4] + a[6] + a[8]` ， `b = a[1] + a[3] + a[5] + a[7] + a[9]` ， 請問空格中應該填入的程式碼為何？",
+      "code": "int a = 0, b = 0;\nint arr[] = {...};\nfor (int i = 0; i < 10; i++) {\n    if (____) {\n        a = a + arr[i];\n    } else {\n        b = b + arr[i];\n    }\n}",
+      "options": [
+        "i % 2 == 0",
+        "i % 2 != 0",
+        "arr[i] % 2 == 0",
+        "arr[i] % 2 != 0"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 9,
+      "category": "C",
+      "question": "若該程式執行完後，請問下列四個選項哪一個正確？",
+      "code": "int arr[3][3] = {{1, 2, 3}, {5, 4, 3}, {7, 8, 9}};\nfor (int i = 0; i < 3; i++) {\n    for (int j = 0; j < 3; j++) {\n        arr[j][i] = arr[j][i] + 1;\n        arr[j][i] = arr[j][i] + 1;\n        arr[i][j] = arr[j][i];\n    }\n}",
+      "options": [
+        "arr[0][1] = arr[1][0] = 2",
+        "arr[2][2] = 9",
+        "arr[1][2] = arr[2][1] = 12",
+        "arr[1][2] = arr[3][2] = 6"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 10,
+      "category": "C",
+      "question": "該程式碼想要輸出陣列中**次大**的數字，下列哪一個陣列可能會輸出錯誤？",
+      "code": "int a, b;\nint p[] = {____};\na = b = p[0]; \nfor (int i = 0; i < 10; i++) {\n    if (p[i] > a) {\n        b = a;\n        a = p[i];\n    } else if (p[i] > b) {\n        b = p[i];\n    }\n}\nprintf(\"%d\\n\", b);",
+      "options": [
+        "{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}",
+        "{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}",
+        "{5, 4, 7, 6, 1, 3, 2, 9, 0, 8}",
+        "{0, 8, 7, 6, 5, 4, 3, 2, 1, 9}"
+      ],
+      "answerIndex": 0,
+      "explanation": "最大值在第一個的時候"
+    },
+    {
+      "number": 11,
+      "category": "C",
+      "question": "求程式執行的輸出結果",
+      "code": "void f(int n) {\n    int sum = 0;\n    while (n > 0) {\n        sum += n % 10;\n        n /= 10;\n    }\n    if (sum % 2 && sum % 3) {\n        printf(\"X\");\n    } else if (sum % 3 == 0) {\n        printf(\"Y\");\n    } else {\n        printf(\"Z\");\n    }\n}\nint main() {\n    f(54321);\n    f(112233);\n}",
+      "options": [
+        "'Y' 和 'Y'",
+        "'Y' 和 'X'",
+        "'Z' 和 'Y'",
+        "'Z' 和 'X'"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 12,
+      "category": "C",
+      "question": "求程式執行後的輸出結果",
+      "code": "#define ROW 3\n#define COL 2\n#define MAXN 10\nint m[ROW][COL] = {{7, 1}, {4, 1}, {6, 3}};\n\nstruct A{\n    int x, y, v;\n} a[MAXN];\n\n\nint main() {\n    int num = 0;\n    for (int i = 0; i < ROW; i++) {\n        for (int j = 0; j < COL; j++) {\n            if (m[i][j] != 1) {\n                num++;\n                a[num].x = i;\n                a[num].y = j;\n                a[num].v = m[i][j];\n            }\n        }\n    }\n    a[0].x = ROW;\n    a[0].y = COL;\n    a[0].v = num;\n    for (int i = 0; i <= num; i++) {\n        printf(\"%d %d %d\\n\", a[i].x, a[i].y, a[i].v);\n    }\n}",
+      "options": [
+        "3 2 4\n0 0 7\n1 0 4\n2 0 6\n2 1 3",
+        "3 2 0\n2 0 6\n2 1 3",
+        "3 2 4\n0 0 7\n1 0 4\n2 1 3",
+        "3 2 4\n0 0 7\n2 1 3"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 13,
+      "category": "C",
+      "question": "求程式執行後的輸出結果",
+      "code": "int main() {\n    int s = 0, i;\n    for (i = 1; i * i <= 1024; i = i * 2)\n        s = s + i;\n    printf(\"%d %d\\n\", s, i);\n}",
+      "options": [
+        "63 64",
+        "63 32",
+        "31 32",
+        "31 16"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 14,
+      "category": "C",
+      "question": "已知該程式執行後輸出為 \"100001100\" ， 請問空格中應該填入的程式碼為何？",
+      "code": "int f(char s[], char k[], char out[]) {\n    int i = 0;\n    while (i < 8) {\n        if (________)\n            out[i] = '0';\n        else\n            out[i] = '1';\n        i++;\n    }\n}\nint main() {\n    char x[] = \"000011110\";\n    char y[] = \"100110001\";\n    char z[] = \"000000000\";\n    f(x, y, z);\n    f(z, y, x);\n    printf(\"%s\", z);\n}",
+      "options": [
+        "s[i] == k[i]",
+        "s[i-1] == k[i+1]",
+        "s[i+1] == k[i]",
+        "s[i] == k[i+1]"
+      ],
+      "answerIndex": 2,
+      "explanation": "XOR"
+    }
+  ],
+  "paper": "第二場"
+}

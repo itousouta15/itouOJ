@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PROBLEM_TYPES } from "@/lib/problemTypes";
 
 // 題目共用欄位。獨立匯出給 problemProposalSchema 用，
 // 因為 problemSchema 本身帶 .superRefine()，zod 不允許對有 refinement 的
@@ -11,9 +12,13 @@ export const problemBaseFields = {
   memoryLimitMb: z.number().int().min(16).max(1024),
 };
 
+// 兩種題型共用同一份 schema：
+// PROGRAMMING（實作題）維持原有驗證；RECOGNITION（識別題）不要求測資，
+// 改驗證選項與正確答案。切換題型時另一邊的欄位由 API 清掉。
 export const problemSchema = z
   .object({
     ...problemBaseFields,
+    type: z.enum(PROBLEM_TYPES).default("PROGRAMMING"),
     isPublic: z.boolean(),
     tagIds: z.array(z.number().int()).default([]),
     // 三態：key 沒出現＝維持原本的 PDF 不動；null＝移除；有值＝換成新檔案。
@@ -47,9 +52,51 @@ export const problemSchema = z
           subtaskIndex: z.number().int().min(0).nullable().default(null),
         })
       )
-      .min(1, "至少要有一筆測資"),
+      .default([]),
+    // 識別題欄位（type = RECOGNITION 才有意義）：
+    code: z.string().max(30000, "程式碼最多 30000 個字元").optional(),
+    options: z
+      .array(z.string().trim().min(1, "選項不能是空的"))
+      .min(2, "至少需要兩個選項")
+      .max(8, "選項最多 8 個")
+      .optional(),
+    answerIndex: z.number().int().min(0).nullable().optional(),
+    explanation: z.string().trim().max(10000, "說明最多 10000 個字元").optional(),
+    paper: z.string().trim().max(50, "卷別最多 50 個字元").optional(),
+    sourceNumber: z.number().int().min(0).nullable().optional(),
+    category: z.string().trim().max(20, "分類最多 20 個字元").optional(),
   })
   .superRefine((data, ctx) => {
+    if (data.type === "RECOGNITION") {
+      if (!data.options || data.options.length < 2) {
+        ctx.addIssue({
+          code: "custom",
+          message: "識別題至少要有兩個選項",
+          path: ["options"],
+        });
+        return;
+      }
+      if (
+        data.answerIndex == null ||
+        data.answerIndex < 0 ||
+        data.answerIndex >= data.options.length
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "正確答案超出選項範圍",
+          path: ["answerIndex"],
+        });
+      }
+      return;
+    }
+
+    if (data.testCases.length < 1) {
+      ctx.addIssue({
+        code: "custom",
+        message: "至少要有一筆測資",
+        path: ["testCases"],
+      });
+    }
     if (data.subtasks.length === 0) return;
 
     const total = data.subtasks.reduce((sum, s) => sum + s.points, 0);

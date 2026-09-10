@@ -38,6 +38,8 @@ export async function GET(
               statement: true,
               timeLimitMs: true,
               memoryLimitMb: true,
+              code: true,
+              options: true,
               pdfData: true,
               pdfFilename: true,
               pdfPassword: true,
@@ -79,6 +81,10 @@ export async function GET(
       memoryLimitMb: cp.problem.memoryLimitMb,
       statement: cp.problem.statement,
       samples: cp.problem.testCases,
+      code: cp.problem.code,
+      options: cp.problem.options
+        ? JSON.parse(cp.problem.options)
+        : null,
     });
     zip.file(`${cp.label}.html`, html);
   }

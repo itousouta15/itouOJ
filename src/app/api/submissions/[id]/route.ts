@@ -21,6 +21,13 @@ export async function GET(
           id: true,
           order: true,
           title: true,
+          type: true,
+          paper: true,
+          sourceNumber: true,
+          category: true,
+          options: true,
+          answerIndex: true,
+          explanation: true,
           subtasks: {
             orderBy: { order: "asc" },
             select: { order: true, points: true },
@@ -58,10 +65,28 @@ export async function GET(
     });
   }
 
+  const isRecognition = submission.problem.type === "RECOGNITION";
+  const canSee = isOwner || isAdmin;
+
   return Response.json({
     id: submission.id,
     username: submission.user.username,
-    problem: submission.problem,
+    problem: {
+      id: submission.problem.id,
+      order: submission.problem.order,
+      title: submission.problem.title,
+      type: submission.problem.type,
+      paper: submission.problem.paper,
+      sourceNumber: submission.problem.sourceNumber,
+      category: submission.problem.category,
+      // 選項是題目本身的一部分（公開）；正確答案與解析只有本人/管理員看得到
+      options: isRecognition
+        ? JSON.parse(submission.problem.options ?? "[]")
+        : null,
+      answerIndex: isRecognition && canSee ? submission.problem.answerIndex : null,
+      explanation: isRecognition && canSee ? submission.problem.explanation : null,
+      subtasks: submission.problem.subtasks,
+    },
     language: submission.language,
     status: submission.status,
     score: submission.score,
@@ -86,5 +111,7 @@ export async function GET(
     // 程式碼與編譯錯誤只有本人和管理員看得到
     code: isOwner || isAdmin ? submission.code : null,
     compileError: isOwner || isAdmin ? submission.compileError : null,
+    // 識別題：選擇的選項只有本人/管理員看得到（等同程式碼的隱私等級）
+    selectedIndex: isRecognition && canSee ? submission.selectedIndex : null,
   });
 }

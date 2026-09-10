@@ -31,14 +31,21 @@ export async function POST(
   const isPublic = body?.isPublic !== false;
 
   const problem = await prisma.$transaction(async (tx) => {
+    const last = await tx.problem.findFirst({
+      where: { type: "PROGRAMMING" },
+      orderBy: { order: "desc" },
+      select: { order: true },
+    });
     const created = await tx.problem.create({
       data: {
         title: proposal.title,
         statement: proposal.statement,
+        type: "PROGRAMMING",
         difficulty: proposal.difficulty,
         timeLimitMs: proposal.timeLimitMs,
         memoryLimitMb: proposal.memoryLimitMb,
         isPublic,
+        order: (last?.order ?? 0) + 1,
         testCases: {
           create: proposal.testCases.map((tc, i) => ({
             input: tc.input,

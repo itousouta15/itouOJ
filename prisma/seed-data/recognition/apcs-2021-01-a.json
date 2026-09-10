@@ -1,0 +1,202 @@
+{
+  "source": "APCS 2021/01",
+  "questions": [
+    {
+      "number": 1,
+      "category": "C",
+      "question": "上述輸出的答案為下列何者？",
+      "code": "int func ( int a[] , int s , int f) {\n    int min = 0, max = s - 1 ;\n    while ( min < max ){\n        int mid = (min + max) / 2;\n        if ( f > a[mid] ){\n            min = mid + 1;\n        } else if ( f < a[mid] ){\n            max = mid - 1;\n        } else {\n            return mid;\n        }\n    }\n    return -1;\n}\nint main(){\n    int a[8] = { 2, 3, 3, 5, 8, 8, 8, 8 } ;\n    printf(\"%d\", func(a, 8, 8) ) ;\n}",
+      "options": [
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 2,
+      "category": "C",
+      "question": "上述輸出的答案為下列何者？",
+      "code": "int main(){\n    char c = 'a';\n    switch(c){\n        case 'a':\n            printf(\"a\");\n        case 'b':\n            printf(\"b\");\n        case 'c':\n            printf(\"c\");\n        default:\n            printf(\"d\");\n    }\n}",
+      "options": [
+        "a",
+        "abc",
+        "ad",
+        "abcd"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 3,
+      "category": "C",
+      "question": "rand() 是一個會回傳隨機整數的函數，試問下列選項何者是無法達成？",
+      "code": "int level = 0;\nint num[6] ;\nfor (int i = 1 ; i <= 6 ; i = i + 1 ) {\n    if ( level == 0 ) {\n        num[level] = i ;\n        level = level + 1 ;\n    } else if ( rand() % 2 == 0 ){ \n        level = level - 1 ;\n        printf(\"%d \", num[level] ) ;\n        i = i - 1;\n    } else {\n        num[level] = i ;\n        level = level + 1 ;\n    }\n}\nwhile ( level ) {\n    level = level - 1 ;\n    printf(\"%d \", num[level] ) ;\n}",
+      "options": [
+        "1 2 3 5 6 4",
+        "4 6 5 3 1 2",
+        "3 4 6 5 2 1",
+        "6 5 4 3 2 1"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 4,
+      "category": "C",
+      "question": "回傳的 c 值為多少？",
+      "code": "int f(){\n    int a[5] = { 9, 2, 4, 7, 3 } ;\n    int b[10] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1} ;\n    int c = 0;\n    for (int i = 0; i < 5 ; i = i + 1 ) {\n        c += b[ a[i] ];\n    }\n    return c;\n}",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 5,
+      "category": "C",
+      "question": "執行上述的函數時回傳的結果： $f$(14) = 28 ，$f$(10) = 21 ， $f$(6) = 12，判斷式該如何選擇才能符合對應關係？",
+      "code": "int f ( int n ){\n    if ( n < 2 )\n        return n ;    \n    else\n        return n + f(__________) ;\n}",
+      "options": [
+        "$\\frac{n+1}{2}$",
+        "$\\frac{n}{2}$",
+        "$\\frac{n-1}{2}$",
+        "$\\frac{n}{2}+1$"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 6,
+      "category": "C",
+      "question": "執行上述的函數時後輸出的結果？",
+      "code": "int f ( int n ){\n    int a[5] = { 5, 3, 10, 4, 20 } ;\n    int b[5] = {} ;\n    int size = 0 ;\n    for ( int i = 0 ; i < 5; i = i + 1 ) { \n        b[ size ] = a[i] ;\n        size =  size + 1 ;\n    }\n    while (  size ) {\n        printf(\"%d \", b[ size - 1]);\n        size =  size - 1 ;\n    }\n}",
+      "options": [
+        "3 4 5 10 20",
+        "5 3 10 4 20",
+        "20 10 5 4 3",
+        "20 4 10 3 5"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "執行為上述的程式碼後輸出結果為[1][2][3][4][7][5][8]，試問判斷是該如何選擇？",
+      "code": "for (int i = 0; i < 6 ; i += 1 ){\n    for (int j = 0 ; __________ ; j += 3 ){\n        printf(\"[%d]\", i+j);\n    }\n}",
+      "options": [
+        "$j < i$",
+        "$j \\leq i$",
+        "$j > i$",
+        "$j \\geq i$"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 8,
+      "category": "C",
+      "question": "為了讓陣列反向儲存時，判斷式應該如何選擇？",
+      "code": "void reverse( int a[], int n ) {\n    for (int i = 0 ; __________ ; i += 1 ) {    \n        int temp = a[i] ;\n        a[i] = a[ n-1-i ] ;\n        a[ n-1-i ] = temp ;\n    }\n}",
+      "options": [
+        "$i < n$",
+        "$i < \\frac{n}{2}$",
+        "$i \\leq n$",
+        "$i \\leq \\frac{n}{2}+1$"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 9,
+      "category": "C",
+      "question": "執行完上述的程式碼後 sum 的值應該為多少？",
+      "code": "#define SIZE 7\nint main() {\n    int outer = 0 , sum = 0 , index = 0 ;\n    int a[7] = { 2, 1, 3, 4, 5, 0, 6 } ;\n    while( outer < SIZE ){ \n        for( index = 0 ; index < a[outer] ; index += 1 )\n            if( index > 5 )\n                break ;\n            else if ( a[ index ] >= a[ index + 1 ] ){\n                sum = sum + a[ index ] ;\n                a[ index ] = a[ index + 1 ] ;\n            }\n        outer = outer + sum ;\n    }\n}",
+      "options": [
+        "0",
+        "2",
+        "3",
+        "6"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 10,
+      "category": "C",
+      "question": "輸出數值為多少？",
+      "code": "void f(int x, int y){\n    int temp = x;\n    x = y;\n    y = temp;\n}\nint main(){\n    int x = 2, y = 5 ;\n    f(x, y) ;\n    printf(\"%d\", (x - y) * (x + y + 4) );\n}",
+      "options": [
+        "33",
+        "1",
+        "-1",
+        "-33"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 11,
+      "category": "C",
+      "question": "輸出數值為多少？",
+      "code": "int f(int *a, int *b) ;\nint g(int *a, int *b) ;\n\nint main(){\n    int a = 32, b = 5 ;\n    int x = f(&a, &b) ;\n    printf(\"%d %d %d\", x, a, b) ;\n}\nint f(int *a, int *b ) {\n    int c = 10 ;\n    *a = *a + *b / 5 ; \n    int p = g(b, a) % 2;\n    if (p % 2 == 0){\n        return *b - p ;\n    } else {\n        return *b + p ;\n    }\n}\nint g(int *a ,int *b ) {\n    return ( *a - *b ) * 5 + 2 ;\n}",
+      "options": [
+        "5 33 5",
+        "5 32 5",
+        "143 33 5",
+        "143 32 5"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 12,
+      "category": "C",
+      "question": "輸出\"wadoteputedo\"時，判斷式應該如何選擇才符合題目要求？\n原版是給定 3 個數字字串對應的英文字串...",
+      "code": "int f(char s[], int n){\n    char t[1000] ;\n    int j = 0 ;\n    for (int i = 0 ; i < strlen(s) ; i += 1, j += 2) {\n        if (s[ i ] == '0'){\n            t[ j ] = 'w' ;\n            t[j+1] = 'a' ;\n        } else if ( _____ || _____ ) {\n            t[ j ] = 't' ;\n            t[j+1] = 'e' ;\n        } else if (s[ i ] == '3' || s[ i ] == '5'){\n            t[ j ] = 'd' ;\n            t[j+1] = 'o' ;\n        } else if (s[ i ] == '4' || s[ i ] == '6'){\n            t[ j ] = 'p' ;\n            t[j+1] = 'u' ;\n        } else {\n            t[ j ] = ' ';\n            j = j - 2 ;\n        }\n    }\n    t[j] = '\\0';\n    printf(\"%s\\n\", t);\n}\nint main(){\n    char s[] = \"0328675\";\n    f(s, 8);\n}",
+      "options": [
+        "s[i] == '2' || s[i] == '7'",
+        "s[i] == '2' || s[i] == '8'",
+        "s[i] == '1' || s[i] == '8'",
+        "s[i] == '1' || s[i] == '2'"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 13,
+      "category": "C",
+      "question": "輸出的字串為何？",
+      "code": "int main(){\n    char s[] = \"3*5/6+2-1\" ;\n    char a[10] = {} ;\n    char b[10] = {} ;\n    int la = 0, lb = 0 ;\n    for ( int i = 0 ; i < strlen(s) ; i += 1 ){\n        switch( s[i] ){\n            case '+': \n            case '-': \n            case '*': \n            case '/':\n                a[la] = s[i] ;\n                la = la + 1 ;\n                break ;\n            default : \n                b[lb] = s[i] ;\n                lb = lb + 1 ;\n        }\n    }\n    while( la ){\n        la = la - 1 ;\n        b[ lb ] = a[ la ] ;\n        lb = lb + 1 ;\n    }\n    b[lb] = '\\0' ;\n    printf(\"%s\\n\",b ) ;\n}\n",
+      "options": [
+        "35621*/+ -",
+        "*/+ -35621",
+        "35621- +/*",
+        "*35/9+2-1"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 14,
+      "category": "C",
+      "question": "邊長Ｎ為奇數的魔方陣，依照下列規則填入１到 $N^{2}$ 的數字就能保證每一行和每一列以及斜對角的數字總和都相同。\n(1) 由最下面那一列的中間格開始填入1\n(2) 接續格在前一格的左下方，除非超出邊界或格內已填數字\n(3) 超出下邊界，則接續格改為左邊一行的最上面一列，除非超出左邊界如說明(6)\n(4) 超出左邊界，則接續格改為下面一列的最右邊一行，除非超出下邊界如說明(6)\n(5) 若接續格已填有數字，接續格改為原格上方一格\n(6) 若下面及左邊同時超出邊界時，接續格改為原格的上方一格",
+      "code": "int main(){\n    int n ;\n    scanf(\"%d\", &n) ;\n    int mat[n][n] = {};\n    int x = n-1 , y = (n - 1) / 2 ;\n    for(int i = 1 ; i <= n * n ; i = i + 1 ){\n        int a = _____ ;\n        int b = _____ ;\n        if ( mat[a][b] ){\n            a = ( x + 1 )% n;\n            b = y ;\n        }\n        x = a ;\n        y = b ;\n        mat[x][y] = i ;\n    }\n}",
+      "options": [
+        "(x-1+n)%n , (y+1+n)%n",
+        "(x-1+n)%n , (y-1+n)%n",
+        "(x+1+n)%n , (y+1+n)%n",
+        "(x+1+n)%n , (y-1+n)%n"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    }
+  ],
+  "paper": "A 卷"
+}

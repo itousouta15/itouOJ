@@ -26,7 +26,21 @@ export async function PUT(
       { status: 400 }
     );
   }
-  const { testCases, subtasks, tagIds, pdfUpload, ...fields } = parsed.data;
+  const {
+    testCases,
+    subtasks,
+    tagIds,
+    pdfUpload,
+    type,
+    code,
+    options,
+    answerIndex,
+    explanation,
+    paper,
+    sourceNumber,
+    category,
+    ...base
+  } = parsed.data;
 
   let pdf;
   try {
@@ -52,11 +66,40 @@ export async function PUT(
     await tx.testCase.deleteMany({ where: { problemId } });
     await tx.subtask.deleteMany({ where: { problemId } });
     await tx.problemTag.deleteMany({ where: { problemId } });
+
+    if (type === "RECOGNITION") {
+      await tx.problem.update({
+        where: { id: problemId },
+        data: {
+          ...base,
+          type,
+          ...pdf,
+          code: code ?? null,
+          options: options ? JSON.stringify(options) : null,
+          answerIndex: answerIndex ?? null,
+          explanation: explanation?.trim() || null,
+          paper: paper?.trim() || null,
+          sourceNumber: sourceNumber ?? null,
+          category: category?.trim() || null,
+        },
+      });
+      return;
+    }
+
     const updated = await tx.problem.update({
       where: { id: problemId },
       data: {
-        ...fields,
+        ...base,
+        type,
         ...pdf,
+        // 從識別題改回實作題時清掉識別欄位
+        code: null,
+        options: null,
+        answerIndex: null,
+        explanation: null,
+        paper: null,
+        sourceNumber: null,
+        category: null,
         subtasks: {
           create: subtasks.map((s, i) => ({
             order: i + 1,

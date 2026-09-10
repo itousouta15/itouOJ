@@ -24,6 +24,7 @@ export default async function EditProblemPage({
       select: {
         id: true,
         order: true,
+        type: true,
         title: true,
         statement: true,
         difficulty: true,
@@ -32,6 +33,13 @@ export default async function EditProblemPage({
         isPublic: true,
         pdfFilename: true,
         pdfPassword: true,
+        code: true,
+        options: true,
+        answerIndex: true,
+        explanation: true,
+        paper: true,
+        sourceNumber: true,
+        category: true,
         testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] },
         subtasks: { orderBy: { order: "asc" } },
         tags: { select: { tagId: true } },
@@ -44,16 +52,20 @@ export default async function EditProblemPage({
   const subtaskIndexById = new Map(
     problem.subtasks.map((s, i) => [s.id, i])
   );
+  const options = JSON.parse(problem.options ?? "[]") as string[];
 
   return (
     <div>
       <h1 className="mb-4 page-title">
-        編輯題目 #{problem.order}
+        {problem.type === "RECOGNITION"
+          ? `編輯識別題：${problem.title}`
+          : `編輯題目 #${problem.order}`}
       </h1>
       <ProblemForm
         availableTags={tags}
         initial={{
           id: problem.id,
+          type: problem.type as "PROGRAMMING" | "RECOGNITION",
           title: problem.title,
           statement: problem.statement,
           difficulty: problem.difficulty,
@@ -76,6 +88,13 @@ export default async function EditProblemPage({
                 ? subtaskIndexById.get(tc.subtaskId) ?? null
                 : null,
           })),
+          code: problem.code ?? "",
+          options: options.length >= 2 ? options : ["", ""],
+          answerIndex: problem.answerIndex ?? 0,
+          explanation: problem.explanation ?? "",
+          paper: problem.paper ?? "",
+          sourceNumber: problem.sourceNumber,
+          category: problem.category ?? "C",
         }}
       />
     </div>

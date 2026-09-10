@@ -7,10 +7,14 @@ import {
   getContestPhase,
   parseAllowedLanguages,
 } from "@/lib/contest";
-import Markdown from "@/components/Markdown";
+import QuestionHeader from "@/components/QuestionHeader";
+import StatementCard from "@/components/StatementCard";
+import SampleCases from "@/components/SampleCases";
+import CodeBlock from "@/components/CodeBlock";
 import ContestStatusBadge from "@/components/ContestStatusBadge";
 import ContestCountdown from "@/components/ContestCountdown";
 import SubmitPanel from "@/components/SubmitPanel";
+import RecognitionAnswerPanel from "@/components/RecognitionAnswerPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +44,7 @@ export default async function ContestProblemPage({
     },
   });
   if (!problem) notFound();
+  const isRecognition = problem.type === "RECOGNITION";
 
   const [contestProblem, acceptedSub] = await Promise.all([
     prisma.contestProblem.findUnique({
@@ -55,6 +60,7 @@ export default async function ContestProblemPage({
   const accepted = acceptedSub !== null;
 
   const phase = getContestPhase(contest);
+  const options = isRecognition ? JSON.parse(problem.options ?? "[]") : [];
 
   return (
     <div className="space-y-6">
@@ -73,56 +79,48 @@ export default async function ContestProblemPage({
         />
       </div>
 
-      <div>
-        <h1 className="page-title">
-          {contestProblem?.label ?? ""}. {problem.title}
-        </h1>
-        <p className="mt-1 text-sm text-dim">
-          時間限制 {problem.timeLimitMs} ms ・ 記憶體限制 {problem.memoryLimitMb} MB
-        </p>
-      </div>
-
-      <div className="card p-6">
-        <Markdown>{problem.statement}</Markdown>
-      </div>
-
-      {problem.testCases.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="section-title">範例測資</h2>
-          {problem.testCases.map((tc, i) => (
-            <div key={tc.id} className="grid gap-4 sm:grid-cols-2">
-              <div className="card p-4">
-                <p className="mb-2 text-xs font-semibold text-dim">範例輸入 {i + 1}</p>
-                <pre className="overflow-x-auto rounded bg-inset p-3 font-mono text-sm whitespace-pre-wrap">
-                  {tc.input}
-                </pre>
-              </div>
-              <div className="card p-4">
-                <p className="mb-2 text-xs font-semibold text-dim">範例輸出 {i + 1}</p>
-                <pre className="overflow-x-auto rounded bg-inset p-3 font-mono text-sm whitespace-pre-wrap">
-                  {tc.output}
-                </pre>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <SubmitPanel
-        problemId={problem.id}
-        problem={{
-          order: problem.order,
-          title: problem.title,
-          difficulty: problem.difficulty,
-          timeLimitMs: problem.timeLimitMs,
-          memoryLimitMb: problem.memoryLimitMb,
-          accepted,
-        }}
-        contestId={contest.id}
-        // assertContestProblemAccess 已經擋掉 upcoming，這裡只會是 running/frozen/ended
-        contestPhase={phase as "running" | "frozen" | "ended"}
-        allowedLanguages={parseAllowedLanguages(contest.allowedLanguages)}
+      <QuestionHeader
+        title={`${contestProblem?.label ?? ""}. ${problem.title}`}
+        sub={
+          isRecognition ? undefined : (
+            <>
+              時間限制 {problem.timeLimitMs} ms ・ 記憶體限制{" "}
+              {problem.memoryLimitMb} MB
+            </>
+          )
+        }
       />
+
+      <StatementCard>{problem.statement}</StatementCard>
+
+      <CodeBlock code={problem.code ?? ""} />
+
+      <SampleCases samples={problem.testCases} />
+
+      {isRecognition ? (
+        <RecognitionAnswerPanel
+          options={options}
+          explanation={problem.explanation}
+          answerIndex={problem.answerIndex ?? 0}
+          locked={phase === "ended"}
+        />
+      ) : (
+        <SubmitPanel
+          problemId={problem.id}
+          problem={{
+            order: problem.order,
+            title: problem.title,
+            difficulty: problem.difficulty,
+            timeLimitMs: problem.timeLimitMs,
+            memoryLimitMb: problem.memoryLimitMb,
+            accepted,
+          }}
+          contestId={contest.id}
+          // assertContestProblemAccess 已經擋掉 upcoming，這裡只會是 running/frozen/ended
+          contestPhase={phase as "running" | "frozen" | "ended"}
+          allowedLanguages={parseAllowedLanguages(contest.allowedLanguages)}
+        />
+      )}
     </div>
   );
 }

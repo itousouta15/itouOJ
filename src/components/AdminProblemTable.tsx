@@ -4,21 +4,30 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import DifficultyBadge from "@/components/DifficultyBadge";
+import CategoryBadge from "@/components/CategoryBadge";
+import { problemHref } from "@/lib/problemTypes";
 
 export interface AdminProblemRow {
   id: number;
   order: number;
+  type: string;
   title: string;
   difficulty: string;
   isPublic: boolean;
   testCaseCount: number;
   submissionCount: number;
+  clusterTitle: string | null;
+  paper: string | null;
+  sourceNumber: number | null;
+  category: string | null;
 }
 
 export default function AdminProblemTable({
   problems,
+  type,
 }: {
   problems: AdminProblemRow[];
+  type: "PROGRAMMING" | "RECOGNITION";
 }) {
   const router = useRouter();
   const [rows, setRows] = useState(problems);
@@ -26,6 +35,9 @@ export default function AdminProblemTable({
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // 切換題型分頁時，由外層 <AdminProblemTable key={type}> 重新掛載，
+  // rows 會直接拿到新題型的資料，不需要在 effect 裡同步 state。
 
   const dirty = rows.some((p, i) => p.id !== problems[i]?.id);
 
@@ -54,7 +66,7 @@ export default function AdminProblemTable({
       const res = await fetch("/api/admin/problems/reorder", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: rows.map((p) => p.id) }),
+        body: JSON.stringify({ ids: rows.map((p) => p.id), type }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -66,6 +78,8 @@ export default function AdminProblemTable({
       setSaving(false);
     }
   }
+
+  const isRecognition = type === "RECOGNITION";
 
   return (
     <div>
@@ -90,9 +104,20 @@ export default function AdminProblemTable({
           <tr>
             <th className="table-head w-16">#</th>
             <th className="table-head">標題</th>
-            <th className="table-head w-24">難度</th>
-            <th className="table-head w-20 text-right">測資</th>
-            <th className="table-head w-20 text-right">提交</th>
+            {isRecognition ? (
+              <>
+                <th className="table-head w-36">群集</th>
+                <th className="table-head w-24">卷別</th>
+                <th className="table-head w-20">原題號</th>
+                <th className="table-head w-20">分類</th>
+              </>
+            ) : (
+              <>
+                <th className="table-head w-24">難度</th>
+                <th className="table-head w-20 text-right">測資</th>
+                <th className="table-head w-20 text-right">提交</th>
+              </>
+            )}
             <th className="table-head w-24">狀態</th>
             <th className="table-head w-20"></th>
           </tr>
@@ -101,10 +126,12 @@ export default function AdminProblemTable({
           {rows.length === 0 && (
             <tr>
               <td
-                colSpan={7}
+                colSpan={isRecognition ? 8 : 8}
                 className="table-cell py-10 text-center text-mute"
               >
-                還沒有題目，點右上角「新增題目」開始出題
+                {isRecognition
+                  ? "還沒有識別題，點右上角「新增題目」再切到識別題即可建立"
+                  : "還沒有題目，點右上角「新增題目」開始出題"}
               </td>
             </tr>
           )}
@@ -147,21 +174,36 @@ export default function AdminProblemTable({
               </td>
               <td className="table-cell font-medium">
                 <Link
-                  href={`/problems/${p.order}`}
+                  href={problemHref(p)}
                   className="text-blue hover:underline"
                 >
                   {p.title}
                 </Link>
               </td>
-              <td className="table-cell">
-                <DifficultyBadge difficulty={p.difficulty} />
-              </td>
-              <td className="table-cell text-right text-dim">
-                {p.testCaseCount}
-              </td>
-              <td className="table-cell text-right text-dim">
-                {p.submissionCount}
-              </td>
+              {isRecognition ? (
+                <>
+                  <td className="table-cell text-dim">
+                    {p.clusterTitle ?? "未分類"}
+                  </td>
+                  <td className="table-cell text-dim">{p.paper ?? "—"}</td>
+                  <td className="table-cell text-dim">{p.sourceNumber ?? "—"}</td>
+                  <td className="table-cell">
+                    <CategoryBadge category={p.category} />
+                  </td>
+                </>
+              ) : (
+                <>
+                  <td className="table-cell">
+                    <DifficultyBadge difficulty={p.difficulty} />
+                  </td>
+                  <td className="table-cell text-right text-dim">
+                    {p.testCaseCount}
+                  </td>
+                  <td className="table-cell text-right text-dim">
+                    {p.submissionCount}
+                  </td>
+                </>
+              )}
               <td className="table-cell text-sm text-dim">
                 {p.isPublic ? "公開" : "未公開"}
               </td>

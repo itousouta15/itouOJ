@@ -1,0 +1,117 @@
+{
+  "source": "APCS 2017/03",
+  "questions": [
+    {
+      "number": 2,
+      "category": "C",
+      "question": "給定函式 A1( )、 A2( ) 與 F( ) 如下。\n\n以下敘述何者有誤？",
+      "code": "void A1 (int n) {\n   F(n/5);\n   F(4*n/5);\n}\n\nvoid A2 (int n) {\n   F(2*n/5);\n   F(3*n/5);\n}\n\nvoid F (int x) {\n   int i;\n   for (i=0; i<x; i=i+1)\n      printf(\"*\");\n   if (x>1) {\n      F(x/2);\n      F(x/2);\n   }\n}",
+      "options": [
+        "A1(5) 印的 '*' 個數比 A2(5) 多",
+        "A1(13) 印的 '*' 個數比 A2(13) 多",
+        "A2(14) 印的 '*' 個數比 A1(14) 多",
+        "A2(15) 印的 '*' 個數比 A1(15) 多"
+      ],
+      "answerIndex": 3,
+      "explanation": "+ F(1) 到 F(12) 在各選項會重複用到，所以先計算 F(1) 到 F(12) 印出星號的數目：\n    | F(n)  | 計算過程      | 印出星號數目 |\n    | ----- | ------------- | ------------ |\n    | F(1)  |               | 1            |\n    | F(2)  | 2 + 2 * F(1)  | 4            |\n    | F(3)  | 3 + 2 * F(1)  | 5            |\n    | F(4)  | 4 + 2 * F(2)  | 12           |\n    | F(5)  | 5 + 2 * F(2)  | 13           |\n    | F(6)  | 6 + 2 * F(3)  | 16           |\n    | F(7)  | 7 + 2 * F(3)  | 17           |\n    | F(8)  | 8 + 2 * F(4)  | 32           |\n    | F(9)  | 9 + 2 * F(4)  | 33           |\n    | F(10) | 10 + 2 * F(5) | 36           |\n    | F(11) | 11 + 2 * F(5) | 37           |\n    | F(12) | 12 + 2 * F(6) | 44           |\n\n+ 再計算各選項印出星號數量：\n\n    + （A）\n        A1(5) = F(1) + F(4) = 13\n        A2(5) = F(2) + F(3) = 9，A1(5) > A2(5)，正確\n\n    + （B）\n        A1(13) = F(2) + F(10) = 40\n        A2(13) = F(5) + F(7) = 30，A1(13) > A2(13)，正確\n\n    + （C）\n        A1(14) = F(2) + F(11) = 41\n        A2(14) = F(5) + F(8) = 45，A2(14) > A1(14)，正確\n\n    + （D）\n        A1(15) = F(3) + F(12) = 49\n        A2(15) = F(6) + F(9) = 49，A1(15) = A2(15)，錯誤"
+    },
+    {
+      "number": 4,
+      "category": "C",
+      "question": "下方函式兩個回傳式分別該如何撰寫，才能正確計算並回傳兩參數 a, b 之最大公因數 (Greatest Common Divisor)？",
+      "code": "int GCD (int a, int b) {\n   int r;\n\n   r = a % b;\n   if (r == 0)\n      return __________;\n   return _____________;\n}",
+      "options": [
+        "a, GCD(b,r)",
+        "b, GCD(b,r)",
+        "a, GCD(a,r)",
+        "b, GCD(a,r)"
+      ],
+      "answerIndex": 1,
+      "explanation": "輾轉相除法求最大公因數： a/b 若整除，b 就是最大公因數；否則以 b 及餘數繼續。\n\n「if(r == 0)」為真表示 a/b 整除，故傳回「b」就是最大公因數，否則以 b 及餘數 ( r ) 繼續，故傳回「GCD(b,r)」繼續執行。"
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "若以 B(5,2) 呼叫下方 B( ) 函式，總共會印出幾次 “base case”？",
+      "code": "int B (int n, int k) {\n   if (k == 0 || k == n){\n      printf (\"base case\\n\");\n      return 1;\n   }\n   return B(n-1,k-1) + B(n-1,k);\n}",
+      "options": [
+        "1",
+        "5",
+        "10",
+        "19"
+      ],
+      "answerIndex": 2,
+      "explanation": "+ 當第 2 個參數為 0 或兩個參數相等時就印出「base case」一次。\n\n+ B(5,2)\n    = B(4,1) + B(4,2)\n    = B(3,0) + B(3,1) + B(3,1) + B(3,2)\n\n    + B(3,1)\n        = B(2,0) + B(2,1)\n        = 1 + B(1,0) + B(1,1)\n        = 1 + 1 + 1\n        = 3（次）\n\n    + B(3,2)\n        = B(2,1) + B(2,2)\n        = B(1,0) + B(1,1) + 1\n        = 1 + 1 + 1\n        = 3（次）\n\n    B(5,2)\n    = B(3,0) + B(3,1) + B(3,1) + B(3,2)\n    = 1 + 3 + 3 + 3\n    = 10（次）\n\n+ 以圖形表示會更清楚（黑框部分表示印出「base case」一次，有部分已在左方推論過）：\n```graphviz\ndigraph tree {\n    nodesep=0.1 // increases the separation between nodes\n\n    node [color=Red,fontname=Courier,shape=box] //All nodes will this shape and colour\n    edge [color=Blue, style=dashed] //All the lines look like this\n\n    {\"B（5,2）\"}->{\"B（4,1）\" \"B（4,2）\"}\n    \"B（4,1）\"->{\"B（3,0）\"[color=Black] \"B（3,1）\"}\n    \"B（3,1）\"->{\"B（2,0）\"[color=Black] \"B（2,1）\"}\n    \"B（2,1）\"->{\"B（1,0）\"[color=Black] \"B（1,1）\"[color=Black]}\n    \n    \"B（4,2）\"->{\"˙B（3,1）\" \"B（3,2）\"}\n    \"˙B（3,1）\"->{\"見左方印 3 次\"}\n    \n    \"B（3,2）\"->{\"˙B（2,1）\" \"B（2,2）\"[color=Black]}\n    \"˙B（2,1）\"->{\"見左方印 2 次\"}\n}\n```"
+    },
+    {
+      "number": 10,
+      "category": "C",
+      "question": "若以 G(100) 呼叫下方函式後，n 的值為何？",
+      "code": "int n = 0;\n\nvoid K (int b) {\n   n = n + 1;\n   if (b % 4)\n      K(b+1);\n}\nvoid G (int m) {\n   for (int i=0; i<m; i=i+1) {\n      K(i);\n   }\n}",
+      "options": [
+        "25",
+        "75",
+        "150",
+        "250"
+      ],
+      "answerIndex": 3,
+      "explanation": "K 函式執行結果：\n參數 b=4 的倍數：遞迴執行 1 次就跳出，n 增加 1。\nb=4 的倍數加 1：遞迴執行 4 次跳出，n 增加 4。\nb=4 的倍數加 2：遞迴執行 3 次跳出，n 增加 3。\nb=4 的倍數加 3：遞迴執行 2 次跳出，n 增加 2。\n\n此每一個 0 到 3 的循環（如 0 到 3、4 到 7 等）增加 1 + 4 + 3 + 2 = 10。\n\n本題執行 K(0) 到 K(99) 共 100 / 4 = 25 個循環，所以增加 10 * 25 = 250"
+    },
+    {
+      "number": 14,
+      "category": "C",
+      "question": "若以 F(15) 呼叫下方 F( ) 函式，總共會印出幾行數字？",
+      "code": "void F (int n) {\n   printf (\"%d\\n\" , n);\n   if ((n%2 == 1) && (n > 1)){\n      return F(5*n+1);\n   }\n   else {\n      if (n%2 == 0)\n         return F(n/2);\n   }\n}",
+      "options": [
+        "16 行",
+        "22 行",
+        "11 行",
+        "15 行"
+      ],
+      "answerIndex": 3,
+      "explanation": "遞迴跳出的條件：必須下面兩種情況都不符合。\n1. 「if((n%2 == 1) && (n > 1))」：n 為大於 1 的奇數。\n2. 「else { if(n%2 == 0)」不符條件 1 的偶數。\n\n兩者都不成立的情況：當 n 為小於等於 1 的奇數時跳出遞迴。\n\nF(15) 印出 15，返回 F(76)。\nF(76) 印出 76，返回 F(38)。\n依此類推：印出 38 19 96 48 24 12 6 3 16 8 4 2 。\nF(2) 印出 2，返回 F(1)\nF(1) 印出 1，因為 1 符合小於等於 1 的奇數，所以遞迴跳出。\n\n最終印出的數為：15 76 38 19 96 48 24 12 6 3 16 8 4 2 1 共 15 個。"
+    },
+    {
+      "number": 17,
+      "category": "C",
+      "question": "給定右側函式 F( )，F( ) 執行完所回傳的 x 值為何？",
+      "code": "int F (int n) {\n   int x = 0;\n   for (int i=1; i<=n; i=i+1)\n      for (int j=i; j<=n; j=j+1)\n         for (int k=1; k<=n; k=k*2)\n            x = x + 1;\n   return x;\n}",
+      "options": [
+        "$n(n+1)\\sqrt{\\lfloor \\log_2 n \\rfloor}$",
+        "$n^2(n+1)/2$",
+        "$n(n+1)\\lfloor \\log_2 (n)+1 \\rfloor/2$",
+        "$n(n+1)/2$"
+      ],
+      "answerIndex": 2,
+      "explanation": "+ 前兩個迴圈(i 及 j)執行次數：\n    i=1 時，j = 1, 2, ......, n，共執行 n 次。\n    i=2 時，j = 2, ......, n，共執行(n-1)次。\n    ......\n    i=n 時，j = n，共執行 1 次。\n    前兩個迴圈執行 $n+(n-1)+(n-2)+......+2+1 = n(n+1)/2$\n+ 第三個迴圈 (k) 執行次數：$\\log_2(n)+1$。以 n=8 為例：\n    第 1 次迴圈：k = 1。\n    第 2 次圈 ： k = 1 * 2 = 2。\n    第 3 次圈 ： k = 2 * 2 = 4。\n    第 4 次迴圈：k = 4 * 2 = 8，迴圈結束。\n    執行次數：$\\log_2(8) + 1 = 3 + 1 = 4$。\n+ 所以解答為：$n(n+1)/2 * (log_2(n)+1) = n(n+1)\\lfloor \\log_2 (n)+1 \\rfloor/2$"
+    },
+    {
+      "number": 20,
+      "category": "C",
+      "question": "小藍寫了一段複雜的程式碼想考考你是否了解函式的執行流程。\n\n請回答程式最後輸出的數值為何？",
+      "code": "int g1 = 30, g2 = 20;\n    \nint f1(int v) {\n   int g1 = 10;\n   return g1+v;\n}\n\nint f2(int v) {\n   int c = g2;\n   v = v+c+g1;\n   g1 = 10;\n   c = 40;\n   return v;\n}\n\nint main() {\n   g2 = 0;\n   g2 = f1(g2);\n   printf(\"%d\", f2(f2(g2)));\n   return 0;\n}",
+      "options": [
+        "70",
+        "80",
+        "100",
+        "190"
+      ],
+      "answerIndex": 0,
+      "explanation": "本題測驗全域變數與區域變數：f1 函式中的 g1 為區域變數，f2 函式中的 g1 為全域變數。\n\n第 2 列「g2 = f1(g2);」：g2 = 10 + 0 = 10（g1 使用區域數值 10）。\n\n第 3 列中的 f2(g2) 傳回值為 10 + 10 + 30 = 50（g1 使用全域變數值 30），同時 g1 全域變數值變為 10。\n第 3 列中的 f2(f2(g2)) 為 f2(50) = 50 + 10 + 10 = 70。"
+    },
+    {
+      "number": 21,
+      "category": "C",
+      "question": "若以 F(5,2) 呼叫右側 F( ) 函式，執行完畢後回傳值為何？",
+      "code": "int F (int x,int y) {\n   if (x<1)\n      return 1;\n   else\n      return F(x-y,y)+F(x-2*y,y);\n}",
+      "options": [
+        "1",
+        "3",
+        "5",
+        "8"
+      ],
+      "answerIndex": 2,
+      "explanation": "此遞迴是當第一個參數 x 小於 1 時就傳回 1。\n\n+ F(5,2)\n    = F(3,2) + F(1,2)\n    = F(1,2) + F(-1,2) + F(1,2)\n\n    + F(1,2)\n        = F(-1,2) + F(-3,2)\n        = 1 + 1 \n        = 2\n\n    F(5,2)\n    = F(1,2) + F(-1,2) + F(1,2)\n    = 2 + 1 + 2\n    = 5\n\n+ 以圖形表示會更清楚(黑框部分表示傳回 1)：\n```graphviz\ndigraph tree {\n    nodesep=0.3 // increases the separation between nodes\n\n    node [color=Red,fontname=Courier,shape=box] //All nodes will this shape and colour\n    edge [color=Blue, style=dashed] //All the lines look like this\n\n    {\"F（5,2）\"}->{\"F（3,2）\" \"F（1,2）\"}\n    \"F（3,2）\"->{\"˙F（1,2）\" \"F（-1,2）\"[color=Black]}\n    \"˙F（1,2）\"->{\"見右方傳回 2\"}\n    \n    \"F（1,2）\"->{\"˙F（-1,2）\"[color=Black] \"F（-3,2）\"[color=Black]}\n}\n```"
+    }
+  ]
+}
