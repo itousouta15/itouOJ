@@ -1,0 +1,76 @@
+{
+  "source": "APCS 2022/01",
+  "questions": [
+    {
+      "number": 4,
+      "category": "C",
+      "question": "詢問 func(30, 4) 的回傳結果",
+      "code": "int func(int n, int m) {\n    int arr[100];\n    int tail = 0, i;\n    for (i = 1; i <= n; i++) {\n        arr[tail] = i;\n        tail = tail + 1;\n    }\n    int head = -1, count = 0;\n    while (tail > head + 1) {\n        count = count + 1;\n        head = head + 1;\n        if (count == m) {\n            arr[tail] = arr[head];\n            count = 0;\n            tail = tail + 1;\n        }\n    }\n    return arr[head];\n}",
+      "options": [
+        "18",
+        "14",
+        "30",
+        "24"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "若執行完畢後 F 為 2，請問在空格中應該填入的程式碼為何？",
+      "code": "int a[] = {0, 1, 5, 4, 5, 4, 5};\nint n = 7, i, key = 5, F = 0;\nfor (i = 0; i < n; i++) {\n    if (a[i] == key) {\n        F = i;\n        __?__;\n    }\n}",
+      "options": [
+        "break",
+        "continue",
+        "i++",
+        "i`--`"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 17,
+      "category": "C",
+      "question": "(a) 當 i 為偶數，則輸出 4\n(b) 當 i 為奇數，則輸出 11\n\n下列敘述哪一項正確？",
+      "code": "void func() {\n    int b = 10, i;\n    double a = 47;\n    for (i = 0; i < 10; i++) {\n        b = a / b;\n        printf(\"%d\", b);\n    }\n}",
+      "options": [
+        "兩個都對",
+        "兩個都錯",
+        "只有 (a) 對",
+        "只有 (b) 對"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 18,
+      "category": "C",
+      "question": "n 為隨機整數，詢問 func(n) 不可能會回傳什麼數值",
+      "code": "int func(int n) {\n    if (n > 10){\n        n = n + 5;\n    }\n    while (n < 12){\n        n = n + 1;\n    }\n    if (n == 14){\n        n = 5;\n    }\n    return n;\n}",
+      "options": [
+        "15",
+        "16",
+        "17",
+        "18"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 20,
+      "category": "C",
+      "question": "下段函式為檢查一個陣列(array)內的數字是否「剛好」覆蓋一段區域，若符合回傳 1，否則回傳 0。例如 {5, 3, 4, 2, 6} 完美覆蓋 2 ~ 6，回傳 1，而 {3, 5, 2, 6, 7} 缺了 4，以及 {2, 3, 2, 4, 5} 多了一個 2，需回傳 0。\n\n請問在空格中應該填入的程式碼為何?",
+      "code": "const int MAXN = 1e5;\nint f(int a[], int n) {\n    int iMax = a[0];\n    for (int i = 1; i < n; i++){\n        if (a[i] > iMax){\n            iMax = a[i];    \n        }\n    }\n    int iMin = a[0];\n    for (int i = 1; i < n; i++){\n        if (a[i] < iMin){\n            iMin = a[i];\n        }\n    }\n    \n   int ok = 1;\n   if (iMax - iMin == n-1) {\n        int cnt[MAXN];\n        for (int i = 0; i < n; i++) {\n            if (cnt[a[i]] == 1){\n                __1__; \n            }\n            cnt[a[i]] = 1;\n        }\n        if (ok){\n            __2__;\n        }\n   }\n   __3__;\n}",
+      "options": [
+        "ok = 0\nreturn 1\nreturn 0",
+        "return 1\nok = 0\nreturn 0",
+        "return 0\nok = 0\nreturn 1",
+        "return 1\nreturn 0\nok = 0"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    }
+  ],
+  "paper": "第一場"
+}

@@ -65,7 +65,7 @@ export default function ProfileForm({
         />
       </div>
       {error && <p className="text-sm text-[#ff6b6b]">{error}</p>}
-      {done && <p className="text-sm text-[#4caf50]">個人資料已更新</p>}
+      {done && <p className="text-sm text-[var(--green)]">個人資料已更新</p>}
       <button className="btn-primary" disabled={loading}>
         {loading ? "處理中…" : "儲存"}
       </button>

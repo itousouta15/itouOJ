@@ -7,6 +7,7 @@ interface ProblemOption {
   id: number;
   title: string;
   isPublic: boolean;
+  type: string;
 }
 
 export interface CourseFormInitial {
@@ -175,6 +176,9 @@ export default function CourseForm({
                 />
                 <span className="mono w-10 text-xs text-mute">#{p.id}</span>
                 <span className="flex-1 truncate">{p.title}</span>
+                {p.type === "RECOGNITION" && (
+                  <span className="vbadge vbadge-blue">選擇題</span>
+                )}
                 {!p.isPublic && (
                   <span className="text-xs text-mute">（未公開）</span>
                 )}

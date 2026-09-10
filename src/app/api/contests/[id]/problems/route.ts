@@ -33,7 +33,9 @@ export async function GET(
             select: {
               id: true,
               title: true,
+              type: true,
               timeLimitMs: true,
+              options: true,
               // 只取範例測資。這份資料會被下載到選手機上離線保存，
               // 一旦把 isSample=false 的也送出去，等於把所有隱藏測資交出去。
               testCases: {
@@ -74,7 +76,9 @@ export async function GET(
       problemId: cp.problemId,
       label: cp.label,
       title: cp.problem.title,
+      type: cp.problem.type,
       timeLimitMs: cp.problem.timeLimitMs,
+      options: cp.problem.options ? JSON.parse(cp.problem.options) : null,
       samples: cp.problem.testCases,
     })),
   });

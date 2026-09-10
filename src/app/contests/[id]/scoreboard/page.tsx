@@ -117,7 +117,7 @@ export default async function ContestScoreboardPage({
                     {row.name}
                   </Link>
                 </td>
-                <td className="table-cell text-right font-semibold text-[#4caf50]">
+                <td className="table-cell text-right font-semibold text-[var(--green)]">
                   {row.solvedCount}
                 </td>
                 <td className="table-cell mono text-right text-dim">
@@ -139,7 +139,7 @@ export default async function ContestScoreboardPage({
                           ⋯{cell.attempts > 0 ? ` (${cell.attempts})` : ""}
                         </span>
                       ) : cell.solved ? (
-                        <span className="mono text-[#4caf50]">
+                        <span className="mono text-[var(--green)]">
                           {isIoi
                             ? `✓${cell.attempts > 1 ? ` (${cell.attempts})` : ""}`
                             : `+${cell.attempts > 0 ? cell.attempts : ""}`}

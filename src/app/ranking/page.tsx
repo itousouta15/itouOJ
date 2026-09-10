@@ -183,7 +183,7 @@ export default async function RankingPage({
                     {r.displayName || r.username}
                   </Link>
                 </td>
-                <td className="table-cell text-right font-semibold text-[#4caf50]">
+                <td className="table-cell text-right font-semibold text-[var(--green)]">
                   {r.solved}
                 </td>
                 <td className="table-cell text-right text-dim">
