@@ -96,6 +96,17 @@ async function judgeSubmission(submissionId: number) {
   // 被重新排入但其實已判完（例如重啟後重複 enqueue）就跳過
   if (!["PENDING", "JUDGING"].includes(submission.status)) return;
 
+  // 識別題在提交 API 就即時判定、不進判題佇列；萬一被排進來（例如舊資料
+  // 重啟後被 resume 撿到），這裡直接補判，避免卡在 PENDING。
+  if (submission.problem.type === "RECOGNITION") {
+    const correct = submission.selectedIndex === submission.problem.answerIndex;
+    await prisma.submission.update({
+      where: { id: submissionId },
+      data: { status: correct ? "AC" : "WA", score: correct ? 100 : 0 },
+    });
+    return;
+  }
+
   if (!isLanguageKey(submission.language)) {
     await prisma.submission.update({
       where: { id: submissionId },

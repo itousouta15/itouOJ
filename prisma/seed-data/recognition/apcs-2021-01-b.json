@@ -1,0 +1,202 @@
+{
+  "source": "APCS 2021/01",
+  "questions": [
+    {
+      "number": 1,
+      "category": "C",
+      "question": "以上程式碼如何達成交換2個變數的功能？",
+      "code": "void swap( int a, int b ) {\n    printf(\"%d, %d\", a, b) ;\n    __________\n    b = a - b ;\n    a = a - b ;\n    printf(\"%d, %d\", a, b) ;\n}",
+      "options": [
+        "a = a - b",
+        "a = a + b",
+        "b = a - b",
+        "b = a + b"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 2,
+      "category": "C",
+      "question": "執行以上程式碼，不可能回傳哪個值？",
+      "code": "int f(int n){\n    if (n > 17 ) \n        n += 5 ;\n    while ( n >= 23 ) \n        n -= 6 ;\n    if (n > 17 ) \n        n += 2 ;\n    return n;\n}",
+      "options": [
+        "23",
+        "21",
+        "19",
+        "17"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 3,
+      "category": "C",
+      "question": "執行以上程式碼後的 a 的值是多少？",
+      "code": "int a = 0 ;\nfor ( int i = 1 ; i <= n ; i = i + 1 )\n    for ( int j = 1 ; j <= n ; j = 2 * j )\n        for ( int k = i ; k <= n ; k = k + 1 )\n            a += 1 ;",
+      "options": [
+        "$\\frac{n(n+1)(n+2)}{3}$",
+        "$\\frac{n(n+1)(2n+1)}{6}$",
+        "$\\frac{n\\lfloor \\log_2{n} \\rfloor(n+1)}{2}$",
+        "$\\frac{n(\\lfloor \\log_2{n} \\rfloor+1 )(n+1)}{2}$"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 4,
+      "category": "C",
+      "question": "執行上述程式碼時依序輸入 10, 9, 8, ..., 1 ，請問陣列內的數字為何？",
+      "code": "int num[ 10 ] ;\nfor( int i = 0 ; i < 10 ; i = i + 1 ) \n    scanf( “%d”, &num[ ( i + 6 ) % 10 ] ) ;",
+      "options": [
+        "{ 6, 5, 4, 3, 2, 1, 10, 9, 8, 7 }",
+        "{ 5, 6, 7, 8, 9, 10, 1, 2, 3, 4 }",
+        "{ 4, 5, 6, 7, 8, 9, 10, 1, 2, 3 }",
+        "{ 9, 8, 7, 6, 5, 4, 3, 2, 1, 10 }"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 5,
+      "category": "C",
+      "question": "以下選項敘述何者正確？",
+      "code": "int a = 7, b = 3 ;\nfloat w = a / 2 / b * 1.0 ;\nfloat x = a / b / 2.0 ;\nfloat y = a / 2 / b ;\nfloat z = 1.0 * a / 2 / b ;",
+      "options": [
+        "$\\lvert w-x  \\rvert > 0.5$",
+        "$\\lvert x-z  \\rvert \\leq 0.0$",
+        "$\\lvert y-z  \\rvert \\leq 0.5$",
+        "$\\lvert x+y  \\rvert \\leq 0.5$"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 6,
+      "category": "C",
+      "question": "以下選項敘述何者正確？",
+      "code": "int Q[30] ;\nint count = 0 ;\nint front = 0 ;\nint back = 0 ;\nfor (int i = 1; i <= 15; i = i + 1 ) {\n    Q[ back ] = i ;\n    back = back + 1;\n}\nwhile ( front < back-1 ){\n    int v = Q[ front ] ;\n    front = front + 1 ;\n    count = count + 1 ;\n    if ( count == 3 ) {\n        count = 0 ;\n        Q[ back ] = v ;\n        back = back + 1 ;\n    }\n}\nprintf(\"%d\", Q[front] );",
+      "options": [
+        "6",
+        "9",
+        "12",
+        "15"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "以下選項敘述何者正確？",
+      "code": "int a[10] = { 10, 9, 7, 2, 3, 4, 5, 6, 1, 8 } ;\nint b[10] = { 2, 1, 3, 4, 5, 6, 7, 2, 4, 5 } ;\nfor (int i = 0 ; i < 10 ; i = i + 1 ) {\n    a[ b[i] - 1 ] = b[ a[i] ] + 1\n}\nprintf(\"%d\", a[7]);",
+      "options": [
+        "輸出 2",
+        "輸出 6",
+        "a[ ] 的索引值錯誤",
+        "b[ ] 的索引值錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 8,
+      "category": "C",
+      "question": "當 n 設定為多少時迴圈才能停下來？",
+      "code": "int f(int n){\n    int A[1000] = { } ;\n    for ( int i = 1 ; i != n ; i = i + 2 ) {\n        A[i] = 1;\n    }\n}",
+      "options": [
+        "1000",
+        "999",
+        "0",
+        "-1"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 9,
+      "category": "C",
+      "question": "停止條件應該如何設定才能計算出 1 + 2 + 3 + ... + n ?",
+      "code": "int sum( int n ) {\n    if (__________) {\n        return __________ ;\n    }\n    return n + sum( n - 1 ) ;\n}",
+      "options": [
+        "$n\\leq 1 , n$",
+        "$n\\leq 0 , n$",
+        "$n\\leq-1 , n+1$",
+        "以上條件都可以"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 10,
+      "category": "C",
+      "question": "執行完上述程式碼後，k的值應該符合下列哪個選項",
+      "code": "int a[21] = { } ;\nfor ( int i = 3 ; i <= 20 ; i = i + 1 )\n    for ( int j = i * i ; j <= 20 ; j = j + i )\n        a[ j ] = 1 ;\nint k = 0 ;\nfor ( int i = 0 ; i <= 20 ; i = i + 1 )\n    k = k + a[ i ]  ;",
+      "options": [
+        "$1 \\leq k \\leq 5$",
+        "$6 \\leq k \\leq 10$",
+        "$11 \\leq k \\leq 15$",
+        "$16 \\leq k \\leq 20$"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 11,
+      "category": "C",
+      "question": "為了找到 n 位學生的成績當中成績最好的，先比總分高的，若總分相同時則比照數學成績，數學成績相同時則依照學號較小的為主，下列的判斷式應該如何選擇才能保證達成條件？",
+      "code": "typedef struct student_info{\n    int math, chinese, english ;\n} std[20];\nint main () {\n    int n = 20 ;\n    int best_ID = 0 ;\n    int best_sum = std[0].math + std[0].chinese + std[0].english;\n    for ( int i = 1 ; i < n ; i = i + 1 ) {\n        int sum = std[i].math + std[i].chinese + std[i].english ; \n        if ( sum > best_sum ) {\n            best_ID = i ;\n            best_sum = sum ;\n        }else if ( ___________ ){\n            best_ID = i ;\n        }\n    }\n}",
+      "options": [
+        "sum >= best_sum and std[ i ].math >= std[ best_ID ].math",
+        "sum >= best_sum and std[ i ].math >  std[ best_ID ].math",
+        "sum > best_sum  and std[ i ].math >  std[ best_ID ].math",
+        "sum > best_sum  and std[ i ].math >= std[ best_ID ].math"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 12,
+      "category": "C",
+      "question": "輸出 a[ ] 執行完後的數字？",
+      "code": "int f() {\n    int a[8] = { 8, 7, 6, 5, 1, 2, 3, 4 } ;\n    for (int i = 7 ; 0 < i ; i = i - 1 ) {\n        for (int j = 0 ; j < i ; j = j + 1) {\n            if ( a[j+1] >= a[j] ) {\n                int temp = a[j+1] ;\n                a[j+1] = a[j];\n                a[j] = temp;\n            }\n        }\n    }\n}",
+      "options": [
+        "= { 8, 7, 6, 5, 1, 2, 3, 4 }",
+        "= { 8, 7, 6, 5, 4, 3, 2, 1 }",
+        "= { 1, 2, 3, 4, 5, 6, 7, 8 }",
+        "= { 5, 6, 7, 8, 1, 2, 3, 4 }"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 13,
+      "category": "C",
+      "question": "上述程式碼執行 f(5) 和 f(99) 之後的值各是多少？",
+      "code": "int f ( int n ) {\n    if ( n >= 101 ) \n        return n - 10 ;\n    return f( f( n + 11 ) ) ;\n}",
+      "options": [
+        "f(5) = 91,  f(99) = 91",
+        "f(5) = 94,  f(99) = 91",
+        "f(5) = 91,  f(99) = 99",
+        "f(5) = 94,  f(99) = 99"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 14,
+      "category": "C",
+      "question": "上述程式碼執行後會輸出的結果？",
+      "code": "int i = 5;\nint main(){\n    while ( i ){\n        i = i - 1 ;\n        main() ;\n        printf( \"%d \", i ) ;\n    }\n    return 0 ;\n}",
+      "options": [
+        "0 0 0 0 0",
+        "1 2 3 4 5",
+        "5 4 3 2 1",
+        "4 3 2 1 0"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    }
+  ],
+  "paper": "B 卷"
+}

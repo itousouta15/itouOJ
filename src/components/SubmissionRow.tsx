@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import VerdictBadge from "@/components/VerdictBadge";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
+import { problemHref } from "@/lib/problemTypes";
 
 export interface SubmissionRowData {
   id: number;
@@ -14,7 +15,7 @@ export interface SubmissionRowData {
   createdAtLabel: string;
   username: string;
   displayName?: string | null;
-  problem: { id: number; order: number; title: string };
+  problem: { id: number; order: number; title: string; type: string };
 }
 
 // 同一筆資料渲染兩種版型：< md 是卡片，≥ md 是表格列。
@@ -27,6 +28,13 @@ export default function SubmissionRow({
   columns?: number;
 }) {
   const router = useRouter();
+  const href = problemHref(s.problem);
+  const langLabel =
+    s.language === "choice"
+      ? "選擇題"
+      : isLanguageKey(s.language)
+        ? LANGUAGES[s.language].label
+        : s.language;
 
   return (
     <>
@@ -37,7 +45,7 @@ export default function SubmissionRow({
         <td className="table-cell mono text-dim">{s.id}</td>
         <td className="table-cell">
           <Link
-            href={`/problems/${s.problem.order}`}
+            href={href}
             className="font-medium text-blue hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
@@ -53,9 +61,7 @@ export default function SubmissionRow({
             {s.displayName || s.username}
           </Link>
         </td>
-        <td className="table-cell text-dim">
-          {isLanguageKey(s.language) ? LANGUAGES[s.language].label : s.language}
-        </td>
+        <td className="table-cell text-dim">{langLabel}</td>
         <td className="table-cell">
           <VerdictBadge status={s.status} />
         </td>
@@ -75,7 +81,7 @@ export default function SubmissionRow({
           <div className="px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <Link
-                href={`/problems/${s.problem.order}`}
+                href={href}
                 className="min-w-0 flex-1 truncate font-medium text-blue hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -101,11 +107,7 @@ export default function SubmissionRow({
               >
                 {s.displayName || s.username}
               </Link>
-              <span className="mono">
-                {isLanguageKey(s.language)
-                  ? LANGUAGES[s.language].label
-                  : s.language}
-              </span>
+              <span className="mono">{langLabel}</span>
               <span className="mono">
                 {s.timeMs != null ? `${s.timeMs} ms` : "—"}
               </span>

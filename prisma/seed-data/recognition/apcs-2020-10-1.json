@@ -1,0 +1,202 @@
+{
+  "source": "APCS 2020/10",
+  "questions": [
+    {
+      "number": 1,
+      "category": "C",
+      "question": "此程式碼的功能是將結構陣列中的 n 位學生按照分數進行升序排序，請找出錯誤的地方。",
+      "code": "struct student{\n    int score;\n    char name[20];\n};\n\nvoid sort(struct student *students, int n){\n    int i, j;\n    for(i = 0; i < n-1; i++){\n        for(j = 0; j < n-1-i; j++){\n            if(students[j].score > students[j+1].score){\n                struct student temp = students[j];\n                students[j] = students[j+1];\n                students[j+1] = temp;\n            }\n        }\n    }\n}",
+      "options": [
+        "第 10 行 程式應該改成 `if(students[j] > students[j+1]){`",
+        "第 11 行 程式應該改成 `struct student temp = students[j+1];`",
+        "第 12 行 程式應該改成 `students[j+1] = students[j];`",
+        "沒有任何錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 2,
+      "category": "C",
+      "question": "請問該程式碼執行後輸出為何？",
+      "code": "int main(){\n    int a1 = 999, a2 = 999;\n    int a[] = {2, 1, 4, 7, 8};\n    for (int i = 0; i < 5; i++) {\n        if (a[i] < a1) {\n            a2 = a1;\n            a1 = a[i];\n        } else if (a[i] < a2) {\n            a2 = a[i];\n        }\n    }\n    printf(\"%d %d\", a1, a2);\n    return 0;\n}",
+      "options": [
+        "1 2",
+        "1 4",
+        "8 7",
+        "2 1"
+      ],
+      "answerIndex": 0,
+      "explanation": "找最小的兩個數字，a1 為最小，a2 為次小。"
+    },
+    {
+      "number": 3,
+      "category": "C",
+      "question": "請問該程式碼執行後輸出為何？",
+      "code": "int a[1001] = {0};\n    for (int i = 3; i <= 1000; i = i + 2) {\n        for (int j = i*i; j <= 1000; j = j + i + i) {\n            a[j] = 1;\n        }\n    }\n    int sum = 0;\n    for(int i = 0; i <= 1000; i = i + 2) {\n        sum = sum + a[i];\n    }\n    printf(\"%d\",sum);",
+      "options": [
+        "332",
+        "0",
+        "168",
+        "1"
+      ],
+      "answerIndex": 1,
+      "explanation": "質數有 0 個偶數"
+    },
+    {
+      "number": 4,
+      "category": "C",
+      "question": "正確的輸出是 300, 1200, 540 ，請找出要刪除的程式碼。",
+      "code": "int rateUSDtoTWD = 30;\nint rateTWDtoJPD = 5;\nint USDtoTWD(int x) {\n    int rateUSDtoTWD = 40;\n    return x * rateUSDtoTWD;\n}\nint TWDtoJPD(int x) {\n    int rateTWDtoJPD = 4;\n    return x * rateTWDtoJPD;\n}\nvoid main(){\n    int iUSD = 10;\n    int iTWD = USDtoTWD(iUSD);\n    printf(\"%d\\n\",iTWD);\n    int iJPD = TWDtoJPD(iTWD);\n    printf(\"%d\\n\",iJPD);\n    int d = USDtoTWD(iUSD) + TWDtoJPD(iTWD) / rateTWDtoJPD;\n    printf(\"%d\\n\",d);\n}",
+      "options": [
+        "第 1 行",
+        "第 2 行",
+        "第 4 行",
+        "第 8 行"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 5,
+      "category": "C",
+      "question": "請問呼叫 `f(6)` 後， a[1] 與 a[2] 分別為何？",
+      "code": "int a[10] = {0};\n\nint f(int n) {\n    a[n]++;\n    if (n <= 1) return 1;\n    return f(n-1) + f(n-2) + 1;\n}",
+      "options": [
+        "5 8",
+        "8 5",
+        "5 3",
+        "3 2"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 6,
+      "category": "C",
+      "question": "請問該程式碼輸出為何？",
+      "code": "void f1(int x);\nvoid f2(int x) {\n    if (x <= 0) return;\n    f1(x-1);\n    printf(\"%d\",x);\n}\nvoid f1(int x) {\n    if (x <= 0) return;\n    printf(\"%d\",x);\n    f2(x-1);\n}\nvoid main(){\n    f1(5);\n}",
+      "options": [
+        "54321",
+        "12345",
+        "53124",
+        "42135"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "將上述 程式碼1 化簡成 程式碼2 ，請問空格中應該填入的程式碼為何？",
+      "code": "// 程式碼1\nchar f(int x, int y) {\n    if(x>10){\n        if(y<3){\n            return \"B\";\n        }\n        else{\n            if(x>y)return \"A\";\n            else return \"B\";\n        }\n    }\n    else return \"A\";\n}\n\n// 程式碼2\nchar f(int x, int y) {\n    if(____________________)\n        return 'B';\n    else return 'A';\n}",
+      "options": [
+        "`x>10 || y<3 && x<=y`",
+        "`x>10 && y<3 && x<=y`",
+        "`x>10 && y<3 || x>10 && x<=y`",
+        "`x>10 && y<3 || x<=y`"
+      ],
+      "answerIndex": 2,
+      "explanation": "```\n    'B' : x>10 && y<3 || x>10 && y>=3 && x<=y\n          A    *  B   +  A    *  B'   *  C\n    AB + AB'C\n    A(B+B'C)\n    A(B+C)\n    AB+AC\n    x>10 && y<3 || x>10 && x<=y\n```"
+    },
+    {
+      "number": 8,
+      "category": "C",
+      "question": "若已知 `f(7) = 31` 且 `f(8) = 26` ，請問空格中應該填入的程式碼為何？",
+      "code": "int f(int x){\n    if (_____) return 4*x - 6;\n    else return 4*x + 3;\n}",
+      "options": [
+        "`x < 8`",
+        "`x > 8`",
+        "`x < 7`",
+        "`x > 7`"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 9,
+      "category": "C",
+      "question": "請問 `x, y, z` 分別為何，會使此程式成立(為TRUE)？",
+      "code": "!((x <= y) || (y > z) || (x < z))",
+      "options": [
+        "9 2 4",
+        "6 7 3",
+        "3 9 3",
+        "1 2 3"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 10,
+      "category": "C",
+      "question": "已知 'A' 與 'a' 的 ASCII 分別為 65 與 97，請問輸出結果為何？",
+      "code": "int a = 1;\nfloat b = 2.0;\nint c = a / b;\n\nprintf(\"%d %c\", c, 65 + c);",
+      "options": [
+        "0 A",
+        "0 a",
+        "65 A",
+        "1 B"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 11,
+      "category": "C",
+      "question": "找出回傳結果不是 25 的選項",
+      "code": "int f(int a, int b, int c, int n) {\n    while (n--) {\n        int tmp = a;\n        a = b;\n        b = c;\n        c = tmp;\n    }\n    return a;\n}",
+      "options": [
+        "`f(25,25,0,16)`",
+        "`f(0,0,25,14)`",
+        "`f(25,0,25,10)`",
+        "`f(25,0,0,18)`"
+      ],
+      "answerIndex": 2,
+      "explanation": "f(a,b,c,n) = 第(n除3餘數)個數字，`n%3==0`為a，`n%3==1`為b，`n%3==2`為c。"
+    },
+    {
+      "number": 12,
+      "category": "C",
+      "question": "請問輸出為何？",
+      "code": "int f(int x) {\n    int ans = 0;\n    do{\n        ans += x;\n    } while (ans >=0 && ans <= 10);\n    return ans;\n}\nint main(){\n    int x = 1;\n    while (x<=40) {\n        x = x + f(x);\n    }\n    printf(\"%d\",x);\n    return 0;\n}",
+      "options": [
+        "22",
+        "48",
+        "24",
+        "44"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 13,
+      "category": "C",
+      "question": "請問輸出為何？",
+      "code": "int main(){\n    int a[] = {-2, -1, 0, 1, 2};\n    int b[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};\n    int c[5] = {0};\n    for(int i = 0; i < 5; i++) {\n        for(int j = 0; j < 5; j++) {\n            c[i] = c[i] + a[j] * b[i+j];\n        }\n    }\n    for(int i = 0; i < 5; i++){\n        printf(\"%d \",c[i]);\n    }\n    return 0;\n}",
+      "options": [
+        "10 10 10 10 10",
+        "8 10 12 14 16",
+        "-20 -15 0 25 60",
+        "0 2 4 6 8"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 14,
+      "category": "C",
+      "question": "請問 `s[]` 為下列哪一字串，`check(s, n)` 會回傳true？",
+      "code": "#include <stdio.h>\n#include <string.h>\n#include <stdbool.h>\n\nbool check(char *s, int n){\n\tint p[100] = {0};\n\tint t = 0;\n\tfor(int i = 0; i < n; i++){\n\t\tif(s[i]=='a' && (p[t]==1 || p[t]==0)){\n\t\t\tt++;\n\t\t\tp[t] = 1;\n\t\t} else if(s[i]=='b' && (p[t]==2 || p[t]==0)){\n\t\t\tt++;\n\t\t\tp[t] = 2;\n\t\t} else {\n\t\t    p[t] = 0;\n\t\t    t--;\n\t\t}\n\t}\n\treturn t == 0;\n}\n\nint main(){\n    // a b 組成的字串\n    char s[] = \"___________\";\n    int n = strlen(s);\n    printf(\"%d\\n\",check(s, n));\n    return 0;\n}\n    ",
+      "options": [
+        "\"abaabababa\"",
+        "\"abbbaababb\"",
+        "\"bbabaababb\"",
+        "\"babbbaaaba\""
+      ],
+      "answerIndex": 3,
+      "explanation": "`bool check(char *s, int n)` 計算字串中 AB 的個數是否一樣多"
+    }
+  ],
+  "paper": "第一場"
+}

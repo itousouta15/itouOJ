@@ -1,0 +1,258 @@
+{
+  "source": "APCS 2022/06",
+  "questions": [
+    {
+      "number": 1,
+      "category": "C",
+      "question": "規則：\n\n| 輸入 x 範圍 | 輸出 |\n| ----------- | ---- |\n| 90 ~ 100    | 'A'  |\n| 80 ~ 89     | 'B'  |\n| 70 ~ 79     | 'C'  |\n| 0 ~ 69      | 'D'  |\n\n下列選項哪一個正確？",
+      "code": "char f1(int x){\n     char result;\n     if (x >= 90) {\n         result = 'A';\n     } else if (x >= 80) {\n         result = 'B';\n     } else if (x >= 70) {\n         result = 'C';\n     } else {\n         result = 'D';\n     }\n     printf(\"%c\",result);\n}\n\nchar f2(int x){\n     char result;\n     if (x >= 90)\n          result = 'A';\n     switch(x) {\n         case 90:\n             result = 'A';\n             break;\n         case 80:\n             result = 'B';\n             break;\n         case 70:\n             result = 'C';\n             break;\n         case 60:\n             result = 'D';\n     }\n     printf(\"%c\",result);\n}",
+      "options": [
+        "f1 不一定會輸出正確解答",
+        "f2 不一定會輸出正確解答",
+        "f1 和程式 f2 都不一定會輸出正確解答",
+        "f1 和程式 f2 都會輸出正確解答"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 2,
+      "category": "C",
+      "question": "問 f(3) 的輸出",
+      "code": "void f(int x) {\n    if (x > 0) {\n        printf(\"positive*\");\n    }\n    if (x < 0 && x >= -100) {\n        printf(\"small negative*\");\n    } else if (x < -100) {\n        printf(\"large negative*\");\n    } else {\n        printf(\"wrong*\");\n    }\n}",
+      "options": [
+        "`positive*`",
+        "`positive*wrong*`",
+        "`large negative*`",
+        "`wrong*`"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 3,
+      "category": "C",
+      "question": "問 x, y, z 要填哪些數值才能讓上述布林運算是 **true**",
+      "code": "(!(x >= y || y >= z) || x <= z)",
+      "options": [
+        "x = 1, y = 0, z = 0",
+        "x = 7, y = 3, z = 5",
+        "x = 5, y = 7, z = 3",
+        "x = 3, y = 5, z = 7"
+      ],
+      "answerIndex": 3,
+      "explanation": "直接找 x <= z 的選項就是答案"
+    },
+    {
+      "number": 4,
+      "category": "C",
+      "question": "問迴圈執行的次數",
+      "code": "int j = 0;\nfor (int i = 0; i < 128; i = i + j + 1)\n    j = i + 1;",
+      "options": [
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 5,
+      "category": "C",
+      "question": "問空格內填入下列哪一個會使得 a 和 b 不一樣？",
+      "code": "int main() {\n    int arr[] = {____};\n\n    int a = 0;\n    for (int i = 0; i < 5; i++)\n        for (int j = 0; j < 5; j++)\n            if (arr[i] - arr[j] <= a)\n                a = arr[i] - arr[j];\n    printf(\"%d\\n\", a);\n\n    int b = 0;\n    for (int i = 0; i < 5; i++)\n        for (int j = i; j < 5; j++)\n            if (arr[i] - arr[j] <= b)\n                b = arr[i] - arr[j];\n    printf(\"%d\\n\", b);\n}",
+      "options": [
+        "5, 4, 3, 2, 1",
+        "1, 2, 3, 4 ,5",
+        "4, 1, 5, 3, 2",
+        "2, 3, 1, 4, 5"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 6,
+      "category": "C",
+      "question": "求程式執行的輸出結果",
+      "code": "int main() {\n    int a[10] = {3, 2, 3, 4, 5, 4, 7, 1, 3, 2};\n    int b[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};\n    for (int i = 0; i < 10; i++)\n        b[a[i] - 1]++;\n    printf(\"%d\", b[5]);\n}",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "哪一行一定不會被執行到？",
+      "code": "void f(int a) {\n    if (a < 8)\n        a = a - 2;\n    if (a > 11)\n        a = a + 3;\n    while (a < 12)\n        a = a + 2;\n    if (a < 10)\n        a = a * 5;\n}",
+      "options": [
+        "a = a - 2;",
+        "a = a + 3;",
+        "a = a + 2;",
+        "a = a * 5;"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 8,
+      "category": "C",
+      "question": "這個函式可以判斷輸入之字串(char*)是否為迴文，請問要改哪一行這個函式才會正常運作？",
+      "code": "bool isPal(const char *s) {\n    int p = 1;\n    int len = strlen(s);\n    for (int i = 0; i < len / 2 - 1; i++) {\n        if (s[i] != s[len - i - 1])\n            p = 0;\n    }\n    return p;\n}",
+      "options": [
+        "line 4 改 for (int i = 0; i < len / 2; i++) {",
+        "line 4 改 for (int i = 0; i < len / 2 + 1; i++) {",
+        "程式沒有任何錯誤",
+        "line 6 改成 p = 1"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 9,
+      "category": "C",
+      "question": "問 a 和 b 要填多少才會輸出 10, 5",
+      "code": "void f(int a, int b) {\n    a = a + b;\n    b = a - b;\n}\nint main() {\n    int a = ____, b = ___;\n    f(a, b);\n    printf(\"%d, %d\\n\", a, b);\n}",
+      "options": [
+        "5, 5",
+        "10, 5",
+        "5, 10",
+        "10, 10"
+      ],
+      "answerIndex": 1,
+      "explanation": "f 不會改變 main 裡面的 a, b\n因此可以知道一開始的 a, b 和輸出的 10 5 是一樣的"
+    },
+    {
+      "number": 10,
+      "category": "C",
+      "question": "求程式執行的輸出結果",
+      "code": "void f(int x, int y) {\n    int tmp = x;\n    x = y;\n    y = tmp;\n}\nint main() {\n    int x = 3, y = 4;\n    f(x, y);\n    int v = (x - y) * (x + y) / 2;\n    printf(\"%d\\n\", v);\n}",
+      "options": [
+        "-4",
+        "-3",
+        "3",
+        "4"
+      ],
+      "answerIndex": 1,
+      "explanation": "f 不會改變 main 裡面的 x, y\n因此 v = (3 - 4) * (3 + 4) / 2;"
+    },
+    {
+      "number": 11,
+      "category": "C",
+      "question": "問最後一個輸出的數字是什麼",
+      "code": "int x = 1;\nint f() {\n    x = x + 3;\n    printf(\"%d \", x);\n}\nint main() {\n    int x = 5;\n    f();\n    f();\n    printf(\"%d \", x);\n}",
+      "options": [
+        "5",
+        "8",
+        "4",
+        "7"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 12,
+      "category": "C",
+      "question": "以上四個函式呼叫有幾種不同的值",
+      "code": "int op3(int i, int j){\n    return i * j;\n}\nint op2(int g, int h){\n    return g * op3(g, h);\n}\nint op1(int e, int f){\n    return op2(e, f);\n}\n\nint a = 1, b = 2, c = 1, d = 2;\n\nop1(op2(op3(b, d), c), a);\nop2(op3(op1(d, c), a), b);\nop3(op1(op2(c, a), d), b);\nop3(1, op1(op2(b, c), d));",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 13,
+      "category": "C",
+      "question": "求程式執行的輸出結果",
+      "code": "void f1(int);\nvoid f2(int);\n\nvoid f1(int i) {\n    if (i < 10) {\n        f2(i - 2);\n        printf(\"%d \", i);\n    }\n}\nvoid f2(int i) {\n    if (i > 0) {\n        printf(\"%d \", i);\n        f1(i - 1);\n    }\n}\n\nint main() {\n    f2(9);\n}",
+      "options": [
+        "9 8 6 5 3 2",
+        "2 3 5 6 8 9",
+        "3 2 5 6 8 9",
+        "9 6 3 2 5 8"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 14,
+      "category": "C",
+      "question": "求程式執行的輸出結果",
+      "code": "int f(int i) {\n    if (i < 8) {\n        i = i + 2;\n        f(i);\n        printf(\"%d \", i);\n    }\n}\n\nint main() {\n    f(4);\n}",
+      "options": [
+        "8 6",
+        "6 8",
+        "4 6 8",
+        "8 6 4"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 15,
+      "category": "C",
+      "question": "該程式執行後應該輸出`110`，則空格中應該填入的程式碼為何？",
+      "code": "int x = 6, result = 0, index = 1;\nint base2 = 2, base10 = 10;\nwhile (x > 0) {\n    int reminder = x % base2;\n    result = ____ + reminder * index;\n    index = index * _____;\n    x = x / base2;\n}\nprintf(\"%d\",result);",
+      "options": [
+        "result, base10;",
+        "base2, base10;",
+        "base10, result",
+        "base2, base10"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 16,
+      "category": "C",
+      "question": "找出以下正確的選項",
+      "code": "int f(int x) {\n    if (x >= 101)\n        return x - 10;\n    return f(f(x + 11));\n}",
+      "options": [
+        "f(4) = 91, f(89) = 91",
+        "f(94) = 94, f(101) = 91",
+        "f(4) = 101, f(89) = 89",
+        "f(91) = 91, f(35) = 35"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 17,
+      "category": "C",
+      "question": "問 a 的結果",
+      "code": "int h(int x) {\n    return x;\n}\n\nint f(int x, int y) {\n    return h(y) - h(x);\n}\nint main() {\n     int n = 10;\n     int a[] = {6, 3, 1, 5, 8, 4, 0, 7, 2, 9};\n     for (int i = 0; i < n - 1; i++) {\n          for (int j = 0; j < n - i - 1; j++) {\n               if (f(a[j], a[j + 1]) > 0) {\n                    int tmp = a[j];\n                    a[j] = a[j + 1];\n                    a[j + 1] = tmp;\n               }\n          }\n     }\n}",
+      "options": [
+        "{6, 3, 1, 5, 8, 4, 0, 7, 2, 9}",
+        "{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}",
+        "{8, 7, 6, 5, 4, 3, 2, 1, 0, 9}",
+        "{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 18,
+      "category": "C",
+      "question": "依序執行 f(2), f(3), g(), f(1), g()，問輸出結果",
+      "code": "int iSA[10];\nint iSB[10];\nint iA = 0, iB = 0;\nvoid f(int i) {\n    iSA[iA] = i;\n    iA = iA + 1;\n}\nvoid g() {\n    if (iB == 0) {\n        while (iA > 0) {\n            iA = iA - 1;\n            iSB[iB] = iSA[iA];\n            iB = iB + 1;\n        }\n    }\n    iB = iB - 1;\n    printf(\"%d\", iSB[iB]);\n}",
+      "options": [
+        "2 3",
+        "3 2",
+        "2 3 1",
+        "2 1"
+      ],
+      "answerIndex": 0,
+      "explanation": "2 個 stack 的 queue\nf(x) = push(x), g() = cout<<q.front() & pop();"
+    }
+  ],
+  "paper": "第一場"
+}
