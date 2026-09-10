@@ -1,0 +1,48 @@
+{
+  "source": "APCS 2022/01",
+  "questions": [
+    {
+      "number": 10,
+      "category": "C",
+      "question": "上述程式碼要做到將輸入的矩陣由大到小排序，空格中應該填入的程式碼分別為何？",
+      "code": "void func(int a[], int n) {\n    int t;\n    for (int i = 0; i < n; i++) {\n        for (int j = i; j < n; j++) {\n            if (___) {\n                ___\n            }\n        }\n    }\n}",
+      "options": [
+        "a[i] < a[j]\nt = a[i];\na[i] = a[j];\na[j] = t;",
+        "a[i] > a[j]\nt = a[i];\na[i] = a[j];\na[j] = t;",
+        "a[i] < a[j]\nt = a[i];\na[j] = a[i];\na[i] = t;",
+        "a[i] > a[j]\nt = a[i];\na[j] = a[i];\na[i] = t;"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 13,
+      "category": "C",
+      "question": "規則：\n+ 40 以下免稅\n+ 40 ~ 100 稅率 0.1\n+ 100 ~ 150 稅率 0.25\n+ 超過部分 稅率 0.3\n\n上方程式碼是錯的，要如何更改？",
+      "code": "int f(int pay) {\n    if (pay <= 40)\n        return 0;\n    if (pay <= 100)\n        return (pay - 40) * 0.1\n    if (pay <= 150)\n        return pay * 0.2;\n    return (pay - 150) * 0.3 + 12.5 + 6;\n}",
+      "options": [
+        "第 4 和 6 行要變成 else if",
+        "第 7 行為 pay * 0.25 - 19",
+        "第 7 行為 (pay - 100) * 0.25 + 10",
+        "第 7 行為 (pay - 100) * 0.25 + 14"
+      ],
+      "answerIndex": 1,
+      "explanation": "減掉多算的：$40\\times0.25+60(0.25-0.1) = 19$"
+    },
+    {
+      "number": 16,
+      "category": "C",
+      "question": "下列何者是對的",
+      "code": "char a[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'};\nfor (int i = 0; i < 9; i++)\n    a[i] = a[i] + i * 2;",
+      "options": [
+        "a[2] = 'd'",
+        "a[4] = 'm'",
+        "a[6] = 't'",
+        "a[8] = 'x'"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    }
+  ],
+  "paper": "第二場"
+}

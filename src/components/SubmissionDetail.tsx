@@ -3,7 +3,9 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import VerdictBadge from "@/components/VerdictBadge";
+import Markdown from "@/components/Markdown";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
+import { problemHref } from "@/lib/problemTypes";
 import { notifyJudged } from "@/lib/capacitor";
 
 interface SubmissionData {
@@ -13,6 +15,13 @@ interface SubmissionData {
     id: number;
     order: number;
     title: string;
+    type: string;
+    paper: string | null;
+    sourceNumber: number | null;
+    category: string | null;
+    options: string[] | null;
+    answerIndex: number | null;
+    explanation: string | null;
     subtasks: { order: number; points: number }[];
   };
   language: string;
@@ -33,6 +42,7 @@ interface SubmissionData {
   }[];
   code: string | null;
   compileError: string | null;
+  selectedIndex: number | null;
 }
 
 interface HiddenSubmission {
@@ -140,9 +150,13 @@ export default function SubmissionDetail({ id }: { id: number }) {
     return <p className="animate-pulse text-mute">載入中…</p>;
   }
 
-  const langLabel = isLanguageKey(data.language)
-    ? LANGUAGES[data.language].label
-    : data.language;
+  const isRecognition = data.problem.type === "RECOGNITION";
+  const langLabel =
+    data.language === "choice"
+      ? "選擇題"
+      : isLanguageKey(data.language)
+        ? LANGUAGES[data.language].label
+        : data.language;
 
   const hasSubtasks = data.problem.subtasks.length > 0;
   const maxScore = data.problem.subtasks.reduce((s, x) => s + x.points, 0);
@@ -170,7 +184,7 @@ export default function SubmissionDetail({ id }: { id: number }) {
           <p>
             <span className="text-dim">題目：</span>
             <Link
-              href={`/problems/${data.problem.order}`}
+              href={problemHref(data.problem)}
               className="text-blue hover:underline"
             >
               {data.problem.title}
@@ -194,166 +208,202 @@ export default function SubmissionDetail({ id }: { id: number }) {
         </div>
       </div>
 
-      {data.compileError && (
-        <div className="card border-[rgba(237,66,69,0.3)] p-4">
-          <p className="mb-2 text-sm font-semibold text-[#ff6b6b]">
-            {data.status === "CE" ? "編譯錯誤訊息" : "錯誤訊息"}
-          </p>
-          <pre className="overflow-x-auto rounded bg-inset p-3 font-mono text-xs whitespace-pre-wrap text-[#ff8a8a]">
-            {data.compileError}
-          </pre>
+      {isRecognition ? (
+        <div className="card space-y-3 p-5">
+          <h2 className="section-title">作答結果</h2>
+          {data.selectedIndex != null && data.problem.options && (
+            <p className="text-sm">
+              <span className="text-dim">你的答案：</span>
+              <span className="font-mono">
+                {String.fromCharCode(65 + data.selectedIndex)}.
+              </span>{" "}
+              <span className="font-mono whitespace-pre-wrap">
+                {data.problem.options[data.selectedIndex]}
+              </span>
+            </p>
+          )}
+          {data.problem.answerIndex != null && data.problem.options && (
+            <p className="text-sm">
+              <span className="text-dim">正確答案：</span>
+              <span className="font-mono font-semibold text-[var(--green)]">
+                {String.fromCharCode(65 + data.problem.answerIndex)}.
+              </span>{" "}
+              <span className="font-mono whitespace-pre-wrap">
+                {data.problem.options[data.problem.answerIndex]}
+              </span>
+            </p>
+          )}
+          {data.problem.explanation && (
+            <div className="border-t border-bd pt-3">
+              <p className="mb-1 text-xs font-semibold text-dim">解析</p>
+              <Markdown className="prose-compact">{data.problem.explanation}</Markdown>
+            </div>
+          )}
         </div>
-      )}
+      ) : (
+        <>
+          {data.compileError && (
+            <div className="card border-[rgba(237,66,69,0.3)] p-4">
+              <p className="mb-2 text-sm font-semibold text-[#ff6b6b]">
+                {data.status === "CE" ? "編譯錯誤訊息" : "錯誤訊息"}
+              </p>
+              <pre className="overflow-x-auto rounded bg-inset p-3 font-mono text-xs whitespace-pre-wrap text-[#ff8a8a]">
+                {data.compileError}
+              </pre>
+            </div>
+          )}
 
-      {hasSubtasks && subtaskGroups.some((g) => g.results.length > 0) && (
-        <div className="space-y-4">
-          {subtaskGroups.map((g) => {
-            if (g.results.length === 0) return null;
-            const passed = g.results.every((r) => r.verdict === "AC");
-            return (
-              <div key={g.order} className="card overflow-x-auto">
-                <div className="flex items-center justify-between border-b border-bd px-4 py-2">
-                  <p className="text-sm font-semibold">
-                    子題 {g.order}（{g.points} 分）
-                  </p>
-                  <span
-                    className={
-                      passed
-                        ? "text-sm text-[#4caf50]"
-                        : "text-sm text-[#ff6b6b]"
-                    }
-                  >
-                    {passed ? `通過，得 ${g.points} 分` : "未通過，得 0 分"}
-                  </span>
-                </div>
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th className="table-head w-24">測資</th>
-                      <th className="table-head">結果</th>
-                      <th className="table-head w-28 text-right">時間</th>
-                      <th className="table-head w-28 text-right">記憶體</th>
-                      <th className="table-head w-20"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {g.results.map((r) => (
-                      <Fragment key={r.order}>
+          {hasSubtasks && subtaskGroups.some((g) => g.results.length > 0) && (
+            <div className="space-y-4">
+              {subtaskGroups.map((g) => {
+                if (g.results.length === 0) return null;
+                const passed = g.results.every((r) => r.verdict === "AC");
+                return (
+                  <div key={g.order} className="card overflow-x-auto">
+                    <div className="flex items-center justify-between border-b border-bd px-4 py-2">
+                      <p className="text-sm font-semibold">
+                        子題 {g.order}（{g.points} 分）
+                      </p>
+                      <span
+                        className={
+                          passed
+                            ? "text-sm text-[var(--green)]"
+                            : "text-sm text-[#ff6b6b]"
+                        }
+                      >
+                        {passed ? `通過，得 ${g.points} 分` : "未通過，得 0 分"}
+                      </span>
+                    </div>
+                    <table className="w-full">
+                      <thead>
                         <tr>
-                          <td className="table-cell text-dim">#{r.order}</td>
-                          <td className="table-cell">
-                            <VerdictBadge status={r.verdict} />
-                          </td>
-                          <td className="table-cell text-right text-dim">
-                            {r.timeMs != null ? `${r.timeMs} ms` : "—"}
-                          </td>
-                          <td className="table-cell text-right text-dim">
-                            {r.memoryKb != null
-                              ? `${(r.memoryKb / 1024).toFixed(1)} MB`
-                              : "—"}
-                          </td>
-                          <td className="table-cell text-right">
-                            {r.input != null && (
-                              <button
-                                className="text-xs text-blue hover:underline"
-                                onClick={() =>
-                                  setExpanded(
-                                    expanded === r.order ? null : r.order,
-                                  )
-                                }
-                              >
-                                {expanded === r.order ? "收起" : "測資"}
-                              </button>
+                          <th className="table-head w-24">測資</th>
+                          <th className="table-head">結果</th>
+                          <th className="table-head w-28 text-right">時間</th>
+                          <th className="table-head w-28 text-right">記憶體</th>
+                          <th className="table-head w-20"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {g.results.map((r) => (
+                          <Fragment key={r.order}>
+                            <tr>
+                              <td className="table-cell text-dim">#{r.order}</td>
+                              <td className="table-cell">
+                                <VerdictBadge status={r.verdict} />
+                              </td>
+                              <td className="table-cell text-right text-dim">
+                                {r.timeMs != null ? `${r.timeMs} ms` : "—"}
+                              </td>
+                              <td className="table-cell text-right text-dim">
+                                {r.memoryKb != null
+                                  ? `${(r.memoryKb / 1024).toFixed(1)} MB`
+                                  : "—"}
+                              </td>
+                              <td className="table-cell text-right">
+                                {r.input != null && (
+                                  <button
+                                    className="text-xs text-blue hover:underline"
+                                    onClick={() =>
+                                      setExpanded(
+                                        expanded === r.order ? null : r.order,
+                                      )
+                                    }
+                                  >
+                                    {expanded === r.order ? "收起" : "測資"}
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                            {expanded === r.order && r.input != null && (
+                              <tr>
+                                <td colSpan={5} className="border-t border-bd p-0">
+                                  <TestCasePanel
+                                    input={r.input}
+                                    expectedOutput={r.expectedOutput!}
+                                    actualOutput={r.actualOutput}
+                                  />
+                                </td>
+                              </tr>
                             )}
+                          </Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!hasSubtasks && data.results.length > 0 && (
+            <div className="card overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="table-head w-24">測資</th>
+                    <th className="table-head">結果</th>
+                    <th className="table-head w-28 text-right">時間</th>
+                    <th className="table-head w-28 text-right">記憶體</th>
+                    <th className="table-head w-20"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.results.map((r) => (
+                    <Fragment key={r.order}>
+                      <tr>
+                        <td className="table-cell text-dim">#{r.order}</td>
+                        <td className="table-cell">
+                          <VerdictBadge status={r.verdict} />
+                        </td>
+                        <td className="table-cell text-right text-dim">
+                          {r.timeMs != null ? `${r.timeMs} ms` : "—"}
+                        </td>
+                        <td className="table-cell text-right text-dim">
+                          {r.memoryKb != null
+                            ? `${(r.memoryKb / 1024).toFixed(1)} MB`
+                            : "—"}
+                        </td>
+                        <td className="table-cell text-right">
+                          {r.input != null && (
+                            <button
+                              className="text-xs text-blue hover:underline"
+                              onClick={() =>
+                                setExpanded(expanded === r.order ? null : r.order)
+                              }
+                            >
+                              {expanded === r.order ? "收起" : "測資"}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                      {expanded === r.order && r.input != null && (
+                        <tr>
+                          <td colSpan={5} className="border-t border-bd p-0">
+                            <TestCasePanel
+                              input={r.input}
+                              expectedOutput={r.expectedOutput!}
+                              actualOutput={r.actualOutput}
+                            />
                           </td>
                         </tr>
-                        {expanded === r.order && r.input != null && (
-                          <tr>
-                            <td colSpan={5} className="border-t border-bd p-0">
-                              <TestCasePanel
-                                input={r.input}
-                                expectedOutput={r.expectedOutput!}
-                                actualOutput={r.actualOutput}
-                              />
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {!hasSubtasks && data.results.length > 0 && (
-        <div className="card overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="table-head w-24">測資</th>
-                <th className="table-head">結果</th>
-                <th className="table-head w-28 text-right">時間</th>
-                <th className="table-head w-28 text-right">記憶體</th>
-                <th className="table-head w-20"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.results.map((r) => (
-                <Fragment key={r.order}>
-                  <tr>
-                    <td className="table-cell text-dim">#{r.order}</td>
-                    <td className="table-cell">
-                      <VerdictBadge status={r.verdict} />
-                    </td>
-                    <td className="table-cell text-right text-dim">
-                      {r.timeMs != null ? `${r.timeMs} ms` : "—"}
-                    </td>
-                    <td className="table-cell text-right text-dim">
-                      {r.memoryKb != null
-                        ? `${(r.memoryKb / 1024).toFixed(1)} MB`
-                        : "—"}
-                    </td>
-                    <td className="table-cell text-right">
-                      {r.input != null && (
-                        <button
-                          className="text-xs text-blue hover:underline"
-                          onClick={() =>
-                            setExpanded(expanded === r.order ? null : r.order)
-                          }
-                        >
-                          {expanded === r.order ? "收起" : "測資"}
-                        </button>
                       )}
-                    </td>
-                  </tr>
-                  {expanded === r.order && r.input != null && (
-                    <tr>
-                      <td colSpan={5} className="border-t border-bd p-0">
-                        <TestCasePanel
-                          input={r.input}
-                          expectedOutput={r.expectedOutput!}
-                          actualOutput={r.actualOutput}
-                        />
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-      {data.code && (
-        <div>
-          <h2 className="mb-2 section-title">程式碼</h2>
-          <pre className="overflow-x-auto rounded-lg bg-inset p-4 font-mono text-[13px] leading-6 text-tx">
-            {data.code}
-          </pre>
-        </div>
+          {data.code && (
+            <div>
+              <h2 className="mb-2 section-title">程式碼</h2>
+              <pre className="overflow-x-auto rounded-lg bg-inset p-4 font-mono text-[13px] leading-6 text-tx">
+                {data.code}
+              </pre>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

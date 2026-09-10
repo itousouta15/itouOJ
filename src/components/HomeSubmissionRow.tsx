@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import VerdictBadge from "@/components/VerdictBadge";
+import { problemHref } from "@/lib/problemTypes";
 
 export interface HomeSubmissionRowData {
   id: number;
@@ -10,7 +11,7 @@ export interface HomeSubmissionRowData {
   createdAtLabel: string;
   username: string;
   displayName?: string | null;
-  problem: { id: number; order: number; title: string };
+  problem: { id: number; order: number; title: string; type: string };
 }
 
 // 同 SubmissionRow：< md 卡片、≥ md 表格列
@@ -22,6 +23,7 @@ export default function HomeSubmissionRow({
   columns?: number;
 }) {
   const router = useRouter();
+  const href = problemHref(s.problem);
 
   return (
     <>
@@ -32,7 +34,7 @@ export default function HomeSubmissionRow({
         <td className="table-cell mono text-dim">{s.id}</td>
         <td className="table-cell">
           <Link
-            href={`/problems/${s.problem.order}`}
+            href={href}
             className="font-medium text-blue hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
@@ -61,7 +63,7 @@ export default function HomeSubmissionRow({
           <div className="px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <Link
-                href={`/problems/${s.problem.order}`}
+                href={href}
                 className="min-w-0 flex-1 truncate font-medium text-blue hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >

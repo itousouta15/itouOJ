@@ -1,0 +1,146 @@
+{
+  "source": "APCS 2020/10",
+  "questions": [
+    {
+      "number": 1,
+      "category": "C",
+      "question": "請問 `f(5, 3)` 回傳結果？",
+      "code": "int f(int x, int y) {\n    if (x <= 0) return y;\n    return f(x-1, 2*y + x + 3);\n}",
+      "options": [
+        "240",
+        "147",
+        "318",
+        "157"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 2,
+      "category": "C",
+      "question": "`f(a,b)` 會回傳 $a^b$ 的結果，請問空格中應該填入的程式碼為何？",
+      "code": "int f(int a, int b) {\n    if (b < 0) return 0;\n    if (b == 0) return 1;\n    return _____;\n}",
+      "options": [
+        "`a * f(a, b-1)`",
+        "`b * f(a, b-1)`",
+        "`a * f(a-1, b)`",
+        "`b * f(a-1, b)`"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 3,
+      "category": "C",
+      "question": "a. `n <= 1` 與 `n`\nb. `n <= 0` 與 `0`\nc. `n < 1` 與 `0`\n\n`f(n)` 會回傳 $1+2+3\\ +\\ ...\\ +n$ 的結果，請問空格中應該填入的程式碼分別為何？請選出符合的選項。",
+      "code": "int f(int n) {\n    if (_____) {\n        return _____;\n    }\n    return n + f(n-1);\n}",
+      "options": [
+        "a, b 都可以",
+        "a, c 都可以",
+        "只有 a 可以",
+        "a, b, c 都可以"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 4,
+      "category": "C",
+      "question": "`f(n)` 會回傳 $1+2+3\\ +\\ ...\\ +n$ 的結果，請問上述程式碼哪一行有錯誤？",
+      "code": "int f(int n) {\n    if (n < 0) {\n        return 0;\n    }\n    return f(n-1);\n}",
+      "options": [
+        "第一行應改成 `if (n < 1) {`",
+        "第二行應改成 `return n;`",
+        "第三行應改成 `return n + f(n-1);`",
+        "沒有任何錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    },
+    {
+      "number": 5,
+      "category": "C",
+      "question": "該程式碼想要輸出陣列中**次大**的數字，下列哪一個陣列可能會輸出錯誤？",
+      "code": "int a, b;\nint p[] = {____};\na = b = p[0]; \nfor (int i = 0; i < 10; i++) {\n    if (p[i] > a) {\n        b = a;\n        a = p[i];\n    } else if (p[i] > b) {\n        b = p[i];\n    }\n}\nprintf(\"%d\\n\", b);",
+      "options": [
+        "{9, 8, 7, 6, 5, 4, 3, 2, 1, 0}",
+        "{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}",
+        "{5, 4, 7, 6, 1, 3, 2, 9, 0, 8}",
+        "{0, 8, 7, 6, 5, 4, 3, 2, 1, 9}"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 6,
+      "category": "C",
+      "question": "請問輸出結果為何？",
+      "code": "int ans = 0;\nint a[6] = {0, 1, 5, 4, 4, 3};\nfor (int i = 0; i < 6; i++) {\n    switch(a[i]) {\n        case 1: ans += 1; break;\n        case 2: ans += 2; \n        case 3: ans += 3; break;\n        case 4: ans += 4; break;\n        case 5: ans += 5; break;\n        case 6: ans += 6;\n        default: ans += 6;\n    }\n}\nprintf(\"%d\",ans);",
+      "options": [
+        "17",
+        "23",
+        "27",
+        "28"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "已知超過 365 天 或是 人數變成負數就結束 while loop，請問 while loop 的 condition (條件式) 為何？",
+      "code": "int people = 10000, days = 0;\nwhile(____________){\n    people = people - days;\n    days = days + 1;\n}",
+      "options": [
+        "`people >= 0 && days <= 365`",
+        "`people > 0 && days < 365`",
+        "`people >= 0 && days < 365`",
+        "`people > 0 && days <= 365`"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 8,
+      "category": "C",
+      "question": "請問 `f(6)` 回傳的結果為何？",
+      "code": "int f(int n){\n    if (n <= 1) return 1;\n    return f(n-1) + f(n-2) + 1;\n}",
+      "options": [
+        "15",
+        "21",
+        "13",
+        "25"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    },
+    {
+      "number": 9,
+      "category": "C",
+      "question": "下列選項皆包含 3 個函式 `f(a, b)` ，請問哪一個選項 `n+m, n-m, n*m` 皆執行過？",
+      "code": "int f(int a, int b) {\n    int n = 2, m = 5;\n    if (a < 5 && b < 7) {\n        if (a >= 3) {\n            return n+m;\n        }\n        else {\n            return n-m;\n        }\n    }\n    else {\n        return n*m;\n    }\n}",
+      "options": [
+        "`f(6,3), f(4,5), f(2,1)`",
+        "`f(2,5), f(4,8), f(3,7)`",
+        "`f(3,3), f(2,6), f(4,4)`",
+        "`f(3,2), f(4,0), f(5,1)`"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    },
+    {
+      "number": 10,
+      "category": "C",
+      "question": "請問該程式的輸出結果為下列何者？",
+      "code": "int main(){\n    int a=4, b=3, c=7;\n    if (a < b) printf(\"A\");\n    else if (!(a == 0)) printf(\"B\");\n    else printf(\"C\");\n}",
+      "options": [
+        "A",
+        "B",
+        "C",
+        "ABC"
+      ],
+      "answerIndex": 1,
+      "explanation": ""
+    }
+  ],
+  "paper": "第二場"
+}

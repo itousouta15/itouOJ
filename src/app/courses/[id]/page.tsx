@@ -154,7 +154,7 @@ export default async function CoursePage({
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-inset">
                   <div
-                    className="h-full rounded-full bg-[#4caf50]"
+                    className="h-full rounded-full bg-[var(--green)]"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -191,30 +191,45 @@ export default async function CoursePage({
                 </td>
               </tr>
             )}
-            {entries.map((e) => (
-              <tr
-                key={e.id}
-                className={
-                  solvedSet.has(e.problemId) ? "row-solved" : "hover:bg-panel2"
-                }
-              >
-                <td className="table-cell text-dim">{e.problem.order}</td>
-                <td className="table-cell">
-                  <Link
-                    href={`/problems/${e.problem.order}`}
-                    className="font-medium text-blue hover:underline"
-                  >
-                    {e.problem.title}
-                  </Link>
-                  {!e.problem.isPublic && (
-                    <span className="ml-2 text-xs text-mute">（未公開）</span>
-                  )}
-                </td>
-                <td className="table-cell">
-                  <DifficultyBadge difficulty={e.problem.difficulty} />
-                </td>
-              </tr>
-            ))}
+            {entries.map((e) => {
+              const isRecognition = e.problem.type === "RECOGNITION";
+              return (
+                <tr
+                  key={e.id}
+                  className={
+                    solvedSet.has(e.problemId) ? "row-solved" : "hover:bg-panel2"
+                  }
+                >
+                  <td className="table-cell text-dim">
+                    {isRecognition ? "選擇" : e.problem.order}
+                  </td>
+                  <td className="table-cell">
+                    <Link
+                      href={
+                        isRecognition
+                          ? `/recognition/q/${e.problem.id}`
+                          : `/problems/${e.problem.order}`
+                      }
+                      className="font-medium text-blue hover:underline"
+                    >
+                      {e.problem.title}
+                    </Link>
+                    {!e.problem.isPublic && (
+                      <span className="ml-2 text-xs text-mute">（未公開）</span>
+                    )}
+                  </td>
+                  <td className="table-cell">
+                    {isRecognition ? (
+                      <span className="vbadge vbadge-blue">
+                        {e.problem.category ?? "選擇題"}
+                      </span>
+                    ) : (
+                      <DifficultyBadge difficulty={e.problem.difficulty} />
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -249,7 +264,7 @@ export default async function CoursePage({
                       {i + 1}
                     </td>
                     <td className="table-cell font-medium">{r.name}</td>
-                    <td className="table-cell text-right font-semibold text-[#4caf50]">
+                    <td className="table-cell text-right font-semibold text-[var(--green)]">
                       {r.solved} / {total}
                     </td>
                     <td className="table-cell text-right text-dim">{r.subs}</td>

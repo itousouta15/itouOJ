@@ -17,7 +17,21 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const { testCases, subtasks, tagIds, pdfUpload, ...fields } = parsed.data;
+  const {
+    testCases,
+    subtasks,
+    tagIds,
+    pdfUpload,
+    type,
+    code,
+    options,
+    answerIndex,
+    explanation,
+    paper,
+    sourceNumber,
+    category,
+    ...base
+  } = parsed.data;
 
   let pdf;
   try {
@@ -30,14 +44,35 @@ export async function POST(request: Request) {
   }
 
   const last = await prisma.problem.findFirst({
+    where: { type },
     orderBy: { order: "desc" },
     select: { order: true },
   });
 
+  if (type === "RECOGNITION") {
+    const problem = await prisma.problem.create({
+      data: {
+        ...base,
+        type,
+        ...pdf,
+        code: code ?? null,
+        options: options ? JSON.stringify(options) : null,
+        answerIndex: answerIndex ?? null,
+        explanation: explanation?.trim() || null,
+        paper: paper?.trim() || null,
+        sourceNumber: sourceNumber ?? null,
+        category: category?.trim() || null,
+        order: (last?.order ?? 0) + 1,
+      },
+    });
+    return Response.json({ id: problem.id });
+  }
+
   const problem = await prisma.$transaction(async (tx) => {
     const created = await tx.problem.create({
       data: {
-        ...fields,
+        ...base,
+        type,
         ...pdf,
         order: (last?.order ?? 0) + 1,
         subtasks: {

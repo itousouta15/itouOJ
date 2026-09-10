@@ -5,17 +5,27 @@ import { getSession } from "@/lib/auth";
 import ProblemForm from "@/components/ProblemForm";
 
 export const metadata: Metadata = { title: "新增題目" };
+export const dynamic = "force-dynamic";
 
-export default async function NewProblemPage() {
+export default async function NewProblemPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
   const session = await getSession();
   if (session?.role !== "ADMIN") redirect("/");
+
+  const { type } = await searchParams;
+  const defaultType = type === "RECOGNITION" ? "RECOGNITION" : "PROGRAMMING";
 
   const tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
 
   return (
     <div>
-      <h1 className="mb-4 page-title">新增題目</h1>
-      <ProblemForm availableTags={tags} />
+      <h1 className="mb-4 page-title">
+        {defaultType === "RECOGNITION" ? "新增識別題" : "新增題目"}
+      </h1>
+      <ProblemForm availableTags={tags} defaultType={defaultType} />
     </div>
   );
 }
