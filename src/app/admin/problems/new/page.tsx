@@ -18,14 +18,24 @@ export default async function NewProblemPage({
   const { type } = await searchParams;
   const defaultType = type === "RECOGNITION" ? "RECOGNITION" : "PROGRAMMING";
 
-  const tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+  const [tags, users] = await Promise.all([
+    prisma.tag.findMany({ orderBy: { name: "asc" } }),
+    prisma.user.findMany({
+      orderBy: { username: "asc" },
+      select: { username: true, displayName: true },
+    }),
+  ]);
 
   return (
     <div>
       <h1 className="mb-4 page-title">
         {defaultType === "RECOGNITION" ? "新增識別題" : "新增題目"}
       </h1>
-      <ProblemForm availableTags={tags} defaultType={defaultType} />
+      <ProblemForm
+        availableTags={tags}
+        availableUsers={users}
+        defaultType={defaultType}
+      />
     </div>
   );
 }

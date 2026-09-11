@@ -53,9 +53,10 @@ export const problemSchema = z
       .default([]),
     // 識別題欄位（type = RECOGNITION 才有意義）：
     code: z.string().max(30000, "程式碼最多 30000 個字元").optional(),
+    // 選項對實作題無意義（表單仍會送出空選項），所以不在這裡擋空值，
+    // 留到下方 superRefine 只對 RECOGNITION 驗證。
     options: z
-      .array(z.string().trim().min(1, "選項不能是空的"))
-      .min(2, "至少需要兩個選項")
+      .array(z.string().trim())
       .max(8, "選項最多 8 個")
       .optional(),
     answerIndex: z.number().int().min(0).nullable().optional(),
@@ -66,10 +67,19 @@ export const problemSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.type === "RECOGNITION") {
-      if (!data.options || data.options.length < 2) {
+      const options = data.options ?? [];
+      if (options.length < 2) {
         ctx.addIssue({
           code: "custom",
-          message: "識別題至少要有兩個選項",
+          message: "至少需要兩個選項",
+          path: ["options"],
+        });
+        return;
+      }
+      if (options.some((opt) => !opt.trim())) {
+        ctx.addIssue({
+          code: "custom",
+          message: "選項不能是空的",
           path: ["options"],
         });
         return;
@@ -77,7 +87,7 @@ export const problemSchema = z
       if (
         data.answerIndex == null ||
         data.answerIndex < 0 ||
-        data.answerIndex >= data.options.length
+        data.answerIndex >= options.length
       ) {
         ctx.addIssue({
           code: "custom",

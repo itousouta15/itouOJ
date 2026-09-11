@@ -16,7 +16,7 @@ export default async function EditProblemPage({
   if (session?.role !== "ADMIN") redirect("/");
 
   const { id } = await params;
-  const [problem, tags] = await Promise.all([
+  const [problem, tags, users] = await Promise.all([
     prisma.problem.findUnique({
       where: { id: Number(id) },
       // 明確列欄位、不整包 include：pdfData 是 BLOB，隨隨便便撈出來太浪費，
@@ -47,6 +47,10 @@ export default async function EditProblemPage({
       },
     }),
     prisma.tag.findMany({ orderBy: { name: "asc" } }),
+    prisma.user.findMany({
+      orderBy: { username: "asc" },
+      select: { username: true, displayName: true },
+    }),
   ]);
   if (!problem) notFound();
 
@@ -64,6 +68,7 @@ export default async function EditProblemPage({
       </h1>
       <ProblemForm
         availableTags={tags}
+        availableUsers={users}
         initial={{
           id: problem.id,
           type: problem.type as "PROGRAMMING" | "RECOGNITION",

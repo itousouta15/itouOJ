@@ -38,6 +38,10 @@ model User {
   sentMessages     Message[]          @relation("MessageSender")
   receivedMessages Message[]          @relation("MessageReceiver")
   authoredProblems Problem[]          @relation("ProblemAuthor")
+  commentReactions CommentReaction[]
+  solutionReactions SolutionReaction[]
+  following        Follow[]           @relation("Following")
+  followers        Follow[]           @relation("Followers")
 }
 
 // 站內訊息：一對一私訊。沒有獨立的「對話」表，同兩人之間依時間排序就是
@@ -170,6 +174,7 @@ model ProblemComment {
   parentId  Int?
   parent    ProblemComment?  @relation("ProblemCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies   ProblemComment[] @relation("ProblemCommentReplies")
+  reactions CommentReaction[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -189,12 +194,55 @@ model ProblemSolution {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   title     String
   content   String // Markdown，解題想法
-  code      String? // 選填：附上的程式碼
+  code      String? // 附上的程式碼
   language  String? // code 有值時才有意義，對應 lib/languages.ts 的 key
+  reactions SolutionReaction[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([problemId])
+}
+
+// 留言與題解的表情回饋（👍 ❤️ 🎉 🤔，一人一則可同時按多種）。
+// 分兩張表而不是單一 polymorphic target：才能吃到 FK cascade，
+// 刪留言/刪題解時回饋一起清掉。
+model CommentReaction {
+  id        Int            @id @default(autoincrement())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commentId Int
+  comment   ProblemComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime       @default(now())
+
+  @@unique([userId, commentId, emoji])
+  @@index([commentId])
+}
+
+model SolutionReaction {
+  id         Int             @id @default(autoincrement())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  solutionId Int
+  solution   ProblemSolution @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+  emoji      String
+  createdAt  DateTime        @default(now())
+
+  @@unique([userId, solutionId, emoji])
+  @@index([solutionId])
+}
+
+// 追蹤關係（follower 追蹤 following）。兩個方向都 cascade：帳號刪掉時
+// 追蹤與粉絲關係一起清掉。
+model Follow {
+  followerId  String
+  follower    User     @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@index([followingId])
 }
 
 // 標籤庫：管理員統一建立/管理，題目從中勾選，避免同義詞打散（如「字串」跟「string」變兩個標籤）

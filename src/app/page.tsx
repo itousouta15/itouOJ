@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { getActivityFeed, type FeedItem } from "@/lib/activityFeed";
+import { getDailyProblem } from "@/lib/dailyProblem";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import HomeSubmissionRow from "@/components/HomeSubmissionRow";
 import VerdictBadge from "@/components/VerdictBadge";
+import FeedList from "@/components/FeedList";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +70,31 @@ export default async function HomePage() {
     { label: "提交", value: submissionCount },
     { label: "Accepted", value: acCount },
   ];
+
+  // 追蹤動態：只有登入且真的有關注人時才查
+  let followFeed: FeedItem[] = [];
+  if (session) {
+    const following = await prisma.follow.findMany({
+      where: { followerId: session.userId },
+      select: { followingId: true },
+    });
+    if (following.length > 0) {
+      followFeed = await getActivityFeed(
+        following.map((f) => f.followingId),
+        5
+      );
+    }
+  }
+
+  // 每日一題；登入者順便看今天這題解過沒
+  const daily = await getDailyProblem();
+  let dailySolved = false;
+  if (daily && session) {
+    const solved = await prisma.submission.count({
+      where: { userId: session.userId, problemId: daily.id, status: "AC" },
+    });
+    dailySolved = solved > 0;
+  }
 
   return (
     <div className="space-y-10" data-app-section="root">
@@ -154,6 +182,31 @@ export default async function HomePage() {
           </div>
         ))}
       </section>
+
+      {/* 每日一題 */}
+      {daily && (
+        <section data-app-section="daily">
+          <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
+            <div className="min-w-0">
+              <p className="page-kicker">每日一題</p>
+              <Link
+                href={`/problems/${daily.order}`}
+                className="mt-1 block truncate font-semibold text-blue hover:underline"
+              >
+                #{daily.order} {daily.title}
+              </Link>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              {dailySolved && (
+                <span className="text-sm font-semibold text-[var(--green)]">
+                  已解過 ✓
+                </span>
+              )}
+              <DifficultyBadge difficulty={daily.difficulty} />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 下載宣傳（網站版限定，App 內隱藏） */}
       <section data-app-section="promo">
@@ -307,6 +360,22 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* 追蹤動態（登入且有關注時才顯示） */}
+      {followFeed.length > 0 && (
+        <section data-app-section="feed">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="section-title">追蹤動態</h2>
+            <Link
+              href="/activity"
+              className="mono text-xs text-blue hover:underline"
+            >
+              更多動態 →
+            </Link>
+          </div>
+          <FeedList items={followFeed} />
+        </section>
+      )}
 
       {/* 最新提交 */}
       <section data-app-section="submissions">

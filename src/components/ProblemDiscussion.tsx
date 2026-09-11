@@ -8,6 +8,8 @@ import CommentItem, {
   type DiscussionAuthor,
   type DiscussionComment,
 } from "@/components/CommentItem";
+import ReactionBar from "@/components/ReactionBar";
+import { toggleReaction, type ReactionSummary } from "@/lib/reactions";
 import { LANGUAGES, LANGUAGE_KEYS, isLanguageKey } from "@/lib/languages";
 
 interface Access {
@@ -27,6 +29,7 @@ interface SolutionItem extends DiscussionAuthor {
   language: string | null;
   createdAt: string;
   canDelete: boolean;
+  reactions: ReactionSummary[];
 }
 
 export default function ProblemDiscussion({
@@ -193,6 +196,78 @@ export default function ProblemDiscussion({
     reload();
   }
 
+  // 表情回饋：先樂觀更新畫面，失敗再換回來。comments 是主留言＋一層回覆
+  // 的樹，所以要遞迴找目標。
+  function commentsWithReaction(
+    list: DiscussionComment[],
+    id: number,
+    emoji: string
+  ): DiscussionComment[] {
+    return list.map((c) => {
+      if (c.id === id) {
+        return { ...c, reactions: toggleReaction(c.reactions, emoji) };
+      }
+      if (c.replies?.some((r) => r.id === id)) {
+        return {
+          ...c,
+          replies: c.replies.map((r) =>
+            r.id === id
+              ? { ...r, reactions: toggleReaction(r.reactions, emoji) }
+              : r
+          ),
+        };
+      }
+      return c;
+    });
+  }
+
+  async function toggleCommentReaction(id: number, emoji: string) {
+    if (!loggedIn) return;
+    const wasMine = comments.some(
+      (c) =>
+        (c.id === id && c.reactions.some((r) => r.emoji === emoji && r.mine)) ||
+        c.replies?.some(
+          (r) =>
+            r.id === id && r.reactions.some((x) => x.emoji === emoji && x.mine)
+        )
+    );
+    setComments((list) => commentsWithReaction(list, id, emoji));
+    const res = await fetch("/api/reactions", {
+      method: wasMine ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target: "comment", id, emoji }),
+    });
+    if (!res.ok) {
+      setComments((list) => commentsWithReaction(list, id, emoji));
+      setError("回應失敗，請稍後再試");
+    }
+  }
+
+  async function toggleSolutionReaction(id: number, emoji: string) {
+    if (!loggedIn) return;
+    const target = solutions.find((s) => s.id === id);
+    if (!target) return;
+    const wasMine = target.reactions.some(
+      (r) => r.emoji === emoji && r.mine
+    );
+    const apply = (list: SolutionItem[]) =>
+      list.map((s) =>
+        s.id === id
+          ? { ...s, reactions: toggleReaction(s.reactions, emoji) }
+          : s
+      );
+    setSolutions(apply);
+    const res = await fetch("/api/reactions", {
+      method: wasMine ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target: "solution", id, emoji }),
+    });
+    if (!res.ok) {
+      setSolutions(apply);
+      setError("回應失敗，請稍後再試");
+    }
+  }
+
   if (loading) {
     return <p className="animate-pulse text-mute">載入討論區…</p>;
   }
@@ -270,6 +345,7 @@ export default function ProblemDiscussion({
               <div key={c.id} className="card p-4">
                 <CommentItem
                   comment={c}
+                  canReact={loggedIn}
                   editingId={editingId}
                   editDraft={editDraft}
                   savingEdit={savingEdit}
@@ -278,6 +354,7 @@ export default function ProblemDiscussion({
                   onEditDraftChange={setEditDraft}
                   onSaveEdit={saveEdit}
                   onDelete={removeComment}
+                  onToggleReaction={toggleCommentReaction}
                 />
 
                 {(c.replies ?? []).length > 0 && (
@@ -287,6 +364,7 @@ export default function ProblemDiscussion({
                         key={r.id}
                         comment={r}
                         size={24}
+                        canReact={loggedIn}
                         editingId={editingId}
                         editDraft={editDraft}
                         savingEdit={savingEdit}
@@ -295,6 +373,7 @@ export default function ProblemDiscussion({
                         onEditDraftChange={setEditDraft}
                         onSaveEdit={saveEdit}
                         onDelete={removeComment}
+                        onToggleReaction={toggleCommentReaction}
                       />
                     ))}
                   </div>
@@ -480,6 +559,15 @@ export default function ProblemDiscussion({
                         </pre>
                       </div>
                     )}
+                    <div className="mt-3">
+                      <ReactionBar
+                        reactions={s.reactions}
+                        canReact={loggedIn}
+                        onToggle={(emoji) =>
+                          toggleSolutionReaction(s.id, emoji)
+                        }
+                      />
+                    </div>
                   </div>
                 ))
               )}
