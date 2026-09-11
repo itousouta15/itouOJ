@@ -365,6 +365,8 @@ model TestCase {
   isSample  Boolean      @default(false) // 範例測資會顯示在題目頁
   order     Int          @default(0)
   results   TestResult[]
+
+  @@index([problemId])
 }
 
 model Submission {
@@ -390,6 +392,12 @@ model Submission {
   clientKey    String?      @unique
   createdAt    DateTime     @default(now())
   results      TestResult[]
+
+  // 提交列表依使用者過濾並以 id 倒序、題目/比賽統計與首頁 AC 統計都會用到
+  @@index([userId, id])
+  @@index([problemId, status])
+  @@index([contestId, status])
+  @@index([status])
 }
 
 model TestResult {
@@ -409,4 +417,6 @@ model TestResult {
   // 這筆測資實際跑出來的 stdout，截斷避免異常輸出把資料庫灌爆
   // （見 lib/judge.ts 的 MAX_ACTUAL_OUTPUT_LEN）。
   actualOutput String?
+
+  @@index([submissionId])
 }

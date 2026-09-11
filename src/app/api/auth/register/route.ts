@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
+import { clientIp, enforceRateLimit } from "@/lib/rateLimit";
 
 const schema = z.object({
   username: z
@@ -22,6 +23,14 @@ export async function POST(request: Request) {
     );
   }
   const { username, password } = parsed.data;
+
+  // 註冊帳號每小時每 IP 上限；正常的教室/考場共用 IP 也用不到這麼多組
+  const limited = enforceRateLimit(
+    `register:${clientIp(request)}`,
+    10,
+    60 * 60_000
+  );
+  if (limited) return limited;
 
   const existing = await prisma.user.findUnique({ where: { username } });
   if (existing) {

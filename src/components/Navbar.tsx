@@ -1,26 +1,12 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getNavInfo } from "@/lib/nav";
 import NavLinks from "@/components/NavLinks";
 import ThemeToggle from "@/components/ThemeToggle";
 import AccountMenu from "@/components/AccountMenu";
 import MobileMenuButton from "@/components/MobileMenuButton";
 
 export default async function Navbar() {
-  const session = await getSession();
-  const isAdmin = session?.role === "ADMIN";
-  const [userRow, unreadCount] = session
-    ? await Promise.all([
-        prisma.user.findUnique({
-          where: { id: session.userId },
-          select: { displayName: true },
-        }),
-        prisma.message.count({
-          where: { receiverId: session.userId, readAt: null },
-        }),
-      ])
-    : [null, 0];
-  const displayName = userRow?.displayName ?? null;
+  const { displayName, username, unread, loggedIn, isAdmin } = await getNavInfo();
 
   return (
     <header className="site-header">
@@ -29,19 +15,15 @@ export default async function Navbar() {
           itouOJ
         </Link>
         <div className="hidden min-w-0 flex-1 md:flex">
-          <NavLinks
-            isAdmin={isAdmin}
-            loggedIn={!!session}
-            unread={unreadCount}
-          />
+          <NavLinks isAdmin={isAdmin} loggedIn={loggedIn} unread={unread} />
         </div>
         <div className="ml-auto flex items-center gap-2 sm:gap-3 md:ml-0">
           <ThemeToggle />
-          {session ? (
+          {loggedIn ? (
             <AccountMenu
-              name={displayName || session.username}
-              username={session.username}
-              unread={unreadCount}
+              name={displayName || username || ""}
+              username={username ?? ""}
+              unread={unread}
             />
           ) : (
             <>
@@ -55,8 +37,8 @@ export default async function Navbar() {
           )}
           <MobileMenuButton
             isAdmin={isAdmin}
-            loggedIn={!!session}
-            unread={unreadCount}
+            loggedIn={loggedIn}
+            unread={unread}
           />
         </div>
       </nav>

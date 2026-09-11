@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navLinksFor, isNavActive } from "@/lib/navLinks";
+import { useMounted } from "@/lib/useMounted";
 
 // 同 itousouta.me 手機版選單背景飄浮的顏文字裝飾
 const FACES = ["= ᗜ ω ᗜ.=", "(◕ᗜ◕✿)", "( ˘ω˘ )zzz", "ฅ^•ﻌ•^ฅ", "(´,,•ω•,,)"];
@@ -19,13 +20,11 @@ export default function MobileMenuButton({
   unread: number;
 }) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const pathname = usePathname();
   const links = navLinksFor(isAdmin, { loggedIn, unreadMessages: unread });
 
-  useEffect(() => setMounted(true), []);
-  useEffect(() => setOpen(false), [pathname]);
-
+  // 導覽後由每個 Link 的 onClick 關閉選單，不需要再用 pathname 的 effect 關一次
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     if (!open) return;

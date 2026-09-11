@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { enforceRateLimit } from "@/lib/rateLimit";
 
 const schema = z.object({
   // 只有「已經有密碼」才需要驗證目前密碼；Google/Discord 帳號第一次設定密碼沒有舊密碼可驗
@@ -14,6 +15,10 @@ export async function POST(request: Request) {
   if (!session) {
     return Response.json({ error: "請先登入" }, { status: 401 });
   }
+
+  // 改密碼需要驗證目前密碼，也給一層限流避免被拿來暴力嘗試
+  const limited = enforceRateLimit(`password:${session.userId}`, 10, 5 * 60_000);
+  if (limited) return limited;
 
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
