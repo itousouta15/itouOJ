@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { avatarSrc } from "@/lib/avatar";
 import Avatar from "@/components/Avatar";
 
 export const metadata: Metadata = { title: "站內訊息" };
@@ -65,6 +66,7 @@ export default async function MessagesPage() {
       username: true,
       displayName: true,
       avatarUrl: true,
+      avatarUpdatedAt: true,
       role: true,
     },
   });
@@ -111,7 +113,7 @@ export default async function MessagesPage() {
             >
               <Avatar
                 name={c.user.displayName || c.user.username}
-                src={c.user.avatarUrl}
+                src={avatarSrc(c.user)}
                 size={44}
               />
               <div className="min-w-0 flex-1">
