@@ -51,6 +51,7 @@ export default async function ProblemPage({
       where: { order: problemOrder, type: "PROGRAMMING" },
       omit: { pdfData: true },
       include: {
+        author: { select: { id: true, username: true, displayName: true } },
         testCases: {
           where: { isSample: true },
           orderBy: [{ order: "asc" }, { id: "asc" }],
@@ -95,6 +96,34 @@ export default async function ProblemPage({
       />
 
       <StatementCard>{problem.statement}</StatementCard>
+
+      {problem.author && (
+        <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+          <span className="text-sm text-dim">
+            出題者：{" "}
+            <Link
+              href={`/users/${problem.author.username}`}
+              className="font-medium text-blue hover:underline"
+            >
+              {problem.author.displayName || problem.author.username}
+            </Link>
+          </span>
+          {session?.userId !== problem.author.id && (
+            <Link
+              href={
+                session
+                  ? `/messages/${problem.author.username}?about=${problem.id}`
+                  : `/login?next=${encodeURIComponent(
+                      `/messages/${problem.author.username}`
+                    )}`
+              }
+              className="btn-secondary px-3 py-1.5 text-xs"
+            >
+              聯絡出題者
+            </Link>
+          )}
+        </div>
+      )}
 
       {problem.subtasks.length > 0 && (
         <div>

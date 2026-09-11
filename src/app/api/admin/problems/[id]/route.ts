@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { problemSchema } from "@/lib/problemSchema";
 import { pdfUpdateData, PdfUploadError } from "@/lib/problemPdf";
+import { resolveAuthorId } from "@/lib/problemAuthor";
 
 async function requireAdmin() {
   const session = await getSession();
@@ -39,6 +40,7 @@ export async function PUT(
     paper,
     sourceNumber,
     category,
+    authorUsername,
     ...base
   } = parsed.data;
 
@@ -50,6 +52,11 @@ export async function PUT(
       return Response.json({ error: err.message }, { status: 400 });
     }
     throw err;
+  }
+
+  const author = await resolveAuthorId(authorUsername);
+  if ("error" in author) {
+    return Response.json({ error: author.error }, { status: 400 });
   }
 
   const existing = await prisma.problem.findUnique({
@@ -92,6 +99,7 @@ export async function PUT(
         ...base,
         type,
         ...pdf,
+        authorId: author.authorId,
         // 從識別題改回實作題時清掉識別欄位
         code: null,
         options: null,

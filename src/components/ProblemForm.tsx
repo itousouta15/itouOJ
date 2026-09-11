@@ -29,6 +29,8 @@ export interface ProblemFormData {
   tagIds: number[];
   subtasks: SubtaskInput[];
   testCases: TestCaseInput[];
+  // 出題者的使用者名稱（選填；只對實作題顯示與聯絡）
+  authorUsername: string;
   // 識別題欄位（type = RECOGNITION 才有意義）
   code: string;
   options: string[];
@@ -60,6 +62,7 @@ const EMPTY: ProblemFormData = {
   tagIds: [],
   subtasks: [],
   testCases: [{ input: "", output: "", isSample: true, subtaskIndex: null }],
+  authorUsername: "",
   code: "",
   options: ["", ""],
   answerIndex: 0,
@@ -402,6 +405,23 @@ export default function ProblemForm({
                 公開題目
               </label>
             </div>
+          </div>
+        )}
+
+        {!isRecognition && (
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              出題者（使用者名稱，選填）
+            </label>
+            <input
+              className="input"
+              value={form.authorUsername}
+              onChange={(e) => set("authorUsername", e.target.value)}
+              placeholder="例如：itouSouta；留空則題目頁不顯示出題者"
+            />
+            <p className="mt-1 text-xs text-mute">
+              題目頁會顯示出題者並提供「聯絡出題者」按鈕；送審核准的題目會自動帶入申請人。
+            </p>
           </div>
         )}
 
