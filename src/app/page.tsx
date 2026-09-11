@@ -19,6 +19,11 @@ export default async function HomePage() {
       prisma.submission.count({ where: { status: "AC" } }),
     ]);
 
+  const announcements = await prisma.announcement.findMany({
+    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+    take: 3,
+  });
+
   const latestProblems = await prisma.problem.findMany({
     where: { isPublic: true, type: "PROGRAMMING" },
     orderBy: { id: "desc" },
@@ -198,6 +203,40 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* 公告 */}
+      {announcements.length > 0 && (
+        <section data-app-section="announcements">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="section-title">公告</h2>
+            <Link
+              href="/announcements"
+              className="mono text-xs text-blue hover:underline"
+            >
+              全部公告 →
+            </Link>
+          </div>
+          <div className="card">
+            {announcements.map((a) => (
+              <Link
+                key={a.id}
+                href={`/announcements/${a.id}`}
+                className="flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
+              >
+                {a.isPinned && <span className="vbadge vbadge-green">置頂</span>}
+                <span className="flex-1 truncate font-medium text-blue">
+                  {a.title}
+                </span>
+                <span className="mono text-xs text-mute">
+                  {a.createdAt.toLocaleDateString("zh-TW", {
+                    timeZone: "Asia/Taipei",
+                  })}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 最新題目 + 排行 */}
       <section className="grid gap-6 md:grid-cols-2" data-app-section="problems-ranking">

@@ -20,7 +20,20 @@ export default async function ProblemListPage({
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
 
-  const allTags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+  // 篩選列只列出（公開）實作題實際用到的標籤，不混入識讀群集專用的標籤
+  const allTags = await prisma.tag.findMany({
+    where: {
+      problems: {
+        some: {
+          problem: {
+            type: "PROGRAMMING",
+            ...(isAdmin ? {} : { isPublic: true }),
+          },
+        },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
 
   const problems = await prisma.problem.findMany({
     where: {
