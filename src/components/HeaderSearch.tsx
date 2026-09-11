@@ -25,10 +25,15 @@ interface SuggestionData {
 
 const EMPTY_DATA: SuggestionData = { key: "", tags: [], problems: [] };
 
-// Header 搜尋：只搜實作題。輸入文字會同時比對「標籤 / 題目」，標籤可點成 chip
-// 當篩選條件（多個標籤取交集），題目直接跳題目頁。Esc 或點別處收合。
-export default function HeaderSearch() {
-  const [open, setOpen] = useState(false);
+// 搜尋實作題與標籤；頁內模式只改呈現方式，仍共用同一套建議與鍵盤操作。
+export default function HeaderSearch({
+  variant = "header",
+}: {
+  variant?: "header" | "page";
+}) {
+  const isPageSearch = variant === "page";
+  const [open, setOpen] = useState(isPageSearch);
+  const [suggestionsVisible, setSuggestionsVisible] = useState(isPageSearch);
   const [input, setInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [data, setData] = useState<SuggestionData>(EMPTY_DATA);
@@ -38,52 +43,65 @@ export default function HeaderSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const close = useCallback(() => {
-    setOpen(false);
+  const reset = useCallback(() => {
+    setOpen(isPageSearch);
+    setSuggestionsVisible(isPageSearch);
     setInput("");
     setTags([]);
     setData(EMPTY_DATA);
     setActiveIndex(0);
     setLoading(false);
-  }, []);
+  }, [isPageSearch]);
+
+  const dismissSuggestions = useCallback(() => {
+    if (isPageSearch) {
+      setSuggestionsVisible(false);
+      return;
+    }
+    reset();
+  }, [isPageSearch, reset]);
 
   useEffect(() => {
     if (!open) return;
-    inputRef.current?.focus();
-    const onKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key === "Escape") close();
+    if (!isPageSearch) inputRef.current?.focus();
+
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") dismissSuggestions();
     };
-    const onPointerDown = (e: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        close();
+    const onPointerDown = (event: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        dismissSuggestions();
       }
     };
+
     window.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onPointerDown);
     return () => {
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPointerDown);
     };
-  }, [open, close]);
+  }, [dismissSuggestions, isPageSearch, open]);
 
-  // 輸入或已選標籤變動時 debounce 打推薦 API；舊請求 abort。
   useEffect(() => {
-    if (!open) return;
+    const searchActive = open && (!isPageSearch || suggestionsVisible);
+    if (!searchActive) return;
+
     const text = input.trim();
     if (!text && tags.length === 0) return;
+
     const key = `${text}|${tags.join(",")}`;
     let aborted = false;
-    const ctrl = new AbortController();
+    const controller = new AbortController();
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
         const params = new URLSearchParams();
         if (text) params.set("q", text);
         if (tags.length) params.set("tags", tags.join(","));
-        const res = await fetch(`/api/search/suggest?${params}`, {
-          signal: ctrl.signal,
+        const response = await fetch(`/api/search/suggest?${params}`, {
+          signal: controller.signal,
         });
-        const json = await res.json();
+        const json = await response.json();
         if (!aborted) {
           setData({
             key,
@@ -92,64 +110,75 @@ export default function HeaderSearch() {
           });
           setActiveIndex(0);
         }
-      } catch (err) {
-        if (!aborted && (err as Error).name !== "AbortError") {
+      } catch (error) {
+        if (!aborted && (error as Error).name !== "AbortError") {
           setData({ key, tags: [], problems: [] });
         }
       } finally {
         if (!aborted) setLoading(false);
       }
     }, 160);
+
     return () => {
       aborted = true;
       clearTimeout(timer);
-      ctrl.abort();
+      controller.abort();
     };
-  }, [input, tags, open]);
+  }, [input, isPageSearch, open, suggestionsVisible, tags]);
 
   function addTag(name: string) {
-    setTags((prev) => (prev.includes(name) ? prev : [...prev, name]));
+    setTags((previous) => (previous.includes(name) ? previous : [...previous, name]));
     setInput("");
+    setSuggestionsVisible(true);
     setActiveIndex(0);
     inputRef.current?.focus();
   }
 
   function removeTag(name: string) {
-    setTags((prev) => prev.filter((t) => t !== name));
+    setTags((previous) => previous.filter((tag) => tag !== name));
+    setSuggestionsVisible(true);
     inputRef.current?.focus();
   }
 
-  function go(p: Suggestion) {
-    close();
-    router.push(`/problems/${p.order}`);
+  function go(problem: Suggestion) {
+    reset();
+    router.push(`/problems/${problem.order}`);
   }
 
   const text = input.trim();
+  const hasQuery = input.length > 0 || tags.length > 0;
   const listKey = `${text}|${tags.join(",")}`;
   const current = data.key === listKey ? data : EMPTY_DATA;
   const tagItems = current.tags;
   const problemItems = current.problems;
   const flatCount = tagItems.length + problemItems.length;
-  const showList = open && (text.length > 0 || tags.length > 0);
+  const showList =
+    open &&
+    (!isPageSearch || suggestionsVisible) &&
+    (text.length > 0 || tags.length > 0);
   const pending = loading || (showList && data.key !== listKey);
 
-  function onKeyDown(e: ReactKeyboardEvent<HTMLInputElement>) {
-    if (e.nativeEvent.isComposing) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIndex((i) => Math.min(i + 1, flatCount - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
+  function onKeyDown(event: ReactKeyboardEvent<HTMLInputElement>) {
+    if (event.nativeEvent.isComposing) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex((index) =>
+        flatCount === 0 ? 0 : Math.min(index + 1, flatCount - 1),
+      );
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((index) => Math.max(index - 1, 0));
+    } else if (event.key === "Enter") {
+      event.preventDefault();
       if (activeIndex < tagItems.length) {
-        addTag(tagItems[activeIndex]);
+        const tag = tagItems[activeIndex];
+        if (tag) addTag(tag);
       } else {
-        const p = problemItems[activeIndex - tagItems.length];
-        if (p) go(p);
+        const problem = problemItems[activeIndex - tagItems.length];
+        if (problem) go(problem);
       }
-    } else if (e.key === "Backspace" && text === "" && tags.length > 0) {
+    } else if (event.key === "Backspace" && text === "" && tags.length > 0) {
       removeTag(tags[tags.length - 1]);
     }
   }
@@ -157,8 +186,10 @@ export default function HeaderSearch() {
   return (
     <form
       ref={rootRef}
-      className={`header-search${open ? " is-open" : ""}`}
-      onSubmit={(e) => e.preventDefault()}
+      className={`header-search${open ? " is-open" : ""}${
+        isPageSearch ? " header-search--page" : ""
+      }`}
+      onSubmit={(event) => event.preventDefault()}
       role="search"
     >
       <div className="header-search-pill">
@@ -172,7 +203,7 @@ export default function HeaderSearch() {
                   onClick={() => removeTag(name)}
                   aria-label={`移除標籤 ${name}`}
                 >
-                  ✕
+                  ×
                 </button>
               </span>
             ))}
@@ -182,23 +213,41 @@ export default function HeaderSearch() {
           ref={inputRef}
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(event) => {
+            setInput(event.target.value);
+            setSuggestionsVisible(true);
+          }}
+          onFocus={() => setSuggestionsVisible(true)}
           onKeyDown={onKeyDown}
           placeholder={tags.length > 0 ? "" : "搜尋實作題或標籤…"}
           className="header-search-input"
           tabIndex={open ? 0 : -1}
+          role="combobox"
           aria-label="搜尋實作題或標籤"
+          aria-expanded={isPageSearch ? showList : open}
+          aria-controls="problem-search-suggestions"
+          aria-haspopup="listbox"
           autoComplete="off"
         />
         <button
           type="button"
           className="header-search-icon"
-          onClick={() => (open ? close() : setOpen(true))}
-          aria-label="搜尋"
-          title="搜尋"
-          aria-expanded={open}
+          onClick={() => {
+            if (isPageSearch) {
+              if (hasQuery) reset();
+              setSuggestionsVisible(true);
+              inputRef.current?.focus();
+              return;
+            }
+            if (open) reset();
+            else setOpen(true);
+          }}
+          aria-label={
+            isPageSearch && hasQuery ? "清除搜尋" : "搜尋實作題或標籤"
+          }
+          title={isPageSearch && hasQuery ? "清除搜尋" : "搜尋"}
         >
-          {open ? (
+          {(isPageSearch ? hasQuery : open) ? (
             <svg
               width="16"
               height="16"
@@ -228,7 +277,11 @@ export default function HeaderSearch() {
       </div>
 
       {showList && (
-        <div className="header-search-list" role="listbox">
+        <div
+          id="problem-search-suggestions"
+          className="header-search-list"
+          role="listbox"
+        >
           {flatCount === 0 ? (
             <div className="header-search-empty">
               {pending ? "搜尋中…" : "沒有符合的題目"}
@@ -238,16 +291,16 @@ export default function HeaderSearch() {
               {tagItems.length > 0 && (
                 <div className="header-search-group">
                   <div className="header-search-group-head">標籤</div>
-                  {tagItems.map((name, i) => (
+                  {tagItems.map((name, index) => (
                     <button
                       key={`tag-${name}`}
                       type="button"
                       role="option"
-                      aria-selected={i === activeIndex}
+                      aria-selected={index === activeIndex}
                       className={`header-search-item${
-                        i === activeIndex ? " active" : ""
+                        index === activeIndex ? " active" : ""
                       }`}
-                      onMouseEnter={() => setActiveIndex(i)}
+                      onMouseEnter={() => setActiveIndex(index)}
                       onClick={() => addTag(name)}
                     >
                       <span className="header-search-tag-glyph">#</span>
@@ -259,24 +312,24 @@ export default function HeaderSearch() {
               {problemItems.length > 0 && (
                 <div className="header-search-group">
                   <div className="header-search-group-head">題目</div>
-                  {problemItems.map((p, j) => {
-                    const i = tagItems.length + j;
+                  {problemItems.map((problem, offset) => {
+                    const index = tagItems.length + offset;
                     return (
                       <button
-                        key={`p-${p.id}`}
+                        key={`problem-${problem.id}`}
                         type="button"
                         role="option"
-                        aria-selected={i === activeIndex}
+                        aria-selected={index === activeIndex}
                         className={`header-search-item${
-                          i === activeIndex ? " active" : ""
+                          index === activeIndex ? " active" : ""
                         }`}
-                        onMouseEnter={() => setActiveIndex(i)}
-                        onClick={() => go(p)}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onClick={() => go(problem)}
                       >
                         <span className="header-search-item-title">
-                          {p.title}
+                          {problem.title}
                         </span>
-                        <DifficultyBadge difficulty={p.difficulty} />
+                        <DifficultyBadge difficulty={problem.difficulty} />
                       </button>
                     );
                   })}
