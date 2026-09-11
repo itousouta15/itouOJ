@@ -30,11 +30,8 @@ export async function createSession(session: Session) {
   });
 }
 
-// 離線收件程式用的 token。內容與一般 session 相同，只是不透過 Set-Cookie 發放，
-// 而是在使用者於 /desktop-auth 按下授權後，由 API 直接交給桌面程式。
-//
-// 有效期刻意比網頁 session 長：斷網比賽可能賽前一週就設定好機器，
-// 七天的話中間過期就得重新登入，而那時候未必有網路。
+// 離線收件程式用的 token，不透過 cookie 發放。有效期 30 天，比網頁 session
+// 長——賽前一週設定好機器後可能就沒網路了，過期會沒辦法重新登入。
 export async function createDesktopToken(session: Session): Promise<string> {
   return new SignJWT({ ...session })
     .setProtectedHeader({ alg: "HS256" })

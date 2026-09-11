@@ -4,13 +4,8 @@ import { getSession } from "@/lib/auth";
 import { renderProblemDocHtml } from "@/lib/renderProblemDoc";
 import { decryptPdf } from "@/lib/pdfCrypto";
 
-// 管理員專用：把一場比賽的題目打包成一份 ZIP，裡面是可離線開啟的 <代號>.html
-// （字型內嵌，不用另外帶字型檔）。用來取代「跑 scripts/export-problems.mjs」
-// 這個命令列流程——管理員在網站上點一下就能拿到，不必自己架開發環境。
-//
-// 這裡刻意不管比賽是否已經開始：管理員本來就看得到全部題目內容，
-// 跟 /api/contests/[id]/problems 給一般選手的版本（開賽前不給題目內容，
-// 防洩題）是兩回事，不能混用同一套權限邏輯。
+// 管理員專用：把整場題目打包成可離線開啟的 ZIP（PDF 或內嵌字型的 HTML）。
+// 管理員本來就看得到全部題目，所以不套用開賽前防洩題的限制。
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -63,9 +58,7 @@ export async function GET(
 
   const zip = new JSZip();
   for (const cp of contest.problems) {
-    // 題目有上傳正式 PDF 的話用那份，跟單題下載（/api/contests/[id]/problems/[label]/doc）
-    // 邏輯一致；沒有才現場產生 HTML。管理員在網站上抓下來是要自己看/列印的，
-    // 有設密碼保護也要解密後才給，不然管理員自己都打不開。
+    // 有正式 PDF 就用那份（管理員自己要看，加密的一律先解密），沒有才現場產生 HTML。
     if (cp.problem.pdfData) {
       const bytes = cp.problem.pdfPassword
         ? decryptPdf(Buffer.from(cp.problem.pdfData), cp.problem.pdfPassword)

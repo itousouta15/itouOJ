@@ -2,10 +2,8 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypt
 
 const IV_LEN = 16;
 
-// AES-256-CBC，不是 GCM：收件程式是 .NET Framework 4.x，沒有內建的 AesGcm
-// （那是 .NET Core 3.0+ 才有的 API），CBC 才是雙邊都不必額外裝套件就能用的交集。
-// 這裡要的只是「賽前不給看」的機密性，不是防篡改，CBC 沒有內建 MAC 這件事
-// 在這個用途上不是問題。
+// 用 AES-256-CBC 而非 GCM：收件程式的 .NET Framework 4.x 沒有 AesGcm。
+// 這裡只求「賽前不給看」的機密性，不做防篡改。
 function deriveKey(password: string): Buffer {
   return createHash("sha256").update(password, "utf8").digest();
 }

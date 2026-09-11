@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { PROBLEM_TYPES } from "@/lib/problemTypes";
 
-// 題目共用欄位。獨立匯出給 problemProposalSchema 用，
-// 因為 problemSchema 本身帶 .superRefine()，zod 不允許對有 refinement 的
-// object schema 呼叫 .omit()（申請出題不需要子題功能，另外組一份更單純）。
+// 題目共用欄位。獨立匯出給 problemProposalSchema 用，因為 problemSchema
+// 帶了 .superRefine()，zod 不允許對它呼叫 .omit()。
 export const problemBaseFields = {
   title: z.string().min(1, "標題不能是空的").max(200),
   statement: z.string().min(1, "題敘不能是空的"),
@@ -12,24 +11,21 @@ export const problemBaseFields = {
   memoryLimitMb: z.number().int().min(16).max(1024),
 };
 
-// 兩種題型共用同一份 schema：
-// PROGRAMMING（實作題）維持原有驗證；RECOGNITION（識別題）不要求測資，
-// 改驗證選項與正確答案。切換題型時另一邊的欄位由 API 清掉。
+// 兩種題型共用同一份 schema：PROGRAMMING 維持原有驗證，RECOGNITION
+// 不要求測資、改驗選項與答案；切換題型時另一邊的欄位由 API 清掉。
 export const problemSchema = z
   .object({
     ...problemBaseFields,
     type: z.enum(PROBLEM_TYPES).default("PROGRAMMING"),
     isPublic: z.boolean(),
     tagIds: z.array(z.number().int()).default([]),
-    // 三態：key 沒出現＝維持原本的 PDF 不動；null＝移除；有值＝換成新檔案。
-    // 表單每次存檔都會送整份資料，如果沒有這個區分，改個標題的錯字就會把
-    // 已經上傳的 PDF 弄丟（逼使用者每次存檔都要重新選一次檔案）。
+    // PDF 三態：key 沒出現 = 不動、null = 移除、有值 = 換新檔。表單每次存檔
+    // 都送整份資料，沒有這個區分的話改個標題錯字就會把 PDF 弄丟。
     pdfUpload: z
       .object({
         filename: z.string().min(1).max(200),
         base64: z.string().min(1),
-        // 選填：有給的話 PDF 存檔時會用這組密碼加密，開賽前佈署到選手機上
-        // 也打不開，收件程式在開賽那一刻才自動解密。
+        // 選填：有給的話存檔時加密 PDF，開賽前佈署到選手機也打不開
         password: z.string().max(200).nullable().optional(),
       })
       .nullable()

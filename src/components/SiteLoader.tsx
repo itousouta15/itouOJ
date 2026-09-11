@@ -58,8 +58,7 @@ export default function SiteLoader() {
     };
   }, []);
 
-  // Logo 用的 ChenYuLuoYan 字面特別小，載入前 fallback 會先放大、載入完成才縮小（FOUT）。
-  // 等字體就緒後才加 .fonts-ready 讓 logo 淡入。原站把這段放在 Header，
+  // 等字體就緒後加 .fonts-ready 讓 logo 淡入。原站把這段放在 Header，
   // 這裡的 Navbar 是 server component，所以掛在 SiteLoader。
   useEffect(() => {
     const reveal = () => document.documentElement.classList.add("fonts-ready");

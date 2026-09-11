@@ -1,13 +1,6 @@
-// 一鍵建立離線比賽的本機測試環境
-//
-// 會在 dev.db 旁邊複製出一份 test.db，在裡面建好「進行中、IOI 計分、只開 C++」
-// 的比賽和一個測試帳號，然後印出接下來要執行的指令。
-//
-// 全程不會動到 dev.db——測試提交、測試帳號都只存在 test.db 裡，
-// 測完直接刪掉 test.db 就乾淨了。
-//
-//   node scripts/setup-test-contest.mjs
-//   node scripts/setup-test-contest.mjs --clean    刪掉 test.db
+// 一鍵建立離線比賽的本機測試環境：把 dev.db 複製成旁邊的 test.db，建好「進行中、
+// IOI 計分、只開 C++」的比賽與測試帳號；全程不動 dev.db，刪掉 test.db 即乾淨。
+// 用法：node scripts/setup-test-contest.mjs（--clean 刪掉 test.db）。
 
 import "dotenv/config";
 import fs from "node:fs";

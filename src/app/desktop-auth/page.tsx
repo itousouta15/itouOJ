@@ -6,15 +6,9 @@ import DesktopAuthPanel from "@/components/DesktopAuthPanel";
 export const metadata: Metadata = { title: "授權收件程式" };
 export const dynamic = "force-dynamic";
 
-// 離線收件程式的登入流程（同 gh CLI / AWS CLI 那套 loopback 做法）：
-//
-//   收件程式在 127.0.0.1 開一個臨時 port，用預設瀏覽器打開這一頁
-//     → 沒登入就先導去登入頁（帳密 / Google / Discord 都可以，登入後回到這裡）
-//     → 使用者確認授權
-//     → 瀏覽器把 token 導回 http://127.0.0.1:<port>/callback
-//
-// 這樣桌面程式完全不需要碰密碼，而且用 Google 註冊、根本沒有密碼的帳號
-// 也能登入收件程式 —— 這是原本用帳密登入時做不到的。
+// 離線收件程式的登入流程（同 gh CLI 的 loopback 做法）：收件程式在本機開臨時
+// port 並用瀏覽器打開這頁，登入授權後把 token 導回 127.0.0.1 的 callback。
+// 桌面程式不用碰密碼，Google 註冊的無密碼帳號也能登入。
 export default async function DesktopAuthPage({
   searchParams,
 }: {

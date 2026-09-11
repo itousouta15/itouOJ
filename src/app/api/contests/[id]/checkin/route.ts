@@ -3,16 +3,12 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getContestPhase, parseAllowedLanguages } from "@/lib/contest";
 
-// 離線收件程式設定完成後回報「這台機器準備好了」。
-//
-// 斷網比賽開賽前，監考需要確認每一台選手機都登入好、選對比賽——漏掉一台，
-// 那位選手整場都交不出東西，而且要到賽後上傳時才會發現。伺服器本身無從得知
-// 客戶端的狀態，所以由客戶端主動回報。
+// 離線收件程式設定完成後回報「這台機器準備好了」，讓監考確認每台都設定正確。
+// 伺服器無從得知客戶端狀態，所以要由客戶端主動回報。
 const schema = z.object({
   // 回報的電腦名稱，方便對照是機房哪一台
   host: z.string().trim().max(100).optional(),
-  // 收件程式版本號（例如 "1.2.11"）。開程式前雖然會自動更新，但沒網路、
-  // 被防毒擋下時會失敗又不出聲——監考巡場靠這個欄位抓出還在跑舊版的機器。
+  // 收件程式版本號；監考靠它抓出還在跑舊版的機器
   clientVersion: z.string().trim().max(20).optional(),
 });
 

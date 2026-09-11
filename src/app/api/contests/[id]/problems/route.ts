@@ -2,12 +2,8 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { parseAllowedLanguages } from "@/lib/contest";
 
-// 給離線收件程式在賽前設定階段抓題號對應用（PDF 上的「A 題」是伺服器上的哪個 problemId）。
-// 標題、範例測資賽前就會給：斷網比賽是在賽前設定階段抓一次這支 API
-// 存進 config.json，那次如果沒抓到，之後全場離線就再也補不回來了——
-// 「測試執行」沒有範例測資可比對，選手整場都測不了自己的程式。
-// 完整題敘（statement）跟隱藏測資風險高很多，不在這支 API 的範圍內，
-// 仍然要透過 /api/contests/[id]/problems/[label]/doc 那條「等開賽才給」的路徑。
+// 離線收件程式賽前抓題號對應用（PDF 上的「A 題」是哪個 problemId）。
+// 只給標題和範例測資；完整題敘與隱藏測資走「等開賽才給」的文件 API。
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -36,8 +32,7 @@ export async function GET(
               type: true,
               timeLimitMs: true,
               options: true,
-              // 只取範例測資。這份資料會被下載到選手機上離線保存，
-              // 一旦把 isSample=false 的也送出去，等於把所有隱藏測資交出去。
+              // 只給範例測資；這份會存到選手機上，隱藏測資不能外流
               testCases: {
                 where: { isSample: true },
                 orderBy: [{ order: "asc" }, { id: "asc" }],

@@ -1,8 +1,5 @@
-// 收件程式的端對端測試（只在開發時建置，不會進到發給選手的 exe）。
-//
-// 跟 OfflineSubmit.cs 一起編譯，用 /main:ItouOJ.TestHarness 換掉進入點，
-// 這樣測到的是 GUI 實際會用的同一份 Api / Store 程式碼，而不是另外寫的仿冒品。
-//
+// 收件程式的端對端測試（只在開發時建置）：與 OfflineSubmit.cs 一起編譯、用
+// /main:ItouOJ.TestHarness 換掉進入點，測的是 GUI 共用的 Api / Store 程式碼。
 // 用法：TestHarness.exe <伺服器網址> <帳號> <密碼>
 
 using System;
@@ -49,9 +46,8 @@ namespace ItouOJ
 
         public static int Main(string[] args)
         {
-            // GUI（winexe）模式下沒有主控台，StandardInput 的編碼行為和主控台程式
-            // 不同。這個模式把結果寫檔，讓 winexe 版本也能被驗證。
-            // 把視窗畫成圖檔。介面調整光看程式碼看不出結果，得真的把畫面存下來看。
+            // GUI（winexe）模式沒有主控台，StandardInput 編碼也與主控台程式不同，
+            // 這個模式改把結果寫檔；介面調整則得把畫面存成圖檔才看得出結果。
             if (args.Length >= 2 && args[0] == "--screenshot")
             {
                 string outPng = args[1];
@@ -89,12 +85,9 @@ namespace ItouOJ
                                     ? "?" : gate.Parent.Controls.GetChildIndex(gate).ToString()) + "\r\n",
                                 new UTF8Encoding(false));
 
-                            // 用 PrintWindow(PW_RENDERFULLCONTENT) 讓視窗自己把內容畫進點陣圖。
-                            //
-                            // 不用 DrawToBitmap：它不會合成重疊的同層控制項，蓋在 TabControl
-                            // 上的遮罩會被忽略，拍出來與實際畫面不符。
-                            // 更不用 CopyFromScreen：那是抓螢幕座標上的畫面，會拍到使用者
-                            // 當下在做的任何事，而且視窗沒在最上層就整張都是別的東西。
+                            // 用 PrintWindow(PW_RENDERFULLCONTENT)：DrawToBitmap 不會合成
+                            // 重疊的同層控制項（TabControl 上的遮罩會被忽略），CopyFromScreen
+                            // 則會拍到螢幕上其他內容，且視窗不在最上層就整張錯。
                             Application.DoEvents();
                             System.Threading.Thread.Sleep(500);
                             Application.DoEvents();
@@ -498,8 +491,7 @@ namespace ItouOJ
                 File.Delete(f);
 
             // ── 0a6. 關閉程式時的重設判斷 ─────────────
-            // 清錯的代價不對稱：少清一次只是髒；多清一次會讓斷網中的選手
-            // 再也登不回來、交不出東西。所以每個分支都要有測試釘住。
+            // 清錯的代價不對稱：多清一次會讓斷網中的選手登不回來，所以每個分支都要釘住。
             Console.WriteLine("\n[0a6] 關掉程式要不要回到初始狀態");
 
             Config xc = new Config();
@@ -543,9 +535,8 @@ namespace ItouOJ
                   !Flow.ShouldResetOnExit(xc, 3), "待上傳 3 筆");
 
             // ── 0a7. 題目清單的標題 ───────────────────
-            // 伺服器現在賽前就會給題名（選比賽當下就抓、存進 config.json，
-            // 免得斷網比賽在開賽前掉線就再也補不回來）。這裡只保留萬一
-            // 題名還是空的 fallback 顯示，不能顯示成空的看起來像資料壞了。
+            // 伺服器賽前就給題名並存進 config.json（斷網後補不回來），這裡只保留
+            // 題名為空的 fallback 顯示，不能顯示成空的。
             Console.WriteLine("\n[0a7] 沒有題名時的顯示");
             Check("沒題名：指向題目 PDF",
                   MainForm.ProblemItemText("B", "") == "B（題名請見題目 PDF）",

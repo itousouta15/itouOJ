@@ -1,16 +1,6 @@
-// 把比賽題目匯出成可列印的 HTML（再用瀏覽器 Ctrl+P 另存 PDF）
-//
-// 為什麼不直接產 PDF：這台機器沒有 Chromium（Firefox/Zen 沒有可靠的命令列
-// 轉 PDF），而產生含中文的 PDF 需要字型嵌入，得多裝相依套件。改成輸出 HTML
-// 之後，用瀏覽器列印就能得到字型正確、數學排版正確的 PDF，而且零新增相依。
-//
-// 渲染管線刻意和網站一致（remark-gfm + remark-math + rehype-katex），
-// 所以印出來的題目和選手在 OJ 上看到的長得一樣。
-//
-//   node scripts/export-problems.mjs                    最新一場比賽 -> ./problem-docs
-//   node scripts/export-problems.mjs --contest 2
-//   node scripts/export-problems.mjs --out C:\Contest\題目
-//   node scripts/export-problems.mjs --db test.db
+// 把比賽題目匯出成可列印的 HTML（瀏覽器 Ctrl+P 另存 PDF）；不直接產 PDF：本機沒有
+// Chromium，中文 PDF 需嵌字型。渲染管線與網站一致（remark-gfm/math + rehype-katex）。
+// 用法：[--contest N] [--out DIR] [--db test.db]，預設最新一場 -> ./problem-docs。
 
 import "dotenv/config";
 import fs from "node:fs";

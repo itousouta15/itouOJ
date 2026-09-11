@@ -1,14 +1,6 @@
-﻿# 打包並發布 itouOJ 收件程式
-#
-#   .\client\release.ps1                          只建置 + 打包，不發布
-#   .\client\release.ps1 -Tag v1.2.1 -NotesFile notes.md    連同發布到 GitHub
-#
-# 產物放在 client\dist\ 底下：
-#   itouOJ-Submit.exe            單一執行檔
-#   itouOJ-lab-deploy-kit.zip    機房佈署包
-#
-# 為什麼要有這支：佈署包的內容（少放一個檔就會讓安裝腳本半殘）和
-# SHA256 的計算時機（必須是最後那顆 exe）以前都靠手動，很容易出錯。
+﻿# 打包並發布 itouOJ 收件程式。產物在 client\dist\（單檔 exe + 機房佈署包 zip），
+# 不給 -Tag 就只建置不發布。佈署包內容與 SHA256 計算以前靠手動、容易出錯，改由本檔處理。
+# 用法：.\client\release.ps1 [-Tag v1.2.1 -NotesFile notes.md]
 
 [CmdletBinding()]
 param(
@@ -120,12 +112,9 @@ Ok ("itouOJ-Submit.exe          " + [math]::Round((Get-Item $distExe).Length / 1
 Ok ("itouOJ-lab-deploy-kit.zip  " + [math]::Round((Get-Item $zip).Length / 1KB, 1) + " KB")
 Ok ("SHA256  $hash")
 
-# 發行說明裡的 SHA256 由這裡填，不要手寫。
-#
-# 這台用的是 .NET Framework 內建的舊版 csc，不支援 /deterministic —— 同一份
-# 原始碼每次編譯出來的 exe 都不一樣（內嵌的 MVID 每次重新產生）。所以事先
-# 手寫的校驗值必然對不上最後真的上傳的那顆，publish 出去反而是錯的資訊。
-# 改成把說明裡的 {{SHA256}} 換成剛剛算出來的值，兩者永遠一致。
+# 發行說明的 SHA256 由這裡填，不要手寫：舊版 csc 不支援 /deterministic，同一份
+# 原始碼每次編譯的 exe 都不同，手寫的校驗值必然對不上最後上傳的那顆。
+# 改成把說明裡的 {{SHA256}} 換成剛剛算出的值，兩者永遠一致。
 $notesForRelease = $NotesFile
 if ($NotesFile) {
     $utf8 = New-Object Text.UTF8Encoding($false)

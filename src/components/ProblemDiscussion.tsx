@@ -119,9 +119,8 @@ export default function ProblemDiscussion({
   const [sCode, setSCode] = useState("");
   const [sLang, setSLang] = useState<string>("cpp");
 
-  // 發文/刪除後把這個值 +1 就會重新抓一次。用計數器而不是把抓資料的函式
-  // 拉到外面：抓資料寫在 effect 裡才好在元件被卸載時用 cancelled 擋掉
-  // 「回應回來時元件已經不在」的 setState。
+  // 發文/刪除後把這個值 +1 就重新抓資料。抓取寫在 effect 內，才能在卸載時
+  // 用 cancelled 擋掉「回應回來時元件已經不在」的 setState。
   const [version, setVersion] = useState(0);
   const reload = () => setVersion((v) => v + 1);
 

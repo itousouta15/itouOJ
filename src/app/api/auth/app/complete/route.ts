@@ -2,9 +2,8 @@ import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
 import { consumeAppLogin } from "@/lib/appOAuth";
 
-// App 用一次性 code 回來領 session：OAuth 在系統瀏覽器跑完，
-// 這裡的 fetch 是 App 的 WebView 發的（同 origin），
-// Set-Cookie 只進 WebView 的 cookie jar，瀏覽器端不受影響。
+// App 用一次性 code 領 session。這裡的 fetch 由 WebView 發出，Set-Cookie
+// 只進 App 的 cookie jar，不影響系統瀏覽器的登入狀態。
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const code = typeof body?.code === "string" ? body.code : null;

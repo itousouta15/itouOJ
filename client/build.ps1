@@ -1,8 +1,5 @@
-﻿# 建置 itouOJ 收件程式
-#
-# 用 Windows 內建的 .NET Framework 編譯器，不需要安裝 Visual Studio 或 .NET SDK。
-# 產出的 itouOJ-Submit.exe 只依賴 .NET Framework 4.x（Windows 10/11 內建），
-# 複製到選手機就能直接執行。
+﻿# 建置 itouOJ 收件程式（用 Windows 內建的 .NET Framework csc.exe，不需 VS/SDK）。
+# 產物 itouOJ-Submit.exe 只依賴 .NET Framework 4.x，複製到選手機就能跑。
 
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path

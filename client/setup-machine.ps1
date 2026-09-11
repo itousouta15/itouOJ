@@ -1,14 +1,6 @@
-﻿# 在選手機上安裝 itouOJ 收件程式
-#
-# 從網路下載的 exe 會被加上 Mark-of-the-Web，Windows SmartScreen 因此跳出
-# 「已保護您的電腦」。這支腳本把檔案複製到本機、移除那個標記，並建立桌面捷徑，
-# 選手就能直接雙擊執行，不會看到警告。
-#
-# Unblock-File 只移除 NTFS 的 Zone.Identifier 資料流，不會改到程式本體
-# （複製前後 SHA256 相同）。
-#
-# 用法：把這支和 itouOJ-Submit.exe 放在一起（隨身碟或網路磁碟機），
-#       在每台選手機上執行「在這台電腦安裝.bat」即可。
+﻿# 在選手機上安裝 itouOJ 收件程式：複製檔案、移除 Mark-of-the-Web（Unblock-File
+# 只拿掉 Zone.Identifier 資料流，不動程式本體），並建立桌面捷徑，避免 SmartScreen 警告。
+# 用法：與 itouOJ-Submit.exe 放在一起，在每台機器執行「在這台電腦安裝.bat」。
 
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -67,12 +59,9 @@ if (Test-Path $manualSrc) {
     Write-Host "  找不到使用說明書.html，略過（不影響程式使用）" -ForegroundColor Yellow
 }
 
-# 桌面捷徑：優先放「所有使用者」桌面，這樣不管誰登入這台機器都看得到
-# （機房常見做法是用管理員帳號佈署、學生用受限帳號考試）。但學校機房的
-# 受限帳號通常寫不進 C:\Users\Public\Desktop——以前只檢查資料夾存不存在，
-# 存在但沒寫入權限時 Test-Path 一樣是 true，於是照樣往共用桌面寫，
-# CreateShortcut 才在那一刻失敗，被下面的 catch 吃掉、什麼捷徑都沒建立。
-# 這裡改成實際探測寫入權限，寫不進去才退回目前使用者自己的桌面。
+# 桌面捷徑優先放「所有使用者」桌面，但學校機房的受限帳號常寫不進去；以前只檢查
+# 資料夾存在，存在卻沒權限時 CreateShortcut 才失敗。改成實際探測寫入權限再退回
+# 目前使用者的桌面。
 $desktop = [Environment]::GetFolderPath("CommonDesktopDirectory")
 $canWriteCommon = $false
 if ($desktop -and (Test-Path $desktop)) {

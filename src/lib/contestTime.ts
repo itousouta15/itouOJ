@@ -1,6 +1,5 @@
-// 全站時間顯示固定用 Asia/Taipei（跟其他頁面 toLocaleString 的慣例一致），
-// 這裡把比賽起訖時間的 <input type="datetime-local"> 字串跟 Date 互轉，
-// 不依賴瀏覽器或伺服器主機的系統時區，避免兩邊時區不一致造成誤差。
+// 比賽時間的 <input type="datetime-local"> 字串與 Date 互轉，固定用
+// Asia/Taipei，不依賴瀏覽器或主機的系統時區。
 const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
 
 export function toTaipeiInputValue(date: Date): string {
