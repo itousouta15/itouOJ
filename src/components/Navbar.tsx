@@ -9,14 +9,18 @@ import MobileMenuButton from "@/components/MobileMenuButton";
 export default async function Navbar() {
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
-  const displayName = session
-    ? (
-        await prisma.user.findUnique({
+  const [userRow, unreadCount] = session
+    ? await Promise.all([
+        prisma.user.findUnique({
           where: { id: session.userId },
           select: { displayName: true },
-        })
-      )?.displayName
-    : null;
+        }),
+        prisma.message.count({
+          where: { receiverId: session.userId, readAt: null },
+        }),
+      ])
+    : [null, 0];
+  const displayName = userRow?.displayName ?? null;
 
   return (
     <header className="site-header">
@@ -25,7 +29,11 @@ export default async function Navbar() {
           itouOJ
         </Link>
         <div className="hidden min-w-0 flex-1 md:flex">
-          <NavLinks isAdmin={isAdmin} />
+          <NavLinks
+            isAdmin={isAdmin}
+            loggedIn={!!session}
+            unread={unreadCount}
+          />
         </div>
         <div className="ml-auto flex items-center gap-2 sm:gap-3 md:ml-0">
           <ThemeToggle />
@@ -33,6 +41,7 @@ export default async function Navbar() {
             <AccountMenu
               name={displayName || session.username}
               username={session.username}
+              unread={unreadCount}
             />
           ) : (
             <>
@@ -44,7 +53,11 @@ export default async function Navbar() {
               </Link>
             </>
           )}
-          <MobileMenuButton isAdmin={isAdmin} />
+          <MobileMenuButton
+            isAdmin={isAdmin}
+            loggedIn={!!session}
+            unread={unreadCount}
+          />
         </div>
       </nav>
     </header>

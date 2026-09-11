@@ -9,11 +9,19 @@ import { navLinksFor, isNavActive } from "@/lib/navLinks";
 // 同 itousouta.me 手機版選單背景飄浮的顏文字裝飾
 const FACES = ["= ᗜ ω ᗜ.=", "(◕ᗜ◕✿)", "( ˘ω˘ )zzz", "ฅ^•ﻌ•^ฅ", "(´,,•ω•,,)"];
 
-export default function MobileMenuButton({ isAdmin }: { isAdmin: boolean }) {
+export default function MobileMenuButton({
+  isAdmin,
+  loggedIn,
+  unread,
+}: {
+  isAdmin: boolean;
+  loggedIn: boolean;
+  unread: number;
+}) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
-  const links = navLinksFor(isAdmin);
+  const links = navLinksFor(isAdmin, { loggedIn, unreadMessages: unread });
 
   useEffect(() => setMounted(true), []);
   useEffect(() => setOpen(false), [pathname]);

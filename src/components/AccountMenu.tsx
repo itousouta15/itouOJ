@@ -7,9 +7,11 @@ import { useRouter } from "next/navigation";
 export default function AccountMenu({
   name,
   username,
+  unread = 0,
 }: {
   name: string;
   username: string;
+  unread?: number;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -49,6 +51,11 @@ export default function AccountMenu({
         <span className="mono max-w-32 truncate text-sm font-medium text-tx">
           {name}
         </span>
+        {unread > 0 && (
+          <span className="rounded-full bg-[#ff6b6b] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+            {unread}
+          </span>
+        )}
         <span
           className={`text-[10px] text-mute transition-transform duration-200 ${
             open ? "rotate-180" : ""
@@ -67,6 +74,19 @@ export default function AccountMenu({
             onClick={() => setOpen(false)}
           >
             個人頁面
+          </Link>
+          <Link
+            href="/messages"
+            className="menu-item justify-between"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+          >
+            <span>站內訊息</span>
+            {unread > 0 && (
+              <span className="rounded-full bg-[#ff6b6b] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+                {unread}
+              </span>
+            )}
           </Link>
           <Link
             href="/settings"

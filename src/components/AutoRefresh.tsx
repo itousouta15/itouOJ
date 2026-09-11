@@ -6,7 +6,14 @@ import { useRouter } from "next/navigation";
 // 給監考巡場用的頁面（例如參賽者狀態）：定期重新整理，不用自己一直按 F5
 // 才看得到最新的就緒回報。router.refresh() 只重新跑 server component，
 // 不會整頁閃一下重載。
-export default function AutoRefresh({ intervalMs = 5000 }: { intervalMs?: number }) {
+export default function AutoRefresh({
+  intervalMs = 5000,
+  showLabel = true,
+}: {
+  intervalMs?: number;
+  // 聊天這種不需要「上次更新」文字的地方可以關掉，只保留定期 refresh
+  showLabel?: boolean;
+}) {
   const router = useRouter();
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
@@ -20,7 +27,7 @@ export default function AutoRefresh({ intervalMs = 5000 }: { intervalMs?: number
   }, [router, intervalMs]);
 
   // 避免 SSR/CSR 首次渲染時間不一致
-  if (!lastRefreshed) return null;
+  if (!lastRefreshed || !showLabel) return null;
 
   return (
     <p className="mono text-xs text-mute">
