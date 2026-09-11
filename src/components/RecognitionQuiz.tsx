@@ -263,7 +263,7 @@ export default function RecognitionQuiz({
 
         <StatementCard>{q.statement}</StatementCard>
 
-        <CodeBlock code={q.code ?? ""} language={q.category} maxHeight="max-h-72" />
+        <CodeBlock code={q.code ?? ""} maxHeight="max-h-72" />
 
         <div className="card space-y-2 p-5">
           <AnswerOptions
