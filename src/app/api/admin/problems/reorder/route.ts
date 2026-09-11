@@ -26,9 +26,8 @@ export async function PUT(request: Request) {
       if (count !== ids.length) {
         throw new Error("ids 與題型不符");
       }
-      // order 欄位有 UNIQUE 限制（[type, order]），直接照新順序寫入會跟其他
-      // 還沒更新到位的列暫時撞號。先把整批挪到不會用到的負數區間，讓所有列
-      // 都不衝突，再照最終順序寫回正數，兩段式更新才不會在交易中途違反 UNIQUE。
+      // order 有 [type, order] UNIQUE 限制，照新順序直接寫會暫時撞號。
+      // 先把整批移到負數區間，再寫回正數，才不會在交易中途違反限制。
       for (const [i, id] of ids.entries()) {
         await tx.problem.update({ where: { id }, data: { order: -(i + 1) } });
       }

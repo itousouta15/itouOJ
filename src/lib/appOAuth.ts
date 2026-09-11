@@ -1,10 +1,6 @@
-// App OAuth 登入暫存：登入流程在系統瀏覽器（Custom Tab）完成，
-// 完成後 App 用一次性 code 回來換 session cookie。
-// 用意：OAuth 在 WebView 內會被 Google 封鎖，改到系統瀏覽器跑；
-// 但 session cookie 只設回 WebView（App 自己的 cookie jar），
-// 不會污染使用者瀏覽器裡的網站登入狀態 —— 這就是「和網頁不衝突」的關鍵。
-//
-// 單一 server process 用 Map 即可；過期自動清理（10 分鐘）。
+// App OAuth 登入暫存：流程在系統瀏覽器完成（WebView 會被 Google 封鎖），
+// App 再用一次性 code 換回 WebView 的 session cookie，不影響瀏覽器登入狀態。
+// 單一 server process 用 Map 即可，10 分鐘過期。
 
 interface PendingLogin {
   provider: "google" | "discord";

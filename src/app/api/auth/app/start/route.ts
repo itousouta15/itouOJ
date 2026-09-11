@@ -1,8 +1,7 @@
 import { createAppLogin } from "@/lib/appOAuth";
 
-// App 啟動 OAuth：產生一次性登入碼，回傳要開到系統瀏覽器的 URL。
-// 流程：App → 此端點拿 { code, url } → Browser.open(url)（系統瀏覽器）
-// → OAuth 完成後瀏覽器顯示「可以回 App 了」→ App 用 code 去 /api/auth/app/complete
+// App 啟動 OAuth：發一次性 code，並回傳要開到系統瀏覽器的網址。
+// OAuth 完成後 App 拿 code 去 /api/auth/app/complete 換 session。
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const provider = searchParams.get("provider");

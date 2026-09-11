@@ -9,10 +9,8 @@ import {
   languageLabels,
 } from "@/lib/contest";
 
-// 斷網比賽的整批上傳：比賽期間選手機沒有網路，收件程式只把程式碼存在本機，
-// 等重新連網後一次送上來。跟 /api/submissions 分開的原因有兩個：
-//   1. assertContestProblemAccess 在比賽結束後會擋掉所有非管理員的提交
-//   2. 這裡必須採用選手當下按提交的時間，而不是 now()，否則罰時/用時全錯
+// 斷網比賽的整批上傳：收件程式把程式碼存在本機，連網後一次送上來。
+// 與 /api/submissions 分開，因為賽後仍要收、且計時得用選手當下按提交的時間。
 const schema = z.object({
   submissions: z
     .array(

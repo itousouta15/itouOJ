@@ -1,7 +1,5 @@
 // itouOJ 收件程式 — 核心（設定存取、HTTP、本機編譯執行）
-//
-// UI 在 MainForm.cs / Dialogs.cs。這裡刻意不碰 WinForms，方便 TestHarness
-// 直接對這些類別做自動化測試。
+// UI 在 MainForm.cs / Dialogs.cs；刻意不碰 WinForms，方便 TestHarness 直接測試。
 
 using System;
 using System.Collections.Generic;
@@ -32,9 +30,8 @@ namespace ItouOJ
         // 比賽限定的語言 key（例如只有 "cpp"）。空清單 = 不限制。
         public List<string> AllowedLanguages { get; set; }
 
-        // 比賽起訖時間（ISO 8601 UTC）。斷網後就是靠這兩個值加上校正過的時鐘
-        // 判斷「可以開始了沒」和「時間到了沒」—— 所有機器校正到同一個伺服器時間，
-        // 就會在同一刻解鎖、同一刻關閉，不需要網路發號施令。
+        // 比賽起訖時間（ISO 8601 UTC）。斷網後靠校正過的時鐘判斷開始/結束——
+        // 所有機器對過同一個伺服器時間，就會同步解鎖與關閉，不需網路發號施令。
         public string StartTimeUtc { get; set; }
         public string EndTimeUtc { get; set; }
 
@@ -293,9 +290,7 @@ namespace ItouOJ
     }
 
     // 本機測試執行：用選手電腦上的 g++ 編譯並執行。
-    //
-    // 這跟伺服器判題是兩回事——沒有沙箱、也不是同一版編譯器，只是讓選手在斷網時
-    // 能確認「有沒有編譯過」和「範例對不對」。真正的判分還是等賽後上傳。
+    // 這跟伺服器判題是兩回事（無沙箱、不同編譯器），只讓斷網時確認編譯與範例對不對；真正判分等賽後上傳。
     public static class Runner
     {
         // Code::Blocks 內建的 MinGW 排最前面——這是主力機房實際在用的編譯器，
@@ -331,9 +326,8 @@ namespace ItouOJ
                 if (File.Exists(p)) return p;
             }
 
-            // winget 安裝的工具鏈（例如 WinLibs）會放在帶套件雜湊的資料夾底下，
-            // 路徑寫不死，用萬用字元找。winget 雖然會把它加進使用者 PATH，
-            // 但那要重開 shell 才生效，直接找檔案比較保險。
+            // winget 安裝的工具鏈（如 WinLibs）放在帶雜湊的資料夾，路徑寫不死，用萬用字元找。
+            // winget 會加進使用者 PATH 但要重開 shell 才生效，直接找檔案比較保險。
             try
             {
                 string pkgRoot = Path.Combine(
@@ -362,22 +356,13 @@ namespace ItouOJ
             get { return Path.Combine(Store.Root, "run"); }
         }
 
-        // 編譯出來的程式會動態連結 libstdc++-6.dll / libgcc_s_seh-1.dll /
-        // libwinpthread-1.dll，這些就放在編譯器的 bin 目錄裡。子行程的 PATH 若沒有
-        // 這個目錄，程式一啟動就會以 0xC0000135（找不到 DLL）死掉——而且只有用到
-        // <iostream> 的才會中招，printf 的程式看起來正常，非常容易漏掉。
+        // 編譯出的程式會動態連結 libstdc++-6.dll 等（放在編譯器 bin）。子行程 PATH 若缺
+        // 這目錄，啟動會以 0xC0000135（找不到 DLL）死掉；只有用 <iostream> 的會中招。
         static bool stdinEncodingFixed = false;
 
-        // .NET Framework 用 Console.InputEncoding 建立子行程的 StandardInput。
-        // 若那個編碼帶前置位元組（主控台是 UTF-8 codepage 時就會），光是存取
-        // StandardInput 就會先送出 BOM（EF BB BF），受測程式的 cin 第一個字元
-        // 讀到它就整個解析失敗、拿到未初始化的值。
-        //
-        // 陰險的地方在於用 printf/scanf 的程式看起來完全正常，只有 <iostream>
-        // 的會壞——而幾乎所有選手都用 cin。
-        //
-        // 沒有主控台時（GUI 模式）setter 會丟例外，但那種情況 .NET 會退回系統
-        // ANSI 編碼，本來就沒有前置位元組，所以吞掉例外是安全的。
+        // .NET Framework 用 Console.InputEncoding 建立子行程的 StandardInput；若編碼帶前置
+        // 位元組（UTF-8 codepage），存取就會先送 BOM，受測程式 cin 首字元讀到即解析失敗。
+        // printf/scanf 看似正常，只有 <iostream> 會壞；無主控台時 setter 丟例外（退回 ANSI、無 BOM），吞掉安全。
         static void EnsureStdinEncoding()
         {
             if (stdinEncodingFixed) return;
@@ -455,11 +440,9 @@ namespace ItouOJ
             p.StartInfo.RedirectStandardInput = true;
             p.StartInfo.RedirectStandardOutput = true;
             p.StartInfo.RedirectStandardError = true;
-            // 沒設的話 .NET 會用主控台目前的編碼（繁中 Windows 通常是 Big5）
-            // 去解讀子程式的輸出位元組。g++ 編譯出來的程式印出來的中文字面量
-            // 是原始碼檔案存的編碼（現在的編輯器多半存 UTF-8），兩邊對不上
-            // 就會整段亂碼——伺服器判題本來就是照 UTF-8 位元組比對，這裡也
-            // 該用同一個編碼讀，選手在本機看到的才會跟送出去比對的一致。
+            // 不設的話 .NET 會用主控台編碼（繁中 Windows 多為 Big5）解讀子程式輸出；
+            // 而原始碼多存 UTF-8，兩邊不符會整段亂碼。伺服器判題照 UTF-8 位元組比對，
+            // 這裡也用同一編碼，選手本機看到的才會與送出一致。
             p.StartInfo.StandardOutputEncoding = new UTF8Encoding(false);
             p.StartInfo.StandardErrorEncoding = new UTF8Encoding(false);
             p.StartInfo.WorkingDirectory = WorkDir;
@@ -479,11 +462,9 @@ namespace ItouOJ
             p.BeginErrorReadLine();
             try
             {
-                // 直接寫 BaseStream，不要用 StandardInput.Write：.NET Framework 的
-                // StandardInput 會套用主控台的輸入編碼，在某些 host 下是 UTF-16，
-                // 送出去的位元組中間夾雜 NUL，受測程式的 cin 會直接讀失敗而拿到
-                // 未初始化的值——輸出看起來是亂數，很難察覺是輸入沒進去。
-                // （.NET Framework 沒有 StandardInputEncoding 可設，只能走 BaseStream。）
+                // 直接寫 BaseStream，別用 StandardInput.Write：.NET Framework 會套用主控台
+                // 輸入編碼（某些 host 是 UTF-16），位元組夾雜 NUL，受測程式 cin 讀失敗拿到
+                // 未初始化值，輸出像亂數很難察覺；且 .NET Framework 沒有 StandardInputEncoding 可設。
                 byte[] data = new UTF8Encoding(false).GetBytes(stdin ?? "");
                 p.StandardInput.BaseStream.Write(data, 0, data.Length);
                 p.StandardInput.BaseStream.Flush();
@@ -522,11 +503,9 @@ namespace ItouOJ
         }
     }
 
-    // 賽前設定分頁的 PIN 鎖。
-    //
-    // 這是【防呆，不是防駭】：擋的是選手比賽中手滑把比賽切掉、或好奇亂改題目
-    // 路徑。PIN 的雜湊存在本機 config.json，有檔案存取權的人刪掉 Locked 就解開了。
-    // 真正的權限邊界在伺服器（報名檢查、語言限制、時間夾制），那些客戶端動不了。
+    // 賽前設定分頁的 PIN 鎖。這是防呆不是防駭：擋手滑切掉比賽或亂改題目路徑；
+    // 雜湊存在本機 config.json，有檔案權的人刪掉 Locked 就解開。真正的權限邊界
+    // 在伺服器（報名、語言限制、時間夾制），客戶端動不了。
     public static class AdminLock
     {
         public static string Hash(string pin)
@@ -584,15 +563,9 @@ namespace ItouOJ
             }
         }
 
-        // 關掉程式時要不要回到初始狀態（清掉身分、比賽選擇、草稿）。
-        //
-        // 預設要 —— 同一台機器下一位開起來應該是全新的。但有兩種情況清了會害人
-        // 交不出東西，寧可留著髒資料也不能清：
-        //
-        //   1. 已選比賽且比賽還沒結束。機房這時候是斷網的，而重新登入需要網路，
-        //      清掉等於那台機器再也回不來。
-        //   2. 還有沒上傳的提交。清掉身分之後那些提交會變成「別人的」，
-        //      要原本那位重新登入才傳得出去。
+        // 關程式時是否回到初始狀態。預設要（下一位應是全新的），但兩種情況清了會害人
+        // 交不出東西：1) 已選比賽且未結束——機房斷網，重新登入需要網路，清掉就回不來；
+        // 2) 還有未上傳的提交——清掉身分後那些提交會變成「別人的」。
         public static bool ShouldResetOnExit(Config cfg, int pendingCount)
         {
             if (cfg == null || string.IsNullOrEmpty(cfg.Username)) return false;
@@ -606,10 +579,8 @@ namespace ItouOJ
         }
     }
 
-    // 比賽現在處於哪個階段。
-    //
-    // 判斷完全靠本機時鐘 + 賽前校正值，不需要網路 —— 這是斷網比賽能「統一開始」
-    // 的關鍵：每台機器在設定時都對過伺服器時間，所以它們算出來的開始/結束時刻一致。
+    // 比賽現在處於哪個階段。全靠本機時鐘 + 賽前校正值，不需網路——這是斷網比賽
+    // 「統一開始」的關鍵：每台機器都對過伺服器時間，算出的開始/結束時刻一致。
     public static class Phase
     {
         public static DateTime NowUtc(Config cfg)
@@ -659,11 +630,9 @@ namespace ItouOJ
         }
     }
 
-    // 題目 PDF 有設密碼保護時，伺服器給的是 AES-256-CBC 加密過的位元組
-    // （lib/pdfCrypto.ts 加密、這裡對稱解密），格式是 [iv 16 bytes][密文]，
-    // key = SHA256(密碼)。用 CBC 不用 GCM：AesGcm 是 .NET Core 3.0+ 才有的
-    // API，.NET Framework 4.x 沒有，CBC 才是伺服器/收件程式雙邊都不必額外
-    // 裝套件就能用的交集——這裡要的只是賽前不給看，不是防篡改。
+    // 有密碼保護的題目 PDF：伺服器用 AES-256-CBC（lib/pdfCrypto.ts）加密，
+    // 格式 [iv 16 bytes][密文]，key = SHA256(密碼)。用 CBC 不用 GCM 是因為
+    // AesGcm 只有 .NET Core 3.0+ 有；這裡只求賽前不給看，不做防篡改。
     public static class PdfCrypto
     {
         const int IvLen = 16;
@@ -722,10 +691,8 @@ namespace ItouOJ
             if (string.IsNullOrEmpty(cfg.ProblemDir)) return null;
             if (!Directory.Exists(cfg.ProblemDir)) return null;
 
-            // PDF 優先；沒有的話收 HTML（scripts/export-problems.mjs 的輸出格式），
-            // 兩者都能用系統預設程式開啟。子資料夾也一併搜尋——監考可能把題目檔
-            // 分資料夾整理，甚至刻意藏在裡面一層避免選手在資料夾裡翻到別題，
-            // 只找最外層會找不到。
+            // PDF 優先，沒有才收 HTML（scripts/export-problems.mjs 的輸出），兩者都能用
+            // 系統預設程式開啟。子資料夾一併搜尋——監考可能分資料夾或刻意藏一層，只找最外層會找不到。
             foreach (string ext in new string[] { ".pdf", ".html", ".htm" })
             {
                 string[] hits;
@@ -746,10 +713,9 @@ namespace ItouOJ
             return Path.Combine(Store.Root, "problem-docs", contestId.ToString());
         }
 
-        // 下載一題的題目文件（PDF 優先，伺服器沒有上傳 PDF 就是現場產生的 HTML），
-        // 存到本機快取。伺服器會自己決定現在准不准下載（賽前又沒開放提前下載
-        // 就會回 403），這裡遇到任何失敗都回傳 null，呼叫端要當作「這題暫時
-        // 拿不到文件」處理，不能讓一題失敗擋住其他題目或整個賽前設定流程。
+        // 下載一題題目文件（PDF 優先，否則現場產生的 HTML）存到本機快取。伺服器
+        // 自行決定准不准下載（賽前未開放回 403）；任何失敗都回 null，呼叫端視為
+        // 這題暫時拿不到文件，不能讓一題失敗擋住整個流程。
         public static string DownloadAndCache(string serverUrl, string cookie, int contestId, string label)
         {
             if (string.IsNullOrEmpty(serverUrl) || string.IsNullOrEmpty(cookie) ||
@@ -773,9 +739,8 @@ namespace ItouOJ
                 string path = Path.Combine(dir, label + ext);
                 File.WriteAllBytes(path, bytes);
 
-                // 密碼跟加密檔放在同一個快取資料夾裡的 sidecar 檔——開賽前這個
-                // 密碼就已經在選手機上了，跟直接把明碼檔案佈署上去比起來，
-                // 至少不會被隨手打開；OnOpenProblem 會在真的開賽後才讀它來解密。
+                // 密碼以 sidecar 檔跟加密檔放同一快取資料夾。開賽前密碼已在選手機上，
+                // 但比直接佈署明碼檔安全；OnOpenProblem 會在開賽後才讀取解密。
                 string passPath = path + ".pass";
                 if (pdfPassword != null) File.WriteAllText(passPath, pdfPassword);
                 else if (File.Exists(passPath)) File.Delete(passPath);
@@ -788,12 +753,9 @@ namespace ItouOJ
             }
         }
 
-        // 監考照手冊手動指定過「題目路徑」的話，那個資料夾裡的檔案完全是自己
-        // 管理的（多半是手動 Ctrl+P 印出來的 PDF），Resolve() 也優先找那裡。
-        // 這裡只覆蓋「代號 + 副檔名都相同」的既有檔案——換過比賽或題目之後，
-        // 按「更新比賽資訊」就能讓那份手動資料夾也跟著更新，不用監考自己重印
-        // 一次、一台一台換。找不到同名檔案就當作那題本來就不歸這個資料夾管，
-        // 不會憑空新增檔案。
+        // 手動指定的題目資料夾（多半是 Ctrl+P 印出的 PDF，Resolve() 優先找那裡）完全
+        // 由監考管理。這裡只覆蓋「代號 + 副檔名相同」的既有檔案，讓「更新比賽資訊」能
+        // 同步更新不用重印；找不到同名檔就略過，不會憑空新增。
         public static bool SyncToManualDir(string manualDir, string cachedPath, string label)
         {
             if (string.IsNullOrEmpty(manualDir) || !Directory.Exists(manualDir)) return false;
@@ -827,14 +789,9 @@ namespace ItouOJ
         public string Error { get; set; }
     }
 
-    // 瀏覽器登入的本機接收端（同 gh CLI / AWS CLI 那套 loopback 做法）。
-    //
-    // 流程：在 127.0.0.1 開一個臨時 port → 用預設瀏覽器打開授權頁 →
-    // 使用者在網頁上登入（帳密 / Google / Discord 都行）並確認 →
-    // 瀏覽器把 token 導回這個 port。
-    //
-    // 用 TcpListener 自己講最簡單的 HTTP，而不是 HttpListener：後者在多數
-    // 前綴上需要 urlacl 或管理員權限，機房的受限帳號很可能註冊不了。
+    // 瀏覽器登入的本機接收端（同 gh CLI / AWS CLI 的 loopback 做法）：在 127.0.0.1
+    // 開臨時 port，用預設瀏覽器登入後把 token 導回。用 TcpListener 自己講 HTTP 而非
+    // HttpListener——後者多數前綴需 urlacl 或管理員權限，受限帳號很可能註冊不了。
     public static class Loopback
     {
         public static int FindFreePort()
@@ -983,13 +940,9 @@ namespace ItouOJ
 
     public static class Selection
     {
-        // 重新登入抓回比賽清單後，該把下拉選單停在第幾筆。
-        //
-        //   已設定過比賽且清單裡有 -> 停在那一筆
-        //   已設定過比賽但清單裡沒有 -> 回 -1，代表「不要動選擇」。無腦選第 0 筆的話，
-        //     賽後為了換發過期 session 而重新登入的選手會被切到清單最上面那場
-        //     （API 依 startTime 倒序），整包提交就送錯比賽。
-        //   還沒設定過 -> 有東西就選第一筆
+        // 重新登入抓回比賽清單後，下拉選單該停在第幾筆：已設定且有 -> 停該筆；
+        // 已設定但清單沒有 -> 回 -1（不要動）。無腦選第 0 筆會讓賽後重新登入的選手
+        // 被切到清單最上面那場（API 依 startTime 倒序），整包提交送錯比賽；未設定 -> 第一筆。
         public static int ChooseContestIndex(List<int> ids, int currentContestId)
         {
             if (currentContestId > 0) return ids.IndexOf(currentContestId);
@@ -1056,11 +1009,9 @@ namespace ItouOJ
                 using (Stream s = req.GetRequestStream()) s.Write(data, 0, data.Length);
             }
 
-            // 時鐘校正要扣掉「這趟來回花了多久」，不然網路慢（DNS、TLS 握手、
-            // 第一次連線）會被整段算成時鐘飄移。t0 到收到 headers 那一刻（下面
-            // 的 t1）之間的時間，假設去回各佔一半，serverDate 往前補半趟——
-            // 呼叫端在這之後不久就會拿 serverDate 去減自己那時的 UtcNow，
-            // 這樣补過的值才會逼近真正的時鐘差，而不是把整趟網路延遲也算進去。
+            // 時鐘校正要扣掉這趟來回時間，不然網路慢（DNS、TLS 握手）會被算成時鐘飄移。
+            // t0 到收到 headers（t1）假設去回各半，serverDate 補半趟；呼叫端稍後拿它
+            // 減 UtcNow，才會逼近真正時鐘差，而不是把整趟網路延遲算進去。
             DateTime t0 = DateTime.UtcNow;
             HttpWebResponse resp = null;
             try
@@ -1103,10 +1054,8 @@ namespace ItouOJ
             }
         }
 
-        // 給下載題目文件用：伺服器回的是 PDF 或 HTML，不是 JSON，用 StreamReader
-        // 硬轉文字會把 PDF 的二進位內容弄壞，所以另外開一個回傳原始位元組的版本。
-        // pdfPassword 非 null 代表這份是加密過的 PDF（伺服器用
-        // X-Itouoj-Pdf-Password-B64 header 帶密碼過來，這裡解 base64 還原）。
+        // 下載題目文件用：伺服器回 PDF 或 HTML，用 StreamReader 硬轉文字會弄壞二進位，
+        // 所以回傳原始位元組。pdfPassword 非 null 代表加密 PDF（X-Itouoj-Pdf-Password-B64 header）。
         public static byte[] SendBinary(string url, string cookie, out string contentType,
                                          out string pdfPassword)
         {
@@ -1178,9 +1127,8 @@ namespace ItouOJ
             return null;
         }
 
-        // 給抓 GitHub release 附件用：公開資源，不帶 cookie。GitHub 的下載連結
-        // 會 302 轉到 objects.githubusercontent.com，HttpWebRequest 預設就會
-        // 自動跟著轉址，不用特別處理。
+        // 抓 GitHub release 附件用：公開資源不帶 cookie。下載連結會 302 到
+        // objects.githubusercontent.com，HttpWebRequest 預設自動跟轉址。
         public static byte[] DownloadPublic(string url, int timeoutMs)
         {
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
@@ -1211,9 +1159,8 @@ namespace ItouOJ
         // 時記得同步把這裡改成同一個版號，否則版本檢查會失準。
         public const string ClientVersion = "1.3.2";
 
-        // 查 GitHub 最新 release（tag 跟 itouOJ-Submit.exe 附件的下載連結）；
-        // 查不到（沒有網路、API 限流等）就回傳 null，呼叫端要當作
-        // 「查不到，不要擋使用者」處理。
+        // 查 GitHub 最新 release（tag 與 itouOJ-Submit.exe 下載連結）；查不到（無網路、
+        // API 限流等）回 null，呼叫端視為「查不到，不要擋使用者」。
         public static LatestRelease FetchLatestRelease()
         {
             try
@@ -1294,12 +1241,9 @@ namespace ItouOJ
             return parts;
         }
 
-        // 開程式前先檢查、有新版就直接換掉重開，選手不用自己點連結下載。
-        // 回傳 true 代表已經在背景交給新版重啟，這個行程接下來該直接結束，
-        // 不要再開 MainForm（不然舊、新兩個視窗會同時出現）。
-        //
-        // 任何一步失敗（沒網路、下載失敗、寫檔失敗……）都直接回傳 false，
-        // 讓呼叫端照舊開啟目前這一份——版本檢查絕對不能變成「開不了程式」。
+        // 開程式前檢查，有新版就換掉重開。回傳 true 代表已交給新版在背景重啟，本行程
+        // 應直接結束、別再開 MainForm（否則新舊視窗同時出現）。任何一步失敗都回 false，
+        // 讓呼叫端照舊開目前版本——版本檢查絕不能變成「開不了程式」。
         public static bool CheckAndSelfUpdate(string[] launchArgs)
         {
             LatestRelease latest = FetchLatestRelease();
@@ -1323,13 +1267,9 @@ namespace ItouOJ
                 string newExePath = Path.Combine(tempDir, "itouOJ-Submit.new.exe");
                 File.WriteAllBytes(newExePath, newExeBytes);
 
-                // 用 PowerShell 而不是 .bat：機房路徑常常帶中文字（桌面、比賽資料夾
-                // 名稱之類的），.bat 靠系統內碼頁解讀很容易亂碼失敗，PowerShell
-                // 這裡整段用 -EncodedCommand（UTF-16LE + base64）傳，不受內碼頁影響。
-                //
-                // 現在這個行程還占著 currentExe 這個檔案，蓋不過去，所以真正的
-                // 複製要等這個行程結束——用重試迴圈等，而不是猜一個固定的
-                // Start-Sleep 秒數。
+                // 用 PowerShell 而非 .bat：機房路徑常帶中文，.bat 靠系統內碼頁容易亂碼；
+                // 這裡用 -EncodedCommand（UTF-16LE + base64）傳，不受內碼頁影響。本行程
+                // 還占著 currentExe 蓋不過去，複製要等它結束，用重試迴圈而非固定 Start-Sleep。
                 string arg0 = (launchArgs != null && launchArgs.Length > 0) ? launchArgs[0] : null;
                 string script =
                     "$target = " + PsQuote(currentExe) + "\n" +

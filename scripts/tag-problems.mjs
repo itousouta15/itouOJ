@@ -1,10 +1,6 @@
-// 幫現有題目建立標籤庫並掛上標籤（依題目標題比對）。
-// 可重複執行：標籤已存在就跳過建立，題目已經掛過某標籤也不會重複掛。
-//
-//   node scripts/tag-problems.mjs                加進 dev.db
-//   node scripts/tag-problems.mjs --db oj.db      加進正式站資料庫
-//
-// 之後要幫新題目補標籤，直接把 ASSIGNMENTS 加一筆、重跑一次即可。
+// 幫現有題目建立標籤庫並依標題掛上標籤；可重複執行（標籤/關聯已存在就跳過）。
+// 用法：node scripts/tag-problems.mjs [--db oj.db]（預設 dev.db）。
+// 之後補標籤：ASSIGNMENTS 加一筆再重跑即可。
 
 import "dotenv/config";
 import Database from "better-sqlite3";

@@ -94,10 +94,8 @@ namespace ItouOJ
         }
     }
 
-    // 管理員設定：題目 PDF 位置與編譯器路徑。
-    //
-    // 設定寫在 config.json，所以監考在一台機器上設好之後，可以直接把那個檔案
-    // 複製到其他機器（或把整個 ITOUOJ_HOME 指到共用資料夾）省去逐台設定。
+    // 管理員設定：題目 PDF 位置與編譯器路徑。設定寫在 config.json，
+    // 可把該檔複製到其他機器（或共用 ITOUOJ_HOME）省去逐台設定。
     public class SettingsDialog : Form
     {
         readonly Config cfg;

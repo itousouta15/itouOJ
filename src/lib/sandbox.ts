@@ -4,10 +4,7 @@ const SANDBOX_URL = process.env.SANDBOX_URL ?? "http://127.0.0.1:8090";
 
 export type { PistonPhase, PistonResult };
 
-// Same request/response shape as pistonExecute() by design (sandbox-runner's
-// sandbox-server was built to match Piston's /api/v2/execute JSON exactly) --
-// only C/C++/Python/JavaScript are supported so far; Java still goes through
-// pistonExecute() until sandbox-runner grows a Java profile.
+// 刻意與 pistonExecute 同介面：sandbox-server 就是照 Piston 的 JSON 做的。
 export async function sandboxExecute(params: {
   language: string;
   version: string;

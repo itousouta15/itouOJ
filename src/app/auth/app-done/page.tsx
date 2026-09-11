@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "登入完成" };
 
-// 這個頁面只會在 App 的 OAuth 流程中出現（系統瀏覽器裡）：
-// Google/Discord 登入完成後導回這裡，提示使用者關掉分頁回 App。
-// App 端偵測到瀏覽器關閉後，會用登入碼去換 session cookie。
+// App OAuth 完成後導回的頁面（在系統瀏覽器裡），提示使用者關掉分頁回 App；
+// App 偵測到分頁關閉後會用登入碼換 session。
 export default function AppDonePage() {
   return (
     <div className="mx-auto mt-16 max-w-sm px-4">

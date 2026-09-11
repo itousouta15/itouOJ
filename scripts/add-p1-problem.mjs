@@ -1,10 +1,5 @@
-// 新增「大里高中 初級營」P1：畢業紀念冊之外的用途？
-// 部分給分：子題一（40 分，只看輸出第一行）／子題二（60 分，完整比對）。
-//
-//   node scripts/add-p1-problem.mjs                 加進 dev.db
-//   node scripts/add-p1-problem.mjs --db oj.db       加進正式站資料庫
-//
-// 重跑會被擋掉（用標題判斷是否已存在），不會建立重複題目。
+// 新增「大里高中 初級營」P1：畢業紀念冊之外的用途？部分給分：子題一
+// 40 分（firstLine）／子題二 60 分（full）。用法：[--db oj.db]；重跑由標題擋掉。
 
 import "dotenv/config";
 import Database from "better-sqlite3";

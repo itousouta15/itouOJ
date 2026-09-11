@@ -2,9 +2,8 @@ import { prisma } from "@/lib/db";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import { execute } from "@/lib/execute";
 
-// 單機用的循序判題佇列：用 promise chain 串起來，
-// 同一時間只有一筆提交在跑，避免把 4 核心的機器壓垮。
-// 存在 globalThis 上，dev 模式熱重載時不會產生多條佇列。
+// 單機用的循序判題佇列（promise chain），一次只跑一筆，避免壓垮機器。
+// 存在 globalThis 上，dev 熱重載時不會產生多條佇列。
 const globalForJudge = globalThis as unknown as { judgeChain?: Promise<void> };
 
 export function enqueueSubmission(submissionId: number) {
@@ -48,9 +47,8 @@ export function normalizeOutput(text: string): string {
     .replace(/\n+$/g, "");
 }
 
-// 單筆測資的判定（判題與測試執行共用）
-// checkMode: full = 完整比對輸出；firstLine = 只比對輸出第一行，其餘內容忽略
-// （對應子題「只要某一行對就給分、後面明細寫錯不扣分」這種配分規則）
+// 單筆測資的判定（判題與測試執行共用）。checkMode=firstLine 只比第一行，
+// 對應「只要某一行對就給分、後面明細寫錯不扣分」的子題配分規則。
 export function runVerdict(
   run: import("@/lib/piston").PistonPhase,
   timeLimitMs: number,
@@ -136,9 +134,8 @@ async function judgeSubmission(submissionId: number) {
     problem.memoryLimitMb * lang.memoryMultiplier * 1024 * 1024;
 
   const hasSubtasks = problem.subtasks.length > 0;
-  // 沒有子題就沿用舊制：所有測資當成單一群組，遇到第一筆失敗就整題停止。
-  // 有子題則每個子題各自跑完自己的測資（子題內遇到失敗就跳到下一個子題），
-  // 全對的子題才拿到該子題配分，最後加總成 score。
+  // 沒有子題就把所有測資當一組，第一筆失敗就整題停；有子題則各子題獨立跑，
+  // 全對才拿該子題配分，最後加總成 score。
   const groups = hasSubtasks
     ? problem.subtasks.map((st) => ({
         testCases: st.testCases,
@@ -163,10 +160,8 @@ async function judgeSubmission(submissionId: number) {
   let maxMemoryKb = 0;
   let score = hasSubtasks ? 0 : null;
   let resultOrder = 0;
-  // 同一筆 submission、不同測資的原始碼完全相同，第一筆測資編譯出來的
-  // 執行檔記下來，後面測資直接重用，不用每筆都重新編譯一次
-  // （sandbox-runner 才吃這個欄位；Piston 語言就一直是 undefined，execute()
-  // 會忽略它，行為跟原本一樣）。
+  // 同一筆 submission 的原始碼相同，第一筆測資編譯出來的執行檔記下來，
+  // 後面測資直接重用，不用每筆重編（只有 sandbox-runner 吃這個欄位）。
   let compiledBinary: string | undefined;
 
   try {

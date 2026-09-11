@@ -1,10 +1,6 @@
-// 把單一題目渲染成一份「可列印、離線可開」的自包含 HTML——不依賴外部字型檔或
-// 網路資源，KaTeX 的 CSS 與字型直接內嵌成 base64，開啟就對，適合下載到選手機。
-//
-// 渲染管線刻意和網站一致（remark-gfm + remark-math + rehype-katex），
-// 所以看起來跟選手在 OJ 上看到的題目長得一樣。這裡是 scripts/export-problems.mjs
-// 的姊妹版本：那支是本機批次匯出整場比賽用的命令列工具，這裡是給網頁 API
-// 用的單題版本，兩邊各自獨立維護（同樣邏輯但執行環境不同，沒有共用模組）。
+// 把單一題目渲染成自包含的 HTML（KaTeX 字型內嵌 base64），適合下載到選手
+// 機離線開啟。渲染管線跟網站一致（remark-gfm + remark-math + rehype-katex），
+// 看起來跟 OJ 上一樣；scripts/export-problems.mjs 是類似的批次匯出版。
 
 import fs from "node:fs";
 import path from "node:path";
@@ -15,9 +11,8 @@ import remarkMath from "remark-math";
 import remarkRehype from "remark-rehype";
 import rehypeKatex from "rehype-katex";
 
-// ── hast -> HTML ────────────────────────────────────
-// rehype-stringify 沒有裝（react-markdown 走 React 元素路徑，不需要序列化字串），
-// 這裡只要把樹轉成字串，自己寫比多裝一個套件划算。
+// rehype-stringify 沒裝（react-markdown 走 React 元素路徑），
+// 這裡自己把 hast 轉成 HTML 字串。
 const VOID = new Set([
   "area", "base", "br", "col", "embed", "hr", "img", "input",
   "link", "meta", "param", "source", "track", "wbr",
@@ -75,8 +70,7 @@ async function markdownToHtml(md: string): Promise<string> {
   return toHtml(tree as unknown as HastNode);
 }
 
-// KaTeX CSS 引用的字型（fonts/*.woff2）直接內嵌成 base64，整份 HTML 才能
-// 零外部依賴地離線開啟——不用另外帶一個 fonts/ 資料夾。
+// KaTeX 的字型檔內嵌成 base64，整份 HTML 才能離線開啟、不用帶 fonts/ 資料夾。
 let cachedKatexCss: string | null = null;
 function embeddedKatexCss(): string {
   if (cachedKatexCss) return cachedKatexCss;

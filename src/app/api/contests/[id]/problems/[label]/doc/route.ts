@@ -4,11 +4,8 @@ import { getContestPhase } from "@/lib/contest";
 import { renderProblemDocHtml } from "@/lib/renderProblemDoc";
 import { decryptPdf } from "@/lib/pdfCrypto";
 
-// 給離線收件程式在賽前設定階段下載題目文件用（有上傳 PDF 就給 PDF，沒有就
-// 現場產生 HTML）。預設要等開賽才能下載，跟 /api/contests/[id]/problems 的
-// 防洩題邏輯一致；管理員把 Contest.allowEarlyProblemDownload 打開後，
-// 已報名的參賽者才能在開賽前就先下載——這是管理員自行評估風險後的選擇，
-// 不是系統預設行為。
+// 給離線收件程式下載題目文件（有上傳 PDF 就給 PDF，沒有就現場產生 HTML）。
+// 預設等開賽才給；管理員開了 allowEarlyProblemDownload 才准已報名者賽前下載。
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string; label: string }> }
@@ -89,12 +86,8 @@ export async function GET(
       });
     }
 
-    // 選手端：有設密碼保護的話，這裡故意不解密——直接把加密過的位元組連同
-    // 密碼一起交給收件程式，讓它存到本機快取。這樣賽前就算開了
-    // allowEarlyProblemDownload 提早佈署，機器上放的也只是打不開的密文，
-    // 收件程式要等真的開賽（Flow 判斷過了 Waiting 階段）才會自動解密開啟。
-    // 密碼經 base64 包一層純粹是避免密碼裡的特殊字元讓 HTTP header 出問題，
-    // 不是額外的保護——這個功能本來就假設密碼在下載當下就會落到選手機上。
+    // 選手端不解密，把密文跟密碼一起交給收件程式快取，等開賽後才自動解密。
+    // 密碼用 base64 只是避免特殊字元弄壞 HTTP header，不是額外的保護。
     if (cp.problem.pdfPassword) {
       return new Response(new Uint8Array(cp.problem.pdfData), {
         headers: {

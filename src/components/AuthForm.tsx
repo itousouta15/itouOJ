@@ -37,9 +37,8 @@ export default function AuthForm({
   const isLogin = mode === "login";
   const isApp = typeof window !== "undefined" && isNativeApp();
 
-  // App 內 OAuth：開系統瀏覽器（Custom Tab）跑 Google/Discord 登入，
-  // 完成後瀏覽器顯示「可以回 App 了」；關掉分頁後用一次性 code 換 session。
-  // 這樣不會污染手機瀏覽器裡的網站登入狀態，也不會被 WebView 封鎖。
+  // App 內 OAuth：開系統瀏覽器跑登入，完成後用一次性 code 換 session，
+  // 不會污染瀏覽器的登入狀態，也不會被 WebView 封鎖。
   async function startAppOAuth(provider: "google" | "discord") {
     if (oauthBusy) return;
     setOauthBusy(true);

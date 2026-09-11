@@ -1,11 +1,6 @@
-// itouOJ 收件程式 — 外觀
-//
-// 色票直接對應網站 globals.css 的淺色主題（[data-theme="light"]），
-// 讓收件程式和 oj.itousouta.me 看起來像同一套東西。
-//
-// 為什麼用淺色而不是網站的預設暗色：WinForms 的原生控制項（TextBox、ListView、
-// ComboBox、捲軸）不吃自訂配色，硬套暗色會變成深色框裡卡著幾塊白，比統一的
-// 淺色更難看。這裡選擇做好一件事，而不是兩件都做半套。
+// itouOJ 收件程式 — 外觀。色票對應網站 globals.css 的淺色主題，讓收件程式和
+// oj.itousouta.me 像同一套。用淺色而非網站預設暗色：WinForms 原生控制項（TextBox、
+// ListView、ComboBox、捲軸）不吃自訂配色，硬套暗色會比統一淺色更難看。
 
 using System;
 using System.Drawing;
@@ -81,11 +76,9 @@ namespace ItouOJ
             return p;
         }
 
-        // 統一的 TableLayoutPanel：無邊距、白底。
-        //
-        // 注意：這裡不預設任何 Column/RowStyle——TableLayoutPanel 的樣式集合
-        // 是空的，設定 ColumnCount/RowCount 也不會自動補樣式（預設 Percent 100）。
-        // 呼叫端必須自行 Add 與行列數相符的樣式，加錯順序會整個錯位。
+        // 統一的 TableLayoutPanel：無邊距、白底。這裡不預設 Column/RowStyle——
+        // 設 ColumnCount/RowCount 不會自動補樣式（預設 Percent 100）；呼叫端必須
+        // 自行 Add 相符樣式，加錯順序會整個錯位。
         public static TableLayoutPanel Table()
         {
             TableLayoutPanel t = new TableLayoutPanel();
@@ -180,7 +173,6 @@ namespace ItouOJ
             return c;
         }
 
-        // 水平分隔線
         public static Panel Divider()
         {
             Panel p = new Panel();

@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-// 給監考巡場用的頁面（例如參賽者狀態）：定期重新整理，不用自己一直按 F5
-// 才看得到最新的就緒回報。router.refresh() 只重新跑 server component，
-// 不會整頁閃一下重載。
+// 給監考巡場頁面（例如參賽者狀態）用的定期重新整理，不用一直按 F5。
+// router.refresh() 只重跑 server component，不會整頁閃一下。
 export default function AutoRefresh({
   intervalMs = 5000,
   showLabel = true,

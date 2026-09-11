@@ -18,9 +18,8 @@ export interface PistonResult {
   version: string;
   compile?: PistonPhase;
   run: PistonPhase;
-  // sandbox-runner only（見 sandbox.ts）：這次是不是真的重新編譯了，
-  // 有的話帶回編譯出來的執行檔（base64），同一筆 submission 後續測資
-  // 可以直接重用，不用每筆都重新編譯一次。
+  // 只有 sandbox-runner 會回傳（見 sandbox.ts）：這次編譯出來的執行檔，
+  // 同一筆 submission 的後續測資可直接重用，不用每筆重編。
   compiled_binary?: string;
 }
 

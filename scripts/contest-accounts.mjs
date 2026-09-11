@@ -1,18 +1,6 @@
-// 比賽選手帳號管理（斷網機房用）
-//
-// 刻意寫成 .mjs 而不是 .ts：判題機在比賽當天沒有對外網路，`npx tsx` 會想
-// 上網抓套件而失敗。這支只用 better-sqlite3 + bcryptjs + dotenv，三個都已經
-// 在 node_modules 裡，所以 `node scripts/contest-accounts.mjs` 就能直接跑。
-//
-// 用法：
-//   node scripts/contest-accounts.mjs list
-//   node scripts/contest-accounts.mjs create --prefix oj --count 30
-//   node scripts/contest-accounts.mjs create --names alice,bob,carol
-//   node scripts/contest-accounts.mjs set-password --names itousota15
-//   node scripts/contest-accounts.mjs set-password --all-oauth-only
-//
-// create / set-password 會把明碼密碼寫成 CSV 供列印發放；密碼在資料庫只存
-// bcrypt hash，關掉視窗就再也查不回來，CSV 請自行保管並在賽後刪除。
+// 比賽選手帳號管理（斷網機房用）。刻意用 .mjs：比賽當天沒網路，npx tsx 會抓套件
+// 失敗；本檔只用已在 node_modules 的 better-sqlite3/bcryptjs/dotenv（--help 有用法）。
+// create/set-password 產出的 CSV 含明碼密碼（DB 只存 bcrypt hash），請賽後刪除。
 
 import "dotenv/config";
 import fs from "node:fs";

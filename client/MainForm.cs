@@ -16,12 +16,8 @@ using System.Windows.Forms;
 
 namespace ItouOJ
 {
-    // 一般 TextBox 貼上 LF-only（沒有 \r）的文字時，Win32 EDIT 控制項不認得
-    // 單獨的 \n 是換行，整段程式碼會擠成一行。很多編輯器/網頁複製出來的程式碼
-    // 就是 LF-only，貼上題目程式碼是這支程式最核心的操作，這個問題不能留著。
-    //
-    // 攔在 WM_PASTE 這一層，不管是 Ctrl+V、右鍵選單、還是滑鼠中鍵貼上都會經過
-    // 這裡，比只處理 Ctrl+V 的 KeyDown 更保險。
+    // Win32 EDIT 控制項不認 LF-only 的 \n，貼上時整段程式碼會擠成一行；貼程式碼
+    // 是核心操作，所以攔在 WM_PASTE（Ctrl+V/右鍵/中鍵都經過），比只處理 KeyDown 保險。
     class PasteNormalizingTextBox : TextBox
     {
         const int WM_PASTE = 0x0302;
@@ -134,9 +130,8 @@ namespace ItouOJ
             CheckForUpdateIfLaunchedFromBrowser(launchUrl);
             WarnIfAccountMismatch();
 
-            // 網路一回來就主動提示，狀態列的連線指示燈也靠它更新。
-            // 沒有這層的話，沒聽到監考宣布的選手可能就這樣關掉程式離場，
-            // 提交永遠留在本機。
+            // 網路一回來就主動提示（狀態列指示燈也靠它更新），否則沒聽到宣布的
+            // 選手可能直接關程式離場，提交永遠留在本機。
             netTimer = new System.Windows.Forms.Timer();
             netTimer.Interval = 5000;
             netTimer.Tick += OnNetTick;
@@ -154,16 +149,13 @@ namespace ItouOJ
             phaseTimer.Start();
             OnPhaseTick(null, EventArgs.Empty);
 
-            // 重新打開程式的第一件事：核對比賽現在的真實狀態，而不是只信任
-            // 上面那行用本機快取算出來的畫面。監考可能在程式沒開著的時候
-            // 延長、提早結束、或改動了這場比賽。
+            // 重新打開程式先核對比賽真實狀態，不信任本機快取算出的畫面——監考
+            // 可能在程式沒開著時延長、提早結束或改動比賽。
             RefreshContestStateAsync();
         }
 
-        // itouoj://start?server=https%3A%2F%2Foj.itousouta.me&contest=3
-        //
-        // 只接受伺服器網址與比賽編號 —— 這是使用者可控的輸入，不該讓它帶進
-        // token 之類的東西。登入仍然要走瀏覽器授權那條路。
+        // itouoj://start?server=...&contest=3 的參數是使用者可控輸入，只接受伺服器
+        // 網址與比賽編號、不讓它帶 token；登入仍走瀏覽器授權。
         void ApplyLaunchUrl(string url)
         {
             if (string.IsNullOrEmpty(url)) return;
@@ -199,12 +191,9 @@ namespace ItouOJ
             catch { /* 參數壞掉不該讓程式開不起來 */ }
         }
 
-        // 從網站「開啟收件程式」按鈕啟動時，帶進來的帳號如果跟這台機器目前
-        // 登入的不一樣，就提醒一下——避免上一位選手（或監考測試用）的帳號
-        // 忘了登出，這一位整場比賽都用錯帳號送出而不自知。
-        //
-        // launchUser 只是「使用者可控的比對用資訊」，不是憑證，所以這裡只警告、
-        // 不自動登出：自動清掉草稿/選比賽這種有副作用的動作不該由網址參數觸發。
+        // 從網站啟動時若帶進來的帳號與本機登入不同就提醒，避免上一位選手忘了
+        // 登出、整場用錯帳號送出。launchUser 只是比對資訊不是憑證，故只警告；
+        // 清草稿/選比賽等有副作用的動作不該由網址參數觸發。
         void WarnIfAccountMismatch()
         {
             if (string.IsNullOrEmpty(launchUser)) return;
@@ -219,9 +208,8 @@ namespace ItouOJ
                 "登入帳號不一致", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
-        // 只在從網站「開啟收件程式」按鈕啟動時查——那正是賽前設定、還有網路的
-        // 時候，過了這個時間點通常就斷網了，查了也沒意義。查不到（沒有網路、
-        // GitHub API 限流）就當作沒事，不能讓版本檢查擋住正常使用。
+        // 只在從網站啟動時查（賽前還有網路，之後通常就斷網）；查不到（沒網路、
+        // GitHub API 限流）就當沒事，不能讓版本檢查擋住使用。
         void CheckForUpdateIfLaunchedFromBrowser(string launchUrl)
         {
             if (string.IsNullOrEmpty(launchUrl)) return;
@@ -356,15 +344,13 @@ namespace ItouOJ
             Text = "itouOJ 收件程式";
             Font = Theme.Body;
             BackColor = Theme.Bg;
-            // 配合 PerMonitorV2：載入時按目前螢幕 DPI 縮放整個布局，而不是
-            // 讓系統位元圖放大（會模糊、會重疊）。AutoScaleDimensions 基準
-            // 設 96 才不會因為預設 (0,0) 而被跳過。
+            // 配合 PerMonitorV2 在載入時按螢幕 DPI 縮放，避免系統位元圖放大；
+            // AutoScaleDimensions 設 96 才不會因預設 (0,0) 被跳過。
             AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
 
-            // 全螢幕：比賽時佔滿畫面，選手不會被其他視窗分心，也少一個誤觸的機會。
-            // 用 Maximized 而不是無邊框全螢幕 —— 選手仍需要切到瀏覽器登入、
-            // 開題目 PDF，把視窗鎖死反而卡住正常流程。
+            // 比賽時最大化佔滿畫面，減少分心與誤觸；不用無邊框全螢幕，因為選手
+            // 仍需切到瀏覽器登入、開題目 PDF。
             WindowState = FormWindowState.Maximized;
             MinimumSize = new Size(900, 640);
             StartPosition = FormStartPosition.CenterScreen;
@@ -390,11 +376,8 @@ namespace ItouOJ
                     e.Graphics.DrawLine(pen, 0, 0, ((Panel)s).Width, 0);
             };
 
-            // 目前是否連得上伺服器，跟時鐘一樣任何階段都看得到。
-            //
-            // 斷網比賽最需要知道的就是「現在到底斷了沒」——以前這件事只在
-            // 網路剛恢復、又剛好有東西要上傳時才會用一則提示訊息閃過去，
-            // 平常根本看不到目前狀態。
+            // 連線狀態跟時鐘一樣常駐，任何階段都看得到；以前只在網路恢復且有東西
+            // 要上傳時才閃一則訊息，平常根本不知道現在到底斷了沒。
             lblNet = new Label();
             lblNet.Dock = DockStyle.Right;
             lblNet.Width = 110;
@@ -407,11 +390,8 @@ namespace ItouOJ
                 "比賽期間預期是「離線」；比賽結束、網路恢復後應變成「已連線」。");
             SetNetLabel(null);
 
-            // 校正後的現在時間，任何階段都看得到。
-            //
-            // 「統一開始」整套機制就是靠每台機器對過同一個伺服器時鐘，但在這之前
-            // 那個值只存在 config.json 裡，監考沒辦法確認各機是否真的一致。
-            // 擺出來之後巡一遍場就能核對。
+            // 「統一開始」靠每台機器對過同一個伺服器時鐘；這個校正值以前只存在
+            // config.json，擺出來監考巡場才能核對各機是否一致。
             lblClock = new Label();
             lblClock.Dock = DockStyle.Right;
             lblClock.Width = 160;
@@ -435,9 +415,8 @@ namespace ItouOJ
             lblRemain.Visible = false;
             bottom.Controls.Add(lblRemain);
 
-            // 比賽還沒開始時，「賽前設定」是從倒數畫面按過來的（暫時讓開
-            // 60 秒，見 BuildGateOverlay 的 toSetup）。放在狀態列而不是
-            // 「賽前設定」分頁裡——分頁裡的話切到別的分頁就看不到，回不去。
+            // 賽前設定是從倒數畫面暫時讓開 60 秒進來的（見 BuildGateOverlay 的
+            // toSetup）；放狀態列才不會切到別分頁就看不到、回不去。
             btnBackToCountdown = Theme.Secondary("回到倒數畫面");
             btnBackToCountdown.Dock = DockStyle.Right;
             btnBackToCountdown.Width = 130;
@@ -460,18 +439,15 @@ namespace ItouOJ
 
             Controls.Add(bottom);
 
-            // 等待 / 結束畫面蓋住整個視窗（狀態列除外）。
-            // 放在 Form 而不是分頁裡：分頁內的 Dock=Fill 只拿得到其他面板分完後
-            // 剩下的空間，題目下拉和提交按鈕會露在外面。
+            // 等待/結束畫面蓋住整個視窗（狀態列除外）。放 Form 而非分頁：分頁內
+            // Dock=Fill 只拿得到剩餘空間，題目下拉和提交按鈕會露在外面。
             Controls.Add(BuildGateOverlay());
             pnlGate.BringToFront();
         }
 
         // ── 等待 / 結束的全屏遮罩 ─────────────────────
-        //
-        // 比賽尚未開始時蓋住整個作答分頁，時間到之後也一樣。這不只是提示：
-        // 遮罩擋住的是「題目與提交按鈕」本身，選手在時間外根本點不到。
-        // 判斷靠校正過的本機時鐘，所以斷網也準，而且每台機器同一刻切換。
+        // 遮罩直接擋住題目與提交按鈕，不只是提示；判斷靠校正過的本機時鐘，
+        // 斷網也準且每台機器同一刻切換。
         Panel BuildGateOverlay()
         {
             pnlGate = new Panel();
@@ -620,9 +596,8 @@ namespace ItouOJ
                     break;
 
                 case Screen.Waiting:
-                    // 監考巡場時光看這個畫面就要能確認「這台機器是誰、考哪一場」，
-                    // 不必另外切去「賽前設定」分頁查帳號——所以帳號/比賽這行用
-                    // lblGateIdentity，字級特地比下面的說明文字大上不少。
+                    // 巡場光看這畫面就要能確認「誰、考哪場」；帳號/比賽用
+                    // lblGateIdentity，字級特地比下方說明大很多。
                     ShowGate("比賽尚未開始",
                         Phase.Clock(Phase.Until(cfg, cfg.StartTimeUtc)), Theme.Accent,
                         cfg.Username + "　·　" + cfg.ContestTitle,
@@ -734,11 +709,8 @@ namespace ItouOJ
         }
 
         // ── 分頁一：作答 ─────────────────────────────
-        //
-        // 布局：2 欄 × 2 列的表格。身分列橫跨全寬；下面左側是題目欄、
-        // 右側是「題目列 / 來源列 / 編輯區 / 動作列」四段。
-        // 全部用 TableLayoutPanel + Dock 組成，視窗縮放時只有編輯區變大，
-        // 其他固定段落的位置與大小不變。
+        // 2 欄 × 2 列 TableLayoutPanel + Dock：身分列橫跨全寬，下方左為題目欄、
+        // 右為題目列/來源列/編輯區/動作列四段；縮放時只有編輯區變大。
         TabPage BuildAnswerTab()
         {
             TabPage tab = new TabPage("作答");
@@ -755,9 +727,8 @@ namespace ItouOJ
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
             // ── 身分列 ──────────────────────────────
-            // 一進畫面就要看得出「我是誰、在哪一場比賽、有沒有設定好」。
-            // 開賽前監考逐台巡檢時，這一條就是判斷依據。背景色就是狀態色
-            // （紅 = 未登入、橘 = 未選比賽、綠 = 就緒）。
+            // 開賽前巡檢的判斷依據：一眼看出我是誰、哪一場、設定好沒；
+            // 背景色即狀態色（紅=未登入、橘=未選比賽、綠=就緒）。
             pnlIdentity = new Panel();
             pnlIdentity.Dock = DockStyle.Fill;
             pnlIdentity.Margin = new Padding(10, 10, 10, 8);
@@ -794,9 +765,8 @@ namespace ItouOJ
             root.SetColumnSpan(pnlIdentity, 2);
 
             // ── 左側：題目欄 ─────────────────────────
-            // 每題一行，右側徽章顯示「已交 n」或「草稿」，一進場就知道
-            // 每題做到哪了。取代以前的下拉選單——題目多的時候一目了然，
-            // 也不用每次切題都要打開下拉。
+            // 每題一列、右側徽章顯示「已交 n」或「草稿」；取代下拉選單，
+            // 題目多時一目了然，切題也不必開下拉。
             Panel sidebar = Theme.CardPanelNoPad();
             sidebar.Dock = DockStyle.Fill;
             sidebar.Margin = new Padding(10, 0, 0, 10);
@@ -945,9 +915,8 @@ namespace ItouOJ
             btnSubmit.Size = new Size(140, 38);
             btnSubmit.Click += OnSubmit;
 
-            // 用 FlowLayoutPanel 靠右排，不要對 Panel 的子控制項用絕對座標 + Right 錨點：
-            // 加入時 Panel 還沒被 dock 撐開（預設寬 200），錨點記下的右邊距會是負值，
-            // 面板變寬後按鈕會被推到可視範圍外。
+            // 用 FlowLayoutPanel 靠右排；對 Panel 子控制項用 Right 錨點的話，
+            // 加入時 Panel 尚未被 dock 撐開（預設寬 200），按鈕會被推出可視範圍。
             FlowLayoutPanel actions = MakeActionBar();
             actions.Controls.Add(btnSubmit); // RightToLeft：先加的在最右邊
             actions.Controls.Add(btnTest);
@@ -1212,10 +1181,8 @@ namespace ItouOJ
             wrap.Controls.Add(listView);
             root.Controls.Add(wrap, 0, 0);
 
-            // 動作列：左邊重新整理 + 帳號，右邊計分板 / 判題結果 / 上傳
-            //
-            // 這裡刻意用「plain Panel + Dock」而不是 TableLayoutPanel：FlowLayoutPanel
-            // 直接當 TLP 的子控制項時 AutoSize 會失效，高度會被拉成整個儲存格。
+            // 動作列：左邊重新整理 + 帳號，右邊計分板 / 判題結果 / 上傳。
+            // 用 plain Panel + Dock：FlowLayoutPanel 當 TLP 子控制項時 AutoSize 會失效。
             Panel foot = new Panel();
             foot.Dock = DockStyle.Fill;
             foot.Margin = new Padding(10, 8, 10, 0);
@@ -1275,9 +1242,7 @@ namespace ItouOJ
         }
 
         // ── 分頁三：賽前設定 ─────────────────────────
-        //
-        // 兩張卡片直排，每張橫向撐滿可用寬度、高度由內容決定——
-        // 寬螢幕不再右邊一片空，矮螢幕也不會互相重疊。
+        // 兩張卡片直排、橫向撐滿、高度由內容決定：寬螢幕不留白，矮螢幕不重疊。
         TabPage BuildSetupTab()
         {
             TabPage tab = new TabPage("賽前設定");
@@ -1296,12 +1261,8 @@ namespace ItouOJ
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             // ── 帳號：永遠可用 ───────────────────────
-            // 不能跟著鎖。選手的 session 過期後必須重新登入才能上傳，
-            // 把登入一起鎖住等於讓他交不出東西。
-            //
-            // 卡片本身是 TableLayoutPanel：放在 root（也是 TLP）的 AutoSize 列裡，
-            // 高度由內容決定、寬度被 TLP 撐滿。包一層普通 Panel 的話，AutoSize
-            // 會贏過 Anchor，卡片寬度會縮成內容寬度。
+            // 不能跟著鎖：session 過期後要重新登入才能上傳，鎖住等於讓他交不出東西。
+            // 卡片用 TLP 放進 root 的 AutoSize 列；外包普通 Panel 會讓 AutoSize 贏過 Anchor。
             TableLayoutPanel ga = Theme.Table();
             ga.AutoSize = true;
             ga.AutoSizeMode = AutoSizeMode.GrowAndShrink;
@@ -1376,9 +1337,8 @@ namespace ItouOJ
             sep1.Margin = new Padding(2, 6, 2, 10);
             ga.Controls.Add(sep1, 0, 4);
 
-            // 不用開瀏覽器也能登入：機器沒有預設瀏覽器、或選手不想離開這個
-            // 視窗時可以用。帳號要先在 itouOJ 網站的「帳號設定」裡設定密碼
-            // 才能用（Google/Discord 專用帳號預設沒有密碼）。
+            // 不開瀏覽器也能登入，供沒有預設瀏覽器的機器使用；帳號需先在網站
+            // 「帳號設定」設密碼（Google/Discord 專用帳號預設沒有）。
             FlowLayoutPanel r5 = SetupRow();
             Label lPw = Theme.FieldLabel("帳密登入");
             lPw.Width = 84;
@@ -1541,10 +1501,8 @@ namespace ItouOJ
         }
 
         // ── 草稿：直接輸入模式的自動保存 ─────────────
-        //
-        // 選手可能在編輯區打半小時才按提交。中途當機、誤關視窗、或不小心切到
-        // 別題都不能讓那些字消失，所以每次輸入後延遲 1 秒落地一次
-        // （每按一個鍵就寫檔太耗，延遲合併批次寫入）。
+        // 打半小時才提交，當機/誤關/切題都不能讓字消失；因此輸入後延遲 1 秒
+        // 才寫檔一次，合併批次避免每鍵都寫。
         void OnCodeChanged(object sender, EventArgs e)
         {
             if (draftTimer == null)
@@ -1594,10 +1552,8 @@ namespace ItouOJ
             RefreshProblemBadges();
         }
 
-        // 題目檔就算已經放在機器上（例如監考為了穩定，提前把整包題目連同
-        // 收件程式一起佈署），比賽開始前也不能給選手打開——不然「先裝好」
-        // 就等於「先洩題」。所以按鈕能不能按不是只看檔案存不存在，還要看
-        // 現在是不是已經開賽。
+        // 題目檔提前佈署在機器上也不能在開賽前打開，否則「先裝好」等於「先洩題」；
+        // 按鈕能不能按除了檔案存在，還要看是否已開賽。
         void UpdateProblemButton()
         {
             if (Flow.Current(cfg) == Screen.Waiting)
@@ -1681,9 +1637,8 @@ namespace ItouOJ
             }
             try
             {
-                // 有 .pass 這個 sidecar 檔代表快取存的是加密過的位元組（見
-                // ProblemDoc.DownloadAndCache）——直接開只會看到亂碼，
-                // 要先用同一份密碼解密到暫存檔，再開那份暫存檔。
+                // 有 .pass sidecar 代表快取是加密位元組（見 ProblemDoc.DownloadAndCache），
+                // 直接開是亂碼；先用同一份密碼解密到暫存檔再開。
                 string passPath = path + ".pass";
                 string openPath = path;
                 if (File.Exists(passPath))
@@ -1716,9 +1671,8 @@ namespace ItouOJ
             Status("設定已儲存", false);
         }
 
-        // 只鎖「管理員設定」。登入必須永遠開著——選手的 session
-        // 過期後要重新登入才能上傳，鎖住等於讓他交不出東西。
-        // 比賽選擇也不鎖：選錯比賽要能自己改回來，鎖住反而卡住需要臨時換場的情況。
+        // 只鎖管理員設定：登入永遠要開（session 過期得重登才能上傳），比賽選擇
+        // 也不鎖（選錯要能改回來、可能要臨時換場）。
         void ApplyLockState()
         {
             bool locked = AdminLock.IsLocked(cfg) && !unlockedThisSession;
@@ -1789,9 +1743,8 @@ namespace ItouOJ
             try
             {
                 sourceName = Path.GetFileName(path);
-                // 每次都重讀檔案：選手很可能在 IDE 又改又存了好幾輪，
-                // 送出的必須是磁碟上的最新版本，同時把編輯區同步成一樣的內容，
-                // 免得畫面顯示的和實際送出的不一致。
+                // 每次重讀檔案：選手可能在 IDE 改存多輪，送出必須是磁碟最新版；
+                // 同時同步編輯區，免得畫面與實際送出的不一致。
                 string code = File.ReadAllText(path, Encoding.UTF8);
                 if (txtCode.Text != code)
                 {
@@ -1869,15 +1822,9 @@ namespace ItouOJ
             pnlIdentity.BackColor = Theme.GoodBg;
         }
 
-        // 向伺服器回報「這台機器準備好了」，讓監考在管理頁一眼看出哪台還沒設定。
-        //
-        // 三個時機都要送，缺一不可：
-        //   選好比賽時 —— 首次設定
-        //   程式啟動時 —— 昨天設定好、今天只是打開程式的機器，不送就永遠顯示未回報
-        //   上傳成功後 —— 順便更新一次「這台還活著」
-        // 失敗不影響作答，只是狀態頁上會顯示未回報。
-        //
-        // 走背景執行緒：啟動時同步打網路會讓視窗卡住好幾秒，機房網路慢的話更明顯。
+        // 向伺服器回報「這台機器準備好了」，讓監考在管理頁看出哪台還沒設定。
+        // 三個時機缺一不可：選好比賽、程式啟動（否則昨天設好的機器永遠顯示未回報）、
+        // 上傳成功後；走背景執行緒，失敗不影響作答。
         void SendCheckinAsync(bool announce)
         {
             if (string.IsNullOrEmpty(cfg.Cookie) || cfg.ContestId <= 0) return;
@@ -2002,8 +1949,7 @@ namespace ItouOJ
         }
 
         // ── 賽前：登入 → 抓比賽清單 ────────────────
-        // 瀏覽器登入：程式本身不碰密碼，也讓只有 Google/Discord、沒有密碼的帳號
-        // 能夠登入收件程式（正式站上六個帳號裡有四個是這種）。
+        // 瀏覽器登入：程式不碰密碼，沒有密碼的 Google/Discord 帳號也能登入。
         void OnLogin(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(BaseUrl())) { Status("請先填伺服器網址", true); return; }
@@ -2049,10 +1995,8 @@ namespace ItouOJ
             });
         }
 
-        // 登出。同一台機器換人用時，要確保下一位看不到也拿不走前一位的東西。
-        // 清掉「這是誰、在考哪一場」。管理員設定（題目路徑、編譯器、PIN）、
-        // 伺服器網址與時鐘校正值屬於這台機器而不屬於某個人，一律保留 ——
-        // 否則每換一位選手就要重做一次賽前設定。
+        // 登出：換人用時清掉「是誰、考哪場」；管理員設定、伺服器網址與時鐘校正
+        // 屬於機器而非個人，一律保留，否則每換選手都要重做賽前設定。
         void ClearSession()
         {
             cfg.Cookie = "";
@@ -2138,9 +2082,8 @@ namespace ItouOJ
             FinishLogin();
         }
 
-        // 不開瀏覽器、直接帳號密碼登入：機器沒有預設瀏覽器、或不想離開這個視窗
-        // 時可以用。帳號要先在 itouOJ 網站「帳號設定」裡設定密碼才能用——
-        // Google/Discord 專用帳號預設沒有密碼，這是刻意的（見 /api/auth/password）。
+        // 不開瀏覽器的帳密登入，供沒有預設瀏覽器的機器；帳號需先在網站「帳號
+        // 設定」設密碼（Google/Discord 專用帳號預設沒有，見 /api/auth/password）。
         void OnPasswordLogin(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(BaseUrl())) { Status("請先填伺服器網址", true); return; }
@@ -2285,11 +2228,8 @@ namespace ItouOJ
             LoadContestState(Convert.ToInt32(contests[i]["id"]));
         }
 
-        // 重新向伺服器要這場比賽的題目、起訖時間與語言限制。
-        //
-        // 監考臨時延長比賽、加題、改語言限制之後，選手機上的快取就過期了 ——
-        // 而起訖時間正是斷網後判斷開始與結束的唯一依據。以前唯一的更新方式是
-        // 登出再登入，那會連帶清掉草稿，代價太大。
+        // 重新向伺服器要題目、起訖時間與語言限制：監考臨時延長/加題/改限制後快取
+        // 會過期，而起訖時間是斷網後判斷開始與結束的唯一依據（以前只能登出重登，會清草稿）。
         void OnRefreshContest(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(cfg.Cookie))
@@ -2388,9 +2328,8 @@ namespace ItouOJ
             FillProblems();
             UpdateLanguageHint();
             OnProblemChanged(null, EventArgs.Empty);
-            // 時間可能被監考改過，畫面要立刻跟上——比賽被延長就從「已結束」變回
-            // 作答中；重新打開程式時發現已經超過結束時間（或還沒到開始時間），
-            // 就要回到全螢幕畫面，不能讓選手留在舊的作答畫面上。
+            // 時間可能被改過，畫面要立刻跟上：延長就從「已結束」變回作答中，
+            // 超過結束（或未到開始）時間就回全螢幕，不留在舊作答畫面。
             OnPhaseTick(null, EventArgs.Empty);
 
             if (sameContest)
@@ -2418,10 +2357,8 @@ namespace ItouOJ
             // 設定完成 = 這台機器準備好了，回報給監考
             SendCheckinAsync(false);
 
-            // 題目文件能下載就先下載存起來（伺服器自己決定准不准，賽前又沒開
-            // allowEarlyProblemDownload 就會被擋，這裡就當作那題暫時沒有文件）。
-            // 背景執行，不能讓下載卡住 UI——這個方法本身也會被背景執行緒的
-            // RefreshContestStateAsync 呼叫到，同步做的話會卡住整個訊息迴圈。
+            // 題目文件能下載就先存起來；賽前伺服器若未開 allowEarlyProblemDownload
+            // 會擋掉，就當作暫時沒有文件。必須背景執行，同步做會卡住訊息迴圈。
             DownloadProblemDocsAsync(contestId, cfg.Problems, cfg.ServerUrl, cfg.Cookie);
         }
 
@@ -2431,9 +2368,8 @@ namespace ItouOJ
             if (problems == null || problems.Count == 0) return;
             if (string.IsNullOrEmpty(serverUrl) || string.IsNullOrEmpty(cookie)) return;
 
-            // 在呼叫當下就把「有沒有手動資料夾」定住：背景執行緒跑的這段期間
-            // 使用者可能又改了「題目路徑與編譯器設定」，不該用下載完那一刻的
-            // cfg.ProblemDir 去判斷「當初」是不是手動指定的。
+            // 在呼叫當下定住「有無手動資料夾」：背景下載期間使用者可能改了
+            // 題目路徑設定，不能用下載完那一刻的 cfg.ProblemDir 判斷當初。
             string manualDir = cfg.ProblemDir;
             bool isManualDir = !string.IsNullOrEmpty(manualDir)
                 && manualDir != ProblemDoc.CacheDir(contestId);
@@ -2447,9 +2383,8 @@ namespace ItouOJ
                     string path = ProblemDoc.DownloadAndCache(serverUrl, cookie, contestId, pe.Label);
                     if (path == null) continue;
                     downloaded++;
-                    // 監考手動指定過題目資料夾的話，裡面同代號的既有檔案也一併換成
-                    // 新版——「更新比賽資訊」才會真的讓選手看到最新的題目文件，
-                    // 不用監考自己重印一次、一台一台換。
+                    // 手動資料夾內同代號檔案也一併換新，「更新比賽資訊」才會讓選手
+                    // 看到最新題目文件，不用逐台重印更換。
                     if (isManualDir && ProblemDoc.SyncToManualDir(manualDir, path, pe.Label))
                         synced++;
                 }
@@ -2476,11 +2411,9 @@ namespace ItouOJ
             });
         }
 
-        // 重新打開程式時第一件事：背景向伺服器核對這場比賽現在的狀態。
-        // 不能同步做——選手機上這時多半還沒連上網路（比賽期間機房斷網是常態），
-        // 同步查會讓視窗卡住等到逾時。查得到就套用最新結果（可能因此從快取
-        // 顯示的「作答中」變回全螢幕的「尚未開始」或「已結束」）；查不到就
-        // 維持原本用本機快取算出來的畫面，不打擾使用者。
+        // 開程式時背景向伺服器核對比賽現況；比賽期間機房斷網是常態，同步查會卡住
+        // 等逾時。查到就套用（可能從快取的「作答中」變回「尚未開始/已結束」），
+        // 查不到就維持本機快取畫面。
         void RefreshContestStateAsync()
         {
             if (string.IsNullOrEmpty(cfg.Cookie) || cfg.ContestId <= 0) return;
@@ -2608,9 +2541,8 @@ namespace ItouOJ
             UpdateTypedLanguageOptions();
         }
 
-        // 比賽的語言限制可能在中途變（監考改設定、換比賽），下拉選單的選項要
-        // 跟著換。盡量保留使用者原本選的語言，選不到了（被排除在新的限制外）
-        // 才退回第一個可用的語言。
+        // 語言限制可能中途變（監考改設定、換比賽），選項要跟著換；盡量保留
+        // 原選語言，被排除在新限制外才退回第一個可用語言。
         void UpdateTypedLanguageOptions()
         {
             if (cboTypedLang == null) return;
@@ -2937,9 +2869,8 @@ namespace ItouOJ
         [DllImport("user32.dll")]
         static extern bool SetProcessDpiAwarenessContext(IntPtr value);
 
-        // 讓整個行程用原生解析度繪製（125%/150% 縮放的螢幕上不模糊、不重疊）。
-        // 公開給自動化測試：TestHarness 直接 new MainForm() 繞過 Main()，
-        // 進 UI 執行緒前也要先初始化，截圖才會跟真實環境一致。
+        // 讓行程用原生解析度繪製（高 DPI 不模糊、不重疊）。公開給自動化測試：
+        // TestHarness 繞過 Main() 直接 new MainForm()，進 UI 執行緒前也要初始化。
         public static void InitDpiAwareness()
         {
             try
@@ -2952,17 +2883,13 @@ namespace ItouOJ
         [STAThread]
         static void Main(string[] args)
         {
-            // 不設 DPI awareness 的話，125%/150% 縮放的螢幕上 WinForms 會被系統
-            // 位元圖放大，文字模糊、固定座標的元件互相重疊。
-            // PerMonitorV2 讓程式用原生解析度繪製，配合各 Form 的 AutoScaleMode.Dpi
-            // 在載入時按 DPI 縮放字型與布局。
+            // 不設 DPI awareness 的話，125%/150% 螢幕上 WinForms 會被系統位元圖放大，
+            // 文字模糊且固定座標元件重疊；PerMonitorV2 配合各 Form 的 AutoScaleMode.Dpi。
             InitDpiAwareness();
 
             Api.InitTls();
-            // 開程式前先查有沒有新版：有的話直接背景下載換掉、重開新版，
-            // 這個行程就結束在這裡，不用再往下開 MainForm（不然新舊兩個視窗
-            // 會同時跑）。查不到新版、沒有網路、下載失敗都會直接回傳 false，
-            // 照舊往下開目前這一份，版本檢查不能變成「開不了程式」。
+            // 開程式前先查新版：有就背景下載換掉並結束本行程，免得新舊視窗同時跑；
+            // 任何失敗（沒網路、下載失敗）都回傳 false 照舊開啟，不能讓檢查擋住程式。
             if (UpdateCheck.CheckAndSelfUpdate(args)) return;
 
             Application.EnableVisualStyles();

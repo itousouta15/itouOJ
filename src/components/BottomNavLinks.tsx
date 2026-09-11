@@ -5,9 +5,8 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { isNavActive } from "@/lib/navLinks";
 
-// App 底部導覽列（網站版由 CSS 隱藏）。username 由父層 server component
-// 傳入；null = 未登入，「我的」改連到登入頁。glyph 用幾何字形（不是
-// emoji），Android / iOS / 桌面瀏覽器都能正常顯示。
+// App 底部導覽列（網站版以 CSS 隱藏）。username 為 null 時「我的」連到登入頁；
+// glyph 用幾何字形而非 emoji，各平台都能正常顯示。
 const ITEMS: {
   href: string;
   label: string;

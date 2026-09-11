@@ -1,15 +1,6 @@
-// 本機測試用的假判題：直接把提交結果寫進 test.db
-//
-// Windows 上跑不了 sandbox-server（Linux namespace + cgroup v2 + seccomp），
-// 所以本機測試時提交都會停在 IE。這支腳本直接填入結果，讓你能驗證計分板、
-// IOI 規則、提交列表這些「判題之後」的東西。
-//
-// 安全限制：只對 test.db 動手，指到別的資料庫會直接拒絕執行。
-//
-//   node scripts/mock-judge.mjs          每題最後一次 AC、之前的 WA（示範 IOI）
-//   node scripts/mock-judge.mjs AC       全部 AC
-//   node scripts/mock-judge.mjs WA       全部 WA
-//   node scripts/mock-judge.mjs reset    全部退回 PENDING
+// 本機測試用的假判題：直接把提交結果寫進 test.db，略過判題來驗證計分板、IOI 規則等。
+// Windows 跑不了 sandbox-server（namespace + cgroup v2 + seccomp），提交會停在 IE。
+// 安全限制：只對 test.db 動手。用法：mix（預設）/ AC / WA / TLE / RE / reset。
 
 import fs from "node:fs";
 import path from "node:path";
