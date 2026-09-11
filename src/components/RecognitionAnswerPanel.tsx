@@ -7,6 +7,8 @@ import AnswerOptions from "@/components/AnswerOptions";
 
 interface Props {
   options: string[];
+  // 畫面選項順序：displayOrder[i] 是畫面第 i 個選項在 options 的索引
+  displayOrder: number[];
   explanation: string | null;
   answerIndex: number;
   locked: boolean;
@@ -15,6 +17,7 @@ interface Props {
 // 識別題不做紀錄：作答在瀏覽器端即時判定，不建立 Submission。
 export default function RecognitionAnswerPanel({
   options,
+  displayOrder,
   explanation,
   answerIndex,
   locked,
@@ -23,11 +26,13 @@ export default function RecognitionAnswerPanel({
   const [status, setStatus] = useState<"AC" | "WA" | null>(null);
 
   const answered = picked !== null && status !== null;
+  const displayOptions = displayOrder.map((oi) => options[oi]);
+  const correctDisplay = displayOrder.indexOf(answerIndex);
 
   function pick(selectedIndex: number) {
     if (locked || answered) return;
     setPicked(selectedIndex);
-    setStatus(selectedIndex === answerIndex ? "AC" : "WA");
+    setStatus(selectedIndex === correctDisplay ? "AC" : "WA");
   }
 
   return (
@@ -42,8 +47,8 @@ export default function RecognitionAnswerPanel({
       )}
 
       <AnswerOptions
-        options={options}
-        answerIndex={answerIndex}
+        options={displayOptions}
+        answerIndex={correctDisplay}
         picked={picked}
         revealed={answered}
         disabled={locked}

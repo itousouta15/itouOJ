@@ -15,7 +15,7 @@ export default async function Navbar() {
           itouOJ
         </Link>
         <div className="hidden min-w-0 flex-1 md:flex">
-          <NavLinks isAdmin={isAdmin} loggedIn={loggedIn} unread={unread} />
+          <NavLinks isAdmin={isAdmin} />
         </div>
         <div className="ml-auto flex items-center gap-2 sm:gap-3 md:ml-0">
           <ThemeToggle />
@@ -35,11 +35,7 @@ export default async function Navbar() {
               </Link>
             </>
           )}
-          <MobileMenuButton
-            isAdmin={isAdmin}
-            loggedIn={loggedIn}
-            unread={unread}
-          />
+          <MobileMenuButton isAdmin={isAdmin} />
         </div>
       </nav>
     </header>

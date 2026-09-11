@@ -112,7 +112,7 @@ export default async function MessageThreadPage({
             >
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
-                  mine ? "bg-blue text-white" : "bg-inset text-tx"
+                  mine ? "bg-blue-deep text-white" : "bg-inset text-tx"
                 }`}
               >
                 <p className="break-words whitespace-pre-wrap">{m.content}</p>
