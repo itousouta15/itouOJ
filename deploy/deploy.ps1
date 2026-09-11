@@ -15,7 +15,9 @@ function Get-DeployServer {
     if ($env:DEPLOY_SERVER) { return $env:DEPLOY_SERVER }
     $envFile = Join-Path (Split-Path $PSScriptRoot -Parent) ".env"
     if (Test-Path $envFile) {
-        $line = Get-Content $envFile |
+        # 一定要指定 UTF8：PS 5.1 預設用 ANSI（CP950）讀，.env 裡的
+        # 中文註解會被當成雙位元組字元、把後面的換行吃掉，整段黏成一行。
+        $line = Get-Content -Encoding UTF8 $envFile |
             Where-Object { $_ -match '^\s*(?:export\s+)?DEPLOY_SERVER\s*=' } |
             Select-Object -First 1
         if ($line) {
