@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getActivityFeed, type FeedItem } from "@/lib/activityFeed";
 import { getDailyProblem } from "@/lib/dailyProblem";
+import { getNextLearningAction } from "@/lib/nextLearningAction";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import HomeSubmissionRow from "@/components/HomeSubmissionRow";
@@ -95,6 +96,7 @@ export default async function HomePage() {
     });
     dailySolved = solved > 0;
   }
+  const nextAction = session ? await getNextLearningAction(session.userId) : null;
 
   return (
     <div className="space-y-10" data-app-section="root">
@@ -209,6 +211,21 @@ export default async function HomePage() {
       )}
 
       {/* 下載宣傳（網站版限定，App 內隱藏） */}
+      {nextAction && (
+        <section>
+          <div className="card flex flex-wrap items-center justify-between gap-4 p-5">
+            <div className="min-w-0">
+              <p className="page-kicker">Next action</p>
+              <p className="mt-1 text-sm text-dim">{nextAction.detail}</p>
+              <Link href={nextAction.href} className="mt-2 block truncate font-semibold text-blue hover:underline">
+                {nextAction.title}
+              </Link>
+            </div>
+            <Link href={nextAction.href} className="btn-primary shrink-0">Continue</Link>
+          </div>
+        </section>
+      )}
+
       <section data-app-section="promo">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="card flex flex-col gap-4 p-6">

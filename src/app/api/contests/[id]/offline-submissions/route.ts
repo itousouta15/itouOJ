@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { enqueueSubmission } from "@/lib/judge";
 import { LANGUAGE_KEYS } from "@/lib/languages";
 import {
   getContestPhase,
@@ -161,8 +160,6 @@ export async function POST(
       duplicate: false,
     });
   }
-
-  for (const submissionId of accepted) enqueueSubmission(submissionId);
 
   return Response.json({
     accepted: accepted.length,

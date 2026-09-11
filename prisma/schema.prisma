@@ -35,6 +35,7 @@ model User {
   problemComments  ProblemComment[]
   problemSolutions ProblemSolution[]
   recognitionAnswers RecognitionAnswer[]
+  recognitionReviews RecognitionReview[]
   sentMessages     Message[]          @relation("MessageSender")
   receivedMessages Message[]          @relation("MessageReceiver")
   authoredProblems Problem[]          @relation("ProblemAuthor")
@@ -109,6 +110,7 @@ model Problem {
   comments        ProblemComment[]
   solutions       ProblemSolution[]
   recognitionAnswers RecognitionAnswer[]
+  recognitionReviews RecognitionReview[]
 
   @@unique([type, order])
   @@index([clusterId])
@@ -444,6 +446,7 @@ model Submission {
   // 否則同一份程式會被灌成多筆、把 IOI 的「最後一次提交」和提交次數算錯。
   clientKey    String?      @unique
   createdAt    DateTime     @default(now())
+  judgeClaimedAt DateTime?
   results      TestResult[]
 
   // 提交列表依使用者過濾並以 id 倒序、題目/比賽統計與首頁 AC 統計都會用到
@@ -451,6 +454,21 @@ model Submission {
   @@index([problemId, status])
   @@index([contestId, status])
   @@index([status])
+  @@index([status, judgeClaimedAt])
+}
+
+model RecognitionReview {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId   Int
+  problem     Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  intervalStep Int     @default(0)
+  dueAt       DateTime
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, problemId])
+  @@index([userId, dueAt])
 }
 
 model TestResult {

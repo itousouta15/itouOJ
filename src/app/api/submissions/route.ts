@@ -1,9 +1,16 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { enqueueSubmission } from "@/lib/judge";
+import { getQueueSnapshot } from "@/lib/judge";
 import { LANGUAGE_KEYS } from "@/lib/languages";
 import { assertContestProblemAccess } from "@/lib/contest";
+import { clientIp, enforceRateLimit } from "@/lib/rateLimit";
+
+const USER_SUBMISSION_LIMIT = 10;
+const IP_SUBMISSION_LIMIT = 30;
+const SUBMISSION_WINDOW_MS = 60_000;
+const MAX_ACTIVE_PER_USER = 3;
+const MAX_PENDING_SUBMISSIONS = 100;
 
 const schema = z.object({
   problemId: z.number().int().positive(),
@@ -17,6 +24,19 @@ export async function POST(request: Request) {
   if (!session) {
     return Response.json({ error: "請先登入" }, { status: 401 });
   }
+
+  const userRateLimit = enforceRateLimit(
+    `submission:user:${session.userId}`,
+    USER_SUBMISSION_LIMIT,
+    SUBMISSION_WINDOW_MS
+  );
+  if (userRateLimit) return userRateLimit;
+  const ipRateLimit = enforceRateLimit(
+    `submission:ip:${clientIp(request)}`,
+    IP_SUBMISSION_LIMIT,
+    SUBMISSION_WINDOW_MS
+  );
+  if (ipRateLimit) return ipRateLimit;
 
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
@@ -58,6 +78,25 @@ export async function POST(request: Request) {
     return Response.json({ error: "題目不存在" }, { status: 404 });
   }
 
+  const [activeCount, pendingCount] = await Promise.all([
+    prisma.submission.count({
+      where: { userId: session.userId, status: { in: ["PENDING", "JUDGING"] } },
+    }),
+    prisma.submission.count({ where: { status: "PENDING" } }),
+  ]);
+  if (activeCount >= MAX_ACTIVE_PER_USER) {
+    return Response.json(
+      { error: "You already have too many submissions waiting to be judged." },
+      { status: 429 }
+    );
+  }
+  if (pendingCount >= MAX_PENDING_SUBMISSIONS) {
+    return Response.json(
+      { error: "The judging queue is currently full. Please try again shortly." },
+      { status: 503, headers: { "Retry-After": "30" } }
+    );
+  }
+
   const submission = await prisma.submission.create({
     data: {
       userId: session.userId,
@@ -69,6 +108,6 @@ export async function POST(request: Request) {
     },
   });
 
-  enqueueSubmission(submission.id);
-  return Response.json({ id: submission.id });
+  const queue = await getQueueSnapshot(submission.id);
+  return Response.json({ id: submission.id, queue });
 }

@@ -141,6 +141,7 @@ AUTH_SECRET="<openssl rand -hex 32>"
 PISTON_URL="http://localhost:2000"   # Piston address (Java)
 SANDBOX_URL="http://localhost:8090"  # sandbox-runner address (C/C++/Python/JavaScript; this is also the default)
 COOKIE_SECURE="0"                    # set to 1 once behind HTTPS
+JUDGE_WORKER_SECRET=""               # a long random value; required by online-judge-worker.service
 
 # Google login (optional; the button is hidden when unset)
 GOOGLE_CLIENT_ID=""
