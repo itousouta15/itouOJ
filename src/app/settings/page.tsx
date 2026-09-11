@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { avatarSrc } from "@/lib/avatar";
 import { googleConfigured } from "@/lib/googleOAuth";
 import { discordConfigured } from "@/lib/discordOAuth";
+import { DIFFICULTY_META, getUserStats } from "@/lib/userStats";
 import AvatarUploader from "@/components/AvatarUploader";
 import ProfileForm from "@/components/ProfileForm";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
@@ -13,12 +14,6 @@ import DeleteAccountForm from "@/components/DeleteAccountForm";
 
 export const metadata: Metadata = { title: "帳號設定" };
 export const dynamic = "force-dynamic";
-
-const DIFFICULTY_META = [
-  { key: "easy", label: "簡單", color: "var(--green)" },
-  { key: "medium", label: "中等", color: "#faa81a" },
-  { key: "hard", label: "困難", color: "#ff6b6b" },
-] as const;
 
 export default async function SettingsPage({
   searchParams,
@@ -39,39 +34,17 @@ export default async function SettingsPage({
     (user.passwordHash ? 1 : 0) + (user.googleId ? 1 : 0) + (user.discordId ? 1 : 0);
 
   // 解題統計（只算實作題，識別題不算進難度統計）
-  const [acDistinct, totalSubmissions, acSubmissions, publicTotals] =
-    await Promise.all([
-      prisma.submission.findMany({
-        where: { userId: user.id, status: "AC", problem: { type: "PROGRAMMING" } },
-        distinct: ["problemId"],
-        select: { problem: { select: { difficulty: true } } },
-      }),
-      prisma.submission.count({ where: { userId: user.id } }),
-      prisma.submission.count({ where: { userId: user.id, status: "AC" } }),
-      prisma.problem.groupBy({
-        by: ["difficulty"],
-        where: { isPublic: true, type: "PROGRAMMING" },
-        _count: { _all: true },
-      }),
-    ]);
-
-  const solvedByDifficulty = new Map<string, number>();
-  for (const s of acDistinct) {
-    solvedByDifficulty.set(
-      s.problem.difficulty,
-      (solvedByDifficulty.get(s.problem.difficulty) ?? 0) + 1
-    );
-  }
-  const totalByDifficulty = new Map(
-    publicTotals.map((g) => [g.difficulty, g._count._all])
-  );
-  const acRate =
-    totalSubmissions > 0
-      ? Math.round((acSubmissions / totalSubmissions) * 100)
-      : 0;
+  const {
+    solvedCount,
+    totalSubmissions,
+    acSubmissions,
+    acRate,
+    solvedByDifficulty,
+    totalByDifficulty,
+  } = await getUserStats(user.id);
 
   const stats = [
-    { label: "解題數", value: acDistinct.length },
+    { label: "解題數", value: solvedCount },
     { label: "提交數", value: totalSubmissions },
     { label: "Accepted", value: acSubmissions },
     { label: "AC 率", value: `${acRate}%` },

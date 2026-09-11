@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
 import { isOfflineMode } from "@/lib/offline";
+import { clientIp, enforceRateLimit } from "@/lib/rateLimit";
 
 const schema = z.object({
   username: z.string().min(1),
@@ -16,6 +17,13 @@ export async function POST(request: Request) {
     return Response.json({ error: "請輸入帳號與密碼" }, { status: 400 });
   }
   const { username, password } = parsed.data;
+
+  // 登入是暴力破解的首要目標：同 IP 大範圍擋一層，同 IP + 帳號再精準擋一層
+  const ip = clientIp(request);
+  const limited =
+    enforceRateLimit(`login:ip:${ip}`, 30, 5 * 60_000) ??
+    enforceRateLimit(`login:user:${ip}:${username.toLowerCase()}`, 10, 5 * 60_000);
+  if (limited) return limited;
 
   const user = await prisma.user.findUnique({ where: { username } });
   if (user && !user.passwordHash) {

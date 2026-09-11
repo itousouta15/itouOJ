@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { messageSchema } from "@/lib/messageSchema";
+import { enforceRateLimit } from "@/lib/rateLimit";
 
 // 傳送站內訊息。收件者用 username 指名（跟 /messages/[username] 的網址一致）。
 export async function POST(request: Request) {
@@ -8,6 +9,9 @@ export async function POST(request: Request) {
   if (!session) {
     return Response.json({ error: "請先登入" }, { status: 401 });
   }
+
+  const limited = enforceRateLimit(`message:${session.userId}`, 20, 60_000);
+  if (limited) return limited;
 
   const body = await request.json().catch(() => null);
   const parsed = messageSchema.safeParse(body);

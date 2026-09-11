@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    env:
+      # CI 用拋棄式資料庫；build 期間的頁面收集只會讀到空資料庫
+      DATABASE_URL: file:./ci.db
+      AUTH_SECRET: ci-secret-not-used-in-production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 從空資料庫套用所有 migration，順便驗證 migration 本身能從零跑完
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Recognition parser self-test
+        run: node scripts/parse-reading-bank.mjs --self-test
+
+      - name: Build
+        run: npm run build

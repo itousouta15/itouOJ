@@ -18,10 +18,13 @@ const PAPER_RANK: Record<string, number> = {
 
 export default async function RecognitionClusterPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   const { id: rawId } = await params;
+  const { q } = await searchParams;
   const session = await getSession();
 
   const isUncategorized = rawId === "uncategorized";
@@ -108,6 +111,13 @@ export default async function RecognitionClusterPage({
     };
   });
 
+  // ?q=12 讓重新整理（或分享連結）回到同一題；超出範圍就從第 1 題開始
+  const qNum = Number(q);
+  const initialIndex =
+    Number.isInteger(qNum) && qNum >= 1 && qNum <= quizQuestions.length
+      ? qNum - 1
+      : 0;
+
   return (
     <div className="space-y-5">
       <RecognitionQuiz
@@ -115,6 +125,7 @@ export default async function RecognitionClusterPage({
         loggedIn={!!session}
         clusterLabel={cluster?.title ?? "未分類"}
         backHref="/recognition"
+        initialIndex={initialIndex}
       />
       <RecognitionCredit />
     </div>

@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Markdown from "@/components/Markdown";
-import Avatar from "@/components/Avatar";
+import CommentItem, {
+  AuthorLine,
+  type DiscussionAuthor,
+  type DiscussionComment,
+} from "@/components/CommentItem";
 import { LANGUAGES, LANGUAGE_KEYS, isLanguageKey } from "@/lib/languages";
 
 interface Access {
@@ -15,24 +19,7 @@ interface Access {
   solved: boolean;
 }
 
-interface Author {
-  authorName: string;
-  authorUsername: string;
-  authorAvatarUrl: string | null;
-  authorIsAdmin: boolean;
-}
-
-interface CommentNode extends Author {
-  id: number;
-  content: string;
-  createdAt: string;
-  canEdit: boolean;
-  canDelete: boolean;
-  edited: boolean;
-  replies?: CommentNode[];
-}
-
-interface SolutionItem extends Author {
+interface SolutionItem extends DiscussionAuthor {
   id: number;
   title: string;
   content: string;
@@ -40,53 +27,6 @@ interface SolutionItem extends Author {
   language: string | null;
   createdAt: string;
   canDelete: boolean;
-}
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleString("zh-TW", {
-    timeZone: "Asia/Taipei",
-    hour12: false,
-  });
-}
-
-// 頭像 + 名字（連到個人頁）+ 管理員標記 + 時間。留言、回覆、題解共用同一個表頭。
-function AuthorLine({
-  author,
-  at,
-  size = 32,
-  edited = false,
-}: {
-  author: Author;
-  at: string;
-  size?: number;
-  edited?: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <Link href={`/users/${author.authorUsername}`} className="shrink-0">
-        <Avatar
-          name={author.authorName}
-          src={author.authorAvatarUrl}
-          size={size}
-        />
-      </Link>
-      <div className="flex flex-wrap items-center gap-x-2 text-sm leading-tight">
-        <Link
-          href={`/users/${author.authorUsername}`}
-          className="font-semibold text-tx hover:text-blue hover:underline"
-        >
-          {author.authorName}
-        </Link>
-        {author.authorIsAdmin && (
-          <span className="rounded bg-inset px-1.5 py-0.5 text-xs text-dim">
-            管理員
-          </span>
-        )}
-        <span className="mono text-xs text-mute">{formatTime(at)}</span>
-        {edited && <span className="text-xs text-mute">（已編輯）</span>}
-      </div>
-    </div>
-  );
 }
 
 export default function ProblemDiscussion({
@@ -98,7 +38,7 @@ export default function ProblemDiscussion({
 }) {
   const [tab, setTab] = useState<"comments" | "solutions">("comments");
   const [access, setAccess] = useState<Access | null>(null);
-  const [comments, setComments] = useState<CommentNode[]>([]);
+  const [comments, setComments] = useState<DiscussionComment[]>([]);
   const [solutions, setSolutions] = useState<SolutionItem[]>([]);
   const [solutionTotal, setSolutionTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -328,127 +268,34 @@ export default function ProblemDiscussion({
           ) : (
             comments.map((c) => (
               <div key={c.id} className="card p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <AuthorLine author={c} at={c.createdAt} edited={c.edited} />
-                  {editingId !== c.id && (
-                    <div className="flex shrink-0 items-center gap-3">
-                      {c.canEdit && (
-                        <button
-                          type="button"
-                          className="text-xs text-mute hover:text-blue"
-                          onClick={() => startEdit(c.id, c.content)}
-                        >
-                          編輯
-                        </button>
-                      )}
-                      {c.canDelete && (
-                        <button
-                          type="button"
-                          className="text-xs text-mute hover:text-[#ff6b6b]"
-                          onClick={() => removeComment(c.id)}
-                        >
-                          刪除
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {editingId === c.id ? (
-                  <div className="mt-3">
-                    <textarea
-                      className="input h-24 text-sm"
-                      value={editDraft}
-                      onChange={(e) => setEditDraft(e.target.value)}
-                      autoFocus
-                    />
-                    <div className="mt-2 flex justify-end gap-2">
-                      <button
-                        className="btn-secondary"
-                        onClick={cancelEdit}
-                        disabled={savingEdit}
-                      >
-                        取消
-                      </button>
-                      <button
-                        className="btn-primary"
-                        disabled={savingEdit || !editDraft.trim()}
-                        onClick={() => saveEdit(c.id)}
-                      >
-                        {savingEdit ? "儲存中…" : "儲存"}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-2 text-sm">
-                    <Markdown>{c.content}</Markdown>
-                  </div>
-                )}
+                <CommentItem
+                  comment={c}
+                  editingId={editingId}
+                  editDraft={editDraft}
+                  savingEdit={savingEdit}
+                  onStartEdit={startEdit}
+                  onCancelEdit={cancelEdit}
+                  onEditDraftChange={setEditDraft}
+                  onSaveEdit={saveEdit}
+                  onDelete={removeComment}
+                />
 
                 {(c.replies ?? []).length > 0 && (
                   <div className="mt-3 space-y-3 border-l-2 border-bd pl-4">
                     {c.replies!.map((r) => (
-                      <div key={r.id}>
-                        <div className="flex items-start justify-between gap-3">
-                          <AuthorLine
-                            author={r}
-                            at={r.createdAt}
-                            size={24}
-                            edited={r.edited}
-                          />
-                          {editingId !== r.id && (
-                            <div className="flex shrink-0 items-center gap-3">
-                              {r.canEdit && (
-                                <button
-                                  type="button"
-                                  className="text-xs text-mute hover:text-blue"
-                                  onClick={() => startEdit(r.id, r.content)}
-                                >
-                                  編輯
-                                </button>
-                              )}
-                              {r.canDelete && (
-                                <button
-                                  type="button"
-                                  className="text-xs text-mute hover:text-[#ff6b6b]"
-                                  onClick={() => removeComment(r.id)}
-                                >
-                                  刪除
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        {editingId === r.id ? (
-                          <div className="mt-2">
-                            <textarea
-                              className="input h-20 text-sm"
-                              value={editDraft}
-                              onChange={(e) => setEditDraft(e.target.value)}
-                              autoFocus
-                            />
-                            <div className="mt-2 flex justify-end gap-2">
-                              <button
-                                className="btn-secondary"
-                                onClick={cancelEdit}
-                                disabled={savingEdit}
-                              >
-                                取消
-                              </button>
-                              <button
-                                className="btn-primary"
-                                disabled={savingEdit || !editDraft.trim()}
-                                onClick={() => saveEdit(r.id)}
-                              >
-                                {savingEdit ? "儲存中…" : "儲存"}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="mt-1 text-sm">
-                            <Markdown>{r.content}</Markdown>
-                          </div>
-                        )}
-                      </div>
+                      <CommentItem
+                        key={r.id}
+                        comment={r}
+                        size={24}
+                        editingId={editingId}
+                        editDraft={editDraft}
+                        savingEdit={savingEdit}
+                        onStartEdit={startEdit}
+                        onCancelEdit={cancelEdit}
+                        onEditDraftChange={setEditDraft}
+                        onSaveEdit={saveEdit}
+                        onDelete={removeComment}
+                      />
                     ))}
                   </div>
                 )}
