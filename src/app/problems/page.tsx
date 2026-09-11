@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import DifficultyBadge from "@/components/DifficultyBadge";
+import HeaderSearch from "@/components/HeaderSearch";
 import TagBadge from "@/components/TagBadge";
 
 export const metadata: Metadata = {
@@ -93,6 +94,9 @@ export default async function ProblemListPage({
             </Link>
           </div>
         )}
+      </div>
+      <div className="app-problem-search">
+        <HeaderSearch variant="page" />
       </div>
       {allTags.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
