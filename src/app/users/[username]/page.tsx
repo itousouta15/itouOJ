@@ -69,6 +69,10 @@ export default async function UserProfilePage({
     acRate,
     solvedByDifficulty,
     totalByDifficulty,
+    recognitionAnswered,
+    recognitionCorrect,
+    recognitionRate,
+    recognitionTotal,
   } = statsData;
 
   const stats = [
@@ -77,6 +81,16 @@ export default async function UserProfilePage({
     { label: "Accepted", value: acSubmissions },
     { label: "AC 率", value: `${acRate}%` },
   ];
+
+  const recognitionStats = [
+    { label: "練習題數", value: recognitionAnswered },
+    { label: "答對", value: recognitionCorrect },
+    { label: "正確率", value: `${recognitionRate}%` },
+  ];
+  const recognitionPct =
+    recognitionTotal > 0
+      ? Math.round((recognitionCorrect / recognitionTotal) * 100)
+      : 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -154,6 +168,37 @@ export default async function UserProfilePage({
               </div>
             );
           })}
+        </div>
+      </section>
+
+      <section className="card p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="section-title">識讀統計</h2>
+          <Link href="/recognition" className="text-sm text-blue hover:underline">
+            去練習 →
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {recognitionStats.map((s) => (
+            <div key={s.label} className="rounded-xl bg-inset p-4">
+              <p className="page-kicker">{s.label}</p>
+              <p className="mono mt-1 text-2xl font-bold text-tx">{s.value}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5">
+          <div className="mb-1 flex items-center justify-between text-sm">
+            <span className="text-dim">答對進度</span>
+            <span className="mono text-xs text-dim">
+              {recognitionCorrect} / {recognitionTotal}
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-inset">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${recognitionPct}%`, background: "var(--green)" }}
+            />
+          </div>
         </div>
       </section>
 

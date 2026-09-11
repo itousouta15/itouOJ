@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import RecognitionQuiz from "@/components/RecognitionQuiz";
 import RecognitionCredit from "@/components/RecognitionCredit";
+import { shuffledOrder } from "@/lib/shuffle";
 
 export const metadata: Metadata = { title: "識讀練習" };
 export const dynamic = "force-dynamic";
@@ -91,12 +92,15 @@ export default async function RecognitionClusterPage({
 
   const quizQuestions = rows.map((q) => {
     const prev = latest.get(q.id);
+    const options = JSON.parse(q.options ?? "[]") as string[];
     return {
       id: q.id,
       title: q.title,
       statement: q.statement,
       code: q.code,
-      options: JSON.parse(q.options ?? "[]") as string[],
+      options,
+      // 每次載入重新洗牌；displayOrder[i] 是畫面第 i 個選項的原始索引
+      displayOrder: shuffledOrder(options.length),
       answerIndex: q.answerIndex ?? 0,
       explanation: q.explanation,
       paper: q.paper?.trim() || null,

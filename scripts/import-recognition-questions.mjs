@@ -79,7 +79,7 @@ let nextClusterOrder = db
 
 const exists = db
   ? db.prepare(
-      "SELECT id FROM Problem WHERE type = 'RECOGNITION' AND title = ?"
+      "SELECT id, clusterId FROM Problem WHERE type = 'RECOGNITION' AND title = ?"
     )
   : null;
 const linkCluster = db
@@ -146,13 +146,16 @@ for (const file of files) {
     ? data.paper.trim()
     : null;
 
-  // 取得或建立群集
-  let clusterId = findCluster?.get(source)?.id;
-  if (!clusterId && !dryRun) {
+  // 取得群集；不存在時先不建立，等確定有題目要新增或補掛再說，
+  // 免得整批題目都已在別的群集時留下一堆空群集。
+  let clusterId = findCluster?.get(source)?.id ?? null;
+  function ensureCluster() {
+    if (clusterId != null || dryRun) return clusterId;
     clusterId = Number(
       insertCluster.run(source, nextClusterOrder++).lastInsertRowid
     );
     console.log(`  建立群集：${source}`);
+    return clusterId;
   }
 
   const questions = (Array.isArray(data.questions) ? data.questions : [])
@@ -179,7 +182,7 @@ for (const file of files) {
     const existing = exists?.get(title);
     if (existing) {
       // 已存在：只補掛還沒有群集的題目，不覆蓋管理員調整過的群集
-      if (clusterId && linkCluster?.run(clusterId, existing.id).changes) {
+      if (existing.clusterId == null && ensureCluster() && linkCluster?.run(clusterId, existing.id).changes) {
         linked++;
       } else {
         skipped++;
@@ -200,7 +203,7 @@ for (const file of files) {
       paper,
       sourceNumber: q.number,
       category: q.category.trim(),
-      clusterId: clusterId ?? null,
+      clusterId: ensureCluster() ?? null,
       order: nextOrder++,
     });
   }

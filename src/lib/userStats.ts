@@ -13,26 +13,49 @@ export interface UserStats {
   acRate: number;
   solvedByDifficulty: Map<string, number>;
   totalByDifficulty: Map<string, number>;
+  // 識別題練習（RecognitionAnswer，只記每題最新一次）：只算公開題目
+  recognitionAnswered: number;
+  recognitionCorrect: number;
+  recognitionRate: number;
+  recognitionTotal: number;
 }
 
-// /settings 與 /users/[username] 共用的解題統計：只算實作題，
-// 識別題是練習、不進難度統計。
+// /settings 與 /users/[username] 共用的解題統計：解題數/難度只算實作題，
+// 識別題另計一組（作答數、答對數、正確率）。
 export async function getUserStats(userId: string): Promise<UserStats> {
-  const [acDistinct, totalSubmissions, acSubmissions, publicTotals] =
-    await Promise.all([
-      prisma.submission.findMany({
-        where: { userId, status: "AC", problem: { type: "PROGRAMMING" } },
-        distinct: ["problemId"],
-        select: { problem: { select: { difficulty: true } } },
-      }),
-      prisma.submission.count({ where: { userId } }),
-      prisma.submission.count({ where: { userId, status: "AC" } }),
-      prisma.problem.groupBy({
-        by: ["difficulty"],
-        where: { isPublic: true, type: "PROGRAMMING" },
-        _count: { _all: true },
-      }),
-    ]);
+  const [
+    acDistinct,
+    totalSubmissions,
+    acSubmissions,
+    publicTotals,
+    recognitionAnswered,
+    recognitionCorrect,
+    recognitionTotal,
+  ] = await Promise.all([
+    prisma.submission.findMany({
+      where: { userId, status: "AC", problem: { type: "PROGRAMMING" } },
+      distinct: ["problemId"],
+      select: { problem: { select: { difficulty: true } } },
+    }),
+    prisma.submission.count({ where: { userId } }),
+    prisma.submission.count({ where: { userId, status: "AC" } }),
+    prisma.problem.groupBy({
+      by: ["difficulty"],
+      where: { isPublic: true, type: "PROGRAMMING" },
+      _count: { _all: true },
+    }),
+    prisma.recognitionAnswer.count({
+      where: { userId, problem: { type: "RECOGNITION", isPublic: true } },
+    }),
+    prisma.recognitionAnswer.count({
+      where: {
+        userId,
+        isCorrect: true,
+        problem: { type: "RECOGNITION", isPublic: true },
+      },
+    }),
+    prisma.problem.count({ where: { type: "RECOGNITION", isPublic: true } }),
+  ]);
 
   const solvedByDifficulty = new Map<string, number>();
   for (const s of acDistinct) {
@@ -55,5 +78,12 @@ export async function getUserStats(userId: string): Promise<UserStats> {
         : 0,
     solvedByDifficulty,
     totalByDifficulty,
+    recognitionAnswered,
+    recognitionCorrect,
+    recognitionRate:
+      recognitionAnswered > 0
+        ? Math.round((recognitionCorrect / recognitionAnswered) * 100)
+        : 0,
+    recognitionTotal,
   };
 }
