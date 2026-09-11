@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import RecognitionQuiz from "@/components/RecognitionQuiz";
+import RecognitionCredit from "@/components/RecognitionCredit";
 
 export const metadata: Metadata = { title: "識讀練習" };
 export const dynamic = "force-dynamic";
@@ -108,11 +109,14 @@ export default async function RecognitionClusterPage({
   });
 
   return (
-    <RecognitionQuiz
-      questions={quizQuestions}
-      loggedIn={!!session}
-      clusterLabel={cluster?.title ?? "未分類"}
-      backHref="/recognition"
-    />
+    <div className="space-y-5">
+      <RecognitionQuiz
+        questions={quizQuestions}
+        loggedIn={!!session}
+        clusterLabel={cluster?.title ?? "未分類"}
+        backHref="/recognition"
+      />
+      <RecognitionCredit />
+    </div>
   );
 }
