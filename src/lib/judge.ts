@@ -28,7 +28,10 @@ export async function recoverStaleJudgingSubmissions(now = new Date()) {
   return prisma.submission.updateMany({
     where: {
       status: "JUDGING",
-      judgeClaimedAt: { lt: new Date(now.getTime() - STALE_CLAIM_MS) },
+      OR: [
+        { judgeClaimedAt: null },
+        { judgeClaimedAt: { lt: new Date(now.getTime() - STALE_CLAIM_MS) } },
+      ],
     },
     data: { status: "PENDING", judgeClaimedAt: null },
   });

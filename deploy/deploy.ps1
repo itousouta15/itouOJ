@@ -91,7 +91,7 @@ Invoke-Native "backup" {
 
 Write-Host "== Server: extract / install / migrate / build / restart =="
 Invoke-Native "remote deploy" {
-    ssh $Server "cd $AppDir && tar xzf /tmp/oj.tar.gz && npm ci --silent && npx prisma migrate deploy && npm run build && chown -R oj:oj $AppDir && install -m 644 deploy/online-judge-worker.service /etc/systemd/system/online-judge-worker.service && systemctl daemon-reload && systemctl restart online-judge online-judge-worker && sleep 3 && systemctl is-active online-judge online-judge-worker"
+    ssh $Server "cd $AppDir && test -n `$(sed -n 's/^JUDGE_WORKER_SECRET=//p' .env | head -n 1) && tar xzf /tmp/oj.tar.gz && npm ci --silent && npx prisma migrate deploy && npm run build && chown -R oj:oj $AppDir && install -m 644 deploy/online-judge-worker.service /etc/systemd/system/online-judge-worker.service && systemctl daemon-reload && systemctl restart online-judge online-judge-worker && sleep 3 && systemctl is-active online-judge online-judge-worker"
 }
 
 # 光看 systemctl is-active 不夠：服務可能還跑著上一版的建置產物。
