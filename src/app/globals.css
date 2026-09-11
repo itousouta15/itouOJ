@@ -734,36 +734,6 @@ html.kbd-open .bottom-nav {
   overflow: auto;
 }
 
-/* ---- 識讀題程式碼區塊（CodeBlock，唯讀 CodeMirror）---- */
-/* 背景留給外層的 bg-inset，只讓語法上色；行號欄比照原本的 CodeBlock */
-.code-block .cm-editor {
-  font-size: 13px;
-  background: transparent;
-}
-.code-block .cm-editor.cm-focused {
-  outline: none;
-}
-.code-block .cm-scroller {
-  overflow: auto;
-}
-.code-block .cm-gutters {
-  background: var(--inset);
-  border-right: 1px solid var(--bd);
-  color: var(--mute);
-}
-.code-block .cm-content,
-.code-block .cm-gutter {
-  padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
-}
-.code-block .cm-content {
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
-}
-.code-block .cm-lineNumbers .cm-gutterElement {
-  padding: 0 0.75rem;
-}
-
 /* ---- 帳號下拉選單 ---- */
 @keyframes menuPop {
   from {
