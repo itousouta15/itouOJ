@@ -26,7 +26,9 @@ interface CommentNode extends Author {
   id: number;
   content: string;
   createdAt: string;
+  canEdit: boolean;
   canDelete: boolean;
+  edited: boolean;
   replies?: CommentNode[];
 }
 
@@ -52,10 +54,12 @@ function AuthorLine({
   author,
   at,
   size = 32,
+  edited = false,
 }: {
   author: Author;
   at: string;
   size?: number;
+  edited?: boolean;
 }) {
   return (
     <div className="flex items-center gap-2">
@@ -79,6 +83,7 @@ function AuthorLine({
           </span>
         )}
         <span className="mono text-xs text-mute">{formatTime(at)}</span>
+        {edited && <span className="text-xs text-mute">（已編輯）</span>}
       </div>
     </div>
   );
@@ -103,6 +108,10 @@ export default function ProblemDiscussion({
   const [replyDraft, setReplyDraft] = useState("");
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState("");
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const [showSolutionForm, setShowSolutionForm] = useState(false);
   const [sTitle, setSTitle] = useState("");
@@ -173,6 +182,39 @@ export default function ProblemDiscussion({
       method: "DELETE",
     });
     reload();
+  }
+
+  function startEdit(id: number, content: string) {
+    setEditingId(id);
+    setEditDraft(content);
+    setError("");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditDraft("");
+  }
+
+  async function saveEdit(id: number) {
+    if (!editDraft.trim()) return;
+    setSavingEdit(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/problems/${problemId}/comments/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: editDraft }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(data?.error ?? "儲存失敗");
+        return;
+      }
+      cancelEdit();
+      reload();
+    } finally {
+      setSavingEdit(false);
+    }
   }
 
   async function postSolution() {
@@ -288,40 +330,125 @@ export default function ProblemDiscussion({
             comments.map((c) => (
               <div key={c.id} className="card p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <AuthorLine author={c} at={c.createdAt} />
-                  {c.canDelete && (
-                    <button
-                      type="button"
-                      className="text-xs text-mute hover:text-[#ff6b6b]"
-                      onClick={() => removeComment(c.id)}
-                    >
-                      刪除
-                    </button>
+                  <AuthorLine author={c} at={c.createdAt} edited={c.edited} />
+                  {editingId !== c.id && (
+                    <div className="flex shrink-0 items-center gap-3">
+                      {c.canEdit && (
+                        <button
+                          type="button"
+                          className="text-xs text-mute hover:text-blue"
+                          onClick={() => startEdit(c.id, c.content)}
+                        >
+                          編輯
+                        </button>
+                      )}
+                      {c.canDelete && (
+                        <button
+                          type="button"
+                          className="text-xs text-mute hover:text-[#ff6b6b]"
+                          onClick={() => removeComment(c.id)}
+                        >
+                          刪除
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
-                <div className="mt-2 text-sm">
-                  <Markdown>{c.content}</Markdown>
-                </div>
+                {editingId === c.id ? (
+                  <div className="mt-3">
+                    <textarea
+                      className="input h-24 text-sm"
+                      value={editDraft}
+                      onChange={(e) => setEditDraft(e.target.value)}
+                      autoFocus
+                    />
+                    <div className="mt-2 flex justify-end gap-2">
+                      <button
+                        className="btn-secondary"
+                        onClick={cancelEdit}
+                        disabled={savingEdit}
+                      >
+                        取消
+                      </button>
+                      <button
+                        className="btn-primary"
+                        disabled={savingEdit || !editDraft.trim()}
+                        onClick={() => saveEdit(c.id)}
+                      >
+                        {savingEdit ? "儲存中…" : "儲存"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 text-sm">
+                    <Markdown>{c.content}</Markdown>
+                  </div>
+                )}
 
                 {(c.replies ?? []).length > 0 && (
                   <div className="mt-3 space-y-3 border-l-2 border-bd pl-4">
                     {c.replies!.map((r) => (
                       <div key={r.id}>
                         <div className="flex items-start justify-between gap-3">
-                          <AuthorLine author={r} at={r.createdAt} size={24} />
-                          {r.canDelete && (
-                            <button
-                              type="button"
-                              className="text-xs text-mute hover:text-[#ff6b6b]"
-                              onClick={() => removeComment(r.id)}
-                            >
-                              刪除
-                            </button>
+                          <AuthorLine
+                            author={r}
+                            at={r.createdAt}
+                            size={24}
+                            edited={r.edited}
+                          />
+                          {editingId !== r.id && (
+                            <div className="flex shrink-0 items-center gap-3">
+                              {r.canEdit && (
+                                <button
+                                  type="button"
+                                  className="text-xs text-mute hover:text-blue"
+                                  onClick={() => startEdit(r.id, r.content)}
+                                >
+                                  編輯
+                                </button>
+                              )}
+                              {r.canDelete && (
+                                <button
+                                  type="button"
+                                  className="text-xs text-mute hover:text-[#ff6b6b]"
+                                  onClick={() => removeComment(r.id)}
+                                >
+                                  刪除
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
-                        <div className="mt-1 text-sm">
-                          <Markdown>{r.content}</Markdown>
-                        </div>
+                        {editingId === r.id ? (
+                          <div className="mt-2">
+                            <textarea
+                              className="input h-20 text-sm"
+                              value={editDraft}
+                              onChange={(e) => setEditDraft(e.target.value)}
+                              autoFocus
+                            />
+                            <div className="mt-2 flex justify-end gap-2">
+                              <button
+                                className="btn-secondary"
+                                onClick={cancelEdit}
+                                disabled={savingEdit}
+                              >
+                                取消
+                              </button>
+                              <button
+                                className="btn-primary"
+                                disabled={savingEdit || !editDraft.trim()}
+                                onClick={() => saveEdit(r.id)}
+                              >
+                                {savingEdit ? "儲存中…" : "儲存"}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-1 text-sm">
+                            <Markdown>{r.content}</Markdown>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
