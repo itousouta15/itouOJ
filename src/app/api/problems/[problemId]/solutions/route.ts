@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { avatarSrc } from "@/lib/avatar";
 import { getDiscussionAccess } from "@/lib/problemDiscussion";
 import { problemSolutionSchema } from "@/lib/problemDiscussionSchema";
+import { summarizeReactions } from "@/lib/reactions";
 
 async function loadProblem(problemId: number, isAdmin: boolean) {
   const problem = await prisma.problem.findUnique({
@@ -53,6 +54,7 @@ export async function GET(
       language: true,
       createdAt: true,
       authorId: true,
+      reactions: { select: { emoji: true, userId: true } },
       author: {
         select: {
           username: true,
@@ -82,6 +84,7 @@ export async function GET(
       authorAvatarUrl: avatarSrc(s.author),
       authorIsAdmin: s.author.role === "ADMIN",
       canDelete: isAdmin || s.authorId === session?.userId,
+      reactions: summarizeReactions(s.reactions, session?.userId),
     })),
   });
 }

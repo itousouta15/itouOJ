@@ -10,7 +10,7 @@ const BASE_NAV_LINKS: NavLinkItem[] = [
   { href: "/contests", label: "比賽" },
   { href: "/submissions", label: "紀錄" },
   { href: "/ranking", label: "排行" },
-  { href: "/search", label: "搜尋" },
+  { href: "/activity", label: "動態" },
 ];
 
 // Header 的導覽列只放公開頁面；訊息屬於個人功能，入口在頭像選單

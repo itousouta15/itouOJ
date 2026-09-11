@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Markdown from "@/components/Markdown";
 import Avatar from "@/components/Avatar";
+import ReactionBar from "@/components/ReactionBar";
+import type { ReactionSummary } from "@/lib/reactions";
 
 export interface DiscussionAuthor {
   authorName: string;
@@ -18,6 +20,7 @@ export interface DiscussionComment extends DiscussionAuthor {
   canEdit: boolean;
   canDelete: boolean;
   edited: boolean;
+  reactions: ReactionSummary[];
   replies?: DiscussionComment[];
 }
 
@@ -72,6 +75,7 @@ interface Props {
   comment: DiscussionComment;
   // 主留言 32、回覆 24（原本兩邊只有頭像大小與間距不同）
   size?: number;
+  canReact: boolean;
   editingId: number | null;
   editDraft: string;
   savingEdit: boolean;
@@ -80,6 +84,7 @@ interface Props {
   onEditDraftChange: (value: string) => void;
   onSaveEdit: (id: number) => void;
   onDelete: (id: number) => void;
+  onToggleReaction: (id: number, emoji: string) => void;
 }
 
 // 一則留言／回覆的表頭、編輯/刪除按鈕與編輯表單。主留言與回覆共用，
@@ -87,6 +92,7 @@ interface Props {
 export default function CommentItem({
   comment,
   size = 32,
+  canReact,
   editingId,
   editDraft,
   savingEdit,
@@ -95,6 +101,7 @@ export default function CommentItem({
   onEditDraftChange,
   onSaveEdit,
   onDelete,
+  onToggleReaction,
 }: Props) {
   const editing = editingId === comment.id;
   const isReply = size < 32;
@@ -160,6 +167,16 @@ export default function CommentItem({
       ) : (
         <div className={isReply ? "mt-1 text-sm" : "mt-2 text-sm"}>
           <Markdown>{comment.content}</Markdown>
+        </div>
+      )}
+
+      {!editing && (
+        <div className={isReply ? "mt-1.5" : "mt-2"}>
+          <ReactionBar
+            reactions={comment.reactions}
+            canReact={canReact}
+            onToggle={(emoji) => onToggleReaction(comment.id, emoji)}
+          />
         </div>
       )}
     </>

@@ -4,6 +4,7 @@ import { avatarSrc } from "@/lib/avatar";
 import { getDiscussionAccess } from "@/lib/problemDiscussion";
 import { problemCommentSchema } from "@/lib/problemDiscussionSchema";
 import { enforceRateLimit } from "@/lib/rateLimit";
+import { summarizeReactions } from "@/lib/reactions";
 
 // 這裡的 problemId 是資料庫的 Problem.id，不是網址上的題號（order）。
 // 題目頁把 problem.id 傳給元件，元件再打這支 API——跟 SubmitPanel 一樣。
@@ -48,6 +49,7 @@ export async function GET(
       createdAt: true,
       updatedAt: true,
       authorId: true,
+      reactions: { select: { emoji: true, userId: true } },
       author: {
         select: {
           username: true,
@@ -76,6 +78,7 @@ export async function GET(
     canDelete: isAdmin || c.authorId === session?.userId,
     // 建立與更新時間差超過一秒就顯示「已編輯」
     edited: c.updatedAt.getTime() - c.createdAt.getTime() > 1000,
+    reactions: summarizeReactions(c.reactions, session?.userId),
   });
 
   // 一層樹：先把主留言排好，再把回覆掛到各自的父留言底下

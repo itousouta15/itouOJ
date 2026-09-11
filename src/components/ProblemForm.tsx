@@ -50,6 +50,11 @@ export interface AvailableTag {
   name: string;
 }
 
+export interface AvailableUser {
+  username: string;
+  displayName: string | null;
+}
+
 const EMPTY: ProblemFormData = {
   type: "PROGRAMMING",
   title: "",
@@ -93,10 +98,12 @@ function readFileAsBase64(file: File): Promise<string> {
 export default function ProblemForm({
   initial,
   availableTags = [],
+  availableUsers = [],
   defaultType = "PROGRAMMING",
 }: {
   initial?: ProblemFormData;
   availableTags?: AvailableTag[];
+  availableUsers?: AvailableUser[];
   defaultType?: "PROGRAMMING" | "RECOGNITION";
 }) {
   const router = useRouter();
@@ -411,14 +418,30 @@ export default function ProblemForm({
         {!isRecognition && (
           <div>
             <label className="mb-1 block text-sm font-medium">
-              出題者（使用者名稱，選填）
+              出題者（選填）
             </label>
-            <input
+            <select
               className="input"
               value={form.authorUsername}
               onChange={(e) => set("authorUsername", e.target.value)}
-              placeholder="例如：itouSouta；留空則題目頁不顯示出題者"
-            />
+            >
+              <option value="">不設定</option>
+              {form.authorUsername &&
+                !availableUsers.some(
+                  (u) => u.username === form.authorUsername
+                ) && (
+                  <option value={form.authorUsername}>
+                    {form.authorUsername}
+                  </option>
+                )}
+              {availableUsers.map((u) => (
+                <option key={u.username} value={u.username}>
+                  {u.displayName
+                    ? `${u.displayName}（@${u.username}）`
+                    : u.username}
+                </option>
+              ))}
+            </select>
             <p className="mt-1 text-xs text-mute">
               題目頁會顯示出題者並提供「聯絡出題者」按鈕；送審核准的題目會自動帶入申請人。
             </p>

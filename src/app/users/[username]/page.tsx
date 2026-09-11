@@ -5,9 +5,12 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { avatarSrc } from "@/lib/avatar";
 import { DIFFICULTY_META, getUserStats } from "@/lib/userStats";
+import { getUserStreak } from "@/lib/streak";
+import { ACHIEVEMENTS, getAchievementStats } from "@/lib/achievements";
 import SubmissionRow from "@/components/SubmissionRow";
 import Avatar from "@/components/Avatar";
 import LogoutButton from "@/components/LogoutButton";
+import FollowButton from "@/components/FollowButton";
 
 export const dynamic = "force-dynamic";
 
@@ -50,17 +53,32 @@ export default async function UserProfilePage({
   const session = await getSession();
   const isOwnProfile = session?.username === user.username;
 
-  const [statsData, recent] = await Promise.all([
-    getUserStats(user.id),
-    prisma.submission.findMany({
-      where: { userId: user.id },
-      orderBy: { id: "desc" },
-      take: 20,
-      include: {
-        problem: { select: { id: true, order: true, title: true, type: true } },
-      },
-    }),
-  ]);
+  const [statsData, recent, followerCount, followingCount, followRow] =
+    await Promise.all([
+      getUserStats(user.id),
+      prisma.submission.findMany({
+        where: { userId: user.id },
+        orderBy: { id: "desc" },
+        take: 20,
+        include: {
+          problem: { select: { id: true, order: true, title: true, type: true } },
+        },
+      }),
+      prisma.follow.count({ where: { followingId: user.id } }),
+      prisma.follow.count({ where: { followerId: user.id } }),
+      session && session.userId !== user.id
+        ? prisma.follow.findUnique({
+            where: {
+              followerId_followingId: {
+                followerId: session.userId,
+                followingId: user.id,
+              },
+            },
+            select: { followerId: true },
+          })
+        : Promise.resolve(null),
+    ]);
+  const isFollowing = followRow !== null;
 
   const {
     solvedCount,
@@ -92,6 +110,13 @@ export default async function UserProfilePage({
       ? Math.round((recognitionCorrect / recognitionTotal) * 100)
       : 0;
 
+  const streak = await getUserStreak(user.id);
+  const achievementStats = await getAchievementStats(user.id, {
+    solvedCount,
+    recognitionCorrect,
+    streakLongest: streak.longest,
+  });
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <section className="card p-6">
@@ -107,12 +132,18 @@ export default async function UserProfilePage({
               <span className="vbadge vbadge-purple">管理員</span>
             )}
             {session && !isOwnProfile && (
-              <Link
-                href={`/messages/${user.username}`}
-                className="btn-secondary"
-              >
-                傳訊息
-              </Link>
+              <>
+                <Link
+                  href={`/messages/${user.username}`}
+                  className="btn-secondary"
+                >
+                  傳訊息
+                </Link>
+                <FollowButton
+                  username={user.username}
+                  initialFollowing={isFollowing}
+                />
+              </>
             )}
           </div>
         </div>
@@ -120,6 +151,12 @@ export default async function UserProfilePage({
           <div className="flex items-center justify-between">
             <dt className="text-dim">使用者名稱</dt>
             <dd className="mono font-medium">{user.username}</dd>
+          </div>
+          <div className="flex items-center justify-between">
+            <dt className="text-dim">追蹤</dt>
+            <dd className="text-dim">
+              追蹤中 {followingCount} ・ 粉絲 {followerCount}
+            </dd>
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-dim">註冊時間</dt>
@@ -199,6 +236,47 @@ export default async function UserProfilePage({
               style={{ width: `${recognitionPct}%`, background: "var(--green)" }}
             />
           </div>
+        </div>
+      </section>
+
+      <section className="card p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="section-title">成就</h2>
+          <span className="text-sm text-dim">
+            連續解題{" "}
+            <span className="mono font-semibold text-tx">{streak.current}</span>{" "}
+            天（最長 {streak.longest} 天）
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {ACHIEVEMENTS.map((a) => {
+            const value = a.value(achievementStats);
+            const earned = value >= a.target;
+            return (
+              <div
+                key={a.id}
+                className={`rounded-xl border border-bd p-3 ${
+                  earned ? "bg-inset" : "opacity-45"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    aria-hidden="true"
+                    className={`text-lg ${earned ? "text-blue" : "text-mute"}`}
+                  >
+                    {a.glyph}
+                  </span>
+                  <span className="text-sm font-semibold">{a.name}</span>
+                </div>
+                <p className="mt-1 text-xs text-mute">{a.description}</p>
+                {!earned && (
+                  <p className="mono mt-1 text-xs text-dim">
+                    {Math.min(value, a.target)} / {a.target}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
