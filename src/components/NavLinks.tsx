@@ -6,15 +6,11 @@ import { navLinksFor, isNavActive } from "@/lib/navLinks";
 
 export default function NavLinks({
   isAdmin,
-  loggedIn,
-  unread,
 }: {
   isAdmin: boolean;
-  loggedIn: boolean;
-  unread: number;
 }) {
   const pathname = usePathname();
-  const links = navLinksFor(isAdmin, { loggedIn, unreadMessages: unread });
+  const links = navLinksFor(isAdmin);
 
   return (
     <div className="flex flex-1 items-center gap-1 overflow-x-auto">

@@ -12,24 +12,10 @@ const BASE_NAV_LINKS: NavLinkItem[] = [
   { href: "/ranking", label: "排行" },
 ];
 
-export interface NavOptions {
-  loggedIn?: boolean;
-  // 站內訊息未讀數；> 0 時「訊息」旁邊直接顯示數字
-  unreadMessages?: number;
-}
-
-export function navLinksFor(
-  isAdmin: boolean,
-  options: NavOptions = {}
-): NavLinkItem[] {
+// Header 的導覽列只放公開頁面；訊息屬於個人功能，入口在頭像選單
+// （AccountMenu）與 App 底部導覽（BottomNavLinks）。
+export function navLinksFor(isAdmin: boolean): NavLinkItem[] {
   const links = [...BASE_NAV_LINKS];
-  if (options.loggedIn) {
-    const unread = options.unreadMessages ?? 0;
-    links.push({
-      href: "/messages",
-      label: unread > 0 ? `訊息 (${unread})` : "訊息",
-    });
-  }
   if (isAdmin) links.push({ href: "/admin/problems", label: "管理" });
   return links;
 }

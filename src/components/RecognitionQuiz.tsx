@@ -15,6 +15,8 @@ export interface QuizQuestion {
   statement: string;
   code: string | null;
   options: string[];
+  // 畫面選項順序：displayOrder[i] 是畫面第 i 個選項在 options 的索引
+  displayOrder: number[];
   answerIndex: number;
   explanation: string | null;
   paper: string | null;
@@ -64,6 +66,9 @@ export default function RecognitionQuiz({
   const topRef = useRef<HTMLDivElement | null>(null);
 
   const q = questions[index];
+  // 題目每次載入由伺服器洗牌；這裡只做顯示與原始索引的換算
+  const displayOptions = q.displayOrder.map((oi) => q.options[oi]);
+  const correctDisplay = q.displayOrder.indexOf(q.answerIndex);
 
   const paperGroups = useMemo(() => {
     const groups: { paper: string | null; start: number; end: number }[] = [];
@@ -101,8 +106,10 @@ export default function RecognitionQuiz({
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  async function pick(selectedIndex: number) {
+  async function pick(selectedDisplayIndex: number) {
     if (answers.has(q.id) || submitting) return;
+    // AnswerOptions 給的是畫面上的位置，換回原始索引再判定、存檔
+    const selectedIndex = q.displayOrder[selectedDisplayIndex] ?? selectedDisplayIndex;
     setError("");
     // 未登入：只在畫面上判定，不寫任何紀錄
     if (!loggedIn) {
@@ -217,9 +224,9 @@ export default function RecognitionQuiz({
   const state = answers.get(q.id);
   const answered = state !== undefined;
 
-  // pb-16 是留給右下角浮動題號鈕的空間，避免蓋到「下一題」
+  // 題號總覽做成「上一題／下一題」中間的按鈕，面板往上展開
   return (
-    <div className="space-y-5 pb-16" ref={topRef}>
+    <div className="space-y-5" ref={topRef}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <h1 className="page-title">{clusterLabel}</h1>
@@ -260,9 +267,9 @@ export default function RecognitionQuiz({
 
         <div className="card space-y-2 p-5">
           <AnswerOptions
-            options={q.options}
-            answerIndex={q.answerIndex}
-            picked={state?.picked ?? null}
+            options={displayOptions}
+            answerIndex={correctDisplay}
+            picked={state ? q.displayOrder.indexOf(state.picked) : null}
             revealed={answered}
             disabled={submitting}
             onPick={pick}
@@ -285,133 +292,129 @@ export default function RecognitionQuiz({
               >
                 {state.correct
                   ? "答對了！"
-                  : `答錯了，正確答案是 ${String.fromCharCode(65 + q.answerIndex)}.`}
+                  : `答錯了，正確答案是 ${String.fromCharCode(65 + correctDisplay)}.`}
               </p>
               {q.explanation && (
                 <Markdown className="prose-compact mt-1 text-dim">
                   {q.explanation}
                 </Markdown>
               )}
+              <button
+                className="btn-secondary mt-3 px-3 py-1.5 text-xs"
+                disabled={submitting}
+                onClick={retry}
+              >
+                重新作答
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* 上下題 */}
-      <div className="flex items-center justify-between gap-3">
+      {/* 上下題 與 題號總覽（面板從按鈕往上展開）：手機也維持同一列 */}
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
         <button
-          className="btn-secondary"
+          className="btn-secondary whitespace-nowrap px-3 sm:px-5"
           disabled={index === 0}
           onClick={() => goTo(index - 1)}
         >
           ← 上一題
         </button>
-        <div className="flex gap-3">
-          {answered && (
-            <button
-              className="btn-secondary"
-              disabled={submitting}
-              onClick={retry}
-            >
-              重新作答
-            </button>
+
+        <div className="relative">
+          {paletteOpen && (
+            <>
+              <button
+                type="button"
+                aria-label="關閉題號總覽"
+                className="fixed inset-0 z-40 cursor-default"
+                onClick={() => setPaletteOpen(false)}
+              />
+              <div
+                id="question-palette"
+                role="dialog"
+                aria-label="題號總覽"
+                className="card absolute bottom-full left-1/2 z-50 mb-3 max-h-[60vh] w-[min(90vw,26rem)] -translate-x-1/2 overflow-y-auto p-4 shadow-xl"
+              >
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {questions.map((qq, i) => {
+                    const s = answers.get(qq.id);
+                    const cls =
+                      i === index
+                        ? "bg-blue-deep text-white border-blue-deep"
+                        : s
+                          ? s.correct
+                            ? "bg-[rgba(129,199,132,0.15)] text-[var(--green)] border-[var(--green)]/40"
+                            : "bg-[rgba(237,66,69,0.12)] text-[#ff6b6b] border-[#ff6b6b]/40"
+                          : "text-dim border-bd2";
+                    const afterGroup = paperGroups.find((g) => g.end === i);
+                    return (
+                      <span key={qq.id} className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            goTo(i);
+                            setPaletteOpen(false);
+                          }}
+                          aria-label={`第 ${i + 1} 題${
+                            i === index
+                              ? "（目前題目）"
+                              : s
+                                ? s.correct
+                                  ? "，答對"
+                                  : "，答錯"
+                                : "，未作答"
+                          }`}
+                          aria-current={i === index ? "true" : undefined}
+                          className={`h-8 w-8 rounded-md border text-xs font-mono transition-colors ${cls}`}
+                        >
+                          {i + 1}
+                        </button>
+                        {afterGroup &&
+                          showPaperGroups &&
+                          afterGroup.end < questions.length - 1 && (
+                            <span className="mx-1 text-xs text-mute">│</span>
+                          )}
+                      </span>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-4 text-xs text-mute">
+                  {showPaperGroups &&
+                    namedPaperGroups.map((g) => (
+                      <span key={g.start}>
+                        {g.paper}：第 {g.start + 1}–{g.end + 1} 題
+                      </span>
+                    ))}
+                  <span>
+                    <i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[rgba(129,199,132,0.4)]" />
+                    答對
+                  </span>
+                  <span>
+                    <i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[rgba(237,66,69,0.4)]" />
+                    答錯
+                  </span>
+                </div>
+              </div>
+            </>
           )}
           <button
-            className="btn-primary"
-            disabled={index === questions.length - 1}
-            onClick={() => goTo(index + 1)}
+            type="button"
+            aria-expanded={paletteOpen}
+            aria-controls="question-palette"
+            className="btn-secondary whitespace-nowrap px-3 sm:px-5"
+            onClick={() => setPaletteOpen((v) => !v)}
           >
-            下一題 →
+            {paletteOpen ? "收起題號" : `▦ 題號 ${index + 1}/${questions.length}`}
           </button>
         </div>
-      </div>
 
-      {/* 浮動題號總覽：固定在右下角，跳題不用再滑回最上面 */}
-      <div className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-end gap-2 md:bottom-6">
-        {paletteOpen && (
-          <>
-            <button
-              type="button"
-              aria-label="關閉題號總覽"
-              className="fixed inset-0 z-40 cursor-default"
-              onClick={() => setPaletteOpen(false)}
-            />
-            <div
-              id="question-palette"
-              role="dialog"
-              aria-label="題號總覽"
-              className="card relative z-50 max-h-[60vh] w-[min(90vw,26rem)] overflow-y-auto p-4 shadow-xl"
-            >
-              <div className="flex flex-wrap items-center gap-1.5">
-                {questions.map((qq, i) => {
-                  const s = answers.get(qq.id);
-                  const cls =
-                    i === index
-                      ? "bg-blue text-white border-blue"
-                      : s
-                        ? s.correct
-                          ? "bg-[rgba(129,199,132,0.15)] text-[var(--green)] border-[var(--green)]/40"
-                          : "bg-[rgba(237,66,69,0.12)] text-[#ff6b6b] border-[#ff6b6b]/40"
-                        : "text-dim border-bd2";
-                  const afterGroup = paperGroups.find((g) => g.end === i);
-                  return (
-                    <span key={qq.id} className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          goTo(i);
-                          setPaletteOpen(false);
-                        }}
-                        aria-label={`第 ${i + 1} 題${
-                          i === index
-                            ? "（目前題目）"
-                            : s
-                              ? s.correct
-                                ? "，答對"
-                                : "，答錯"
-                              : "，未作答"
-                        }`}
-                        aria-current={i === index ? "true" : undefined}
-                        className={`h-8 w-8 rounded-md border text-xs font-mono transition-colors ${cls}`}
-                      >
-                        {i + 1}
-                      </button>
-                      {afterGroup &&
-                        showPaperGroups &&
-                        afterGroup.end < questions.length - 1 && (
-                          <span className="mx-1 text-xs text-mute">│</span>
-                        )}
-                    </span>
-                  );
-                })}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-4 text-xs text-mute">
-                {showPaperGroups &&
-                  namedPaperGroups.map((g) => (
-                    <span key={g.start}>
-                      {g.paper}：第 {g.start + 1}–{g.end + 1} 題
-                    </span>
-                  ))}
-                <span>
-                  <i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[rgba(129,199,132,0.4)]" />
-                  答對
-                </span>
-                <span>
-                  <i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[rgba(237,66,69,0.4)]" />
-                  答錯
-                </span>
-              </div>
-            </div>
-          </>
-        )}
         <button
-          type="button"
-          aria-expanded={paletteOpen}
-          aria-controls="question-palette"
-          className="btn-primary relative z-50 rounded-full px-5 shadow-xl"
-          onClick={() => setPaletteOpen((v) => !v)}
+          className="btn-primary whitespace-nowrap px-3 sm:px-5"
+          disabled={index === questions.length - 1}
+          onClick={() => goTo(index + 1)}
         >
-          {paletteOpen ? "收起題號" : `▦ 題號 ${index + 1}/${questions.length}`}
+          下一題 →
         </button>
       </div>
     </div>

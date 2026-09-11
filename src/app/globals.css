@@ -22,8 +22,10 @@
   --tx: #e8ebf2;
   --dim: #9aa1ad;
   --mute: #6a7280;
-  --blue: #b8c4f8;
-  --purple: #a1ade0;
+  --blue: #b3bbf3;
+  --blue-deep: #7a7d96; /* 填色底（訊息泡泡、目前題號鈕）配白字，--blue 太淺不能當底 */
+  --purple: #959fcc;
+  --purple-deep: #6d7294; /* 填色底（選中的篩選 pill）配白字 */
   --green: #81c784;
   --btn: #94a6cc;
   --btntx: #24272c;
@@ -45,7 +47,9 @@
   --dim: #494f59; /* was #5b626d — darkened for WCAG AA contrast on panel bg */
   --mute: #6b7280; /* was #8a909b — darkened to improve readability */
   --blue: #364a7c;
+  --blue-deep: #364a7c; /* 同 --blue：亮色主題的 --blue 本來就夠深 */
   --purple: #5c7cbf;
+  --purple-deep: #4a63a5;
   --green: #3f7d4f;
   --btn: #2b2f36;
   --btntx: #f2f4f9;
@@ -63,6 +67,7 @@
   --color-dim: var(--dim);
   --color-mute: var(--mute);
   --color-blue: var(--blue);
+  --color-blue-deep: var(--blue-deep);
   --color-purple: var(--purple);
   --font-sans: "Noto Sans TC", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
@@ -918,8 +923,8 @@ html.kbd-open .bottom-nav {
     color: var(--tx);
   }
   .pill-active {
-    background: var(--purple);
-    border-color: var(--purple);
+    background: var(--purple-deep);
+    border-color: var(--purple-deep);
     color: #fff;
   }
   .pill-active:hover {
@@ -1246,10 +1251,12 @@ html.kbd-open .bottom-nav {
   font-weight: 700;
   margin: 20px 0 8px;
 }
-.prose-oj h1:first-child,
-.prose-oj h2:first-child,
-.prose-oj h3:first-child {
+/* 卡片邊緣不要再多一層段落 margin（疊上卡片 padding 會顯得很厚） */
+.prose-oj > :first-child {
   margin-top: 0;
+}
+.prose-oj > :last-child {
+  margin-bottom: 0;
 }
 .prose-oj p {
   margin: 12px 0;
@@ -1342,7 +1349,9 @@ html[data-app] {
   --dim: #9aa1ad;
   --mute: #6a7280;
   --blue: #a9b8f2;
+  --blue-deep: #4a5490;
   --purple: #9fa9df;
+  --purple-deep: #545d9e;
   --btn: #94a6cc;
   --btntx: #21252b;
   --shadow: rgba(0, 0, 0, 0.5);
@@ -1361,7 +1370,9 @@ html[data-app][data-theme="light"] {
   --dim: #9aa1ad;
   --mute: #6a7280;
   --blue: #a9b8f2;
+  --blue-deep: #4a5490;
   --purple: #9fa9df;
+  --purple-deep: #545d9e;
   --btn: #94a6cc;
   --btntx: #21252b;
   --shadow: rgba(0, 0, 0, 0.5);

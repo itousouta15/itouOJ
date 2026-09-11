@@ -15,6 +15,7 @@ import ContestStatusBadge from "@/components/ContestStatusBadge";
 import ContestCountdown from "@/components/ContestCountdown";
 import SubmitPanel from "@/components/SubmitPanel";
 import RecognitionAnswerPanel from "@/components/RecognitionAnswerPanel";
+import { shuffledOrder } from "@/lib/shuffle";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +61,7 @@ export default async function ContestProblemPage({
   const accepted = acceptedSub !== null;
 
   const phase = getContestPhase(contest);
-  const options = isRecognition ? JSON.parse(problem.options ?? "[]") : [];
+  const options = isRecognition ? (JSON.parse(problem.options ?? "[]") as string[]) : [];
 
   return (
     <div className="space-y-6">
@@ -100,6 +101,7 @@ export default async function ContestProblemPage({
       {isRecognition ? (
         <RecognitionAnswerPanel
           options={options}
+          displayOrder={shuffledOrder(options.length)}
           explanation={problem.explanation}
           answerIndex={problem.answerIndex ?? 0}
           locked={phase === "ended"}

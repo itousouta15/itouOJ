@@ -12,17 +12,13 @@ const FACES = ["= ᗜ ω ᗜ.=", "(◕ᗜ◕✿)", "( ˘ω˘ )zzz", "ฅ^•ﻌ�
 
 export default function MobileMenuButton({
   isAdmin,
-  loggedIn,
-  unread,
 }: {
   isAdmin: boolean;
-  loggedIn: boolean;
-  unread: number;
 }) {
   const [open, setOpen] = useState(false);
   const mounted = useMounted();
   const pathname = usePathname();
-  const links = navLinksFor(isAdmin, { loggedIn, unreadMessages: unread });
+  const links = navLinksFor(isAdmin);
 
   // 導覽後由每個 Link 的 onClick 關閉選單，不需要再用 pathname 的 effect 關一次
   useEffect(() => {
