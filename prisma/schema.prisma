@@ -37,6 +37,7 @@ model User {
   recognitionAnswers RecognitionAnswer[]
   sentMessages     Message[]          @relation("MessageSender")
   receivedMessages Message[]          @relation("MessageReceiver")
+  authoredProblems Problem[]          @relation("ProblemAuthor")
 }
 
 // 站內訊息：一對一私訊。沒有獨立的「對話」表，同兩人之間依時間排序就是
@@ -79,6 +80,9 @@ model Problem {
   memoryLimitMb   Int              @default(256)
   isPublic        Boolean          @default(true)
   order           Int              @default(0) // 題型內排序；實作題同時是對外題號（網址 /problems/{order}）
+  // 出題者（送審核准自動帶入、管理員也可指定）。只給實作題顯示與聯絡用。
+  authorId        String?
+  author          User?            @relation("ProblemAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   // 管理員自製的正式題目檔（通常是排版過的 PDF）。沒有上傳的話，下載題目文件時
   // 會退回用 statement 現場產生的 HTML（見 lib/renderProblemDoc.ts）。
   // 掛在 Problem 而不是 ContestProblem：後者每次比賽編輯存檔都會整批刪除重建
@@ -104,6 +108,7 @@ model Problem {
 
   @@unique([type, order])
   @@index([clusterId])
+  @@index([authorId])
 }
 
 // 識讀群集：一組識別題（例如「APCS 2021/01」）。

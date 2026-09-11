@@ -19,6 +19,7 @@ export default function robots(): MetadataRoute.Robots {
         "/submissions",
         "/users",
         "/ranking",
+        "/search",
         "/problems/propose",
         "/problems/proposals",
       ],
