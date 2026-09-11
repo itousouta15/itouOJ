@@ -5,9 +5,15 @@ import { useRouter } from "next/navigation";
 
 // 對話頁下方的輸入框。傳送成功後用 router.refresh() 讓 server component
 // 重新抓訊息，不用自己維護一份訊息 state。
-export default function MessageComposer({ to }: { to: string }) {
+export default function MessageComposer({
+  to,
+  initialDraft = "",
+}: {
+  to: string;
+  initialDraft?: string;
+}) {
   const router = useRouter();
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(initialDraft);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 

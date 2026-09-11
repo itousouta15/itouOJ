@@ -24,13 +24,16 @@ function formatTime(date: Date) {
 
 export default async function MessageThreadPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ about?: string }>;
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
 
   const { username } = await params;
+  const { about } = await searchParams;
   const other = await prisma.user.findUnique({
     where: { username },
     select: {
@@ -44,6 +47,20 @@ export default async function MessageThreadPage({
   });
   if (!other) notFound();
   if (other.id === session.userId) redirect("/messages");
+
+  // 從題目頁的「聯絡出題者」進來時，先把題目資訊填進輸入框
+  const aboutId = Number(about);
+  const aboutProblem =
+    Number.isInteger(aboutId) && aboutId > 0
+      ? await prisma.problem.findUnique({
+          where: { id: aboutId },
+          select: { order: true, title: true, type: true },
+        })
+      : null;
+  const initialDraft =
+    aboutProblem?.type === "PROGRAMMING"
+      ? `關於題目 #${aboutProblem.order}「${aboutProblem.title}」：\n`
+      : "";
 
   // 只取最近 200 則（往前比較久的訊息之後有需要再做分頁）
   const rows = await prisma.message.findMany({
@@ -129,7 +146,7 @@ export default async function MessageThreadPage({
         })}
       </div>
 
-      <MessageComposer to={other.username} />
+      <MessageComposer to={other.username} initialDraft={initialDraft} />
     </div>
   );
 }
