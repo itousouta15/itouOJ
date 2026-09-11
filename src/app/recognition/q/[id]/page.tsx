@@ -66,7 +66,7 @@ export default async function RecognitionQuestionPage({
 
       <StatementCard>{problem.statement}</StatementCard>
 
-      <CodeBlock code={problem.code ?? ""} />
+      <CodeBlock code={problem.code ?? ""} language={problem.category} />
 
       <div className="card space-y-2 p-5">
         <AnswerOptions

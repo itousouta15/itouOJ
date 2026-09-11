@@ -22,37 +22,66 @@ interface RankRow {
   submissions: number;
 }
 
-async function siteWideRanking(): Promise<RankRow[]> {
-  const acPairs = await prisma.submission.findMany({
-    where: { status: "AC" },
-    distinct: ["userId", "problemId"],
-    select: { userId: true },
-  });
+// 全站排行：實作與識讀合併，名次依「解題數 + 識讀答對數」總和
+interface CombinedRankRow extends RankRow {
+  recognitionCorrect: number;
+  recognitionAnswered: number;
+}
+
+async function siteWideRanking(): Promise<CombinedRankRow[]> {
+  const [acPairs, submissionCounts, recognitionAnswers, users] =
+    await Promise.all([
+      prisma.submission.findMany({
+        where: { status: "AC" },
+        distinct: ["userId", "problemId"],
+        select: { userId: true },
+      }),
+      prisma.submission.groupBy({
+        by: ["userId"],
+        _count: { _all: true },
+      }),
+      prisma.recognitionAnswer.findMany({
+        where: { problem: { type: "RECOGNITION", isPublic: true } },
+        select: { userId: true, isCorrect: true },
+      }),
+      prisma.user.findMany({
+        select: { id: true, username: true, displayName: true },
+      }),
+    ]);
+
   const solvedByUser = new Map<string, number>();
   for (const { userId } of acPairs) {
     solvedByUser.set(userId, (solvedByUser.get(userId) ?? 0) + 1);
   }
-
-  const submissionCounts = await prisma.submission.groupBy({
-    by: ["userId"],
-    _count: { _all: true },
-  });
   const subsByUser = new Map(
     submissionCounts.map((g) => [g.userId, g._count._all]),
   );
+  const recByUser = new Map<string, { correct: number; answered: number }>();
+  for (const a of recognitionAnswers) {
+    const s = recByUser.get(a.userId) ?? { correct: 0, answered: 0 };
+    s.answered++;
+    if (a.isCorrect) s.correct++;
+    recByUser.set(a.userId, s);
+  }
 
-  const users = await prisma.user.findMany({
-    select: { id: true, username: true, displayName: true },
-  });
   return users
-    .map((u) => ({
-      username: u.username,
-      displayName: u.displayName,
-      solved: solvedByUser.get(u.id) ?? 0,
-      submissions: subsByUser.get(u.id) ?? 0,
-    }))
-    .filter((r) => r.submissions > 0)
-    .sort((a, b) => b.solved - a.solved || a.submissions - b.submissions);
+    .map((u) => {
+      const rec = recByUser.get(u.id) ?? { correct: 0, answered: 0 };
+      return {
+        username: u.username,
+        displayName: u.displayName,
+        solved: solvedByUser.get(u.id) ?? 0,
+        submissions: subsByUser.get(u.id) ?? 0,
+        recognitionCorrect: rec.correct,
+        recognitionAnswered: rec.answered,
+      };
+    })
+    .filter((r) => r.submissions > 0 || r.recognitionAnswered > 0)
+    .sort(
+      (a, b) =>
+        b.solved + b.recognitionCorrect - (a.solved + a.recognitionCorrect) ||
+        a.submissions - b.submissions,
+    );
 }
 
 async function campRanking(): Promise<RankRow[]> {
@@ -127,10 +156,8 @@ export default async function RankingPage({
   const { scope } = await searchParams;
   const isCamp = scope === "camp";
 
-  const rows = (isCamp ? await campRanking() : await siteWideRanking()).slice(
-    0,
-    100,
-  );
+  const combinedRows = isCamp ? [] : (await siteWideRanking()).slice(0, 100);
+  const campRows = isCamp ? (await campRanking()).slice(0, 100) : [];
 
   return (
     <div>
@@ -152,47 +179,95 @@ export default async function RankingPage({
         </div>
       </div>
       <div className="card overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th className="table-head w-20">名次</th>
-              <th className="table-head">使用者</th>
-              <th className="table-head w-28 text-right">解題數</th>
-              <th className="table-head w-28 text-right">提交數</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 && (
+        {isCamp ? (
+          <table className="w-full">
+            <thead>
               <tr>
-                <td
-                  colSpan={4}
-                  className="table-cell py-10 text-center text-mute"
-                >
-                  還沒有人提交過
-                </td>
+                <th className="table-head w-20">名次</th>
+                <th className="table-head">使用者</th>
+                <th className="table-head w-28 text-right">解題數</th>
+                <th className="table-head w-28 text-right">提交數</th>
               </tr>
-            )}
-            {rows.map((r, i) => (
-              <tr key={r.username} className="hover:bg-panel2">
-                <td className="table-cell font-semibold text-dim">{i + 1}</td>
-                <td className="table-cell font-medium">
-                  <Link
-                    href={`/users/${r.username}`}
-                    className="text-blue hover:underline"
+            </thead>
+            <tbody>
+              {campRows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="table-cell py-10 text-center text-mute"
                   >
-                    {r.displayName || r.username}
-                  </Link>
-                </td>
-                <td className="table-cell text-right font-semibold text-[var(--green)]">
-                  {r.solved}
-                </td>
-                <td className="table-cell text-right text-dim">
-                  {r.submissions}
-                </td>
+                    還沒有人提交過
+                  </td>
+                </tr>
+              )}
+              {campRows.map((r, i) => (
+                <tr key={r.username} className="hover:bg-panel2">
+                  <td className="table-cell font-semibold text-dim">{i + 1}</td>
+                  <td className="table-cell font-medium">
+                    <Link
+                      href={`/users/${r.username}`}
+                      className="text-blue hover:underline"
+                    >
+                      {r.displayName || r.username}
+                    </Link>
+                  </td>
+                  <td className="table-cell text-right font-semibold text-[var(--green)]">
+                    {r.solved}
+                  </td>
+                  <td className="table-cell text-right text-dim">
+                    {r.submissions}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="table-head w-20">名次</th>
+                <th className="table-head">使用者</th>
+                <th className="table-head w-24 text-right">解題數</th>
+                <th className="table-head w-24 text-right">識讀答對</th>
+                <th className="table-head w-24 text-right">提交數</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {combinedRows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="table-cell py-10 text-center text-mute"
+                  >
+                    還沒有人提交或練過識讀題
+                  </td>
+                </tr>
+              )}
+              {combinedRows.map((r, i) => (
+                <tr key={r.username} className="hover:bg-panel2">
+                  <td className="table-cell font-semibold text-dim">{i + 1}</td>
+                  <td className="table-cell font-medium">
+                    <Link
+                      href={`/users/${r.username}`}
+                      className="text-blue hover:underline"
+                    >
+                      {r.displayName || r.username}
+                    </Link>
+                  </td>
+                  <td className="table-cell text-right font-semibold text-[var(--green)]">
+                    {r.solved}
+                  </td>
+                  <td className="table-cell text-right font-semibold text-[var(--green)]">
+                    {r.recognitionCorrect}
+                  </td>
+                  <td className="table-cell text-right text-dim">
+                    {r.submissions}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
