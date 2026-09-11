@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { avatarSrc } from "@/lib/avatar";
 import SubmissionRow from "@/components/SubmissionRow";
 import Avatar from "@/components/Avatar";
 import LogoutButton from "@/components/LogoutButton";
@@ -16,7 +17,20 @@ const DIFFICULTY_META = [
 ] as const;
 
 async function getUser(username: string) {
-  return prisma.user.findUnique({ where: { username } });
+  // 不 select avatarData：這個頁面只需要知道有沒有本地頭像
+  return prisma.user.findUnique({
+    where: { username },
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      bio: true,
+      role: true,
+      avatarUrl: true,
+      avatarUpdatedAt: true,
+      createdAt: true,
+    },
+  });
 }
 
 export async function generateMetadata({
@@ -98,7 +112,7 @@ export default async function UserProfilePage({
         <div className="mb-4 flex items-center gap-4">
           <Avatar
             name={user.displayName || user.username}
-            src={user.avatarUrl}
+            src={avatarSrc(user)}
             size={64}
           />
           <div className="flex flex-wrap items-center gap-3">

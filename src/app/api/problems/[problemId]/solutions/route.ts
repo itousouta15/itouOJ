@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { avatarSrc } from "@/lib/avatar";
 import { getDiscussionAccess } from "@/lib/problemDiscussion";
 import { problemSolutionSchema } from "@/lib/problemDiscussionSchema";
 
@@ -58,6 +59,7 @@ export async function GET(
           displayName: true,
           role: true,
           avatarUrl: true,
+          avatarUpdatedAt: true,
         },
       },
     },
@@ -77,7 +79,7 @@ export async function GET(
       authorName: s.author.displayName || s.author.username,
       // username 是個人頁的網址（/users/{username}），displayName 不保證唯一，不能拿來連
       authorUsername: s.author.username,
-      authorAvatarUrl: s.author.avatarUrl,
+      authorAvatarUrl: avatarSrc(s.author),
       authorIsAdmin: s.author.role === "ADMIN",
       canDelete: isAdmin || s.authorId === session?.userId,
     })),
