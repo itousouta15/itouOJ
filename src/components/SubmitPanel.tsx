@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import CodeMirror from "@uiw/react-codemirror";
@@ -133,6 +133,7 @@ export default function SubmitPanel({
   const [kbdVisible, setKbdVisible] = useState(false);
   const [isApp] = useState(() => isNativeApp());
   const viewRef = useRef<EditorView | null>(null);
+  const restoreFocusRef = useRef(false);
   // 這次全螢幕是不是「點編輯器自動開」的：自動開的才在收鍵盤時自動關
   const autoOpenedRef = useRef(false);
 
@@ -171,15 +172,16 @@ export default function SubmitPanel({
     setFullscreen(true);
   }
 
-  function closeFullscreen() {
+  const closeFullscreen = useCallback(() => {
     // 先播退場動畫（180ms）再真的卸載 portal
     if (closing) return;
+    restoreFocusRef.current = true;
     setClosing(true);
     setTimeout(() => {
       setClosing(false);
       setFullscreen(false);
     }, 180);
-  }
+  }, [closing]);
 
   // 記住上次選的語言、以及每題每語言打到一半的程式碼
   useEffect(() => {
@@ -206,6 +208,15 @@ export default function SubmitPanel({
       document.body.style.overflow = "";
     };
   }, [fullscreen]);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeFullscreen();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [fullscreen, closeFullscreen]);
 
   function draftKey(lang: LanguageKey) {
     return `oj-draft-${problemId}-${lang}`;
@@ -311,6 +322,10 @@ export default function SubmitPanel({
       onChange={updateCode}
       onCreateEditor={(view) => {
         viewRef.current = view;
+        if (fullscreen || restoreFocusRef.current) {
+          restoreFocusRef.current = false;
+          requestAnimationFrame(() => view.focus());
+        }
       }}
       onFocus={() => {
         // App 手機上點程式區塊 → 自動進全螢幕編輯（鍵盤符號列才會出現）
@@ -348,6 +363,7 @@ export default function SubmitPanel({
         <div className="flex items-center gap-2">
           {langSelect}
           <button
+            type="button"
             className="theme-btn"
             onClick={() => openFullscreen(true)}
             aria-label="全螢幕編輯"
@@ -358,8 +374,8 @@ export default function SubmitPanel({
         </div>
       </div>
       {!fullscreen && (
-        <div className="oj-editor overflow-hidden rounded-md border border-bd">
-          <div style={{ height: "380px" }}>{editor}</div>
+        <div className="oj-editor oj-editor--inline overflow-hidden rounded-md border border-bd">
+          {editor}
         </div>
       )}
       {showCustom && (
@@ -504,6 +520,7 @@ export default function SubmitPanel({
               <div className="flex flex-none items-center gap-2">
                 {langSelect}
                 <button
+                  type="button"
                   className="theme-btn"
                   onClick={closeFullscreen}
                   aria-label="離開全螢幕編輯"
