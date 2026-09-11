@@ -57,6 +57,7 @@ export default function RecognitionQuiz({
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const topRef = useRef<HTMLDivElement | null>(null);
 
   const q = questions[index];
@@ -136,8 +137,9 @@ export default function RecognitionQuiz({
   const state = answers.get(q.id);
   const answered = state !== undefined;
 
+  // pb-16 是留給右下角浮動題號鈕的空間，避免蓋到「下一題」
   return (
-    <div className="space-y-5" ref={topRef}>
+    <div className="space-y-5 pb-16" ref={topRef}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <h1 className="page-title">{clusterLabel}</h1>
@@ -154,56 +156,6 @@ export default function RecognitionQuiz({
               答對 {correctCount}
             </span>
           )}
-        </div>
-      </div>
-
-      {/* 題號總覽 */}
-      <div className="card p-4">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {questions.map((qq, i) => {
-            const s = answers.get(qq.id);
-            const cls =
-              i === index
-                ? "bg-blue text-white border-blue"
-                : s
-                  ? s.correct
-                    ? "bg-[rgba(129,199,132,0.15)] text-[var(--green)] border-[var(--green)]/40"
-                    : "bg-[rgba(237,66,69,0.12)] text-[#ff6b6b] border-[#ff6b6b]/40"
-                  : "text-dim border-bd2";
-            const afterGroup = paperGroups.find((g) => g.end === i);
-            return (
-              <span key={qq.id} className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => goTo(i)}
-                  className={`h-8 w-8 rounded-md border text-xs font-mono transition-colors ${cls}`}
-                >
-                  {i + 1}
-                </button>
-                {afterGroup &&
-                  showPaperGroups &&
-                  afterGroup.end < questions.length - 1 && (
-                    <span className="mx-1 text-xs text-mute">│</span>
-                  )}
-              </span>
-            );
-          })}
-        </div>
-        <div className="mt-3 flex flex-wrap gap-4 text-xs text-mute">
-          {showPaperGroups &&
-            namedPaperGroups.map((g) => (
-              <span key={g.start}>
-                {g.paper}：第 {g.start + 1}–{g.end + 1} 題
-              </span>
-            ))}
-          <span>
-            <i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[rgba(129,199,132,0.4)]" />
-            答對
-          </span>
-          <span>
-            <i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[rgba(237,66,69,0.4)]" />
-            答錯
-          </span>
         </div>
       </div>
 
@@ -288,6 +240,79 @@ export default function RecognitionQuiz({
             下一題 →
           </button>
         </div>
+      </div>
+
+      {/* 浮動題號總覽：固定在右下角，跳題不用再滑回最上面 */}
+      <div className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-end gap-2 md:bottom-6">
+        {paletteOpen && (
+          <>
+            <button
+              type="button"
+              aria-label="關閉題號總覽"
+              className="fixed inset-0 z-40 cursor-default"
+              onClick={() => setPaletteOpen(false)}
+            />
+            <div className="card relative z-50 max-h-[60vh] w-[min(90vw,26rem)] overflow-y-auto p-4 shadow-xl">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {questions.map((qq, i) => {
+                  const s = answers.get(qq.id);
+                  const cls =
+                    i === index
+                      ? "bg-blue text-white border-blue"
+                      : s
+                        ? s.correct
+                          ? "bg-[rgba(129,199,132,0.15)] text-[var(--green)] border-[var(--green)]/40"
+                          : "bg-[rgba(237,66,69,0.12)] text-[#ff6b6b] border-[#ff6b6b]/40"
+                        : "text-dim border-bd2";
+                  const afterGroup = paperGroups.find((g) => g.end === i);
+                  return (
+                    <span key={qq.id} className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          goTo(i);
+                          setPaletteOpen(false);
+                        }}
+                        className={`h-8 w-8 rounded-md border text-xs font-mono transition-colors ${cls}`}
+                      >
+                        {i + 1}
+                      </button>
+                      {afterGroup &&
+                        showPaperGroups &&
+                        afterGroup.end < questions.length - 1 && (
+                          <span className="mx-1 text-xs text-mute">│</span>
+                        )}
+                    </span>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-4 text-xs text-mute">
+                {showPaperGroups &&
+                  namedPaperGroups.map((g) => (
+                    <span key={g.start}>
+                      {g.paper}：第 {g.start + 1}–{g.end + 1} 題
+                    </span>
+                  ))}
+                <span>
+                  <i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[rgba(129,199,132,0.4)]" />
+                  答對
+                </span>
+                <span>
+                  <i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[rgba(237,66,69,0.4)]" />
+                  答錯
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+        <button
+          type="button"
+          aria-expanded={paletteOpen}
+          className="btn-primary relative z-50 rounded-full px-5 shadow-xl"
+          onClick={() => setPaletteOpen((v) => !v)}
+        >
+          {paletteOpen ? "收起題號" : `▦ 題號 ${index + 1}/${questions.length}`}
+        </button>
       </div>
     </div>
   );
