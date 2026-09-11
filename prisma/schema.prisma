@@ -28,6 +28,24 @@ model User {
   problemComments  ProblemComment[]
   problemSolutions ProblemSolution[]
   recognitionAnswers RecognitionAnswer[]
+  sentMessages     Message[]          @relation("MessageSender")
+  receivedMessages Message[]          @relation("MessageReceiver")
+}
+
+// 站內訊息：一對一私訊。沒有獨立的「對話」表，同兩人之間依時間排序就是
+// 一個對話串；readAt 只在收件者打開對話時更新（null = 未讀）。
+model Message {
+  id         Int       @id @default(autoincrement())
+  senderId   String
+  sender     User      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User      @relation("MessageReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  content    String
+  createdAt  DateTime  @default(now())
+  readAt     DateTime?
+
+  @@index([senderId, receiverId, createdAt])
+  @@index([receiverId, readAt])
 }
 
 model Problem {

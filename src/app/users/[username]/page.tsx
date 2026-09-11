@@ -106,6 +106,14 @@ export default async function UserProfilePage({
             {user.role === "ADMIN" && (
               <span className="vbadge vbadge-purple">管理員</span>
             )}
+            {session && !isOwnProfile && (
+              <Link
+                href={`/messages/${user.username}`}
+                className="btn-secondary"
+              >
+                傳訊息
+              </Link>
+            )}
           </div>
         </div>
         <dl className="mb-5 space-y-3 border-b border-bd pb-5 text-sm">

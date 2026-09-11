@@ -14,12 +14,21 @@ const ITEMS: {
   glyph: string;
   dynamic?: boolean;
   adminOnly?: boolean;
+  authOnly?: boolean;
+  badge?: boolean;
 }[] = [
   { href: "/", label: "首頁", glyph: "⌂" },
   { href: "/problems", label: "實作", glyph: "▤" },
   { href: "/recognition", label: "識讀", glyph: "◈" },
   { href: "/submissions", label: "紀錄", glyph: "≣" },
   { href: "/ranking", label: "排行", glyph: "▥" },
+  {
+    href: "/messages",
+    label: "訊息",
+    glyph: "✉",
+    authOnly: true,
+    badge: true,
+  },
   { href: "/admin/problems", label: "管理", glyph: "⚙", adminOnly: true },
   { href: "/me", label: "我的", glyph: "◎", dynamic: true },
 ];
@@ -27,9 +36,11 @@ const ITEMS: {
 export default function BottomNavLinks({
   username,
   isAdmin,
+  unread = 0,
 }: {
   username: string | null;
   isAdmin: boolean;
+  unread?: number;
 }) {
   const pathname = usePathname();
 
@@ -48,7 +59,9 @@ export default function BottomNavLinks({
     return () => vv.removeEventListener("resize", onResize);
   }, []);
 
-  const items = ITEMS.filter((i) => !i.adminOnly || isAdmin);
+  const items = ITEMS.filter(
+    (i) => (!i.adminOnly || isAdmin) && (!i.authOnly || username)
+  );
 
   return (
     <nav
@@ -62,14 +75,22 @@ export default function BottomNavLinks({
             : "/login"
           : item.href;
         const active = isNavActive(pathname, href);
+        const showBadge = item.badge && unread > 0;
         return (
           <Link
             key={item.href}
             href={href}
             className={`bottom-nav-link${active ? " active" : ""}`}
           >
-            <span className="bottom-nav-glyph" aria-hidden="true">
-              {item.glyph}
+            <span className="relative">
+              <span className="bottom-nav-glyph" aria-hidden="true">
+                {item.glyph}
+              </span>
+              {showBadge && (
+                <span className="absolute -top-1.5 -right-2.5 rounded-full bg-[#ff6b6b] px-1 text-[9px] font-semibold leading-4 text-white">
+                  {unread > 99 ? "99+" : unread}
+                </span>
+              )}
             </span>
             <span className="bottom-nav-label">{item.label}</span>
           </Link>

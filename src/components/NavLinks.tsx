@@ -4,9 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navLinksFor, isNavActive } from "@/lib/navLinks";
 
-export default function NavLinks({ isAdmin }: { isAdmin: boolean }) {
+export default function NavLinks({
+  isAdmin,
+  loggedIn,
+  unread,
+}: {
+  isAdmin: boolean;
+  loggedIn: boolean;
+  unread: number;
+}) {
   const pathname = usePathname();
-  const links = navLinksFor(isAdmin);
+  const links = navLinksFor(isAdmin, { loggedIn, unreadMessages: unread });
 
   return (
     <div className="flex flex-1 items-center gap-1 overflow-x-auto">
