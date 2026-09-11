@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import TagBadge from "@/components/TagBadge";
+import RecognitionCredit from "@/components/RecognitionCredit";
 
 export const metadata: Metadata = {
   title: "識讀練習",
@@ -199,6 +200,8 @@ export default async function RecognitionPage({
           </tbody>
         </table>
       </div>
+
+      <RecognitionCredit className="mt-4" />
     </div>
   );
 }
