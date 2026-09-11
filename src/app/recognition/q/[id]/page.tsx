@@ -9,6 +9,7 @@ import StatementCard from "@/components/StatementCard";
 import CodeBlock from "@/components/CodeBlock";
 import AnswerOptions from "@/components/AnswerOptions";
 import CategoryBadge from "@/components/CategoryBadge";
+import RecognitionCredit from "@/components/RecognitionCredit";
 
 export const metadata: Metadata = { title: "程式識別練習" };
 export const dynamic = "force-dynamic";
@@ -82,6 +83,8 @@ export default async function RecognitionQuestionPage({
           <Markdown className="prose-compact">{problem.explanation}</Markdown>
         </div>
       )}
+
+      <RecognitionCredit />
     </div>
   );
 }
