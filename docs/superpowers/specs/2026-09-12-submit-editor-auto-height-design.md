@@ -8,8 +8,9 @@ behavior.
 
 ## Behavior
 
-- The inline editor starts at 380px high and grows with its document, up to
-  70vh. Beyond that height, its own scroller takes over.
+- The inline editor starts at 380px high and grows downward with its document
+  without an artificial maximum. The page, rather than the inline editor,
+  scrolls for long submissions.
 - Focusing the inline editor applies a subtle visual focus treatment without
   moving the page or stealing focus from the CodeMirror selection.
 - The desktop fullscreen control opens a portal editor reliably, transfers
@@ -23,7 +24,7 @@ behavior.
 ## Implementation and verification
 
 Configure CodeMirror content-height support and an update listener that keeps
-the wrapper within its bounds. Separate the editor instances' DOM ownership so
+the inline wrapper equal to document height. Separate the editor instances' DOM ownership so
 the inline and portal modes never attempt to mount into the same container.
 Verify short, long, and very long source code; keyboard focus; desktop open/
 close; Escape; and mobile fullscreen layouts. Then run type checking and a
