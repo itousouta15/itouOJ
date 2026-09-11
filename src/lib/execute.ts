@@ -3,10 +3,8 @@ import { sandboxExecute } from "@/lib/sandbox";
 import type { PistonResult } from "@/lib/piston";
 import type { LanguageKey } from "@/lib/languages";
 
-// M8 cutover: sandbox-runner (this project's own namespace/cgroup/seccomp
-// sandbox) has replaced Piston for the languages it supports. Java still
-// goes through Piston until sandbox-runner grows a Java seccomp profile --
-// see sandbox-runner/README and the M7 milestone notes.
+// C/C++/Python/JavaScript 走自建的 sandbox-runner，Java 在生出 seccomp
+// profile 之前仍走 Piston（見 sandbox-runner/README）。
 const SANDBOX_LANGUAGES: ReadonlySet<LanguageKey> = new Set([
   "c",
   "cpp",

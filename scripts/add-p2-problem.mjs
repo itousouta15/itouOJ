@@ -1,12 +1,6 @@
-// 新增「大里高中 初級營」P2：校長的口號到底多有梗？
-// 部分給分：子題一（40 分，只看輸出第一行）／子題二（60 分，完整比對）。
-//
-//   node scripts/add-p2-problem.mjs                 加進 dev.db
-//   node scripts/add-p2-problem.mjs --db oj.db       加進正式站資料庫
-//
-// 重跑會被擋掉（用標題判斷是否已存在），不會建立重複題目。
-// 有對應的標籤（字串、陣列）存在的話會一併掛上，不存在就跳過（不負責建標籤，
-// 那是 scripts/tag-problems.mjs 的事）。
+// 新增「大里高中 初級營」P2：校長的口號到底多有梗？部分給分：子題一
+// 40 分（firstLine）／子題二 60 分（full）。用法：[--db oj.db]；重跑由標題擋掉。
+// 標籤（字串、陣列）存在才掛，不存在跳過（建標籤是 tag-problems.mjs 的事）。
 
 import "dotenv/config";
 import Database from "better-sqlite3";

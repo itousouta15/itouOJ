@@ -48,11 +48,8 @@ export default async function ContestScoreboardPage({
       )}
 
       {/*
-        「已凍結」只在真的凍結時才說。不能用 !revealed 判斷 ——
-        isContestRevealed 在比賽進行中一律回 false，拿它當條件的話
-        freeze=0 的比賽會冒出「最後 0 分鐘的結果暫不公開」，
-        freeze>0 但還沒進到凍結期的也會提早宣告凍結（其實還是即時的）。
-        真正算凍結時機的是 getContestPhase。
+        只有真的凍結才顯示。不能用 !revealed 判斷——比賽進行中它一律回 false，
+        會讓 freeze=0 的比賽冒出錯誤訊息；凍結時機要看 getContestPhase。
       */}
       {(phase === "frozen" || awaitingReveal) && (
         <div className="card border-[rgba(250,168,26,0.3)] p-4 text-sm text-[#faa81a]">

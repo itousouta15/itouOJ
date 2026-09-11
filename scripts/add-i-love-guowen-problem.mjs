@@ -1,10 +1,6 @@
-// 新增單一題目「我愛國文！」：判斷每位學生的國文成績有沒有低於門檻。
-// 不掛在任何課程底下（獨立題目），跟 add-household-registration-problem 的模式一樣。
-//
-//   node scripts/add-i-love-guowen-problem.mjs                 加進 dev.db
-//   node scripts/add-i-love-guowen-problem.mjs --db oj.db      加進正式站資料庫
-//
-// 重跑會被擋掉（用標題判斷是否已存在），不會建立重複題目。
+// 新增單一題目「我愛國文！」：判斷每位學生的國文成績是否低於門檻；不掛課程。
+// 用法：node scripts/add-i-love-guowen-problem.mjs [--db oj.db]（預設 dev.db）。
+// 重跑會被標題擋掉，不會建立重複題目。
 
 import "dotenv/config";
 import Database from "better-sqlite3";

@@ -1,10 +1,6 @@
-// 新增單一題目「幫 Jason 應援」：無輸入，固定輸出應援口號。
-// 不掛在任何課程底下（獨立題目），跟 add-household-registration-problem 的模式一樣。
-//
-//   node scripts/add-cheer-for-leeseo-problem.mjs                 加進 dev.db
-//   node scripts/add-cheer-for-leeseo-problem.mjs --db oj.db      加進正式站資料庫
-//
-// 重跑會被擋掉（用標題判斷是否已存在），不會建立重複題目。
+// 新增單一題目「幫 Jason 應援」：無輸入，固定輸出；不掛課程，獨立題目。
+// 用法：node scripts/add-cheer-for-leeseo-problem.mjs [--db oj.db]（預設 dev.db）。
+// 重跑會被標題擋掉，不會建立重複題目。
 
 import "dotenv/config";
 import Database from "better-sqlite3";

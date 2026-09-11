@@ -1,12 +1,9 @@
 import { prisma } from "@/lib/db";
 import type { Session } from "@/lib/auth";
 
-// 這題目前還被某場「尚未結束」的比賽用到嗎？
-//
-// 條件是「有任何一場 endTime 還沒到的比賽用到這題」，所以 upcoming / running /
-// frozen 三種狀態都算。為什麼連還沒開始的比賽也要鎖：比賽兩點開始、選手一點鐘
-// 把討論區的提示讀完，跟賽中偷看沒有差別——這跟 api/contests/[id]/problems
-// 開賽前不給題目內容是同一個考量。
+// 這題是否還被「尚未結束」的比賽用到（upcoming / running / frozen 都算）。
+// 連還沒開始的比賽也要鎖：賽前先把提示讀完跟賽中偷看沒有差別，這跟賽前不給
+// 題目內容是同一個考量。
 export async function isProblemLockedByContest(
   problemId: number
 ): Promise<boolean> {
@@ -16,11 +13,8 @@ export async function isProblemLockedByContest(
   return count > 0;
 }
 
-// 這位使用者「解出」這一題了嗎？
-//
-// 定義刻意跟計分板完全一致（Submission.status === "AC"，見 lib/contest.ts 的
-// buildScoreboard），也就是全部測資都對才算，子題拿部分分數不算解出來。
-// 兩邊共用同一套標準，才不會出現「計分板說我沒解出來、題解區卻讓我看」的矛盾。
+// 使用者是否解出這題。定義跟計分板一致（status === "AC"，見 lib/contest.ts），
+// 子題部分分不算解出，兩邊才不會一個說沒解、一個讓你看題解。
 export async function hasSolvedProblem(
   userId: string,
   problemId: number

@@ -1,18 +1,6 @@
-// 匯入「識讀」歷屆試題（prisma/seed-data/recognition/*.json）。
-//
-// 識別題存進 Problem 表（type = 'RECOGNITION'），並依 JSON 的 source（場次）
-// 建立／掛上「識讀群集」（RecognitionCluster）。與實作題共用題目系統，
-// 可掛課程/比賽、記錄提交與進度。
-//
-//   node scripts/import-recognition-questions.mjs            匯入 dev.db
-//   node scripts/import-recognition-questions.mjs --db oj.db 匯入正式站資料庫
-//   node scripts/import-recognition-questions.mjs --dry-run  只驗證，不寫入
-//
-// 同一標題已存在時會略過建立，但仍會把還沒有群集的題目補掛上群集；
-// 重跑不會建立重複題目，也不會覆蓋管理員手動調整過的群集。
-// JSON 格式：{ "source": "APCS 2021/01", "paper": "A 卷",
-//   "questions": [ { number, category, question, code, options, answerIndex,
-//   explanation } ] }
+// 匯入「識讀」歷屆試題（prisma/seed-data/recognition/*.json）到 Problem 表
+//（type='RECOGNITION'）並依 source 建立／掛上 RecognitionCluster，可掛課程/比賽。
+// 用法：--db oj.db 換庫、--dry-run 只驗證；重跑不建重複題、只補掛沒群集的題（不覆蓋管理員調整）。
 
 import "dotenv/config";
 import fs from "node:fs";

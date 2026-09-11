@@ -1,10 +1,6 @@
-// 簡化題目「畢業紀念冊之外的用途？」：拿掉「依座號列出每人違規件數」的部分，
-// 只留「輸出違規作品總件數」，並移除子題配分（改回整題 AC/WA）。
-//
-//   node scripts/simplify-graduation-book-problem.mjs                 改 dev.db
-//   node scripts/simplify-graduation-book-problem.mjs --db oj.db      改正式站資料庫
-//
-// 找不到題目就直接跳過；重跑是安全的（每次都用同一套新內容整個覆蓋舊測資/子題）。
+// 簡化題目「畢業紀念冊之外的用途？」：拿掉依座號列每人違規件數的部分，只留
+// 違規總件數並移除子題配分（改回整題 AC/WA）。
+// 用法：[--db oj.db]；找不到題目就跳過，重跑安全（整批覆蓋舊測資/子題）。
 
 import "dotenv/config";
 import Database from "better-sqlite3";

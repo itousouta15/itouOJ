@@ -1,15 +1,6 @@
-// 新增 Day2「變數與運算子」前半段（資料型態）的兩題練習：
-//   1. 班級點名卡：純 int / char / string 宣告 + 輸入輸出，不需要任何運算子。
-//   2. 攝氏轉華氏：練 double + 一個算術公式，不碰比較 / 邏輯運算子與 if。
-// 插在 Day2 課程題單最前面（原本的判斷奇偶數等 4 題往後推兩格），
-// 讓學生在還沒學到運算子 / if 之前，就有東西可以在 OJ 上練型態宣告與輸入輸出。
-//
-//   node scripts/add-day2-front-half-problems.mjs                 加進 dev.db
-//   node scripts/add-day2-front-half-problems.mjs --db oj.db      加進正式站資料庫
-//
-// 重跑會被擋掉（用標題判斷是否已存在），不會建立重複題目，也不會重複搬動課程順序。
-// Problem.order 是全站題號（網址 /problems/{order}），新題附加在全站最後一號之後，
-// 不會動到既有題目的題號；課程列表內的先後順序另外用 CourseProblem.order 控制。
+// 新增 Day2「變數與運算子」前半段的兩題（班級點名卡、攝氏轉華氏），插在課程
+// 題單最前面，讓學生在學運算子/ if 前先練型態宣告與輸入輸出；重跑由標題擋掉。
+// 用法：[--db oj.db]。Problem.order 是全站題號，課程順序另用 CourseProblem.order。
 
 import "dotenv/config";
 import Database from "better-sqlite3";
@@ -28,9 +19,8 @@ db.pragma("foreign_keys = ON");
 
 const COURSE_TITLE = "APCS 初級營 Day2｜變數與運算子";
 
-// C++ 的 cout 預設用 6 位「有效數字」印 double（等同 printf 的 %g），
-// 會去掉多餘的尾端 0（32.0 印成 "32"），這裡完整模擬同一套規則，
-// 讓參考答案跟學生用預設 cout 印出來的字串一模一樣。
+// C++ cout 預設用 6 位有效數字印 double（等同 %g，會去掉尾端 0），
+// 這裡完整模擬，讓參考答案與學生輸出逐字一致。
 function cppDouble(x) {
   if (Object.is(x, -0)) x = 0;
   let s = x.toPrecision(6);

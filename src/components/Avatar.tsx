@@ -26,9 +26,8 @@ export default function Avatar({
 
   if (src && !failed) {
     return (
-      // 用原生 <img> 不用 next/image：這是 32px 的外部頭像，交給瀏覽器直接抓
-      // CDN 就好，沒必要讓自架的伺服器代理並最佳化每一張。
-      // referrerPolicy 是 Google 頭像的慣例做法，少了它有機會被擋掉。
+      // 外部頭像用原生 <img> 直接抓 CDN，不用 next/image 代理。
+      // referrerPolicy 是 Google 頭像的慣例，少了可能被擋。
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}

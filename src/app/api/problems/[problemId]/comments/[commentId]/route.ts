@@ -56,9 +56,8 @@ export async function PATCH(
   return Response.json({ ok: true });
 }
 
-// 刪自己的留言；管理員可以刪任何一則（討論區總要有人能處理不當發言）。
-// 底下的回覆會跟著被刪掉——schema 的 parentId 是 onDelete: Cascade，
-// 否則主留言消失後回覆會變成沒有上下文的孤兒。
+// 刪自己的留言，管理員可以刪任何一則。底下的回覆靠 schema 的
+// onDelete: Cascade 一起刪掉。
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ problemId: string; commentId: string }> }

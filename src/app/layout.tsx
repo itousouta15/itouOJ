@@ -8,9 +8,8 @@ import PageTransition from "@/components/PageTransition";
 import SiteLoader from "@/components/SiteLoader";
 import { isOfflineMode } from "@/lib/offline";
 
-// 手機瀏覽器 / Capacitor WebView 的 viewport 設定：
-// viewport-fit=cover 讓畫面延伸到瀏海/圓角底下，配合 CSS 的
-// env(safe-area-inset-*) 自行留邊（見 globals.css 的 .site-header / .bottom-nav）。
+// viewport-fit=cover 讓畫面延伸到瀏海/圓角底下，再由 CSS 的
+// env(safe-area-inset-*) 留邊（見 globals.css 的 .site-header / .bottom-nav）。
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -34,12 +33,8 @@ export const metadata: Metadata = {
   },
 };
 
-// 在 hydration 前套用主題，避免亮→暗閃爍。
-//
-// App（Capacitor WebView）內一律深色：Capacitor 原生橋接在頁面載入前就會
-// 注入 window.Capacitor，所以在這裡就能同步判斷，data-app 設在首繪之前，
-// App 專屬樣式（見 globals.css 的 html[data-app]）不會有閃爍，瀏覽器也
-// 完全不受影響。
+// 在 hydration 前套用主題，避免亮→暗閃爍。App（Capacitor WebView）內一律
+// 深色：原生橋接在頁面載入前就會注入 window.Capacitor，這裡可同步判斷。
 const themeInit = `(function(){try{
   var app=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform();
   if(app){
@@ -49,8 +44,7 @@ const themeInit = `(function(){try{
   }
 }catch(e){}})();`;
 
-// 辰宇落雁體走 emfont 的分塊 subset CSS（同 itousouta.me）。
-// 先 preload、等瀏覽器閒置才真正套用，首繪不會被字體檔擋住；
+// 辰宇落雁體走 emfont 的分塊 subset CSS，先 preload、等瀏覽器閒置才套用；
 // 字體就緒前 logo 由 .fonts-ready 規則隱藏（見 SiteLoader / globals.css）。
 const EMFONT_CSS = "https://font.emtech.cc/css/ChenYuLuoYan";
 const fontApply = `(function(){
