@@ -1,0 +1,1880 @@
+{
+  "source": "Python 程式識讀 125 題",
+  "questions": [
+    {
+      "number": 1,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = 5\nb = 3+a*2-a//2\na = a+b\nprint(a,b)",
+      "options": [
+        "15.5 10.5",
+        "16 11",
+        "10 5",
+        "10.5 5.5",
+        "執行錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "整數除法、先乘除後加減\n出題用意：變數與基本運算\n難度：易"
+    },
+    {
+      "number": 2,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = (5+2)*(7-2*3)\nb = (a-4*(a-5))*2\nprint(a,b)",
+      "options": [
+        "7 -2",
+        "105 -325",
+        "51 -9",
+        "0 0",
+        "執行錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "括弧先算、先乘除後加減\n出題用意：變數與基本運算\n難度：易"
+    },
+    {
+      "number": 3,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = 5\nb = a+3 = 7\nprint(a,b)",
+      "options": [
+        "5 7",
+        "4 7",
+        "4 8",
+        "5 8",
+        "執行錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "指定運算(=)左方必須為變數\n出題用意：變數與基本運算\n難度：易"
+    },
+    {
+      "number": 4,
+      "category": "Python",
+      "question": "此程式中 q 是用來當作一個先進先出的佇\n列(queue)。push 與 pop 兩函數中所缺\n的指令 x 與 y 應填入下列何者？",
+      "code": "q = []\nhead = 0\ndef push(q,c):\n        x\n#\ndef pop(q):\n    c = q[head]\n        y\n    return c\n#",
+      "options": [
+        "x: q[head]=c; y: head += 1",
+        "x: q.append(c); y: head += 1",
+        "x: q[head]=c; y: head -= 1",
+        "x: q.append(c); y: head -= 1",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "queue 的基本題，簡易的 queue，\nhead 為彈出的位置，list 的尾端直接\n當作 queue 的尾端。\n出題用意：queue, list\n難度：中"
+    },
+    {
+      "number": 5,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = 2\na = 3.5\nb = 3//5*5\nprint(a,b)",
+      "options": [
+        "2 3",
+        "3.5 3",
+        "2 0",
+        "3.5 0",
+        "執行錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "指令先後順序，變數無型態限制，所\n以 a=3.5。b 的計算同是乘除，由左往右，\n整數除法無小數，b=0\n出題用意：指令循序執行，變數與基本運算\n難度：易"
+    },
+    {
+      "number": 6,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = 13%5\nb = -13%5\nc = -13//5\nprint(a,b,c)",
+      "options": [
+        "3 -3 -3",
+        "3 2 -3",
+        "3 -3 -2",
+        "3 2 -2",
+        "執行錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "負號優先結合，題目中等同 b=(-\n13)%5 與 c=(-13)//5，求整數除法商取\nrounding down(捨位到比較小的整數，\n餘數運算時，滿足被除數=商*除數+餘數，\n所以負數除以正數取餘數時，餘數落於[0,\n除數-1]之間\n出題用意：變數與基本運算\n難度：中"
+    },
+    {
+      "number": 7,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = 5\nb = 3\na,b = b-1,a-1\nprint(a,b)",
+      "options": [
+        "2 1",
+        "3 4",
+        "2 4",
+        "不一定",
+        "執行錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "先取值計算右邊，再指定給左邊\n出題用意：多變數的指定運算，=的運作方\n式\n難度：易"
+    },
+    {
+      "number": 8,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "s = [1,1,-3,2,4,-1,2,3,-5,2,-1,1]\nq = []\nh = 0\nfor v in s:\n    if v > 0:\n        q.append(v)\n    else:\n        while v < 0 and h<len(q):\n            v += q[h]; h += 1\nprint(sum(q[h:]))",
+      "options": [
+        "1",
+        "3",
+        "4",
+        "6",
+        "以上皆非或執行錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "用理解或直接追蹤皆可。q 是 queue，\n碰到正數壓入，負數則一直彈出抵銷，直到\nq 是空或抵消完畢。問最後剩下 queue 中\n的總和。在測資中，-3 消掉前面，-1 消掉\n2，-5 消(4,2)，-1 消 3，最後 queue 中\n剩下(2,1)\n出題用意：queue,list\n難度：難"
+    },
+    {
+      "number": 9,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "q = []\nh = 0\ns = ''\nfor v in [3,12,-2,765,23,-1,-3]:\n    if v > 0: q.append(str(v))\n    else:\n        s += q[h]\n        h += 1\n#\nprint(s)",
+      "options": [
+        "312765",
+        "780",
+        "31276523",
+        "1223765",
+        "以上皆非或執行錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "q 是 queue，正數壓入字串，否則從\nq 中彈出串接到 s。\n出題用意：queue, string\n難度：中"
+    },
+    {
+      "number": 10,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = 1 < 2\nb += a\nprint(a,b)",
+      "options": [
+        "True 1",
+        "1 1",
+        "0 0",
+        "不一定",
+        "執行錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "b+= 左方必須有定義\n出題用意：布林表示法，常見錯誤\n難度：易"
+    },
+    {
+      "number": 11,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "s = [1,1,-3,3,4,-1,2,3,-5,2,1,-1]\nq = []\nfor v in s:\n    if v > 0:\n        q.append(v)\n    else:\n        while v < 0 and q:\n            v += q.pop()\nprint(sum(q))",
+      "options": [
+        "1",
+        "3",
+        "5",
+        "7",
+        "以上皆非或執行錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "用理解或直接追蹤皆可。q 是 stack，\n碰到正數壓入，負數則一直彈出抵銷，直到\nq 是空或抵消完畢。問最後剩下 stack 中\n的總和。在測資中，-3 消掉前面，-1 消掉\n3，-5 消(2,3)，-1 消 1，最後 stack 中\n剩下(3,2)\n出題用意：stack,list\n難度：難"
+    },
+    {
+      "number": 12,
+      "category": "Python",
+      "question": "若輸入為以下內容\n則輸出為何？",
+      "code": "s = input()\na = [s for s in input().split()]\nprint(s,a)\nhello py\n123 45",
+      "options": [
+        "hello py [123,45]",
+        "hello 123 45",
+        "hello ['123','45']",
+        "hello py ['123','45']",
+        "以上皆非或執行錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "輸入為一行字串，split()是以空白\n切割字串，第二行[]內的 s 為區域變數與\n外面的無關\n出題用意：常用輸入方式，列表生成式中的\n區域變數\n難度：中"
+    },
+    {
+      "number": 13,
+      "category": "Python",
+      "question": "若輸入為以下內容\n則輸出為何？",
+      "code": "a,b = [int(x) for x in input().split()]\nprint(a+b)\n100 45",
+      "options": [
+        "10045",
+        "[100,45]",
+        "145",
+        "[10045]",
+        "以上皆非或執行錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "輸入為一行字串，split()是以\n空白切割字串，int 轉換為整數。所以\na=100,b=45 皆整數。\n等號右邊是 list，左邊是兩個變數與\nlist 長度相同，會自動 unpack。\n出題用意：常用輸入方式\n難度：中"
+    },
+    {
+      "number": 14,
+      "category": "Python",
+      "question": "若輸入為以下內容\n則輸出為何？",
+      "code": "a,b = [int(x) for x in input().split()]\nprint(a,b)\n100 45 25",
+      "options": [
+        "100 45",
+        "[100,45],25",
+        "[100,[45,25]",
+        "45 25",
+        "以上皆非或執行錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "右邊是 3 個整數的 list，左邊\n只有兩個變數，會產生執行錯誤。\n等號右邊是 list，左邊是兩個變數與\nlist 長度相同，會自動 unpack。\n出題用意：常用輸入方式、unpack 時\n左右數量比須一致。\n難度：中"
+    },
+    {
+      "number": 15,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = (10<3) or (4!=2+3)\nb = a and (3<7<=9)\nprint(a,b)",
+      "options": [
+        "False True",
+        "True True",
+        "False False",
+        "True False",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "邏輯運算\n出題用意：基本邏輯運算\n難度：易"
+    },
+    {
+      "number": 16,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a,b = 10<3, 4!=2+3\nc = b and (a or not b)\nd = (a and not b) or (not a and b)\nprint(c,d)",
+      "options": [
+        "False True",
+        "True True",
+        "False False",
+        "True False",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "邏輯運算\n出題用意：基本邏輯運算\n難度：易"
+    },
+    {
+      "number": 17,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = str(1<3)+str(101)\nprint(a)",
+      "options": [
+        "1101",
+        "102",
+        "True101",
+        "False101",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "數字與布林轉字串，字串相接\n出題用意：轉換字串 str 函數\n難度：易"
+    },
+    {
+      "number": 18,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = '12'\nb = '3'\nprint(int(a+b),int(a)+int(b))",
+      "options": [
+        "123 123",
+        "12 3",
+        "15 15",
+        "123 15",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "數字轉字串，字串相接\n出題用意：int 函數用法，整數與字串的區\n別\n難度：易"
+    },
+    {
+      "number": 19,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = \"fake\"\nb = ord(a[3])-ord(a[1])\nc = a + chr(ord('f')+b)\nprint(c)",
+      "options": [
+        "fakek",
+        "fakej",
+        "fakk",
+        "fakj",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "b=ord('e')-ord('a')=4;\nchr(ord('f')+4) = 'j'\n出題用意：ord,chr 函數，字母的 ASCII\n是連續(a ~ z)\n難度：中"
+    },
+    {
+      "number": 20,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = bool(\"\")+int(1<3)\nprint(a)",
+      "options": [
+        "0",
+        "1",
+        "True",
+        "False1",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "\"\"轉 bool 是 False，int(1<3)是\nTrue 轉為 1，因為是加法，前面型轉成 0，\n0+1=1\n出題用意：bool 與 int 函數\n難度：易"
+    },
+    {
+      "number": 21,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "s = \"\"\na = s or 'notEmpty'\nprint(a)",
+      "options": [
+        "False",
+        "True",
+        "(輸出空字串)",
+        "notEmpty",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "or 運算回傳第一個 true 的項目，如\n果全部是 false 就回傳 false\n出題用意：or 與 and 的運作方式，short\ncircuit evaluation\n難度：難"
+    },
+    {
+      "number": 22,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = (3 and 'we') or 0\nprint(a)",
+      "options": [
+        "False",
+        "True",
+        "3",
+        "we",
+        "0"
+      ],
+      "answerIndex": 3,
+      "explanation": "(3 and 'we')是 true,結果是 we，\nOR 回傳第一個 true 的項目\n出題用意：or 與 and 的運作方式，short\ncircuit evaluation\n難度：難"
+    },
+    {
+      "number": 23,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "s = \"\"\na = (s==\"\") and ((1>3) or 123)\nprint(a+2)",
+      "options": [
+        "2",
+        "3",
+        "1232",
+        "125",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "(s==\"\")為 true，回傳後項；or 回\n傳第一個為 true 的項目，a 是整數 123\n出題用意：or 與 and 的運作方式，short\ncircuit evaluation\n難度：難"
+    },
+    {
+      "number": 24,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "n = 2\na = 'py'*n+(n+1)*'a'\nprint(a)",
+      "options": [
+        "py23a",
+        "pypyaaa",
+        "0",
+        "5",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "字串乘數字是重複字串\n出題用意：字串基本操作乘法與加法\n難度：易"
+    },
+    {
+      "number": 25,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = 'py'+2\nprint(a)",
+      "options": [
+        "py2",
+        "2",
+        "pypy",
+        "(輸出空字串)",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 4,
+      "explanation": "字串與整數無法相加\n出題用意：字串與整數資料型別\n難度：易"
+    },
+    {
+      "number": 26,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "s = \"py\"\na = s*(1>3)\nprint(a)",
+      "options": [
+        "py",
+        "py0",
+        "False",
+        "(輸出空字串)",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "(1>3)轉整數為 0，s*0 是空字串\n出題用意：字串基本操作乘法與加法，布林\n轉整數\n難度：中"
+    },
+    {
+      "number": 27,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = ''\na = 20+3.5\nprint(a)",
+      "options": [
+        "23.5",
+        "23.0",
+        "203.5",
+        "23",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "第一行無作用。整數與 float 運算後\n變成 float\n出題用意：float 的基本操作\n難度：易"
+    },
+    {
+      "number": 28,
+      "category": "Python",
+      "question": "若輸入為以下內容\n則輸出為何？",
+      "code": "a,b,c = [float(x) for x in input().split()]\nr = (c+a)*b\nprint(r)\n1.5 10 2.5e2",
+      "options": [
+        "17.5",
+        "2515.0",
+        "261.5",
+        "2515",
+        "以上皆非或執行錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "輸入一行字串切開後轉\nfloat，2.5e2 是科學表示式，乘\n以 10 的 2 次方。計算時括弧先\n算，輸出時，浮點數後有小數點\n出題用意：常用輸入法與 float\n的基本操作\n難度：易"
+    },
+    {
+      "number": 29,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "s,w = \"\",5\np = [1,5,7]\nif s:\n    if w in p: a = 0\n    else: a = 1\nelif p[0]< w <p[2]:\n    if w+2 not in p: a = 2\n    else: a = 3\nelse:\n    a = 4\nprint(a%4)",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "0",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "if 判斷，空字串轉布林是 false，\np[0]=1,p[2]=7,故 1<w<7 成立，w+2=7\n所以 7 not in p 不成立，a=3\n出題用意：基本流程控制，邏輯運算\n難度：易"
+    },
+    {
+      "number": 30,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a,s = 3,\"e\"\nif 2<a<5:\n    s += 'e'\nif len(s)==2:\n    a += 5\nelse: a = 0\nprint(a,s)",
+      "options": [
+        "8 e",
+        "8 ee",
+        "0 e",
+        "3 ee",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "第一個 if 會成立，第 2 個 if 也成\n立。\n出題用意：基本流程控制與邏輯運算，\nx<y<z 這種表示法，多個 if 以及有沒有\nelse 的流程，len(str)的使用\n難度：易"
+    },
+    {
+      "number": 31,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a,s = 3,\"e\"\nif 2<a<5:\n    s += 'e'\n    if len(s)==1:\n        a += 5\nelse: a = 0\nprint(a,s)",
+      "options": [
+        "8 e",
+        "0 ee",
+        "0 e",
+        "3 ee",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "nested if and else\n出題用意：基本流程控制與邏輯運算，\nx<y<z 這種表示法，多個 if 以及有沒有\nelse 的流程，len(str)的使用。\n與其一題的差別。\n難度：易"
+    },
+    {
+      "number": 32,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "t = 0\nfor i in range(10):\n    if i%3 == 1:\n        t += 1\nprint(t)",
+      "options": [
+        "0",
+        "3",
+        "4",
+        "10",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "i=1,4,7 時 if 成立，t 加 1 三次\n出題用意：for 與 if 的基本流程控制與\nfor range 的使用方式。\n難度：易"
+    },
+    {
+      "number": 33,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "t = 0\nfor i in range(100):\n    if i%2 == 1:\n        t += i\nprint(t)",
+      "options": [
+        "50",
+        "2500",
+        "2450",
+        "4950",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "1+3+…+99 = 2500\n出題用意：for 與 if 的基本流程控制與\nfor range 的使用方式。簡單的等差級數\n公式。\n難度：中"
+    },
+    {
+      "number": 34,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "t = 0\nfor i in range(100):\n    if i%2 == 1:\n    t += i\nprint(t)",
+      "options": [
+        "50",
+        "2500",
+        "2450",
+        "4950",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 4,
+      "explanation": "if 內的指令要縮排或接在:之後\n出題用意：if 的格式。\n難度：易"
+    },
+    {
+      "number": 35,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "t = 0\nfor i in range(10): t += i\nif t%6 == 0: t += 10\nelse: t += t\nprint(t)",
+      "options": [
+        "45",
+        "55",
+        "90",
+        "110",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "for 與 if 內只有一個指令時，可以\n寫在:之後\n出題用意：if 與 for 的格式。\n難度：易"
+    },
+    {
+      "number": 36,
+      "category": "Python",
+      "question": "此函數定義為：檢查 a 的平方加上 b 的平方是否\n等於 c 的平方。請問程式中的?處填入下列何者可\n以正確達到目的？",
+      "code": "def f(a,b,c):\n    if\n            ?\n                :\n        return True\n#",
+      "options": [
+        "(a^2 + b^2) = c^2",
+        "a^2 + b^2 == c^2",
+        "a**a + b**b == c**c",
+        "a*a + b*b == c**2",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "平 方 可 以 寫 a*a 也 可 以 寫\na**2。\n出 題 用 意 ： 基 本 運 算 。 code\ncompletion\n難度：易"
+    },
+    {
+      "number": 37,
+      "category": "Python",
+      "question": "此函數定義為： 保證傳入的 a 是一個正整數，回\n傳 a 的結尾有幾個 0(十進制)，例如 10300 的結\n尾有 2 個 0。請問程式中的?處應填入下列何者？",
+      "code": "def f(a):\n    i = 0\n    while a%10 == 0:\n        i += 1\n            ?\n    return i\n#",
+      "options": [
+        "a -= 10",
+        "a//10",
+        "a //= 10",
+        "a >> 1",
+        "以上皆非"
+      ],
+      "answerIndex": 2,
+      "explanation": "每次除以 10。\n出題用意：推理程式的意義。\n難度：中\n的結"
+    },
+    {
+      "number": 38,
+      "category": "Python",
+      "question": "費式數的定義為：f(1)=f(2)=1，對 i>2\nf(i)=f(i-1)+f(i-2)。\n此程式要計算第一個大於 10000 的費式數，程式\n中的?處應填入下列何者？",
+      "code": "t1 = t2 = 1\nwhile t2 <= 10000:\n        ?\nprint(t2)\n#",
+      "options": [
+        "t1 = t2; t2 = t1+t2",
+        "t2 = t1+t2; t1 = t2",
+        "t3 = t1; t2 = t2+t3; t1 = t2",
+        "t1,t2 = t2,t1+t2",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "=右邊先取值，再指定給左邊。\n出題用意：指令的執行順序。多變數\n指定運算。\n，\n難度：中"
+    },
+    {
+      "number": 39,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "t = 0\nfor i in range(10):\n    if not i%2:\n        i += 1\n    t += i\n    if t == 48: break\nelse:\n    t += 10\nprint(t)",
+      "options": [
+        "60",
+        "50",
+        "55",
+        "48",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "若 i 偶數，t 增加 i+1，若 i 是奇數\n則 t 增加 i，留意 i 的值雖被改變，但下次\n迴圈仍是 range 的下一個值(與 C 語言不\n同)。t 的值是(1+3+5+7+9)*2=50，顯然\n不會經過 48。for-else 的結構，如果順\n利完成，會執行 else 的部分，因此 t 會再\n+10，若 break 則不執行 else。\n出題用意：for 與 if 的基本流程控制，for\n的變數運作方式，for-else 的結構\n難度：難"
+    },
+    {
+      "number": 40,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "t = 0\nwhile t<20:\n    if t%2:\n        t *= 2\n    else: t += 1\nprint(t)",
+      "options": [
+        "0",
+        "20",
+        "30",
+        "32",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "t 是奇數的話加倍，偶數加一，\nt = 0,1,2,3,6,7,14,15,30\n出題用意：while 的基本流程控制\n難度：中"
+    },
+    {
+      "number": 41,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "t = 5\nwhile t<20:\n    t += t//2\n    if t%3 == 0:\n        break\nelse: t = -1\nprint(t)",
+      "options": [
+        "-1",
+        "5",
+        "15",
+        "20",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "t=5,7,10,15\n出題用意：while-else 的基本流程控制\n難度：中"
+    },
+    {
+      "number": 42,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "t = 9\nwhile t<20:\n    t += t//2\n    if t%3 == 0:\n        break\nelse: t = -1\nprint(t)",
+      "options": [
+        "-1",
+        "9",
+        "19",
+        "28",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "t=9,13,19,28,-1，因未 break，\n會執行 else part\n出題用意：while-else 的基本流程控制\n難度：中"
+    },
+    {
+      "number": 43,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "t = 0\nfor i in range(10):\n    for j in range(1,10,2):\n        if (i+j)%5 == 0:\n            t += 1\nprint(t)",
+      "options": [
+        "0",
+        "5",
+        "10",
+        "50",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "j 的變化是(1,3,5,7,9)，\nj%5=(1,3,0,2,4)也就是對於任何 i，\n恰有一個相加後為 5 的倍數，所以答案是\n10。\n出題用意：nested for 的基本流程控\n制，range(a,b,c)的了解，簡單數學。\n難度：難"
+    },
+    {
+      "number": 44,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "cnt = 0\nfor t in (9,19,29,39,49):\n    for i in range(2,t):\n        if t%i == 0:\n            f = False\n            break\n    else: f = True\n    cnt += f\n#\nprint(cnt)",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "迴圈內為檢驗是否為質數的程\n序，外面被檢測的中有 2 個質數。\n出題用意：nested for 的基本流程\n控制，簡單數學，要能看得出來是整數\n是在測試因數，就可以理解 f 代表是\n否是質數。\n難度：難"
+    },
+    {
+      "number": 45,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "cnt = 0\nfor t in (-5,-1,5,11,13,15):\n    if t//5 >= 2:\n        for i in range(1,6):\n            t -= i\n        if t < 0:\n            t += 2\n    else:\n        t += 3\n    cnt += (t<0)\nprint(cnt)",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "t<10 時，會+3，所以 t<-3 會得到負\n值。t≥10 時，先減去(1+2+…5)=15，如果\n<0 會再加 2，因此得到負值的是減去 15 後\n<-2，也就是 t≤12，也就是 10,11,12 三\n者。總共有兩個：-5 與 11\n出題用意：基本流程控制，簡單數學，推理。\n難度：難"
+    },
+    {
+      "number": 46,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [1,-1,3,5,-7,0]\nprint(sum(a),max(a),len(a))",
+      "options": [
+        "1 5 6",
+        "9 -7 5",
+        "17 5 6",
+        "1 -7 6",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "基本函數的使用\n出題用意：sum,max,len 基本用法。\n難度：易"
+    },
+    {
+      "number": 47,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [1,-1,3,5,-7,0]\nx = 3\nif x in a:\n    x -= 4\n    if x not in a:\n        x += 9\nelse: x = 99\nprint(x)",
+      "options": [
+        "99",
+        "8",
+        "-1",
+        "3",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "x in a 是成立的，x → -1，not\nin a 不成立，所以答案就是-1\n出題用意：nested if-else，in list\n的邏輯運算。\n難度：易"
+    },
+    {
+      "number": 48,
+      "category": "Python",
+      "question": "若 a=[]，b=[-1,1],c=[1,2,3]，考慮\n以下指令個別執行的結果。\n有幾個指令個別執行時會導致執行錯誤？",
+      "code": "(1) t = sum(a)+max(b)\n(2) t = max(a)+min(c)\n(3) t = max(c)//sum(a+b)\n(4) a = b+a+[sum(a)]",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answerIndex": 2,
+      "explanation": "max(a)會錯，因為 max 內不得為空，\nsum(a+b)=0 在分母會錯。\n出題用意：sum,max,min 常用函數。常見\n執行錯誤。\n難度：中"
+    },
+    {
+      "number": 49,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [2,-3,-1,6,0,3,5,6,8]\nt = 0\nfor v in a:\n    if v == 0: break\n    if v%2:\n        t *= 2\n    else:\n        v = 0\n        t += 1\nprint(a[0],t)",
+      "options": [
+        "0 5",
+        "2 5",
+        "2 42",
+        "0 50",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "偶數 t 加一，奇數 t 乘 2，遇到 0 離\n開，t 值 0,1,2,4,5。a 未變動。a[0]=2\n出題用意：對 for-in 的運作方式的了解。\n難度：易"
+    },
+    {
+      "number": 50,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [[2,-3],[-1,6],[-3,3],[5,6]]\nt = 0\nfor v in a:\n    if sum(v) == 0: break\n    if max(v) > 3:\n        t *= 3\n        v = []\n    else:\n        v.clear()\n        t += 1\nprint(len(a[0]),len(a[1]),t)",
+      "options": [
+        "0 0 3",
+        "0 2 3",
+        "2 2 3",
+        "0 2 12",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "v=a[0] 時 ， v.clear() 會 影 響\na[0]，且 t+1；v=a[1]時，t*3，但 v=[]\n不影響 a[1]。v=a[2]時 break，a[3]未\n執行\n出題用意：對 for-in 的運作方式的了解。\nlist 在被指向時，是否受影響。\n難度：難。"
+    },
+    {
+      "number": 51,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "p = [True]*20\nfor i in range(2,20):\n    if not p[i]: continue\n    for m in range(i+i,20,i):\n        p[m] = False\nprint(sum(p[2:]))",
+      "options": [
+        "8",
+        "9",
+        "10",
+        "11",
+        "執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "找質數，20 以內的質數個數(2, 3,\n5, 7, 11, 13, 17, 19)共八個\n出題用意：能看出在找質數。range 的用\n法，[list]*c 是重複，list slicing。\n布林轉整數。\n難度：中"
+    },
+    {
+      "number": 52,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [8,3,1,5,0,7,4,2]\nn = len(a)\nfor j in range(3):\n    for i in range(1,n):\n        if a[i-1]>a[i]:\n            a[i-1],a[i] = a[i],a[i-1]\nprint(a)",
+      "options": [
+        "[0,1,2,3,4,5,7,8]",
+        "[3,1,0,4,2,5,7,8]",
+        "[1,0,3,4,5,2,7,8]",
+        "[1,0,3,4,2,5,7,8]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "此為 bubble sort 前三回合\n[3,1,5,0,7,4,2,8]\n[1,3,0,5,4,2,7,8]\n[1,0,3,4,2,5,7,8]\n出題用意：能看出運作方式後，用紙\n本很容易得到答案。變數交換的用\n法。\n難度：中"
+    },
+    {
+      "number": 53,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a, b = [8,4,3,1], [0,4,5]\nd = []\nfor v in b:\n    while a and a[-1] <= v:\n        d.append(a.pop())\n    d.append(v)\nd += a\nprint(d)",
+      "options": [
+        "[0,1,4,3,5,4,8]",
+        "[0,1,3,4,4,5,8]",
+        "[0,4,5,1,3,4,8]",
+        "[1,3,4,8,0,4,5]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "a 是遞減，b 是遞增，合併成\nsorted list\n出題用意：推理程式碼運作的意義。\n難度：中"
+    },
+    {
+      "number": 54,
+      "category": "Python",
+      "question": "考慮下面的程式片段\n此程式是想要將 a,b 兩個遞增序列合併成一個遞\n增序列 d，但此程式有個錯誤，請問下列哪一組測\n資放在第一行的?處，可以使得 d 不是想要的結\n果？",
+      "code": "a, b = ?\nd = []\ni = 0\nfor v in b:\n    while i<len(a) and a[i] <= v:\n        d.append(a[i])\n        i += 1\n    d.append(v)\nprint(d)",
+      "options": [
+        "[], [1,4,5]",
+        "[1,2,3,4], [5,6,7,8]",
+        "[3,4,7,9], [2,5,8]",
+        "[1,3,5,7], [2,4,6,8]",
+        "以上皆非"
+      ],
+      "answerIndex": 2,
+      "explanation": "for 之後最後漏了將 a 的剩下\n部份放進 d 的尾端\nd += a[i:]\n所以 a 中>b[-1]的部份沒有在 d\n中，選項中只有(C)有此情形\n出題用意：推理程式碼運作與偵錯能\n力。\n難度：難"
+    },
+    {
+      "number": 55,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [[-1,-2],[1,2],[3,4]]\nd = []\nfor p in a:\n    if sum(p) < 0:\n        p = []\n    else:\n        d += p\nprint(d, sum(a[0]))",
+      "options": [
+        "[[-1,-2],[1,2],[3,4]] -3",
+        "[1,2,3,4] -3",
+        "[1,2,3,4] 0",
+        "[-1,-2,1,2,3,4] 0",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "每個 row 串接放在 d，a[0]不\n會被清為[]\n出題用意：list 被 assign 給變數，\n是否影響原 list。for 與 if 的流\n程。sum(list)\n難度：中"
+    },
+    {
+      "number": 56,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [8,3,1,5,0,7,4,2]\nt1,t2 = -1,-1\nfor v in a:\n    if v%2: continue\n    if v > t1:\n        t1,t2 = v,t1\n    elif v > t2:\n        t2 = v\n#\nprint(t2)",
+      "options": [
+        "8",
+        "7",
+        "4",
+        "2",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "找第二大偶數。t1,t2 是存最\n大與第二大偶數\n出題用意：推理程式碼運作\n難度：中"
+    },
+    {
+      "number": 57,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [1,2,3,4]\nb = a\nc = a[:]\nb[0] = 0\nprint(a[0],b[0],c[0])",
+      "options": [
+        "0 0 1",
+        "1 0 1",
+        "0 0 0",
+        "1 1 1",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "a,b 指向同一 list，c 是被複\n製出來獨立的\n出題用意：list 運作與複製\n難度：易"
+    },
+    {
+      "number": 58,
+      "category": "Python",
+      "question": "以下選項中 a 的初值與輸出的敘述何者錯誤？",
+      "code": "a = ?\ni = a.index(max(a))\nj = a.index(min(a))\nif i < j:\n    b = a[j:]+a[:i+1]\nelse:\n    b = a[j:i+1]\nprint(b)",
+      "options": [
+        "若 a=[2,1,3,4,5]，則輸出為[1,3,4,5]",
+        "若 a=[3,6,3,1,5]，則輸出為[1,5,3,6]",
+        "若 a=[1,1,1,1]，則輸出為[1]",
+        "若 a=[4,3,3,1]，則輸出為[1,3,3,4]",
+        "以上皆無錯誤或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "從最小值位置到最大值位\n置，把 a 看成環狀，(D)的結果\n應該是[1,4]\n出題用意：list slicing,\nmax, min, index 與串接用\n法。\n難度：中"
+    },
+    {
+      "number": 59,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "total = imax = 0\nfor i in range(16):\n    cnt = 0\n    while i>0:\n        if i&1: cnt += 1\n        i >>=  1\n    if cnt > imax:\n        imax = cnt\n    total += cnt\nprint(imax, total)",
+      "options": [
+        "5 30",
+        "4 30",
+        "4 32",
+        "4 34",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "迴圈內是計算二進位表示時 1-bit 的\n個數，imax 是最大，所以是 4 (i=15,\n1111)，要計算 1-bit 總數，每個 bit 剛\n好 有 一 半 是 1 ， 所 以 total =\n4*(16/2)=32\n出題用意：binary code，推理程式碼運\n作，計算總和要有點數學推理\n難度：難"
+    },
+    {
+      "number": 60,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = (10 << 3)\nb = (a&(a-1))\nprint(a – b)",
+      "options": [
+        "0",
+        "16",
+        "32",
+        "64",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "由二進位表示法去看\na = 1010 << 3 = 1010000\nb = 1000000\na-b 就是 10000 = 16\na&(a-1)是去除最後一個 1\n出題用意：binary code\n難度：難"
+    },
+    {
+      "number": 61,
+      "category": "Python",
+      "question": "註： 0b 是二進位表示的意思，例如 0b1101 就是十\n進制整數 13。\n以下選項中 k 的初值與輸出的敘述何者錯誤？",
+      "code": "k = 0b?\na = [8,3,1,5,0,7,4,2]\nt = 0\nfor i in range(8):\n    if k & (1<<i):\n        t += a[i]\nprint(t)",
+      "options": [
+        "若 k=0b00000101，則輸出為 9",
+        "若 k=0b10100010，則輸出為 12",
+        "若 k=0b10000001，10",
+        "若 k=0b00110000，則輸出為 6",
+        "以上皆無錯誤或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "k 的二進位表示中 1-bit 的位\n置就是 a 中要被加入總和的元素，例\n如 k=0b101，t=a[0]+a[2]。要注\n意高位元與低位元的位置\n(D)錯誤，因為 t=a[4]+a[5]=7\n出題用意：位元運算\n難度：中"
+    },
+    {
+      "number": 62,
+      "category": "Python",
+      "question": "以下選項中傳入值 s 與回傳值的敘述何者錯誤？",
+      "code": "def chk(s):\n    n = len(s)//2\n    return s[:n] == s[:-n-1:-1]\n#",
+      "options": [
+        "chk('xxarx')回傳 True",
+        "chk('a')回傳 True",
+        "chk('abba')回傳 True",
+        "chk('abab')回傳 False",
+        "以上皆無錯誤或執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "此函數判斷字串是否為迴文\n出題用意：字串 slicing，函數定義\n難度：中"
+    },
+    {
+      "number": 63,
+      "category": "Python",
+      "question": "以下選項中傳入值 s 與回傳值的敘述何者錯誤？",
+      "code": "def chk(s):\n    n = len(s)\n    for i in range(n//2):\n        if s[i] != s[n-1-i]:\n            return i\n    return -1\n#",
+      "options": [
+        "chk('xxarx')回傳 1",
+        "chk('abccba')回傳-1",
+        "chk('wa')回傳 0",
+        "chk('ababbba')回傳 3",
+        "以上皆無錯誤或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "由外而內找第一個不對稱的位\n置，(D)答案應該是 2\n出題用意：字串與函數定義。看懂程\n式的意義\n難度：中"
+    },
+    {
+      "number": 64,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = 3\ndef f(k):\n    a = 4\n    k += 2\n    return a+k\n#\nb = 1\nc = f(b)+a\nprint(b,c)",
+      "options": [
+        "3 11",
+        "1 10",
+        "1 11",
+        "3 10",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "a,b 值不會改變，副程式內的\na 是區域變數\n出題用意：參數傳遞與區域/全域變\n數\n難度：中"
+    },
+    {
+      "number": 65,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = 3\ndef f(k):\n    a += 2\n    k = 4\n    return a+k\n#\nb = 1\nc = f(b)+a\nprint(b,c)",
+      "options": [
+        "1 12",
+        "4 12",
+        "1 9",
+        "4 9",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 4,
+      "explanation": "函數內的 a 會被認為是區域變\n數，但無初值不可以做 += 運算，執\n行錯誤\n出題用意：參數傳遞與區域/全域變\n數\n難度：中"
+    },
+    {
+      "number": 66,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = 3\nb = 1\ndef f(a):\n    a += 2\n    b = 4\n    return a+b\n#\nc = f(b)+a\nprint(b,c)",
+      "options": [
+        "1 14",
+        "4 14",
+        "1 10",
+        "1 12",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "函數內的 a 是參數，算是區域\n變數，傳進來是 b=1，所以 a+=2 變\n成 3，函數內 b 是區域變數，值是 4。\n回傳 7。全域的 a,b 值未改變，\nc=7+3=10\n出題用意：參數傳遞與區域/全域變\n數\n難度：中"
+    },
+    {
+      "number": 67,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a,b = 3,[1,2]\ndef f(p,q):\n    p += 2\n    q[0] = 0\n    return p+sum(q)\n#\nd = f(a,b)\nprint(a,b,d)",
+      "options": [
+        "3 [1,2] 7",
+        "5 [0,2] 7",
+        "3 [0,2] 7",
+        "5 [1,2] 8",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "list 是 mutable，參數會被\n修改\n出題用意：list 參數傳遞與區域/全\n域變數\n難度：中"
+    },
+    {
+      "number": 68,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def f(s):\n    s *= 2\n    return s+'wa'\n#\nt = 'ab'\ns = 'www'\nc = f(t)+s\nprint(c,t)",
+      "options": [
+        "wwwwwwwawww ab",
+        "wwwwwwwawww abab",
+        "ababwawww abab",
+        "ababwawww ab",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "字串是 immutable，傳遞過去\n不會變動。函數內的 s 是外部傳過來\n的 t='ab'，回傳 ababwa。\n出題用意：字串參數傳遞與區域/全\n域變數\n難度：中"
+    },
+    {
+      "number": 69,
+      "category": "Python",
+      "question": "以下選項中傳入值 s 與回傳值的敘述何者錯誤？",
+      "code": "def f(s):\n    cnt = [0]*26\n    for c in s:\n        if c<'a' or c>'z': return -1\n        cnt[ord(c)-ord('a')] += 1\n    return max(cnt)\n#",
+      "options": [
+        "f('xxBarx')回傳-1",
+        "f('abccbac')回傳 3",
+        "f('waxyz')回傳 1",
+        "f('aaaaabbbb')回傳 5",
+        "以上皆無錯誤或執行錯誤 Error"
+      ],
+      "answerIndex": 4,
+      "explanation": "函數計算最多出現的字母次\n數，若有非小寫字母回傳-1。選項皆\n無錯誤\n出題用意：字串與 list 運算\n難度：中"
+    },
+    {
+      "number": 70,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def g(x,y):\n    if y == 0: return x\n    if x >= y: return g(x-y,y)\n    return g(y,x)\n#\na = [3,5,12,18]\nans = 0\nfor i in range(3):\n    ans += g(a[i],a[i+1])\nprint(ans)",
+      "options": [
+        "3",
+        "8",
+        "10",
+        "12",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "此函數為 gcd，a 中相鄰數的\ngcd 分別是 1,1,6，總和 8\n出題用意：遞迴。要推理出此函數在\n算 gcd\n難度：難"
+    },
+    {
+      "number": 71,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def g(x,y):\n    if x < 2: return y\n    return g(x-2,y+1)\n#\na = [1,5,20,8]\nb = [3,1,20,0]\nans = sum(g(a[i],b[i]) for i in range(4))\nprint(ans)",
+      "options": [
+        "40",
+        "45",
+        "52",
+        "58",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "推理函數所做的運算，每次\nx-2，y+1，(皆非負)，所以此函\n數回傳是 y+x//2，\n3+(1+2)+(20+10)+4=40\n出題用意：遞迴。sum 的表示生成\n式用法。(comprehension)\n難度：中"
+    },
+    {
+      "number": 72,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def g(x,y):\n    t = 0\n    while x > 1 and y > 0:\n        t += 1\n        x, y = x-2, y-1\n    return t\n#\na = [1,5,20,9]\nb = [3,1,11,4]\nans = sum(g(u,v) for u,v in zip(a,b))\nprint(ans)",
+      "options": [
+        "17",
+        "16",
+        "15",
+        "14",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "每次 x-2，y-1，(皆非負)所以\n函數回傳是 min(x//2,y)\nans= min(1//2,3) + min(5//2,1) +\nmin(20//2,11) + min(9//2,4) =\n0+1+10+4=15\n出題用意：推理函數所做的運算， sum\n的表示生成式用法，zip\n難度：中"
+    },
+    {
+      "number": 73,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def g(d):\n    if d%2 == 0: return f(d//2)+1\n    return f(d)\n#\ndef f(d):\n    if  d == 1: return 0\n    if d%2==1: return g(3*d+1)+1\n    return g(d)\n#\nans = sum(f(i) for i in (1,2,3,4))\nprint(ans)",
+      "options": [
+        "7",
+        "8",
+        "9",
+        "10",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "此函數是 3n+1，即偶數除以 2\n奇數變 3n+1，回傳經過幾回合變成\n1，輸入 3 時\n(3,10,5,16,8,4,2,1)，7 回合。\nans= 0+1+7+2=10\n出題用意：兩函數遞迴，推理函數所\n做的運算再去算答案\n難度：難"
+    },
+    {
+      "number": 74,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def g(d):\n    d = [1,2,3]\n    return sum(d)\nd = [4,5,6]\nw = g(d)\nprint(w,d)",
+      "options": [
+        "6 [4,5,6]",
+        "6 [1,2,3]",
+        "15 [4,5,6]",
+        "15 [1,2,3]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "函數中的 d 雖是傳遞過來的，\n但仍是區域變數，一開始指向全域的\nd，但改指向[1,2,3]計算 sum，全\n域的 d 並未改變。\n出題用意：list 參數傳遞與區域/全\n域變數\n難度：中"
+    },
+    {
+      "number": 75,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def g(s,ans):\n    if not s: return\n    imax = max(s)\n    i = s.index(imax)\n    ans.append(imax)\n    g(s[i+1:],ans)\n    return\n#\nans = []\ng([5,2,9,4,5,6,3,4,1],ans)\nprint(ans)",
+      "options": [
+        "[9,5,6]",
+        "[9,6,4,1]",
+        "[9,5,6,1]",
+        "[9,6,3,4,1]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "先找最大然後遞迴右邊。\n出題用意：遞迴。list 操作。推理\n出函數的意義，再找答案。\n難度：中"
+    },
+    {
+      "number": 76,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [3,4,1,5,2,4,2,6,9,7,8]\ns = []\nfor v in a:\n    while s and s[-1]>=v:\n        s.pop()\n    s.append(v)\n#\nprint(s)",
+      "options": [
+        "[3,4,5,6,7,8]",
+        "[1,2,4,6,7,8]",
+        "[1,2,6,7,8]",
+        "[1,2,2,6,7,8]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "s 中維護遞增子序列(無等號)。\n出題用意：stack, list 操作。推\n理出函數的意義，tracing。\n難度：中"
+    },
+    {
+      "number": 77,
+      "category": "Python",
+      "question": "以下選項中傳入值與回傳值的敘述何者錯誤？",
+      "code": "def f(a):\n    t = 0\n    for v in a:\n        if v>t or –v>t:\n            t = v\n    return t\n#",
+      "options": [
+        "f([4,1,9,5,3])回傳 9",
+        "f([-4,-1,-5])回傳-5",
+        "f([-4,1,-5,1])回傳-5",
+        "f([4,-1,-5,1,-9])回傳-9",
+        "以上皆無誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "絕對值大的會變成 t，但如果 t\n是負值，下一個任何值都會取代它\n出題用意：推理出函數的意義，再找\n答案。\n難度：難"
+    },
+    {
+      "number": 78,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [3,1,6,4,9,5,7]\nn = len(a)\nfor i in range(n):\n    if a[i]>a[i+1]:\n        a[i],a[i+1] = a[i+1],a[i]\n#\nprint(a)",
+      "options": [
+        "[1,3,4,5,6,7,9]",
+        "[1,3,4,6,5,7,9]",
+        "[1,3,4,6,5,7,0]",
+        "[1,3,4,6,5,7,0,9]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 4,
+      "explanation": "bubble sort 一回合，但 index\n範圍寫錯，會 out of range。\n應該寫 range(n-1)。\n出題用意：list 常見錯誤。\n難度：中"
+    },
+    {
+      "number": 79,
+      "category": "Python",
+      "question": "以下選項中 v 與回傳值的敘述何者錯誤？",
+      "code": "a = [1,2,4,4,5,7,7,8]\nn = len(a)\ndef f(v):\n    i = 0\n    while a[i] < v:\n        i += 1\n    return i\n#",
+      "options": [
+        "f(0)回傳 0",
+        "f(6)回傳 5",
+        "f(4)回傳 2",
+        "f(9)回傳 8",
+        "以上皆無錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "while 迴圈 i 的上限忘記寫，\nv=9 時會執行錯誤。\n出題用意：常見錯誤。\n難度：中"
+    },
+    {
+      "number": 80,
+      "category": "Python",
+      "question": "以下選項中傳入值 s 與回傳值的敘述何者正確？",
+      "code": "def chk(s):\n    i,j = 0,len(s)-1\n    cost = 0\n    while i<j:\n        if s[i] != s[j]:\n            cost += 1\n            s[j] = s[i]\n        i,j = i+1,j-1\n    return cost\n#",
+      "options": [
+        "chk('xxarx')回傳 2",
+        "chk('abc')回傳 2",
+        "chk('yxarx')回傳 2",
+        "chk('abab')回傳 0",
+        "以上皆不正確"
+      ],
+      "answerIndex": 4,
+      "explanation": "字串是 immutable 不能更改\n其中的字元\n出題用意：常見錯誤。\n難度：中"
+    },
+    {
+      "number": 81,
+      "category": "Python",
+      "question": "以下選項中傳入值 s 與回傳值的敘述何者正確？",
+      "code": "def chk(s):\n    i,j = 0,len(s)-1\n    while i<j:\n        if s[i] != s[j]:\n            cost += 1\n        i,j = i+1,j-1\n    return cost\n#",
+      "options": [
+        "chk('xxarx')回傳 2",
+        "chk('abc')回傳 2",
+        "chk('yxarx')回傳 2",
+        "chk('abab')回傳 0",
+        "以上皆不正確"
+      ],
+      "answerIndex": 4,
+      "explanation": "cost 初值未設，執行錯誤\n出題用意：常見錯誤。\n難度：易"
+    },
+    {
+      "number": 82,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def f(s):\n    i,j = 0,len(s)-1\n    cost = 0\n    while i<j:\n        if s[i] != s[j]:\n            cost += min(int(s[i]),int(s[j]))\n        i,j = i+1,j-1\n    return cost\n#\nv = 93010307435\nprint(f(str(v)))",
+      "options": [
+        "6",
+        "8",
+        "9",
+        "12",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "第 i 個與倒數第 i 個不同時加\n上較小的\n出題用意：推理函數的意義。\n難度：中"
+    },
+    {
+      "number": 83,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "idx = [3,0,5,1]\np = [5,4,3,2,1]\ntotal = 0\nfor i in idx:\n    if p[i]<5 and i<len(p):\n        total += p[i]\n#\nprint(total)",
+      "options": [
+        "11",
+        "6",
+        "15",
+        "4",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 4,
+      "explanation": "想要將 idx 所指位置的值小於 5 的\n相加，預期是 4+2=6，但 if\n的 short-circuit 保護寫反了，會產\n生 index out of range 的錯誤。\n出題用意：short-circuit。常見錯誤。\n難度：難"
+    },
+    {
+      "number": 84,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [3,1,2,0,5]\np = 12\ncnt = 0\nfor v in a:\n    if (p%v == 0) and (v != 0):\n        cnt += 1\n#\nprint(cnt)",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 4,
+      "explanation": "想要計算 p 的倍數有幾個，預期有\n三個，但 if 的兩條件寫反了，沒有\nshort-circuit 保護，產生執行錯誤\n出題用意：short-circuit。常見錯誤。\n難度：中"
+    },
+    {
+      "number": 85,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [0,1,4,2,0,-3,2,0]\np = 3\nwhile True:\n    if a[p]==0 or p<0 or p>=8:\n        break\n    p += a[p]\n#\nprint(p)",
+      "options": [
+        "0",
+        "4",
+        "7",
+        "8",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 4,
+      "explanation": "每次前進 a[p]距離，負值為倒退，\n直到碰到 0 或者出界，if 的條件寫反\n了，沒有 short-circuit 保護，執行\n錯誤\n出題用意：short-circuit。常見錯\n誤。\n難度：中"
+    },
+    {
+      "number": 86,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [0,-1,4,2,0,-3,-2,5,1,-8,-3]\ndef f(i):\n    while 0<=i<len(a):\n        if a[i]==0:\n            return i\n        i += a[i]\n    return -1\n#\np = [f(1),f(3),f(8),f(10)]\nprint(p)",
+      "options": [
+        "[0,4,-1,-1]",
+        "[0,4,0,-1]",
+        "[1,-1,4,-1]",
+        "[0,-1,0,-1]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "每次前進 a[i]距離，負值為倒退，\n直到碰到 0 或者出界，出界回傳-1，否\n則回傳停下來的位置\n每一格走過了之後，下次再走到不必重複\n走，可以很快的用紙筆模擬\n出題用意：一維陣列模擬\n難度：中"
+    },
+    {
+      "number": 87,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [0,1,2,3,4,5,6,7]\np = a[1:3]+a[4:9:2]\na[1] = 9\nprint(p)",
+      "options": [
+        "[1,2,4,6]",
+        "[9,2,4,6]",
+        "[1,2,4,5,6,7]",
+        "[1,2,3,4,6]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "list slicing\n出題用意： list 的 slicing 以及複製\n與串接\n難度：易"
+    },
+    {
+      "number": 88,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [[0,1],[2,3],[4,5]]\np = [a[1],a[0]]\na[1] = 9\na[0][0] = 9\nprint(p)",
+      "options": [
+        "[[2,3],[0,1]]",
+        "[9,[0,1]]",
+        "[[2,3],[9,1]]",
+        "[9,[9,1]]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "一 開 始 p=[[2,3],[0,1]] ，\na[1]=9，不會改變 p，a[0][0]=9 時，\np[1]與 a[0]指向相同的[0,1]，兩者皆\n被影響\n出題用意：list of list 二維陣列。變\n數指向 list 的修改\n難度：中"
+    },
+    {
+      "number": 89,
+      "category": "Python",
+      "question": "執行後 p 的內容為何？",
+      "code": "a = ['wa','tle','ac']\np = [a[0],a[1]]\na[1] += 'Omg'\na[0] = 'ce'",
+      "options": [
+        "['wa','tle']",
+        "['wa','tleOmg']",
+        "['ce','tle']",
+        "['ce','tleOmg']",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "字串是 immutable，copy 過\n去就是獨立的\n出題用意：list of string\n難度：中"
+    },
+    {
+      "number": 90,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def f(t):\n    r = ''\n    for ch in t:\n        if int(ch)%3 == 0:\n            r += '0'\n        else:\n            r += ch\n    return r\n#\ns = f('12346')\nt = f('96134')\ns = f(s+t[: : -1])\nprint(s)",
+      "options": [
+        "1234696134",
+        "1234643169",
+        "4010004021",
+        "1204040100",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "3 的倍數改成 0。t[: :-1]是\n反轉，先反轉後串接，再傳入一次沒\n有作用\n出題用意：string slicing，參數\n傳遞\n難度：中"
+    },
+    {
+      "number": 91,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = \"127037265\"\nwhile len(a) > 1:\n    tem = \"\"\n    for i in range(0,len(a),2):\n        p = int(a[i:i+2])\n        tem += str(p//10 + p%10)\n    a = tem\n#\nprint(a)",
+      "options": [
+        "4",
+        "6",
+        "7",
+        "8",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "每 2 位切成一個數字，個位與\n十位相加寫下來，重複此步驟直到剩\n下一位。\n注意不會奇數位數不會 error\n出題用意：string。模擬與推理程式\n的意義。\n難度：難"
+    },
+    {
+      "number": 92,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def f(a):\n    while True:\n        s1 = str(a)\n        s2 = s1[: : -1]\n        if s1 == s2: return a\n        a = int(s1)+int(s2)\n    return -1\n#\nprint(f(2371),f(932),f(1221))",
+      "options": [
+        "7117 1441 1221",
+        "6226 2822 3553",
+        "7117 2882 1221",
+        "6226 1441 3553",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "reverse and add: 將整數\n反轉後與原數相加，直到成為迴文數\n字。\n2371 → 4103 → 7117\n932 → 1171 → 2882\n出題用意：string。模擬與推理程式\n的意義。\n難度：難"
+    },
+    {
+      "number": 93,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = ['1110','1010','0011','1110']\nw = ''\nfor i,r in enumerate(a):\n    w += r[i]\nprint(w)",
+      "options": [
+        "1110",
+        "1010",
+        "0101",
+        "1101",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "對角線串接\n出題用意：二維陣列\n難度：中"
+    },
+    {
+      "number": 94,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = ['abcd','pqrs','1234']\ns = ''\nfor i in range(4):\n    for r in a:\n        s += r[i]\nprint(s)",
+      "options": [
+        "abcdpqrs1234",
+        "aaaapppp1111",
+        "aq3br4cs1dp2",
+        "ap1bq2cr3ds4",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "依照 column major 串接字\n串。\n出題用意：二維陣列。\n難度：中"
+    },
+    {
+      "number": 95,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def fj(s,d):\n    if not s: return ''\n    t = ''\n    for ch in s[:-1]:\n        t += ch+d\n    return t+s[-1]\n#\ns1 = fj('qw','-')\ns2 = fj(['03','14','2025'],'/')\ns3 = fj(list('post'),'')\nprint(s1,s2,s3)",
+      "options": [
+        "q-w- 03/14/2025/ post",
+        "-qw- /03142025/ ['post']",
+        "q-w 03/14/2025 post",
+        "q-w 03/14/2025 ['post']",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "join 函數的實作，以 d 為間隔\n串接 s(list of string)\n出題用意：string。模擬與推理程式\n的意義。\n難度：難"
+    },
+    {
+      "number": 96,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def f(i,j):\n    if a[i][j] == '0': return 0\n    v[i][j] = True\n    cnt = 1\n    for p,q in ((i,j+1),(i+1,j),(i,j-1),(i-1,j)):\n        if 0<=p<4 and 0<=q<10 and not v[p][q]:\n            cnt += f(p,q)\n    return cnt\n#\na = ['0110001101',\n    '1011101101',\n    '1101110111',\n    '1100100010']\nv = [[False]*10 for i in range(4)]\nx,y,z = f(1,3),f(0,3),f(2,9)\nprint(x,y,z)",
+      "options": [
+        "9 1 9",
+        "10 0 5",
+        "10 0 9",
+        "9 0 10",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "很標準的 DFS 寫法，以\n上下左右為聯通，計算連通\n區塊的大小，DFS\n用字串且對齊位置，讓人眼\n比較好看出答案。\n出題用意：遞迴。推理程式的\n意義。二維陣列。\n難度：難"
+    },
+    {
+      "number": 97,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def f(a):\n    if not a: return []\n    p = 0\n    for i in range(1,len(a)):\n        if a[i] < a[p]: p = i\n    return [a[p]]+f(a[:p])+f(a[p+1:])\n#\nq = [3,4,2,7,0,8,1,3,2]\nprint(f(q))",
+      "options": [
+        "[0,1,2,2,3,3,4,7,8]",
+        "[0,2,3,4,7,1,8,2,3]",
+        "[0,2,3,4,7,1,2,3,8]",
+        "[0,2,3,4,7,1,8,3,2]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "分治的標準型，找最小值放在\n前面，分左右遞迴\nf([3,4,2,7,0,8,1,3,2])\n=[0]+f([3,4,2,7])+f(8,1,3,2])\n=[0]+[2]+f([3,4])+f([7])+\n[1]+f([8])+f([3,2])\n=[0,2,3,4,7,1,8,2,3]\n出題用意：遞迴。推理程式的意義。\n二維陣列。\n難度：難"
+    },
+    {
+      "number": 98,
+      "category": "Python",
+      "question": "以下呼叫與結果何者錯誤？",
+      "code": "def b(x):\n    le,ri = 0,7\n    while le < ri:\n        mid = (le+ri)//2\n        if x == a[mid]: return mid\n        if x < a[mid]:\n            ri = mid-1\n        else:\n            le = mid\n    return le\n#\na = [0,3,6,9,12,15,18,20]",
+      "options": [
+        "b(-1)回傳 0",
+        "b(5)回傳 2",
+        "b(18)回傳 6",
+        "b(30)程式不會正常結束",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "寫壞的二分搜，只有在 a 中或\n<0 會正確回傳第一個≥x 的位置，其\n他會導致無窮迴圈\n當 le+1=ri 時，mid = le，會執\n行 le = mid，因此 le,ri 並無改\n變\n出題用意：偵錯。推理程式的意義。\n難度：難"
+    },
+    {
+      "number": 99,
+      "category": "Python",
+      "question": "此程式計算根號 2 的近似值，其中 cnt 的值是迴\n圈的次數，也表示程式的效率。cnt 最後輸出的值\n在下列何範圍？",
+      "code": "low,up = 1.0, 2.0\neps = 0.0001\nx = 2.0\ncnt = 0\nwhile up - low > eps:\n    cnt += 1\n    mid = (low+up)/2\n    if mid*mid > x:\n        up = mid\n    else: low = mid\n#\nprint(low,cnt)",
+      "options": [
+        "0 ~ 50",
+        "51 ~ 100",
+        "101 ~ 500",
+        "501 ~ 1000",
+        "1000 以上"
+      ],
+      "answerIndex": 0,
+      "explanation": "二分搜，區間不超過 10000，\n次數大約 14 次 2^14>10000\n出題用意：時間複雜度。\n難度：中"
+    },
+    {
+      "number": 100,
+      "category": "Python",
+      "question": "此程式片段的時間複雜度以 m,n 表示為下列何\n者？",
+      "code": "a = []\nfor i in range(n):\n    for j in range(m):\n        a.append(i+j)\n#",
+      "options": [
+        "O(m+n)",
+        "O(mn)",
+        "O(m/n)",
+        "O(m2+n2)",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "雙迴圈執行次數\n出題用意：時間複雜度。\n難度：易"
+    },
+    {
+      "number": 101,
+      "category": "Python",
+      "question": "此程式片段的時間複雜度以 n 表示為下列何者？",
+      "code": "a = []\nfor i in range(n):\n    a = [i]+a\n#",
+      "options": [
+        "O(n)",
+        "O(nlog(n))",
+        "O(n2)",
+        "O(n3)",
+        "以上皆非"
+      ],
+      "answerIndex": 2,
+      "explanation": "每次 O(i)總和 O(1+2+…n)=\nO(n2)\n出題用意：時間複雜度。\n難度：中"
+    },
+    {
+      "number": 102,
+      "category": "Python",
+      "question": "以 f(p,n-1,0)呼叫此函數，其中 n 是列表 p 的\n長度，則 worst case 時間複雜度以 n 表示為下\n列何者？",
+      "code": "def f(a,i,v):\n    if i < 0: return 0\n    p = f(a,i-1,v+a[i])\n    q = f(a,i-1,v)\n    return max(p,q)\n#",
+      "options": [
+        "O(n)",
+        "O(n2)",
+        "O(n!)",
+        "O(2n)",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "暴搜子集合\n出題用意：時間複雜度。\n難度：難"
+    },
+    {
+      "number": 103,
+      "category": "Python",
+      "question": "此程式的 worst case 時間複雜度以 n 表示為下\n列何者？",
+      "code": "def f(k):\n    for i in range(k):\n        if i*i > k:\n            return i\n#\np = 0\nfor i in range(n):\n    p += f(i)\n#",
+      "options": [
+        "O(n3/2)",
+        "O(nlog(n))",
+        "O(n1/2)",
+        "O(n2)",
+        "以上皆非"
+      ],
+      "answerIndex": 0,
+      "explanation": "f(k)的時間是根號 k，(根號\n1+根號 2+…根號 n) = O(n^1.5)\n出題用意：時間複雜度。\n難度：難"
+    },
+    {
+      "number": 104,
+      "category": "Python",
+      "question": "以 f(0,n)呼叫此函數，則 worst case 時間複\n雜度為下列何者？",
+      "code": "def f(p,q):\n    if q < p+5: return (p+q)//2\n    s = 0\n    for i in range(p,q):\n        s += i\n    #\n    m = (p+q)//2\n    return f(p,m)+f(m+1,q)+s\n#",
+      "options": [
+        "O(2n)",
+        "O(nlog(n))",
+        "O(n)",
+        "O(n2)",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "分治 T(n)=2T(n/2)+O(n)，\nT(n)=O(nlog(n))。注意時間複雜\n度不是返回的數值。\n出題用意：時間複雜度。\n難度：難"
+    },
+    {
+      "number": 105,
+      "category": "Python",
+      "question": "此程式片段的時間複雜度以 n 表示，則下列何者\n為最準確的表示式？",
+      "code": "s = 0\nfor i in range(1,n):\n    for j in range(i,n,i):\n        s += 1\n#\nprint(s)",
+      "options": [
+        "O(n)",
+        "O(nlog(n))",
+        "O(n2)",
+        "O(n3)",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "n(1+1/2+1/3+1/4…) = O(nlog(n))\n出題用意：時間複雜度。\n難度：難"
+    },
+    {
+      "number": 106,
+      "category": "Python",
+      "question": "a 是一個整數 list，此程式片段的時間複雜度以\na 的長度 n 表示，則下列何者為最準確的表示式？",
+      "code": "s = 0\nn = len(a)\nfor i in range(n):\n    s += sum(a[i:]):\n#",
+      "options": [
+        "O(n)",
+        "O(nlog(n))",
+        "O(n2)",
+        "O(n3)",
+        "以上皆非"
+      ],
+      "answerIndex": 2,
+      "explanation": "sum(a[i:])的時間是 O(n-\ni)，所以總時間是(1+2+3…n) =\nO(n2)\n出題用意：時間複雜度。\n難度：中"
+    },
+    {
+      "number": 107,
+      "category": "Python",
+      "question": "此函數被呼叫時，傳入的 a 是一個整數 list，而\nx 是一個整數。此函數的時間複雜度以 a 的長度 n\n來表示的話，則下列何者為其 worst case 時間\n複雜度？",
+      "code": "def f(a,x):\n    p = len(a)//2\n    q = 0\n    while p > 0:\n        if q+p<len(a) and a[q+p] < x:\n            q += p\n        p //= 2\n    #\n    return q\n#",
+      "options": [
+        "O(1)",
+        "O(log(n))",
+        "O(n)",
+        "O(nlog(n))",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "p 每次減半，log(n)次之後變\n成 0，迴圈內為 O(1)，故複雜度為\nO(logn)。\n此程式未必是執行二分搜，但只要看\n時間複雜度，while 內是 O(1)，p\n每次折半。\n出題用意：時間複雜度。\n難度：中"
+    },
+    {
+      "number": 108,
+      "category": "Python",
+      "question": "此函數定義為：a 字串的「字典序」小於 b 字串時\n回傳 True，請問程式中的 q1 與 q2 為下列何者\n時可以符合定義？",
+      "code": "def small(a,b):\n    m,n = len(a),len(b)\n    for i in range(  q1\n                            ):\n        if a[i] < b[i]: return True\n        if a[i] > b[i]: return False\n    #\n    return\n                q2\n#",
+      "options": [
+        "q1: min(m,n), q2: (a[i]<b[i])",
+        "q1: min(m,n), q2: (m<n)",
+        "q1: max(m,n), q2: (a[i]<b[i])",
+        "q1: max(m,n), q2: False",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "迴圈比較到 min(m,n)，若未分\n大小，a 比較短的時候回傳 True\n出題用意：推理程式的意義。字典序\n的定義。\n難度：中"
+    },
+    {
+      "number": 109,
+      "category": "Python",
+      "question": "此函數定義為： a 字串的「字典序」小於 b 字串\n時回傳 True，輸入保證傳入的 a 與 b 長度相等。\n請問程式中的?處應填入下列何者？",
+      "code": "def small(a,b): # len(a)==len(b)\n    n = len(a)\n    i = 0\n    while i<n and a[i]==b[i]:\n        i += 1\n    #\n    return\n                ?\n#",
+      "options": [
+        "a[i]<b[i] and i<n",
+        "i>=n or a[i]<b[i]",
+        "i<n or a[i]<b[i]",
+        "i<n and a[i]<b[i]",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "迴圈找到第一個不相同位置，但\n不能超範圍。迴圈結束後，若 i==n\n則 a==b(不符合 True 的定義)，否\n則，a[i]與 b[i]不同，a[i]小則回\n傳 True。\n注意(A)的寫法可能導致錯誤\n出題用意：推理程式的意義。字典序\n的定義。短路\n難度：中"
+    },
+    {
+      "number": 110,
+      "category": "Python",
+      "question": "此函數利用 b 的二進位表示法來快速計算 a 的 b\n次方除以 mod 的餘數，其中 a,b,mod 皆正整數\n且 mod 不為 0。請問程式中的?1 與?2 處應填入\n下列何者？",
+      "code": "def f(a,b,mod):\n    result = 1\n    while b:\n        if\n                ?1\n                    :\n            result = (result*a)%mod\n            ?2\n        a = (a*a)%mod\n    #\n    return result\n#",
+      "options": [
+        "q1: b%10, q2: b //= 10",
+        "q1: b&result, q2: b >>= 1",
+        "q1: b&1, q2: b >>= 1",
+        "q1: b^1, q2: b //= 2",
+        "以上皆非"
+      ],
+      "answerIndex": 2,
+      "explanation": "b 為奇數時將 a 乘進去。每一回\n合 b 右移一位。\n出題用意：推理程式的意義。二進位。\n難度：中"
+    },
+    {
+      "number": 111,
+      "category": "Python",
+      "question": "此函數定義為： 計算並回傳 list a 中 b 的倍數\n的總和。請問程式中的?處應填入下列何者？",
+      "code": "def f(a,b):\n    n = 0\n    for v in a:\n        if\n                ?\n                    :\n            n += v\n    return n\n#",
+      "options": [
+        "v%b == 0",
+        "v%b",
+        "a[v]%b == 0",
+        "b in v",
+        "以上皆非"
+      ],
+      "answerIndex": 0,
+      "explanation": "檢查是否為倍數。\n出 題 用 意 ： 基 本 運 算 。 code\ncompletion\n難度：易"
+    },
+    {
+      "number": 112,
+      "category": "Python",
+      "question": "以下何者回傳 True？",
+      "code": "def f(s):\n    q = []\n    for c in s:\n        if c < 0: q.append(c)\n        elif not q or q[-1]!=-c:\n            return False\n        else: q.pop()\n    return not q\n#",
+      "options": [
+        "f([-1,1,-2,-3,2,3])",
+        "f([-1,-3,-2,2,3,-1,1])",
+        "f([-1,-2,2,-3,-1,1,3,1])",
+        "f([-1,-1,1,-2,3,-3,2,1])",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "類似用 stack 檢查括號平衡，\n負數是左括號，正數是右括號，絕對\n值相同是一對。\n出題用意：stack，list\n難度：難"
+    },
+    {
+      "number": 113,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [4,-5,2,0,4,2,-2,1,3,-1]\nn = len(a)\nfor i in range(1,n):\n    if a[i-1] > 0:\n        a[i] += a[i-1]\n#\nprint(a[7],max(a))",
+      "options": [
+        "5 10",
+        "7 12",
+        "7 10",
+        "5 12",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "若前一項大於 0 就加過來，否\n則不變。很容易用紙筆得到\na=[4,-1,2,2,6,8,6,7,10,9]\n其實是找 max subarray 的演算\n法，但做答並不一定需要知道。\n出題用意：模擬，陣列，迴圈\n難度：中"
+    },
+    {
+      "number": 114,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [(i,j) for i in range(5) \\\n    for j in range(5) if (i+j)%4==0 ]\nprint(a[: : 2])",
+      "options": [
+        "[(0,0),(1,3),(3,1),(4,4)]",
+        "[(0,0),(0,4),(1,3),(2,2)]",
+        "[(0,0),(1,3),(2,2),(4,4)]",
+        "[(0,4),(2,2),(4,0)]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "a 生成的結果是\n[(0, 0), (0, 4), (1, 3), (2, 2),\n(3, 1), (4, 0), (4, 4)]\na[ : : 2] 是由頭到尾每次跳過一\n個\n出題用意：列表生成式，slicing\n難度：中"
+    },
+    {
+      "number": 115,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [1,2,3,4,5,6]\nq = [1,0,2,-1,1,0]\nw = sum(a[i]*q[i] for i in range(6))\nprint(w)",
+      "options": [
+        "6",
+        "8",
+        "10",
+        "11",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "向量內積\n出題用意：列表生成式\n難度：易"
+    },
+    {
+      "number": 116,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "a = [1]*6\ndef f(i,s):\n    if i == 6:\n        return s==3\n    w1 = f(i+1,s)\n    w2 = f(i+1,s+a[i])\n    return w1+w2\n#\nprint(f(0,0))",
+      "options": [
+        "4",
+        "16",
+        "20",
+        "64",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "此遞迴程式枚舉所有子集合，\n檢查其和是否為 3。所以答案是\nC(6,3)=20\n出題用意：遞迴，枚舉子集合\n難度：難"
+    },
+    {
+      "number": 117,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "def f(n,i):\n    if i==0 or i==n:\n        return 1\n    return f(n-1,i)+f(n-1,i-1)\nprint(f(5,2))",
+      "options": [
+        "6",
+        "10",
+        "15",
+        "20",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "遞迴。手算可以建表，其實這是\n組合數的公式 C(n,r)=C(n-1,r-\n1)+C(n-1,r-1)\n出題用意：遞迴\n難度：中"
+    },
+    {
+      "number": 118,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "n = 6\nd = [[1]*n for i in range(n)]\nfor i in range(2,n):\n    for j in range(1,i):\n        d[i][j] = d[i-1][j-1]+d[i-1][j]\n#\nprint(d[4][2]+d[5][3])",
+      "options": [
+        "13",
+        "14",
+        "15",
+        "16",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "二維陣列建表。\nC(4,2)+C(5,3)=16\n其實這是組合數的公式，但並不需要\n知道也可以做。\nC(n,r)=C(n-1,r-1)+C(n-1,r-1)\n出題用意：二維陣列\n難度：中"
+    },
+    {
+      "number": 119,
+      "category": "Python",
+      "question": "下列何者最準確的以 n 來表達此程式的時間複雜\n度？",
+      "code": "d = [[0]*(n+1) for i in range(n+1)]\ndef f(k,i):\n    if d[k][i] > 0: return d[k][i]\n    if i==0 or i==k:\n        d[k][i] = 1\n    else:\n        d[k][i] = f(k-1,i)+f(k-1,i-1)\n    return d[k][i]\n#\nprint(f(n,n//2))",
+      "options": [
+        "O(n2)",
+        "O(n3)",
+        "O(2n)",
+        "O(n!)",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 0,
+      "explanation": "這是以 top-down DP 來計算\n組合數，答題不一定要知道，注意到\nd 的存在，所有可能的呼叫參數都在\n表格內，每一個格子只會遞迴計算一\n次，格子數是 O(n2)，所以複雜度就\n是平方。\n如果沒有 memoization，時間複雜\n度是 O(C(n,n/2))=O(2^n)\n出題用意：程式效率，遞迴，DP\n難度：難"
+    },
+    {
+      "number": 120,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "d = list((x-2)**2 for x in range(6))\nd.sort()\nprint(d)",
+      "options": [
+        "[4,1,0,1,4,9]",
+        "[-4,-2,0,2,4,6]",
+        "[0,1,1,4,4,9]",
+        "[0,1,1,4,4,9,16]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "用 0..5 生成\n[4,1,0,1,4,9]，然後小排到大\n出題用意：sort，列表生成\n難度：易"
+    },
+    {
+      "number": 121,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "d = [3,-1,0,5,0,9,1,0,7,4]\nn = len(d)\np = sorted(d[:n//2])+sorted(d[n//2:])\ncnt = 0;\nfor i in range(n):\n    for j in range(i+1,n):\n        if p[i] > p[j]: cnt += 1\nprint(cnt)",
+      "options": [
+        "15",
+        "10",
+        "7",
+        "5",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "d 切成 2 段，個別排序，再接起來。\n左邊[-1,0,0,3,5]，\n右邊[0,1,4,7,9]\n後面在算 inversion，就是有幾對(前\n大後小)，已排序的內部不需要算，所以\n只要算 p[i]在左邊，p[j]在右邊的有多\n少反序就好了。\n(3,0)(5,0)(3,1)(5,1)(5,4)\n出題用意：sort,推理\n難度：難"
+    },
+    {
+      "number": 122,
+      "category": "Python",
+      "question": "p 的內容為何？",
+      "code": "d = 'cbda'\np = sorted(d)",
+      "options": [
+        "'abcd'",
+        "['a','b','c','d']",
+        "'cbda'",
+        "['c','b','d','a']",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 1,
+      "explanation": "字串放進 sorted 會看成 iterable，\n切開變成 list 進行排序。"
+    },
+    {
+      "number": 123,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "d = ['bdc','aw','ab','b']\ns = '/'.join(sorted(d))\nprint(d[0],s)",
+      "options": [
+        "bdc a/a/b/b/b/c/d/w",
+        "b a/a/b/b/b/c/d/w",
+        "bdc ab/aw/b/bdc",
+        "b ab/aw/b/bdc",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 2,
+      "explanation": "字串的 list 排序，依照字典序。\nsorted(d)執行後 d 不會改變。\njoin 的作用是當中介將後面的字串\n串起來\n出題用意：sort,string\n難度：中"
+    },
+    {
+      "number": 124,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "s = 'apaltpptpal'\nn = len(s)\nq = sorted(s)\nwhat = cnt = 1\nfor i in range(1,n):\n    if q[i] == q[i-1]:\n        cnt += 1\n    else:\n        what = max(what,cnt)\n        cnt = 1\nprint(what)",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 3,
+      "explanation": "排序後相同的東西會在一起。q\n是 s 每個字母的 list，後面那段在\n算連續出現的字母個數，what 是最\n大值，所以，就是出現最多的字母，\np 有 4 個。\n出題用意：sort，程式理解。\n難度：難"
+    },
+    {
+      "number": 125,
+      "category": "Python",
+      "question": "輸出為何？",
+      "code": "d = [3,1,2]\na = d.sort()\na[0] = 0\nprint(a,d)",
+      "options": [
+        "[0,2,3] [1,2,3]",
+        "[0,1,2] [1,2,3]",
+        "[0,2,3] [3,1,2]",
+        "[0,2,3] [0,2,3]",
+        "以上皆非或執行錯誤 Error"
+      ],
+      "answerIndex": 4,
+      "explanation": "一個常犯的錯誤，d.sort()沒有\n回傳值，所以 a 是 None，a[0]會引發錯\n誤。\n出題用意：sort\n難度：中"
+    }
+  ]
+}
