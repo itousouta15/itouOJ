@@ -94,7 +94,7 @@ export default async function ContestProblemPage({
 
       <StatementCard>{problem.statement}</StatementCard>
 
-      <CodeBlock code={problem.code ?? ""} language={problem.category} />
+      <CodeBlock code={problem.code ?? ""} />
 
       <SampleCases samples={problem.testCases} />
 
