@@ -1591,6 +1591,12 @@ html[data-app] .bottom-nav-link {
 html[data-app] .bottom-nav-glyph {
   font-size: 20px;
 }
+html[data-app] .bottom-nav-more-glyph {
+  display: inline-block;
+  transform: translateY(-2px);
+  font-size: 14px;
+  letter-spacing: 1px;
+}
 html[data-app] .bottom-nav-label {
   font-size: 10px;
   letter-spacing: 0;

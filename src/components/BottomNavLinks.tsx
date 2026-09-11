@@ -98,8 +98,8 @@ export default function BottomNavLinks({
           aria-controls="app-more-nav"
         >
           <span className="relative">
-            <span className="bottom-nav-glyph" aria-hidden="true">
-              •••
+            <span className="bottom-nav-glyph bottom-nav-more-glyph" aria-hidden="true">
+              ⋯
             </span>
             {unread > 0 && (
               <span className="absolute -top-1.5 -right-2.5 rounded-full bg-[#ff6b6b] px-1 text-[9px] font-semibold leading-4 text-white">
