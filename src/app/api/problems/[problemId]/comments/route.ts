@@ -44,6 +44,7 @@ export async function GET(
       content: true,
       parentId: true,
       createdAt: true,
+      updatedAt: true,
       authorId: true,
       author: {
         select: {
@@ -66,8 +67,12 @@ export async function GET(
     authorUsername: c.author.username,
     authorAvatarUrl: c.author.avatarUrl,
     authorIsAdmin: c.author.role === "ADMIN",
+    // 只有作者本人能編輯（管理員也不行，以免改掉別人講過的話）
+    canEdit: c.authorId === session?.userId,
     // 自己的留言可以刪，管理員可以刪任何一則
     canDelete: isAdmin || c.authorId === session?.userId,
+    // 建立與更新時間差超過一秒就顯示「已編輯」
+    edited: c.updatedAt.getTime() - c.createdAt.getTime() > 1000,
   });
 
   // 一層樹：先把主留言排好，再把回覆掛到各自的父留言底下
