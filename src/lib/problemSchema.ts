@@ -18,6 +18,8 @@ export const problemSchema = z
     ...problemBaseFields,
     type: z.enum(PROBLEM_TYPES).default("PROGRAMMING"),
     isPublic: z.boolean(),
+    // 出題者（使用者名稱，選填；只對實作題有意義，API 會查無此人時擋下）
+    authorUsername: z.string().trim().max(50, "使用者名稱最多 50 個字元").optional(),
     tagIds: z.array(z.number().int()).default([]),
     // PDF 三態：key 沒出現 = 不動、null = 移除、有值 = 換新檔。表單每次存檔
     // 都送整份資料，沒有這個區分的話改個標題錯字就會把 PDF 弄丟。

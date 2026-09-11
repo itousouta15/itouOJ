@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { problemSchema } from "@/lib/problemSchema";
 import { pdfUpdateData, PdfUploadError } from "@/lib/problemPdf";
+import { resolveAuthorId } from "@/lib/problemAuthor";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
     paper,
     sourceNumber,
     category,
+    authorUsername,
     ...base
   } = parsed.data;
 
@@ -41,6 +43,11 @@ export async function POST(request: Request) {
       return Response.json({ error: err.message }, { status: 400 });
     }
     throw err;
+  }
+
+  const author = await resolveAuthorId(authorUsername);
+  if ("error" in author) {
+    return Response.json({ error: author.error }, { status: 400 });
   }
 
   const last = await prisma.problem.findFirst({
@@ -74,6 +81,7 @@ export async function POST(request: Request) {
         ...base,
         type,
         ...pdf,
+        authorId: author.authorId,
         order: (last?.order ?? 0) + 1,
         subtasks: {
           create: subtasks.map((s, i) => ({

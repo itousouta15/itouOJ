@@ -46,6 +46,7 @@ export async function POST(
         memoryLimitMb: proposal.memoryLimitMb,
         isPublic,
         order: (last?.order ?? 0) + 1,
+        authorId: proposal.authorId,
         testCases: {
           create: proposal.testCases.map((tc, i) => ({
             input: tc.input,
