@@ -134,6 +134,7 @@ export default function SubmitPanel({
   const [isApp] = useState(() => isNativeApp());
   const viewRef = useRef<EditorView | null>(null);
   const restoreFocusRef = useRef(false);
+  const closingRef = useRef(false);
   // 這次全螢幕是不是「點編輯器自動開」的：自動開的才在收鍵盤時自動關
   const autoOpenedRef = useRef(false);
 
@@ -142,18 +143,30 @@ export default function SubmitPanel({
     if (fullscreen) viewRef.current?.focus();
   }, [fullscreen]);
 
+  const closeFullscreen = useCallback(() => {
+    // App 退出時絕不能把焦點還給內嵌編輯器：那會再次觸發自動全螢幕與鍵盤。
+    if (closingRef.current) return;
+    closingRef.current = true;
+    autoOpenedRef.current = false;
+    restoreFocusRef.current = !isApp;
+    if (isApp) viewRef.current?.contentDOM.blur();
+    setClosing(true);
+    setTimeout(() => {
+      closingRef.current = false;
+      setClosing(false);
+      setFullscreen(false);
+    }, 180);
+  }, [isApp]);
+
   // App 內：手機鍵盤開/關事件 —— 關閉時自動開的全螢幕編輯器回到內嵌模式；
-  // 符號列只在鍵盤出現時顯示
+  // 符號列只在鍵盤出現時顯示。
   useEffect(() => {
     if (!isApp) return;
     let cleanup: () => void = () => {};
     Promise.all([
       onKeyboardWillHide(() => {
         setKbdVisible(false);
-        if (autoOpenedRef.current) {
-          autoOpenedRef.current = false;
-          closeFullscreen();
-        }
+        if (autoOpenedRef.current) closeFullscreen();
       }),
       onKeyboardWillShow(() => setKbdVisible(true)),
     ]).then(([unsubHide, unsubShow]) => {
@@ -163,25 +176,14 @@ export default function SubmitPanel({
       };
     });
     return () => cleanup();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isApp]);
+  }, [closeFullscreen, isApp]);
 
   function openFullscreen(manual: boolean) {
+    closingRef.current = false;
     setClosing(false);
     autoOpenedRef.current = !manual;
     setFullscreen(true);
   }
-
-  const closeFullscreen = useCallback(() => {
-    // 先播退場動畫（180ms）再真的卸載 portal
-    if (closing) return;
-    restoreFocusRef.current = true;
-    setClosing(true);
-    setTimeout(() => {
-      setClosing(false);
-      setFullscreen(false);
-    }, 180);
-  }, [closing]);
 
   // 記住上次選的語言、以及每題每語言打到一半的程式碼
   useEffect(() => {
