@@ -18,8 +18,15 @@ model User {
   displayName  String? // 顯示名稱（未設定時顯示 username）
   bio          String? // 自我介紹
   // Google / Discord 登入時帶回來的頭像網址，每次登入都會更新（對方換頭像這裡才跟得上）。
-  // 站內沒有自己上傳頭像的功能，所以純密碼帳號這欄是 null，前端退回顯示名字首字。
+  // 純密碼帳號這欄是 null，前端退回顯示名字首字。
   avatarUrl    String?
+  // 本地上傳的頭像（前端已縮成 256px 的 webp/jpeg）。有本地上傳時優先於
+  // avatarUrl——不然用 Google 登入一次就被換回舊的大頭貼。avatarUpdatedAt
+  // 同時當作「有沒有本地頭像」的旗標與網址的 cache busting 版本號，
+  // 列表查詢就不必把 BLOB 一起撈出來。
+  avatarData     Bytes?
+  avatarMime     String?
+  avatarUpdatedAt DateTime?
   createdAt    DateTime             @default(now())
   submissions  Submission[]
   courses      CourseMember[]

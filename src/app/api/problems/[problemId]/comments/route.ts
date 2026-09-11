@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { avatarSrc } from "@/lib/avatar";
 import { getDiscussionAccess } from "@/lib/problemDiscussion";
 import { problemCommentSchema } from "@/lib/problemDiscussionSchema";
 
@@ -52,6 +53,7 @@ export async function GET(
           displayName: true,
           role: true,
           avatarUrl: true,
+          avatarUpdatedAt: true,
         },
       },
     },
@@ -65,7 +67,7 @@ export async function GET(
     authorName: c.author.displayName || c.author.username,
     // username 是個人頁的網址（/users/{username}），displayName 不保證唯一，不能拿來連
     authorUsername: c.author.username,
-    authorAvatarUrl: c.author.avatarUrl,
+    authorAvatarUrl: avatarSrc(c.author),
     authorIsAdmin: c.author.role === "ADMIN",
     // 只有作者本人能編輯（管理員也不行，以免改掉別人講過的話）
     canEdit: c.authorId === session?.userId,

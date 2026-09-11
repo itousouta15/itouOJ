@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { avatarSrc } from "@/lib/avatar";
 import { googleConfigured } from "@/lib/googleOAuth";
 import { discordConfigured } from "@/lib/discordOAuth";
+import AvatarUploader from "@/components/AvatarUploader";
 import ProfileForm from "@/components/ProfileForm";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import LinkedAccounts from "@/components/LinkedAccounts";
@@ -29,6 +31,7 @@ export default async function SettingsPage({
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
+    omit: { avatarData: true },
   });
   if (!user) redirect("/login");
 
@@ -77,6 +80,15 @@ export default async function SettingsPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="page-title">帳號設定</h1>
+
+      <section className="card p-6">
+        <h2 className="section-title mb-4">頭像</h2>
+        <AvatarUploader
+          name={user.displayName || user.username}
+          currentSrc={avatarSrc(user)}
+          hasLocalAvatar={Boolean(user.avatarUpdatedAt)}
+        />
+      </section>
 
       <section className="card p-6">
         <h2 className="section-title mb-4">個人資料</h2>

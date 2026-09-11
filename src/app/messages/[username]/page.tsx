@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { avatarSrc } from "@/lib/avatar";
 import Avatar from "@/components/Avatar";
 import AutoRefresh from "@/components/AutoRefresh";
 import MessageComposer from "@/components/MessageComposer";
@@ -37,6 +38,7 @@ export default async function MessageThreadPage({
       username: true,
       displayName: true,
       avatarUrl: true,
+      avatarUpdatedAt: true,
       role: true,
     },
   });
@@ -81,7 +83,7 @@ export default async function MessageThreadPage({
           >
             <Avatar
               name={other.displayName || other.username}
-              src={other.avatarUrl}
+              src={avatarSrc(other)}
               size={36}
             />
             <span className="font-semibold text-tx hover:text-blue hover:underline">
