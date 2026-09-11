@@ -91,6 +91,7 @@ export default async function UserProfilePage({
     recognitionCorrect,
     recognitionRate,
     recognitionTotal,
+    recognitionProgressRate,
   } = statsData;
 
   const stats = [
@@ -101,14 +102,10 @@ export default async function UserProfilePage({
   ];
 
   const recognitionStats = [
-    { label: "練習題數", value: recognitionAnswered },
+    { label: "已作答題數", value: recognitionAnswered },
     { label: "答對", value: recognitionCorrect },
     { label: "正確率", value: `${recognitionRate}%` },
   ];
-  const recognitionPct =
-    recognitionTotal > 0
-      ? Math.round((recognitionCorrect / recognitionTotal) * 100)
-      : 0;
 
   const streak = await getUserStreak(user.id);
   const achievementStats = await getAchievementStats(user.id, {
@@ -233,7 +230,10 @@ export default async function UserProfilePage({
           <div className="h-2 overflow-hidden rounded-full bg-inset">
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${recognitionPct}%`, background: "var(--green)" }}
+              style={{
+                width: `${recognitionProgressRate}%`,
+                background: "var(--green)",
+              }}
             />
           </div>
         </div>

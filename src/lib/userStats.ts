@@ -18,10 +18,15 @@ export interface UserStats {
   recognitionCorrect: number;
   recognitionRate: number;
   recognitionTotal: number;
+  recognitionProgressRate: number;
+}
+
+function percentage(correct: number, total: number): number {
+  return total > 0 ? Math.round((correct / total) * 100) : 0;
 }
 
 // /settings 與 /users/[username] 共用的解題統計：解題數/難度只算實作題，
-// 識別題另計一組（作答數、答對數、正確率）。
+// 識別題另計一組（已作答數、答對數、正確率與總進度）。
 export async function getUserStats(userId: string): Promise<UserStats> {
   const [
     acDistinct,
@@ -80,10 +85,8 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     totalByDifficulty,
     recognitionAnswered,
     recognitionCorrect,
-    recognitionRate:
-      recognitionAnswered > 0
-        ? Math.round((recognitionCorrect / recognitionAnswered) * 100)
-        : 0,
+    recognitionRate: percentage(recognitionCorrect, recognitionAnswered),
     recognitionTotal,
+    recognitionProgressRate: percentage(recognitionCorrect, recognitionTotal),
   };
 }
