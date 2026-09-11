@@ -104,7 +104,9 @@ the daily problem. Its selection order is:
 
 1. a due code-recognition review;
 2. an unfinished course problem;
-3. a recommended public programming problem.
+
+When neither a due review nor an unfinished course exists, no Next action card
+is shown: the existing daily problem remains the single general recommendation.
 
 Unauthenticated home pages do not perform personal queries and retain the
 current content. Existing visual tokens, cards, badges, and light/dark themes

@@ -43,16 +43,7 @@ export async function getNextLearningAction(userId: string): Promise<NextLearnin
     }
   }
 
-  const problem = await prisma.problem.findFirst({
-    where: {
-      type: "PROGRAMMING",
-      isPublic: true,
-      submissions: { none: { userId, status: "AC" } },
-    },
-    orderBy: [{ difficulty: "asc" }, { order: "asc" }],
-    select: { order: true, title: true },
-  });
-  return problem
-    ? { href: `/problems/${problem.order}`, title: problem.title, detail: "A new problem picked for you." }
-    : null;
+  // Daily problem already owns the general-purpose recommendation slot on the
+  // home page. Only surface an action here when it represents unfinished work.
+  return null;
 }
