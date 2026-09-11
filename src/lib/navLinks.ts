@@ -12,10 +12,26 @@ const BASE_NAV_LINKS: NavLinkItem[] = [
   { href: "/ranking", label: "排行" },
 ];
 
-export function navLinksFor(isAdmin: boolean): NavLinkItem[] {
-  return isAdmin
-    ? [...BASE_NAV_LINKS, { href: "/admin/problems", label: "管理" }]
-    : BASE_NAV_LINKS;
+export interface NavOptions {
+  loggedIn?: boolean;
+  // 站內訊息未讀數；> 0 時「訊息」旁邊直接顯示數字
+  unreadMessages?: number;
+}
+
+export function navLinksFor(
+  isAdmin: boolean,
+  options: NavOptions = {}
+): NavLinkItem[] {
+  const links = [...BASE_NAV_LINKS];
+  if (options.loggedIn) {
+    const unread = options.unreadMessages ?? 0;
+    links.push({
+      href: "/messages",
+      label: unread > 0 ? `訊息 (${unread})` : "訊息",
+    });
+  }
+  if (isAdmin) links.push({ href: "/admin/problems", label: "管理" });
+  return links;
 }
 
 export function isNavActive(pathname: string, href: string): boolean {
