@@ -14,9 +14,12 @@ export const dynamic = "force-dynamic";
 export default async function ProblemListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string }>;
+  searchParams: Promise<{ tag?: string; after?: string }>;
 }) {
-  const { tag } = await searchParams;
+  const { tag, after: afterParam } = await searchParams;
+  const after = Number(afterParam);
+  const validAfter = Number.isInteger(after) && after >= 0 ? after : null;
+  const pageSize = 30;
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
 
@@ -35,23 +38,29 @@ export default async function ProblemListPage({
     orderBy: { name: "asc" },
   });
 
-  const problems = await prisma.problem.findMany({
+  const pageProblems = await prisma.problem.findMany({
     where: {
       type: "PROGRAMMING",
       ...(isAdmin ? {} : { isPublic: true }),
       ...(tag ? { tags: { some: { tag: { name: tag } } } } : {}),
+      ...(validAfter === null ? {} : { order: { gt: validAfter } }),
     },
     orderBy: { order: "asc" },
+    take: pageSize + 1,
     omit: { pdfData: true },
     include: { tags: { include: { tag: true } } },
   });
+  const hasNextPage = pageProblems.length > pageSize;
+  const problems = pageProblems.slice(0, pageSize);
+  const problemIds = problems.map((p) => p.id);
   const acCounts = await prisma.submission.groupBy({
     by: ["problemId"],
-    where: { status: "AC" },
+    where: { status: "AC", problemId: { in: problemIds } },
     _count: { _all: true },
   });
   const allCounts = await prisma.submission.groupBy({
     by: ["problemId"],
+    where: { problemId: { in: problemIds } },
     _count: { _all: true },
   });
   const acMap = new Map(acCounts.map((g) => [g.problemId, g._count._all]));
@@ -100,6 +109,23 @@ export default async function ProblemListPage({
             </Link>
           ))}
         </div>
+      )}
+      {(validAfter !== null || hasNextPage) && (
+        <nav className="mb-4 flex items-center justify-end gap-3 text-sm" aria-label="Problem list pagination">
+          {validAfter !== null && (
+            <Link href={tag ? `/problems?tag=${encodeURIComponent(tag)}` : "/problems"} className="btn-secondary">
+              First page
+            </Link>
+          )}
+          {hasNextPage && problems.length > 0 && (
+            <Link
+              href={`/problems?${new URLSearchParams({ ...(tag ? { tag } : {}), after: String(problems[problems.length - 1].order) })}`}
+              className="btn-secondary"
+            >
+              Next page
+            </Link>
+          )}
+        </nav>
       )}
       <div className="card overflow-x-auto">
         <table className="w-full">

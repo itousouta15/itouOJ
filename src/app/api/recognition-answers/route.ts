@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { nextRecognitionReview } from "@/lib/recognitionReview";
 
 const schema = z.object({
   problemId: z.number().int().positive(),
@@ -51,10 +52,22 @@ export async function POST(request: Request) {
   }
 
   const isCorrect = selectedIndex === problem.answerIndex;
-  await prisma.recognitionAnswer.upsert({
-    where: { userId_problemId: { userId: session.userId, problemId } },
-    create: { userId: session.userId, problemId, selectedIndex, isCorrect },
-    update: { selectedIndex, isCorrect },
+  await prisma.$transaction(async (tx) => {
+    await tx.recognitionAnswer.upsert({
+      where: { userId_problemId: { userId: session.userId, problemId } },
+      create: { userId: session.userId, problemId, selectedIndex, isCorrect },
+      update: { selectedIndex, isCorrect },
+    });
+    const current = await tx.recognitionReview.findUnique({
+      where: { userId_problemId: { userId: session.userId, problemId } },
+      select: { intervalStep: true },
+    });
+    const review = nextRecognitionReview(isCorrect, current?.intervalStep ?? null);
+    await tx.recognitionReview.upsert({
+      where: { userId_problemId: { userId: session.userId, problemId } },
+      create: { userId: session.userId, problemId, ...review },
+      update: review,
+    });
   });
 
   return Response.json({ correct: isCorrect });

@@ -11,9 +11,12 @@ export const dynamic = "force-dynamic";
 export default async function SubmissionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mine?: string; contest?: string }>;
+  searchParams: Promise<{ mine?: string; contest?: string; before?: string }>;
 }) {
-  const { mine, contest } = await searchParams;
+  const { mine, contest, before: beforeParam } = await searchParams;
+  const before = Number(beforeParam);
+  const validBefore = Number.isInteger(before) && before > 0 ? before : null;
+  const pageSize = 30;
   const session = await getSession();
   const onlyMine = mine === "1" && session;
 
@@ -31,15 +34,18 @@ export default async function SubmissionsPage({
     where: {
       ...(onlyMine ? { userId: session!.userId } : {}),
       ...(filteredContest ? { contestId: filteredContest.id } : {}),
+      ...(validBefore === null ? {} : { id: { lt: validBefore } }),
     },
     orderBy: { id: "desc" },
-    take: 100,
+    take: pageSize + 1,
     include: {
       user: { select: { username: true, displayName: true } },
       problem: { select: { id: true, order: true, title: true, type: true } },
       contest: true,
     },
   });
+  const hasNextPage = submissions.length > pageSize;
+  const submissionPage = submissions.slice(0, pageSize);
   const isAdmin = session?.role === "ADMIN";
 
   // 我的識讀練習紀錄：以群集為單位（資料在 RecognitionAnswer，不是 Submission）
@@ -186,7 +192,7 @@ export default async function SubmissionsPage({
             </tr>
           </thead>
           <tbody>
-            {submissions.length === 0 && (
+            {submissionPage.length === 0 && (
               <tr>
                 <td
                   colSpan={8}
@@ -196,7 +202,7 @@ export default async function SubmissionsPage({
                 </td>
               </tr>
             )}
-            {submissions.map((s) => {
+            {submissionPage.map((s) => {
               const isOwner = session?.userId === s.userId;
               const redacted =
                 s.contest &&
@@ -226,6 +232,26 @@ export default async function SubmissionsPage({
           </tbody>
         </table>
       </div>
+      {(validBefore !== null || hasNextPage) && (
+        <nav className="mt-4 flex items-center justify-end gap-3 text-sm" aria-label="Submission history pagination">
+          {validBefore !== null && (
+            <Link
+              href={`/submissions?${new URLSearchParams({ ...(onlyMine ? { mine: "1" } : {}), ...(filteredContest ? { contest: String(filteredContest.id) } : {}) })}`}
+              className="btn-secondary"
+            >
+              First page
+            </Link>
+          )}
+          {hasNextPage && submissionPage.length > 0 && (
+            <Link
+              href={`/submissions?${new URLSearchParams({ ...(onlyMine ? { mine: "1" } : {}), ...(filteredContest ? { contest: String(filteredContest.id) } : {}), before: String(submissionPage[submissionPage.length - 1].id) })}`}
+              className="btn-secondary"
+            >
+              Next page
+            </Link>
+          )}
+        </nav>
+      )}
 
       {session && recognitionRows.length > 0 && (
         <div className="mt-8">
