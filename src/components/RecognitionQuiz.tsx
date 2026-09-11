@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Markdown from "@/components/Markdown";
 import QuestionHeader from "@/components/QuestionHeader";
@@ -35,6 +35,8 @@ interface Props {
   loggedIn: boolean;
   clusterLabel: string;
   backHref: string;
+  // 從網址 ?q= 還原的起始題號（0-based）；沒帶或超範圍時為 0
+  initialIndex?: number;
 }
 
 export default function RecognitionQuiz({
@@ -42,8 +44,9 @@ export default function RecognitionQuiz({
   loggedIn,
   clusterLabel,
   backHref,
+  initialIndex = 0,
 }: Props) {
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(initialIndex);
   const [answers, setAnswers] = useState<Map<number, AnswerState>>(
     () =>
       new Map(
@@ -89,6 +92,12 @@ export default function RecognitionQuiz({
 
   function goTo(i: number) {
     setIndex(i);
+    // 只更新網址不重新導覽：重整或分享連結時用 ?q= 回到同一題
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("q", String(i + 1));
+      window.history.replaceState(null, "", url);
+    }
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -128,11 +137,82 @@ export default function RecognitionQuiz({
     }
   }
 
-  function retry() {
+  async function retry() {
+    if (submitting) return;
+    setError("");
     const next = new Map(answers);
     next.delete(q.id);
-    setAnswers(next);
+    // 未登入沒有伺服器紀錄，清掉前端狀態就好
+    if (!loggedIn) {
+      setAnswers(next);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/recognition-answers", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ problemId: q.id }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(data?.error ?? "重新作答失敗");
+        return;
+      }
+      setAnswers(next);
+    } catch {
+      setError("重新作答失敗，請稍後再試");
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  // 鍵盤快捷鍵：A-E / 1-5 選答，←/→ 切題，Esc 收起題號總覽。
+  // 不用依賴陣列（每次 render 重掛 listener），確保拿到最新的 index/answers。
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (e.key === "Escape" && paletteOpen) {
+        setPaletteOpen(false);
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        if (index > 0) {
+          e.preventDefault();
+          goTo(index - 1);
+        }
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        if (index < questions.length - 1) {
+          e.preventDefault();
+          goTo(index + 1);
+        }
+        return;
+      }
+      let picked = -1;
+      if (e.key >= "1" && e.key <= "5") {
+        picked = Number(e.key) - 1;
+      } else if (/^[a-eA-E]$/.test(e.key)) {
+        picked = e.key.toUpperCase().charCodeAt(0) - 65;
+      }
+      if (picked >= 0 && picked < q.options.length) {
+        e.preventDefault();
+        void pick(picked);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   const state = answers.get(q.id);
   const answered = state !== undefined;
@@ -228,7 +308,11 @@ export default function RecognitionQuiz({
         </button>
         <div className="flex gap-3">
           {answered && (
-            <button className="btn-secondary" onClick={retry}>
+            <button
+              className="btn-secondary"
+              disabled={submitting}
+              onClick={retry}
+            >
               重新作答
             </button>
           )}
@@ -252,7 +336,12 @@ export default function RecognitionQuiz({
               className="fixed inset-0 z-40 cursor-default"
               onClick={() => setPaletteOpen(false)}
             />
-            <div className="card relative z-50 max-h-[60vh] w-[min(90vw,26rem)] overflow-y-auto p-4 shadow-xl">
+            <div
+              id="question-palette"
+              role="dialog"
+              aria-label="題號總覽"
+              className="card relative z-50 max-h-[60vh] w-[min(90vw,26rem)] overflow-y-auto p-4 shadow-xl"
+            >
               <div className="flex flex-wrap items-center gap-1.5">
                 {questions.map((qq, i) => {
                   const s = answers.get(qq.id);
@@ -273,6 +362,16 @@ export default function RecognitionQuiz({
                           goTo(i);
                           setPaletteOpen(false);
                         }}
+                        aria-label={`第 ${i + 1} 題${
+                          i === index
+                            ? "（目前題目）"
+                            : s
+                              ? s.correct
+                                ? "，答對"
+                                : "，答錯"
+                              : "，未作答"
+                        }`}
+                        aria-current={i === index ? "true" : undefined}
                         className={`h-8 w-8 rounded-md border text-xs font-mono transition-colors ${cls}`}
                       >
                         {i + 1}
@@ -308,6 +407,7 @@ export default function RecognitionQuiz({
         <button
           type="button"
           aria-expanded={paletteOpen}
+          aria-controls="question-palette"
           className="btn-primary relative z-50 rounded-full px-5 shadow-xl"
           onClick={() => setPaletteOpen((v) => !v)}
         >

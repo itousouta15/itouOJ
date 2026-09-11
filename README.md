@@ -118,9 +118,19 @@ Optional seeds and helpers:
 
 ```bash
 node scripts/import-recognition-questions.mjs  # import the bundled APCS recognition papers (idempotent, --dry-run to validate)
+node scripts/parse-reading-bank.mjs --self-test # parser that turns a reading-bank PDF into prisma/seed-data/recognition/*.json
 node scripts/tag-problems.mjs                 # seed the tag library and assign tags by title (idempotent)
 node scripts/setup-test-contest.mjs           # build a disposable test.db with a running IOI-mode C++-only contest
 node scripts/mock-judge.mjs                   # fill test.db submission results (for Windows dev without a Linux sandbox)
+```
+
+Re-generating the recognition question JSON from the original PDF (`--dump-text` first
+to inspect the extracted layout, `--answers` if answers are in a separate key):
+
+```bash
+node scripts/parse-reading-bank.mjs --pdf <pdf> --category C --source "C 程式識讀 125 題"
+node scripts/parse-reading-bank.mjs --pdf <pdf> --category Python --source "Python 程式識讀 125 題"
+node scripts/import-recognition-questions.mjs --dry-run   # validate before importing
 ```
 
 `.env` configuration (reference):

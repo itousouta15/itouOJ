@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { avatarSrc } from "@/lib/avatar";
 import { getDiscussionAccess } from "@/lib/problemDiscussion";
 import { problemCommentSchema } from "@/lib/problemDiscussionSchema";
+import { enforceRateLimit } from "@/lib/rateLimit";
 
 // 這裡的 problemId 是資料庫的 Problem.id，不是網址上的題號（order）。
 // 題目頁把 problem.id 傳給元件，元件再打這支 API——跟 SubmitPanel 一樣。
@@ -104,6 +105,9 @@ export async function POST(
   if (!session) {
     return Response.json({ error: "請先登入" }, { status: 401 });
   }
+
+  const limited = enforceRateLimit(`comment:${session.userId}`, 10, 60_000);
+  if (limited) return limited;
 
   const { problemId: raw } = await params;
   const problemId = Number(raw);
