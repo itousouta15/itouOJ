@@ -4,7 +4,7 @@
 
 ## 1. 開始之前
 
-- 請先閱讀 `README.md`、`RELEASING.md` 與現有程式碼。
+- 請先閱讀 `README.md`、`docs/guides/releasing-windows-client.md` 與現有程式碼。
 - 若要修正 bug，請先檢查是否已有相關 issue。若沒有，請先開 issue。
 - 若要提出新功能，請先描述動機和預期行為，避免重複工作。
 

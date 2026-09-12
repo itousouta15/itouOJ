@@ -24,6 +24,7 @@
 .DS_Store
 *.pem
 .superpowers/
+docs/superpowers/
 
 # debug
 npm-debug.log*
@@ -45,6 +46,8 @@ next-env.d.ts
 dev.db
 test.db
 *.db-journal
+prisma/data/*.db
+prisma/data/*.db-journal
 
 # 比賽選手帳密名單（scripts/contest-accounts.mjs 產出，含明碼密碼）
 contest-accounts-*.csv
@@ -67,6 +70,7 @@ android/app/src/main/assets/
 AGENTS.md
 # 題目匯出（scripts/export-problems.mjs 產出，可隨時重新產生）
 problem-docs/
+artifacts/
 
 # 未公開比賽的出題 script：明碼版只留在本機，git 裡只放加密過的 .enc
 # （openssl enc -aes-256-cbc -pbkdf2 -iter 200000，密碼另外管道傳遞）

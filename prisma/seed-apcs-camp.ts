@@ -1,7 +1,7 @@
 import "dotenv/config";
 import Database from "better-sqlite3";
 
-const dbPath = (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, "");
+const dbPath = (process.env.DATABASE_URL ?? "file:./prisma/data/dev.db").replace(/^file:/, "");
 const db = new Database(dbPath);
 db.pragma("foreign_keys = ON");
 

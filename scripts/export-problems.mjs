@@ -1,6 +1,6 @@
 // 把比賽題目匯出成可列印的 HTML（瀏覽器 Ctrl+P 另存 PDF）；不直接產 PDF：本機沒有
 // Chromium，中文 PDF 需嵌字型。渲染管線與網站一致（remark-gfm/math + rehype-katex）。
-// 用法：[--contest N] [--out DIR] [--db test.db]，預設最新一場 -> ./problem-docs。
+// 用法：[--contest N] [--out DIR] [--db test.db]，預設最新一場 -> ./artifacts/problem-docs。
 
 import "dotenv/config";
 import fs from "node:fs";
@@ -22,11 +22,11 @@ function flag(name, fallback) {
     : fallback;
 }
 
-const dbPath = (flag("db", process.env.DATABASE_URL ?? "file:./dev.db")).replace(
+const dbPath = (flag("db", process.env.DATABASE_URL ?? "file:./prisma/data/dev.db")).replace(
   /^file:/,
   ""
 );
-const outDir = path.resolve(flag("out", "./problem-docs"));
+const outDir = path.resolve(flag("out", "./artifacts/problem-docs"));
 
 if (!fs.existsSync(dbPath)) {
   console.error(`找不到資料庫：${path.resolve(dbPath)}`);

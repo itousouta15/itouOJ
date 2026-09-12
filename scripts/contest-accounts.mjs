@@ -43,7 +43,7 @@ function parseArgs(argv) {
 }
 
 function openDb() {
-  const url = process.env.DATABASE_URL ?? "file:./dev.db";
+  const url = process.env.DATABASE_URL ?? "file:./prisma/data/dev.db";
   const file = url.replace(/^file:/, "");
   if (!fs.existsSync(file)) {
     console.error(`找不到資料庫：${path.resolve(file)}`);

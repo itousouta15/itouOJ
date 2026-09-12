@@ -16,7 +16,7 @@ function flag(name, fallback) {
 }
 
 const dryRun = argv.includes("--dry-run");
-const dbPath = flag("db", (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, ""));
+const dbPath = flag("db", (process.env.DATABASE_URL ?? "file:./prisma/data/dev.db").replace(/^file:/, ""));
 const dataDir = path.resolve("prisma/seed-data/recognition");
 
 if (!fs.existsSync(dataDir)) {

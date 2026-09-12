@@ -104,7 +104,7 @@ export default async function HomePage() {
       <section className="pt-4" data-app-section="hero">
         <div className="flex flex-col items-center text-center">
           <img
-            src="/itouOJ.png"
+            src="/brand/itouOJ.png"
             alt="itouOJ"
             className="logo-hero"
             width={88}
@@ -230,7 +230,7 @@ export default async function HomePage() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="card flex flex-col gap-4 p-6">
             <div className="flex items-center gap-3">
-              <img src="/itouOJ.png" alt="" className="h-14 w-14 rounded-xl" />
+              <img src="/brand/itouOJ.png" alt="" className="h-14 w-14 rounded-xl" />
               <div>
                 <h2 className="section-title">itouOJ Android App</h2>
                 <p className="text-sm text-dim">手機隨時寫題・判題通知・比賽提醒</p>
@@ -252,7 +252,7 @@ export default async function HomePage() {
 
           <div className="card flex flex-col gap-4 p-6">
             <div className="flex items-center gap-3">
-              <img src="/port.png" alt="" className="h-14 w-14 rounded-xl" />
+              <img src="/brand/port.png" alt="" className="h-14 w-14 rounded-xl" />
               <div>
                 <h2 className="section-title">收件程式（Windows）</h2>
                 <p className="text-sm text-dim">桌面端離線收題・測資上傳</p>

@@ -13,7 +13,7 @@ function flag(name, fallback) {
     : fallback;
 }
 
-const dbPath = flag("db", (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, ""));
+const dbPath = flag("db", (process.env.DATABASE_URL ?? "file:./prisma/data/dev.db").replace(/^file:/, ""));
 const db = new Database(dbPath);
 db.pragma("foreign_keys = ON");
 

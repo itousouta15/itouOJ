@@ -1151,7 +1151,7 @@ namespace ItouOJ
         public string ExeDownloadUrl; // null 代表這個 release 沒有附 itouOJ-Submit.exe
     }
 
-    // 版本檢查：選手是從 GitHub Releases 下載收件程式的（見 RELEASING.md），
+    // 版本檢查：選手是從 GitHub Releases 下載收件程式的（見 docs/guides/releasing-windows-client.md），
     // 所以「最新版」就是 GitHub 上最新的 release tag，不需要另外做伺服器端機制。
     public static class UpdateCheck
     {
