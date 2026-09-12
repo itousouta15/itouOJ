@@ -15,7 +15,7 @@ const USERNAME = process.env.TEST_USERNAME ?? "testplayer";
 const PASSWORD = process.env.TEST_PASSWORD ?? "test1234";
 const PORT = 3999;
 
-const devPath = (process.env.DATABASE_URL ?? "file:./dev.db").replace(/^file:/, "");
+const devPath = (process.env.DATABASE_URL ?? "file:./prisma/data/dev.db").replace(/^file:/, "");
 const testPath = path.join(path.dirname(devPath), "test.db");
 
 if (process.argv.includes("--clean")) {

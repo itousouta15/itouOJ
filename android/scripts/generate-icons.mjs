@@ -18,7 +18,7 @@ const DENSITIES = [
 ];
 
 // 母檔 1024px
-const master = await sharp(join(repo, "itouOJ.svg")).resize(1024, 1024).png().toBuffer();
+const master = await sharp(join(repo, "public", "brand", "itouOJ.svg")).resize(1024, 1024).png().toBuffer();
 
 for (const d of DENSITIES) {
   const dir = join(resDir, `mipmap-${d.name}`);

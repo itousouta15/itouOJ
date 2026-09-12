@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 
-const TARGET = "test.db";
+const TARGET = "prisma/data/test.db";
 const mode = (process.argv[2] ?? "mix").toUpperCase();
 const VALID = ["MIX", "AC", "WA", "TLE", "RE", "RESET"];
 
