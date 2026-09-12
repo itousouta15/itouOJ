@@ -1836,9 +1836,7 @@ html[data-app] [data-app-section="promo"] {
 .oj-footer {
   margin-top: 64px;
   border-top: 1px solid var(--bd);
-  background:
-    radial-gradient(circle at 12% 0%, rgba(93, 120, 255, 0.09), transparent 28rem),
-    var(--panel2);
+  background: var(--panel2);
   overflow: visible;
 }
 .oj-footer-inner {
@@ -1872,17 +1870,10 @@ html[data-app] [data-app-section="promo"] {
 .oj-footer-logo:hover {
   color: var(--blue);
 }
-.oj-footer-logo-mark {
-  display: inline-grid;
-  min-width: 38px;
-  height: 30px;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--blue) 48%, var(--bd));
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--blue) 11%, transparent);
-  color: var(--blue);
-  font-size: 13px;
-  letter-spacing: -0.12em;
+.oj-footer-logo-image {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
 }
 .oj-footer-description {
   max-width: 30rem;

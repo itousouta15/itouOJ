@@ -1,9 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const EXPLORE_LINKS = [
-  { label: "題庫", href: "/problems" },
+  { label: "時做", href: "/problems" },
   { label: "比賽", href: "/contests" },
-  { label: "認知測驗", href: "/recognition" },
+  { label: "識讀", href: "/recognition" },
   { label: "排行榜", href: "/ranking" },
   { label: "提交紀錄", href: "/submissions" },
 ];
@@ -41,10 +42,14 @@ export default function Footer() {
         <div className="oj-footer-grid">
           <section className="oj-footer-intro" aria-labelledby="oj-footer-title">
             <Link href="/" className="oj-footer-logo" id="oj-footer-title">
-              <span className="oj-footer-logo-mark" aria-hidden="true">
-                &gt;_
-              </span>
-              itouOJ
+              <Image
+                className="oj-footer-logo-image"
+                src="/brand/itouOJ.svg"
+                alt=""
+                width={32}
+                height={32}
+              />
+            實做itouOJ
             </Link>
             <p className="oj-footer-description">
               練習、比賽、提交與即時判題，專心把每一次嘗試寫成 AC。
