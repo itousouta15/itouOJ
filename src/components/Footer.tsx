@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 const EXPLORE_LINKS = [
-  { label: "時做", href: "/problems" },
+  { label: "實做", href: "/problems" },
   { label: "比賽", href: "/contests" },
   { label: "識讀", href: "/recognition" },
   { label: "排行榜", href: "/ranking" },
@@ -44,12 +44,12 @@ export default function Footer() {
             <Link href="/" className="oj-footer-logo" id="oj-footer-title">
               <Image
                 className="oj-footer-logo-image"
-                src="/brand/itouOJ.svg"
+                src="/brand/itouOJ.png"
                 alt=""
                 width={32}
                 height={32}
               />
-            實做itouOJ
+            itouOJ
             </Link>
             <p className="oj-footer-description">
               練習、比賽、提交與即時判題，專心把每一次嘗試寫成 AC。
