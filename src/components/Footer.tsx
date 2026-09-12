@@ -106,7 +106,7 @@ export default function Footer() {
 
         <div className="oj-footer-bottom">
           <span>© 2026 itouOJ</span>
-          <span>Open source · Built for problem solving</span>
+          <span>Open source · Build By itouSouta</span>
         </div>
       </div>
     </footer>
