@@ -1831,3 +1831,184 @@ html[data-app] .account-actions .btn-secondary {
 html[data-app] [data-app-section="promo"] {
   display: none;
 }
+
+/* ---- Online Judge footer ---- */
+.oj-footer {
+  margin-top: 64px;
+  border-top: 1px solid var(--bd);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(93, 120, 255, 0.09), transparent 28rem),
+    var(--panel2);
+  overflow: visible;
+}
+.oj-footer-inner {
+  max-width: 1024px;
+  padding: 48px 20px 28px;
+}
+.oj-footer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(10rem, 0.8fr) minmax(12rem, 0.95fr);
+  gap: clamp(28px, 5vw, 72px);
+}
+.oj-footer-intro,
+.oj-footer-column {
+  min-width: 0;
+}
+.oj-footer-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.oj-footer-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--tx);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.07em;
+}
+.oj-footer-logo:hover {
+  color: var(--blue);
+}
+.oj-footer-logo-mark {
+  display: inline-grid;
+  min-width: 38px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--blue) 48%, var(--bd));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--blue) 11%, transparent);
+  color: var(--blue);
+  font-size: 13px;
+  letter-spacing: -0.12em;
+}
+.oj-footer-description {
+  max-width: 30rem;
+  margin: 16px 0 20px;
+  color: var(--dim);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.oj-footer-star {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border: 1px solid color-mix(in srgb, var(--tx) 18%, var(--bd));
+  border-radius: 8px;
+  background: var(--inset);
+  color: var(--tx);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.oj-footer-star:hover {
+  border-color: var(--blue);
+  background: color-mix(in srgb, var(--blue) 10%, var(--inset));
+  transform: translateY(-2px);
+}
+.oj-footer-star svg {
+  width: 17px;
+  height: 17px;
+}
+.oj-footer-star-note {
+  margin: 10px 0 0;
+  color: var(--mute);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.oj-footer-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.oj-footer-heading {
+  margin: 3px 0 0;
+  color: var(--mute);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.oj-footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.oj-footer-links a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--dim);
+  font-size: 14px;
+  line-height: 1.45;
+  transition: color 0.18s ease, transform 0.18s ease;
+}
+.oj-footer-links a:hover {
+  color: var(--tx);
+  transform: translateX(3px);
+}
+.oj-footer-links a span {
+  color: var(--mute);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+}
+.oj-footer-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.oj-footer-stack span {
+  border: 1px solid var(--bd);
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: var(--mute);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  line-height: 1.2;
+}
+.oj-footer-divider {
+  height: 1px;
+  margin: 38px 0 20px;
+  background: var(--bd);
+}
+.oj-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px 24px;
+  color: var(--mute);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  line-height: 1.6;
+}
+@media (max-width: 760px) {
+  .oj-footer-inner {
+    padding: 40px 20px calc(30px + env(safe-area-inset-bottom) + 56px);
+  }
+  .oj-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .oj-footer-description {
+    max-width: 34rem;
+    font-size: 15px;
+  }
+  .oj-footer-links {
+    gap: 12px;
+  }
+  .oj-footer-links a {
+    font-size: 15px;
+  }
+  .oj-footer-bottom {
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10.5px;
+  }
+}
