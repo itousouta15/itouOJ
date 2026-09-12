@@ -52,7 +52,7 @@ export default function Footer() {
             itouOJ
             </Link>
             <p className="oj-footer-description">
-              練習、比賽、提交與即時判題，專心把每一次嘗試寫成 AC。
+              練習、比賽、提交，專心每一次嘗試
             </p>
             <a
               className="oj-footer-star"
