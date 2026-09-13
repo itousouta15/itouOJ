@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import DifficultyBadge from "@/components/DifficultyBadge";
@@ -12,17 +13,40 @@ export const metadata: Metadata = {
 };
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 30;
+
+function problemsHref({
+  tag,
+  sort,
+  page,
+}: {
+  tag?: string;
+  sort: "order" | "difficulty";
+  page?: number;
+}) {
+  const params = new URLSearchParams();
+  if (tag) params.set("tag", tag);
+  if (sort === "difficulty") params.set("sort", sort);
+  if (page && page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/problems?${query}` : "/problems";
+}
+
 export default async function ProblemListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string; after?: string }>;
+  searchParams: Promise<{ tag?: string; page?: string; sort?: string }>;
 }) {
-  const { tag, after: afterParam } = await searchParams;
-  const after = Number(afterParam);
-  const validAfter = Number.isInteger(after) && after >= 0 ? after : null;
-  const pageSize = 30;
+  const { tag, page: pageParam, sort: sortParam } = await searchParams;
+  const requestedPage = Number(pageParam);
+  const sort = sortParam === "difficulty" ? "difficulty" : "order";
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
+  const where = {
+    type: "PROGRAMMING",
+    ...(isAdmin ? {} : { isPublic: true }),
+    ...(tag ? { tags: { some: { tag: { name: tag } } } } : {}),
+  } as const;
 
   // 篩選列只列出（公開）實作題實際用到的標籤，不混入識讀群集專用的標籤
   const allTags = await prisma.tag.findMany({
@@ -39,20 +63,58 @@ export default async function ProblemListPage({
     orderBy: { name: "asc" },
   });
 
+  const totalProblems = await prisma.problem.count({ where });
+  const totalPages = Math.ceil(totalProblems / PAGE_SIZE);
+  const currentPage =
+    totalPages === 0
+      ? 1
+      : Math.min(
+          Math.max(Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1, 1),
+          totalPages,
+        );
+  const offset = (currentPage - 1) * PAGE_SIZE;
+  const conditions = [Prisma.sql`p."type" = 'PROGRAMMING'`];
+  if (!isAdmin) conditions.push(Prisma.sql`p."isPublic" = 1`);
+  if (tag) {
+    conditions.push(Prisma.sql`
+      EXISTS (
+        SELECT 1
+        FROM "ProblemTag" pt
+        INNER JOIN "Tag" t ON t."id" = pt."tagId"
+        WHERE pt."problemId" = p."id" AND t."name" = ${tag}
+      )
+    `);
+  }
+  const orderBy =
+    sort === "difficulty"
+      ? Prisma.sql`
+          CASE p."difficulty"
+            WHEN 'easy' THEN 1
+            WHEN 'medium' THEN 2
+            WHEN 'hard' THEN 3
+            ELSE 4
+          END ASC,
+          p."order" ASC
+        `
+      : Prisma.sql`p."order" ASC`;
+  const pageRows = await prisma.$queryRaw<{ id: number }[]>`
+    SELECT p."id"
+    FROM "Problem" p
+    WHERE ${Prisma.join(conditions, " AND ")}
+    ORDER BY ${orderBy}
+    LIMIT ${PAGE_SIZE} OFFSET ${offset}
+  `;
+  const pageProblemIds = pageRows.map((p) => p.id);
   const pageProblems = await prisma.problem.findMany({
-    where: {
-      type: "PROGRAMMING",
-      ...(isAdmin ? {} : { isPublic: true }),
-      ...(tag ? { tags: { some: { tag: { name: tag } } } } : {}),
-      ...(validAfter === null ? {} : { order: { gt: validAfter } }),
-    },
-    orderBy: { order: "asc" },
-    take: pageSize + 1,
+    where: { id: { in: pageProblemIds } },
     omit: { pdfData: true },
     include: { tags: { include: { tag: true } } },
   });
-  const hasNextPage = pageProblems.length > pageSize;
-  const problems = pageProblems.slice(0, pageSize);
+  const byId = new Map(pageProblems.map((problem) => [problem.id, problem]));
+  const problems = pageProblemIds.flatMap((id) => {
+    const problem = byId.get(id);
+    return problem ? [problem] : [];
+  });
   const problemIds = problems.map((p) => p.id);
   const acCounts = await prisma.submission.groupBy({
     by: ["problemId"],
@@ -100,13 +162,16 @@ export default async function ProblemListPage({
       </div>
       {allTags.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
-          <Link href="/problems" className={`pill ${!tag ? "pill-active" : ""}`}>
+          <Link
+            href={problemsHref({ sort })}
+            className={`pill ${!tag ? "pill-active" : ""}`}
+          >
             全部
           </Link>
           {allTags.map((t) => (
             <Link
               key={t.id}
-              href={`/problems?tag=${encodeURIComponent(t.name)}`}
+              href={problemsHref({ tag: t.name, sort })}
               className={`pill ${tag === t.name ? "pill-active" : ""}`}
             >
               {t.name}
@@ -114,23 +179,21 @@ export default async function ProblemListPage({
           ))}
         </div>
       )}
-      {(validAfter !== null || hasNextPage) && (
-        <nav className="mb-4 flex items-center justify-end gap-3 text-sm" aria-label="Problem list pagination">
-          {validAfter !== null && (
-            <Link href={tag ? `/problems?tag=${encodeURIComponent(tag)}` : "/problems"} className="btn-secondary">
-              First page
-            </Link>
-          )}
-          {hasNextPage && problems.length > 0 && (
-            <Link
-              href={`/problems?${new URLSearchParams({ ...(tag ? { tag } : {}), after: String(problems[problems.length - 1].order) })}`}
-              className="btn-secondary"
-            >
-              Next page
-            </Link>
-          )}
-        </nav>
-      )}
+      <div className="mb-4 flex flex-wrap gap-2 text-sm">
+        <span className="self-center text-dim">排序：</span>
+        <Link
+          href={problemsHref({ tag, sort: "order" })}
+          className={`pill ${sort === "order" ? "pill-active" : ""}`}
+        >
+          題號
+        </Link>
+        <Link
+          href={problemsHref({ tag, sort: "difficulty" })}
+          className={`pill ${sort === "difficulty" ? "pill-active" : ""}`}
+        >
+          難度（易到難）
+        </Link>
+      </div>
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -203,6 +266,43 @@ export default async function ProblemListPage({
           </tbody>
         </table>
       </div>
+      {totalPages > 1 && (
+        <nav
+          className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm"
+          aria-label="Problem list pagination"
+        >
+          {currentPage > 1 ? (
+            <Link
+              href={problemsHref({ tag, sort, page: currentPage - 1 })}
+              className="btn-secondary"
+            >
+              上一頁
+            </Link>
+          ) : (
+            <span className="btn-secondary cursor-not-allowed opacity-50">上一頁</span>
+          )}
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+            <Link
+              key={page}
+              href={problemsHref({ tag, sort, page })}
+              aria-current={page === currentPage ? "page" : undefined}
+              className={`pill ${page === currentPage ? "pill-active" : ""}`}
+            >
+              {page}
+            </Link>
+          ))}
+          {currentPage < totalPages ? (
+            <Link
+              href={problemsHref({ tag, sort, page: currentPage + 1 })}
+              className="btn-secondary"
+            >
+              下一頁
+            </Link>
+          ) : (
+            <span className="btn-secondary cursor-not-allowed opacity-50">下一頁</span>
+          )}
+        </nav>
+      )}
     </div>
   );
 }

@@ -21,8 +21,8 @@ Live site: [oj.itousouta.me](https://oj.itousouta.me) ・ Android App: [app-v1.2
 
 ## Features
 
-- Account registration / login (the first registered user automatically becomes an admin), Google / Discord login support
-- Problem list with tags, Markdown + KaTeX math statements, sample test cases, subtask scoring
+- Account registration / login, Google / Discord login support; the first administrator is created with the trusted-server bootstrap command
+- Problem list with tags, page-number navigation, number / difficulty sorting, Markdown + KaTeX math statements, sample test cases, subtask scoring
 - CodeMirror code editor (C++ / C / Python / Java / JavaScript) with automatic draft autosave
 - Real-time judging: AC / WA / TLE / MLE / RE / CE, with per-test-case time and memory display
 - **Code Recognition practice (識讀)**: multiple-choice questions showing a C or Python snippet ("what does this program output / do?"), organized into clusters (e.g. APCS past exam papers plus the C / Python 125-question banks — 391 questions in 15 clusters already imported); practice one at a time with instant answer checking and explanations. Answers are recorded separately (`RecognitionAnswer`, not submissions), with per-cluster progress and a reviewable answer history. The C / Python 125-question banks are used with permission from Prof. Bangye Wu for non-profit educational use, with the source credited on the recognition pages
@@ -45,7 +45,7 @@ Live site: [oj.itousouta.me](https://oj.itousouta.me) ・ Android App: [app-v1.2
 | Database | SQLite + Prisma 7 (better-sqlite3 driver adapter) |
 | Android App | Capacitor 8 (`android/` native project, WebView loading the live site) + browser / local-notifications / status-bar / keyboard / splash-screen plugins |
 | Judging engine | [sandbox-runner](sandbox-runner/README.md) (self-hosted, C/C++/Python/JavaScript) + Piston (Docker, Java) |
-| Judging queue | in-process promise chain (`src/lib/judge.ts`), automatically resumes unfinished submissions on server restart |
+| Judging queue | supervised `online-judge-worker.service` claims one submission at a time through `src/lib/judge.ts`; lease IDs prevent stale workers from writing results, and expired claims are recovered automatically. `next dev` starts an equivalent local worker |
 | Compile cache | the compiled binary from the first test case is reused for the rest of the same submission |
 
 ```
@@ -113,6 +113,8 @@ npm install                 # runs prisma generate automatically
 npx prisma migrate dev      # create the SQLite database
 npm run dev
 ```
+
+`next dev` also starts a local judging worker. It still needs a reachable sandbox-runner / Piston instance; use the SSH tunnel below when judging against the remote development services.
 
 Optional seeds and helpers:
 
@@ -317,7 +319,7 @@ npx cap run android     # or run from Android Studio
 git add -A
 git commit -m "what you changed"
 
-# 2. One-click deploy: package → upload → npm ci → migrate → build → restart services
+# 2. One-click deploy: package → upload → npm ci → prisma generate → migrate → build → restart services
 .\deploy\deploy.ps1
 
 # 3. Sync to GitHub
