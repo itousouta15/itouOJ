@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { createSession, getSession } from "@/lib/auth";
 import { enforceRateLimit } from "@/lib/rateLimit";
 
 const schema = z.object({
@@ -49,7 +49,11 @@ export async function POST(request: Request) {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash: await bcrypt.hash(parsed.data.newPassword, 10) },
+    data: {
+      passwordHash: await bcrypt.hash(parsed.data.newPassword, 10),
+      sessionVersion: { increment: 1 },
+    },
   });
+  await createSession({ userId: user.id, username: user.username, role: user.role });
   return Response.json({ ok: true });
 }

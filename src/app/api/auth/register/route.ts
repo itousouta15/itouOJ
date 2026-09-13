@@ -13,6 +13,7 @@ const schema = z.object({
     .max(20, "使用者名稱最多 20 個字元")
     .regex(/^[a-zA-Z0-9_]+$/, "只能使用英數字與底線"),
   password: z.string().min(6, "密碼至少 6 個字元").max(72),
+  email: z.string().trim().email("請輸入有效的 Email").optional(),
   turnstileToken: z.string().min(1).max(2048).optional(),
 });
 
@@ -25,7 +26,10 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const { username, password } = parsed.data;
+  const { username, password, email } = parsed.data;
+  if (!isOfflineMode() && !email) {
+    return Response.json({ error: "請輸入 recovery email" }, { status: 400 });
+  }
 
   // 註冊帳號每小時每 IP 上限；正常的教室/考場共用 IP 也用不到這麼多組
   const limited = enforceRateLimit(
@@ -48,6 +52,7 @@ export async function POST(request: Request) {
     data: {
       username,
       passwordHash: await bcrypt.hash(password, 10),
+      email: email?.toLowerCase() ?? null,
       role: "USER",
     },
   });

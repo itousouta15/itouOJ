@@ -6,13 +6,16 @@ import { useRouter } from "next/navigation";
 export default function ProfileForm({
   initialDisplayName,
   initialBio,
+  initialEmail,
 }: {
   initialDisplayName: string;
   initialBio: string;
+  initialEmail: string;
 }) {
   const router = useRouter();
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [bio, setBio] = useState(initialBio);
+  const [email, setEmail] = useState(initialEmail);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +29,7 @@ export default function ProfileForm({
       const res = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ displayName, bio }),
+        body: JSON.stringify({ displayName, bio, email }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -44,6 +47,16 @@ export default function ProfileForm({
 
   return (
     <form onSubmit={submit} className="space-y-4">
+      <div>
+        <label className="mb-1 block text-sm font-medium">Recovery Email</label>
+        <input
+          className="input"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="用於重設密碼，不會公開顯示"
+        />
+      </div>
       <div>
         <label className="mb-1 block text-sm font-medium">顯示名稱</label>
         <input

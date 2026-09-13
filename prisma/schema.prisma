@@ -14,6 +14,7 @@ model User {
   googleId     String?              @unique // Google 帳號的 sub
   discordId    String?              @unique // Discord 帳號的 id
   email        String? // 目前只有 Google / Discord 登入會帶入
+  sessionVersion Int                  @default(0)
   role         String               @default("USER") // USER | ADMIN
   displayName  String? // 顯示名稱（未設定時顯示 username）
   bio          String? // 自我介紹
@@ -43,6 +44,19 @@ model User {
   solutionReactions SolutionReaction[]
   following        Follow[]           @relation("Following")
   followers        Follow[]           @relation("Followers")
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // 站內訊息：一對一私訊。沒有獨立的「對話」表，同兩人之間依時間排序就是

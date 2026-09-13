@@ -153,6 +153,10 @@ GOOGLE_CLIENT_SECRET=""
 DISCORD_CLIENT_ID=""
 DISCORD_CLIENT_SECRET=""
 
+# Resend (password reset email)
+RESEND_API_KEY=""
+RESEND_FROM="itouOJ <noreply@account.example.tw>"
+
 # Cloudflare Turnstile (required for password login and registration outside offline mode)
 TURNSTILE_SECRET=""
 TURNSTILE_HOSTNAMES="localhost,127.0.0.1" # production: oj.itousouta.me only

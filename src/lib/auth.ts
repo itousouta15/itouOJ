@@ -32,7 +32,12 @@ export interface Session {
 }
 
 export async function createSession(session: Session) {
-  const token = await new SignJWT({ ...session })
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { sessionVersion: true },
+  });
+  if (!user) throw new Error("使用者不存在");
+  const token = await new SignJWT({ ...session, sessionVersion: user.sessionVersion })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE}s`)
@@ -50,7 +55,12 @@ export async function createSession(session: Session) {
 // 離線收件程式用的 token，不透過 cookie 發放。有效期 30 天，比網頁 session
 // 長——賽前一週設定好機器後可能就沒網路了，過期會沒辦法重新登入。
 export async function createDesktopToken(session: Session): Promise<string> {
-  return new SignJWT({ ...session })
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { sessionVersion: true },
+  });
+  if (!user) throw new Error("使用者不存在");
+  return new SignJWT({ ...session, sessionVersion: user.sessionVersion })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${60 * 60 * 24 * 30}s`) // 30 天
@@ -70,9 +80,13 @@ export const getSession = cache(async (): Promise<Session | null> => {
     // tokens belonging to deleted users immediately.
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      select: { id: true, username: true, role: true },
+      select: { id: true, username: true, role: true, sessionVersion: true },
     });
-    if (!user) return null;
+    // 舊 JWT 尚未帶 sessionVersion，migration 前的帳號一律是 version 0；
+    // 這樣不用強制全站登出，但重設密碼遞增 version 後仍能使舊 session 失效。
+    const sessionVersion =
+      typeof payload.sessionVersion === "number" ? payload.sessionVersion : 0;
+    if (!user || sessionVersion !== user.sessionVersion) return null;
     return {
       userId: user.id,
       username: user.username,
