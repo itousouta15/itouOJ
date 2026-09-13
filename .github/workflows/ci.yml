@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma Client
+        run: npm run generate
+
       # 從空資料庫套用所有 migration，順便驗證 migration 本身能從零跑完
       - name: Apply migrations
         run: npx prisma migrate deploy
