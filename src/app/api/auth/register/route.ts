@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   }
   const { username, password, email } = parsed.data;
   if (!isOfflineMode() && !email) {
-    return Response.json({ error: "請輸入 recovery email" }, { status: 400 });
+    return Response.json({ error: "請輸入 Email" }, { status: 400 });
   }
 
   // 註冊帳號每小時每 IP 上限；正常的教室/考場共用 IP 也用不到這麼多組

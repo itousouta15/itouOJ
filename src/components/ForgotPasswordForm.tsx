@@ -34,7 +34,7 @@ export default function ForgotPasswordForm() {
   return (
     <form onSubmit={submit} className="space-y-4">
       <p className="text-sm leading-relaxed text-dim">
-        輸入使用者名稱後，若帳號已設定 recovery email，會收到 30 分鐘有效的重設連結。
+        輸入使用者名稱後，若帳號已設定 Email，會收到 30 分鐘有效的重設連結。
       </p>
       <div>
         <label className="mb-1 block text-sm font-medium">使用者名稱</label>
@@ -49,7 +49,7 @@ export default function ForgotPasswordForm() {
       {error && <p className="text-sm text-[#ff6b6b]">{error}</p>}
       {done && (
         <p className="text-sm text-[var(--green)]">
-          若帳號已設定 recovery email，重設連結將寄到該信箱。
+          若帳號已設定 Email，重設連結將寄到該信箱。
         </p>
       )}
       <button className="btn-primary" disabled={loading}>

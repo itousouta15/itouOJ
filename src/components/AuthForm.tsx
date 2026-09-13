@@ -210,7 +210,7 @@ export default function AuthForm({
           </div>
           {!isLogin && (
             <div>
-              <label className="mb-1 block text-sm font-medium">Recovery Email</label>
+              <label className="mb-1 block text-sm font-medium">Email</label>
               <input
                 className="input"
                 type="email"
