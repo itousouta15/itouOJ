@@ -17,6 +17,11 @@ export async function verifyTurnstile(
   const secret = process.env.TURNSTILE_SECRET;
   const hostnames = configuredHostnames();
   if (!secret || !token || token.length > 2048 || hostnames.size === 0) {
+    console.warn("Turnstile request is missing required configuration or token", {
+      hasSecret: Boolean(secret),
+      hasToken: Boolean(token),
+      hostnameCount: hostnames.size,
+    });
     return false;
   }
 
@@ -34,20 +39,35 @@ export async function verifyTurnstile(
         signal: AbortSignal.timeout(10_000),
       },
     );
-    if (!response.ok) return false;
+    if (!response.ok) {
+      console.warn("Turnstile Siteverify returned an HTTP error", { status: response.status });
+      return false;
+    }
 
     const result = (await response.json()) as {
       success?: boolean;
       action?: string;
       hostname?: string;
+      "error-codes"?: string[];
     };
-    return (
+    const valid =
       result.success === true &&
       result.action === action &&
       typeof result.hostname === "string" &&
-      hostnames.has(result.hostname)
-    );
-  } catch {
+      hostnames.has(result.hostname);
+    if (!valid) {
+      console.warn("Turnstile Siteverify rejected a token", {
+        expectedAction: action,
+        action: result.action,
+        hostname: result.hostname,
+        errorCodes: result["error-codes"],
+      });
+    }
+    return valid;
+  } catch (error) {
+    console.warn("Turnstile Siteverify request failed", {
+      message: error instanceof Error ? error.message : "unknown error",
+    });
     return false;
   }
 }
