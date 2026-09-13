@@ -20,18 +20,53 @@ export const viewport: Viewport = {
   ],
 };
 
+const siteUrl = process.env.APP_URL ?? "https://oj.itousouta.me";
+const siteDescription =
+  "itouOJ 是線上程式解題與競賽平台，提供程式題庫、即時程式評測、程式碼識讀練習與競賽功能。";
+
 // metadataBase 給相對網址（OG 圖片、canonical）補齊網域用；沒設的話 Next.js
 // 只會警告，不影響功能，但社群分享預覽、搜尋結果的網址可能會是錯的相對路徑。
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL ?? "https://oj.itousouta.me"),
-  title: { default: "itouOJ", template: "%s | itouOJ" },
-  description: "itouSouta 的程式解題系統，收錄 APCS 風格的練習題與線上比賽。",
+  metadataBase: new URL(siteUrl),
+  applicationName: "itouOJ",
+  title: {
+    default: "itouOJ | 線上程式解題與競賽平台",
+    template: "%s | itouOJ",
+  },
+  description: siteDescription,
+  keywords: ["itouOJ", "online judge", "程式解題", "APCS", "程式競賽"],
   openGraph: {
     siteName: "itouOJ",
     type: "website",
     locale: "zh_TW",
+    url: "/",
+    title: "itouOJ | 線上程式解題與競賽平台",
+    description: siteDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "itouOJ | 線上程式解題與競賽平台",
+    description: siteDescription,
   },
 };
+
+const websiteStructuredData = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${siteUrl}/#website`,
+  name: "itouOJ",
+  alternateName: "itou OJ",
+  url: siteUrl,
+  description: siteDescription,
+  inLanguage: "zh-Hant-TW",
+  publisher: {
+    "@type": "Organization",
+    name: "itouOJ",
+    url: siteUrl,
+    logo: `${siteUrl}/brand/itouOJ.png`,
+    sameAs: ["https://github.com/itousouta15/itouOJ"],
+  },
+}).replace(/</g, "\\u003c");
 
 // 在 hydration 前套用主題，避免亮→暗閃爍。App（Capacitor WebView）內一律
 // 深色：原生橋接在頁面載入前就會注入 window.Capacitor，這裡可同步判斷。
@@ -84,6 +119,10 @@ export default function RootLayout({
             </noscript>
           </>
         )}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: websiteStructuredData }}
+        />
       </head>
       <body className="flex min-h-full flex-col">
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />

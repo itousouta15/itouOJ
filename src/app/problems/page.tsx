@@ -9,7 +9,8 @@ import TagBadge from "@/components/TagBadge";
 
 export const metadata: Metadata = {
   title: "題目列表",
-  description: "APCS 風格的程式練習題，依難度與標籤分類，線上直接提交評測。",
+  description: "瀏覽 itouOJ 的程式題庫，依標籤與難度排序，線上撰寫程式並取得即時評測結果。",
+  alternates: { canonical: "/problems" },
 };
 export const dynamic = "force-dynamic";
 
@@ -138,9 +139,31 @@ export default async function ProblemListPage({
     });
     for (const s of solved) solvedSet.add(s.problemId);
   }
+  const itemListStructuredData = !isAdmin && problems.length > 0
+    ? JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "itouOJ 程式題庫",
+        numberOfItems: problems.length,
+        itemListOrder: "https://schema.org/ItemListOrderAscending",
+        itemListElement: problems.map((problem, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: `#${problem.order}. ${problem.title}`,
+          url: `${process.env.APP_URL ?? "https://oj.itousouta.me"}/problems/${problem.order}`,
+        })),
+      }).replace(/</g, "\\u003c")
+    : null;
 
   return (
-    <div>
+    <>
+      {itemListStructuredData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: itemListStructuredData }}
+        />
+      )}
+      <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="page-title">題目列表</h1>
         {session && (
@@ -303,6 +326,7 @@ export default async function ProblemListPage({
           )}
         </nav>
       )}
-    </div>
+      </div>
+    </>
   );
 }
