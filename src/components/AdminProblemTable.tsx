@@ -20,14 +20,17 @@ export interface AdminProblemRow {
   paper: string | null;
   sourceNumber: number | null;
   category: string | null;
+  author: { username: string; displayName: string | null } | null;
 }
 
 export default function AdminProblemTable({
   problems,
   type,
+  users,
 }: {
   problems: AdminProblemRow[];
   type: "PROGRAMMING" | "RECOGNITION";
+  users: { username: string; displayName: string | null }[];
 }) {
   const router = useRouter();
   const [rows, setRows] = useState(problems);
@@ -37,6 +40,7 @@ export default function AdminProblemTable({
   const [error, setError] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkAction, setBulkAction] = useState("publish");
+  const [bulkAuthorUsername, setBulkAuthorUsername] = useState("");
 
   const isRecognition = type === "RECOGNITION";
   const selected = new Set(selectedIds);
@@ -79,12 +83,19 @@ export default function AdminProblemTable({
 
   async function applyBulkEdit() {
     const [action, difficulty] = bulkAction.split(":");
+    const author = users.find((user) => user.username === bulkAuthorUsername);
+    if (action === "setAuthor" && !author) {
+      setError("請選擇出題者");
+      return;
+    }
     const label =
       action === "publish"
         ? "設為公開"
         : action === "unpublish"
           ? "設為未公開"
-          : `設為${difficulty === "easy" ? "簡單" : difficulty === "medium" ? "中等" : "困難"}`;
+          : action === "setAuthor"
+            ? `的出題者設為${author!.displayName || author!.username}`
+            : `設為${difficulty === "easy" ? "簡單" : difficulty === "medium" ? "中等" : "困難"}`;
     if (!confirm(`確定要將 ${selectedIds.length} 題${label}嗎？`)) return;
 
     setSaving(true);
@@ -98,6 +109,7 @@ export default function AdminProblemTable({
           type,
           action,
           ...(difficulty ? { difficulty } : {}),
+          ...(action === "setAuthor" ? { authorUsername: bulkAuthorUsername } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -166,9 +178,27 @@ export default function AdminProblemTable({
                 <option value="setDifficulty:easy">難度設為簡單</option>
                 <option value="setDifficulty:medium">難度設為中等</option>
                 <option value="setDifficulty:hard">難度設為困難</option>
+                <option value="setAuthor">設定出題者</option>
               </>
             )}
           </select>
+          {bulkAction === "setAuthor" && (
+            <select
+              className="input w-auto py-1.5 text-sm"
+              value={bulkAuthorUsername}
+              onChange={(event) => setBulkAuthorUsername(event.target.value)}
+              disabled={saving}
+            >
+              <option value="">選擇出題者</option>
+              {users.map((user) => (
+                <option key={user.username} value={user.username}>
+                  {user.displayName
+                    ? `${user.displayName}（@${user.username}）`
+                    : user.username}
+                </option>
+              ))}
+            </select>
+          )}
           <button className="btn-primary" onClick={applyBulkEdit} disabled={saving}>
             {saving ? "更新中…" : "套用"}
           </button>
@@ -204,9 +234,10 @@ export default function AdminProblemTable({
                 <th className="table-head w-20">分類</th>
               </>
             ) : (
-              <>
-                <th className="table-head w-24">難度</th>
-                <th className="table-head w-20 text-right">測資</th>
+                <>
+                  <th className="table-head w-24">難度</th>
+                  <th className="table-head w-36">出題者</th>
+                  <th className="table-head w-20 text-right">測資</th>
                 <th className="table-head w-20 text-right">提交</th>
               </>
             )}
@@ -296,6 +327,11 @@ export default function AdminProblemTable({
                 <>
                   <td className="table-cell">
                     <DifficultyBadge difficulty={p.difficulty} />
+                  </td>
+                  <td className="table-cell text-sm text-dim">
+                    {p.author
+                      ? p.author.displayName || `@${p.author.username}`
+                      : "—"}
                   </td>
                   <td className="table-cell text-right text-dim">
                     {p.testCaseCount}

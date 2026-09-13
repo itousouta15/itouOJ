@@ -7,8 +7,9 @@ const bulkEditSchema = z
   .object({
     ids: z.array(z.number().int().positive()).min(1).max(500),
     type: z.enum(PROBLEM_TYPES),
-    action: z.enum(["publish", "unpublish", "setDifficulty"]),
+    action: z.enum(["publish", "unpublish", "setDifficulty", "setAuthor"]),
     difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+    authorUsername: z.string().min(1).max(20).optional(),
   })
   .superRefine((data, ctx) => {
     if (new Set(data.ids).size !== data.ids.length) {
@@ -19,6 +20,12 @@ const bulkEditSchema = z
     }
     if (data.action === "setDifficulty" && !data.difficulty) {
       ctx.addIssue({ code: "custom", message: "請選擇難度", path: ["difficulty"] });
+    }
+    if (data.action === "setAuthor" && data.type !== "PROGRAMMING") {
+      ctx.addIssue({ code: "custom", message: "只有實作題能設定出題者", path: ["action"] });
+    }
+    if (data.action === "setAuthor" && !data.authorUsername?.trim()) {
+      ctx.addIssue({ code: "custom", message: "請選擇出題者", path: ["authorUsername"] });
     }
   });
 
@@ -34,22 +41,37 @@ export async function PUT(request: Request) {
     return Response.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const { ids, type, action, difficulty } = parsed.data;
-  const data =
-    action === "publish"
-      ? { isPublic: true }
-      : action === "unpublish"
-        ? { isPublic: false }
-        : { difficulty: difficulty! };
+  const { ids, type, action, difficulty, authorUsername } = parsed.data;
 
   const updated = await prisma.$transaction(async (tx) => {
     const count = await tx.problem.count({ where: { id: { in: ids }, type } });
     if (count !== ids.length) {
       return 0;
     }
+    const author =
+      action === "setAuthor"
+        ? await tx.user.findUnique({
+            where: { username: authorUsername!.trim() },
+            select: { id: true },
+          })
+        : null;
+    if (action === "setAuthor" && !author) {
+      return -1;
+    }
+    const data =
+      action === "publish"
+        ? { isPublic: true }
+        : action === "unpublish"
+          ? { isPublic: false }
+          : action === "setDifficulty"
+            ? { difficulty: difficulty! }
+            : { authorId: author!.id };
     const result = await tx.problem.updateMany({ where: { id: { in: ids }, type }, data });
     return result.count;
   });
+  if (updated === -1) {
+    return Response.json({ error: "找不到指定的出題者" }, { status: 400 });
+  }
   if (updated !== ids.length) {
     return Response.json(
       { error: "部分題目不存在或不屬於目前的題型" },
