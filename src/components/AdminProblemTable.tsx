@@ -35,6 +35,12 @@ export default function AdminProblemTable({
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkAction, setBulkAction] = useState("publish");
+
+  const isRecognition = type === "RECOGNITION";
+  const selected = new Set(selectedIds);
+  const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
 
   // 切換題型分頁時，由外層 <AdminProblemTable key={type}> 重新掛載，
   // rows 會直接拿到新題型的資料，不需要在 effect 裡同步 state。
@@ -59,6 +65,53 @@ export default function AdminProblemTable({
     setError("");
   }
 
+  function toggleSelected(id: number) {
+    setSelectedIds((current) =>
+      current.includes(id)
+        ? current.filter((selectedId) => selectedId !== id)
+        : [...current, id],
+    );
+  }
+
+  function toggleAllSelected() {
+    setSelectedIds(allSelected ? [] : rows.map((row) => row.id));
+  }
+
+  async function applyBulkEdit() {
+    const [action, difficulty] = bulkAction.split(":");
+    const label =
+      action === "publish"
+        ? "設為公開"
+        : action === "unpublish"
+          ? "設為未公開"
+          : `設為${difficulty === "easy" ? "簡單" : difficulty === "medium" ? "中等" : "困難"}`;
+    if (!confirm(`確定要將 ${selectedIds.length} 題${label}嗎？`)) return;
+
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/problems/bulk", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: selectedIds,
+          type,
+          action,
+          ...(difficulty ? { difficulty } : {}),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "批次更新失敗");
+        return;
+      }
+      setSelectedIds([]);
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function saveOrder() {
     setSaving(true);
     setError("");
@@ -79,8 +132,6 @@ export default function AdminProblemTable({
     }
   }
 
-  const isRecognition = type === "RECOGNITION";
-
   return (
     <div>
       {dirty && (
@@ -99,9 +150,50 @@ export default function AdminProblemTable({
           {error && <p className="text-sm text-[#ff6b6b]">{error}</p>}
         </div>
       )}
+      {selectedIds.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-blue/40 bg-panel2 px-4 py-3">
+          <span className="text-sm text-dim">已選取 {selectedIds.length} 題</span>
+          <select
+            className="input w-auto py-1.5 text-sm"
+            value={bulkAction}
+            onChange={(event) => setBulkAction(event.target.value)}
+            disabled={saving}
+          >
+            <option value="publish">設為公開</option>
+            <option value="unpublish">設為未公開</option>
+            {!isRecognition && (
+              <>
+                <option value="setDifficulty:easy">難度設為簡單</option>
+                <option value="setDifficulty:medium">難度設為中等</option>
+                <option value="setDifficulty:hard">難度設為困難</option>
+              </>
+            )}
+          </select>
+          <button className="btn-primary" onClick={applyBulkEdit} disabled={saving}>
+            {saving ? "更新中…" : "套用"}
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={() => setSelectedIds([])}
+            disabled={saving}
+          >
+            取消選取
+          </button>
+          {error && <p className="text-sm text-[#ff6b6b]">{error}</p>}
+        </div>
+      )}
       <table className="w-full">
         <thead>
           <tr>
+            <th className="table-head w-10">
+              <input
+                type="checkbox"
+                aria-label="選取全部題目"
+                checked={allSelected}
+                onChange={toggleAllSelected}
+                disabled={saving || rows.length === 0}
+              />
+            </th>
             <th className="table-head w-16">#</th>
             <th className="table-head">標題</th>
             {isRecognition ? (
@@ -126,7 +218,7 @@ export default function AdminProblemTable({
           {rows.length === 0 && (
             <tr>
               <td
-                colSpan={isRecognition ? 8 : 8}
+                colSpan={9}
                 className="table-cell py-10 text-center text-mute"
               >
                 {isRecognition
@@ -143,7 +235,7 @@ export default function AdminProblemTable({
                   ? "border-t-2 border-t-blue"
                   : ""
               }`}
-              draggable={!saving}
+              draggable={!saving && selectedIds.length === 0}
               onDragStart={() => setDragIndex(i)}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -161,6 +253,15 @@ export default function AdminProblemTable({
                 setOverIndex(null);
               }}
             >
+              <td className="table-cell">
+                <input
+                  type="checkbox"
+                  aria-label={`選取 ${p.title}`}
+                  checked={selected.has(p.id)}
+                  onChange={() => toggleSelected(p.id)}
+                  disabled={saving}
+                />
+              </td>
               <td className="table-cell text-dim">
                 <div className="flex items-center gap-2">
                   <span
