@@ -32,10 +32,10 @@ export default async function ContestProblemPage({
   const session = await getSession();
   const access = await assertContestProblemAccess(session, contestId, problemId);
   if (!access.ok) notFound();
-  const { contest, problem: baseProblem } = access;
+  const { contest } = access;
 
   const problem = await prisma.problem.findUnique({
-    where: { id: baseProblem.id },
+    where: { id: problemId },
     omit: { pdfData: true },
     include: {
       testCases: {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { getSiteWideRanking, type SiteWideRankRow } from "@/lib/ranking";
 
 export const metadata: Metadata = { title: "排行" };
 export const dynamic = "force-dynamic";
@@ -23,67 +24,6 @@ interface RankRow {
 }
 
 // 全站排行：實作與識讀合併，名次依「解題數 + 識讀答對數」總和
-interface CombinedRankRow extends RankRow {
-  recognitionCorrect: number;
-  recognitionAnswered: number;
-}
-
-async function siteWideRanking(): Promise<CombinedRankRow[]> {
-  const [acPairs, submissionCounts, recognitionAnswers, users] =
-    await Promise.all([
-      prisma.submission.findMany({
-        where: { status: "AC" },
-        distinct: ["userId", "problemId"],
-        select: { userId: true },
-      }),
-      prisma.submission.groupBy({
-        by: ["userId"],
-        _count: { _all: true },
-      }),
-      prisma.recognitionAnswer.findMany({
-        where: { problem: { type: "RECOGNITION", isPublic: true } },
-        select: { userId: true, isCorrect: true },
-      }),
-      prisma.user.findMany({
-        select: { id: true, username: true, displayName: true },
-      }),
-    ]);
-
-  const solvedByUser = new Map<string, number>();
-  for (const { userId } of acPairs) {
-    solvedByUser.set(userId, (solvedByUser.get(userId) ?? 0) + 1);
-  }
-  const subsByUser = new Map(
-    submissionCounts.map((g) => [g.userId, g._count._all]),
-  );
-  const recByUser = new Map<string, { correct: number; answered: number }>();
-  for (const a of recognitionAnswers) {
-    const s = recByUser.get(a.userId) ?? { correct: 0, answered: 0 };
-    s.answered++;
-    if (a.isCorrect) s.correct++;
-    recByUser.set(a.userId, s);
-  }
-
-  return users
-    .map((u) => {
-      const rec = recByUser.get(u.id) ?? { correct: 0, answered: 0 };
-      return {
-        username: u.username,
-        displayName: u.displayName,
-        solved: solvedByUser.get(u.id) ?? 0,
-        submissions: subsByUser.get(u.id) ?? 0,
-        recognitionCorrect: rec.correct,
-        recognitionAnswered: rec.answered,
-      };
-    })
-    .filter((r) => r.submissions > 0 || r.recognitionAnswered > 0)
-    .sort(
-      (a, b) =>
-        b.solved + b.recognitionCorrect - (a.solved + a.recognitionCorrect) ||
-        a.submissions - b.submissions,
-    );
-}
-
 async function campRanking(): Promise<RankRow[]> {
   const courses = await prisma.course.findMany({
     where: { title: { in: CAMP_COURSE_TITLES } },
@@ -156,7 +96,9 @@ export default async function RankingPage({
   const { scope } = await searchParams;
   const isCamp = scope === "camp";
 
-  const combinedRows = isCamp ? [] : (await siteWideRanking()).slice(0, 100);
+  const combinedRows: SiteWideRankRow[] = isCamp
+    ? []
+    : await getSiteWideRanking(100);
   const campRows = isCamp ? (await campRanking()).slice(0, 100) : [];
 
   return (

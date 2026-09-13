@@ -1,6 +1,8 @@
 import type { PistonPhase, PistonResult } from "@/lib/piston";
 
 const SANDBOX_URL = process.env.SANDBOX_URL ?? "http://127.0.0.1:8090";
+const COMPILE_TIMEOUT_MS = 15_000;
+const TRANSPORT_GRACE_MS = 15_000;
 
 export type { PistonPhase, PistonResult };
 
@@ -17,6 +19,7 @@ export async function sandboxExecute(params: {
   // 會跳過重新編譯，直接拿這份去跑——見 judge.ts 的 compile-once 快取。
   precompiledBinary?: string;
 }): Promise<PistonResult> {
+  const timeoutMs = COMPILE_TIMEOUT_MS + params.runTimeoutMs + TRANSPORT_GRACE_MS;
   const res = await fetch(`${SANDBOX_URL}/api/v2/execute`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -25,11 +28,12 @@ export async function sandboxExecute(params: {
       version: params.version,
       files: [{ name: params.filename, content: params.code }],
       stdin: params.stdin,
-      compile_timeout: 15000,
+      compile_timeout: COMPILE_TIMEOUT_MS,
       run_timeout: params.runTimeoutMs,
       run_memory_limit: params.runMemoryLimitBytes,
       precompiled_binary: params.precompiledBinary,
     }),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
     throw new Error(`sandbox-server HTTP ${res.status}: ${await res.text()}`);

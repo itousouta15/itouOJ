@@ -1,4 +1,6 @@
 const PISTON_URL = process.env.PISTON_URL ?? "http://localhost:2000";
+const COMPILE_TIMEOUT_MS = 15_000;
+const TRANSPORT_GRACE_MS = 15_000;
 
 export interface PistonPhase {
   stdout: string;
@@ -32,6 +34,7 @@ export async function pistonExecute(params: {
   runTimeoutMs: number;
   runMemoryLimitBytes: number;
 }): Promise<PistonResult> {
+  const timeoutMs = COMPILE_TIMEOUT_MS + params.runTimeoutMs + TRANSPORT_GRACE_MS;
   const res = await fetch(`${PISTON_URL}/api/v2/execute`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -40,10 +43,11 @@ export async function pistonExecute(params: {
       version: params.version,
       files: [{ name: params.filename, content: params.code }],
       stdin: params.stdin,
-      compile_timeout: 15000,
+      compile_timeout: COMPILE_TIMEOUT_MS,
       run_timeout: params.runTimeoutMs,
       run_memory_limit: params.runMemoryLimitBytes,
     }),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
     throw new Error(`Piston HTTP ${res.status}: ${await res.text()}`);

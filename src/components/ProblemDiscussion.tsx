@@ -42,8 +42,14 @@ export default function ProblemDiscussion({
   const [tab, setTab] = useState<"comments" | "solutions">("comments");
   const [access, setAccess] = useState<Access | null>(null);
   const [comments, setComments] = useState<DiscussionComment[]>([]);
+  const [commentTotal, setCommentTotal] = useState(0);
+  const [commentCursor, setCommentCursor] = useState<number | null>(null);
+  const [loadingMoreComments, setLoadingMoreComments] = useState(false);
   const [solutions, setSolutions] = useState<SolutionItem[]>([]);
   const [solutionTotal, setSolutionTotal] = useState(0);
+  const [solutionCursor, setSolutionCursor] = useState<number | null>(null);
+  const [solutionLoaded, setSolutionLoaded] = useState(false);
+  const [loadingMoreSolutions, setLoadingMoreSolutions] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [draft, setDraft] = useState("");
@@ -69,30 +75,89 @@ export default function ProblemDiscussion({
 
   useEffect(() => {
     let cancelled = false;
-    async function fetchAll() {
-      const [cRes, sRes] = await Promise.all([
-        fetch(`/api/problems/${problemId}/comments`, { cache: "no-store" }),
-        fetch(`/api/problems/${problemId}/solutions`, { cache: "no-store" }),
-      ]);
+    async function fetchComments() {
+      const cRes = await fetch(`/api/problems/${problemId}/comments`, {
+        cache: "no-store",
+      });
       if (cRes.ok) {
         const data = await cRes.json();
         if (cancelled) return;
         setAccess(data.access);
         setComments(data.comments);
-      }
-      if (sRes.ok) {
-        const data = await sRes.json();
-        if (cancelled) return;
-        setSolutions(data.solutions);
-        setSolutionTotal(data.total);
+        setCommentTotal(data.total ?? 0);
+        setCommentCursor(data.nextCursor ?? null);
+        setSolutionTotal(data.solutionTotal ?? 0);
+        setSolutions([]);
+        setSolutionCursor(null);
+        setSolutionLoaded(false);
       }
       if (!cancelled) setLoading(false);
     }
-    fetchAll();
+    fetchComments();
     return () => {
       cancelled = true;
     };
   }, [problemId, version]);
+
+  useEffect(() => {
+    if (tab !== "solutions" || !access?.canViewSolutions || solutions.length > 0) {
+      return;
+    }
+    let cancelled = false;
+    async function fetchSolutions() {
+      try {
+        const res = await fetch(`/api/problems/${problemId}/solutions`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setSolutions(data.solutions);
+        setSolutionTotal(data.total);
+        setSolutionCursor(data.nextCursor ?? null);
+      } finally {
+        if (!cancelled) setSolutionLoaded(true);
+      }
+    }
+    fetchSolutions();
+    return () => {
+      cancelled = true;
+    };
+  }, [access?.canViewSolutions, problemId, solutions.length, tab]);
+
+  async function loadMoreComments() {
+    if (!commentCursor || loadingMoreComments) return;
+    setLoadingMoreComments(true);
+    try {
+      const res = await fetch(
+        `/api/problems/${problemId}/comments?cursor=${commentCursor}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      setComments((current) => [...current, ...data.comments]);
+      setCommentCursor(data.nextCursor ?? null);
+    } finally {
+      setLoadingMoreComments(false);
+    }
+  }
+
+  async function loadMoreSolutions() {
+    if (!solutionCursor || loadingMoreSolutions) return;
+    setLoadingMoreSolutions(true);
+    try {
+      const res = await fetch(
+        `/api/problems/${problemId}/solutions?cursor=${solutionCursor}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      setSolutions((current) => [...current, ...data.solutions]);
+      setSolutionCursor(data.nextCursor ?? null);
+    } finally {
+      setLoadingMoreSolutions(false);
+    }
+  }
 
   async function postComment(content: string, parentId: number | null) {
     if (!content.trim()) return;
@@ -282,11 +347,6 @@ export default function ProblemDiscussion({
     );
   }
 
-  const commentCount = comments.reduce(
-    (n, c) => n + 1 + (c.replies?.length ?? 0),
-    0
-  );
-
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -295,7 +355,7 @@ export default function ProblemDiscussion({
           className={`pill ${tab === "comments" ? "pill-active" : ""}`}
           onClick={() => setTab("comments")}
         >
-          討論 {commentCount > 0 && `(${commentCount})`}
+          討論 {commentTotal > 0 && `(${commentTotal})`}
         </button>
         <button
           type="button"
@@ -422,6 +482,16 @@ export default function ProblemDiscussion({
               </div>
             ))
           )}
+          {commentCursor && (
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={loadingMoreComments}
+              onClick={loadMoreComments}
+            >
+              {loadingMoreComments ? "載入中…" : "載入更多留言"}
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -520,7 +590,9 @@ export default function ProblemDiscussion({
                   </button>
                 ))}
 
-              {solutions.length === 0 ? (
+              {!solutionLoaded ? (
+                <p className="animate-pulse text-sm text-mute">載入題解中…</p>
+              ) : solutions.length === 0 ? (
                 <p className="text-sm text-mute">
                   還沒有人分享題解，把你的想法寫下來給其他人參考吧。
                 </p>
@@ -570,6 +642,16 @@ export default function ProblemDiscussion({
                     </div>
                   </div>
                 ))
+              )}
+              {solutionCursor && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={loadingMoreSolutions}
+                  onClick={loadMoreSolutions}
+                >
+                  {loadingMoreSolutions ? "載入中…" : "載入更多題解"}
+                </button>
               )}
             </>
           )}

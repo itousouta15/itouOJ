@@ -58,6 +58,7 @@ model Message {
   readAt     DateTime?
 
   @@index([senderId, receiverId, createdAt])
+  @@index([receiverId, senderId, createdAt])
   @@index([receiverId, readAt])
 }
 
@@ -181,6 +182,7 @@ model ProblemComment {
   updatedAt DateTime @updatedAt
 
   @@index([problemId])
+  @@index([problemId, createdAt, id])
 }
 
 // 使用者分享的題解。內容一定會直接洩題，所以「要先自己 AC 過這一題才看得到」，
@@ -203,6 +205,7 @@ model ProblemSolution {
   updatedAt DateTime @updatedAt
 
   @@index([problemId])
+  @@index([problemId, createdAt, id])
 }
 
 // 留言與題解的表情回饋（👍 ❤️ 🎉 🤔，一人一則可同時按多種）。
@@ -447,6 +450,7 @@ model Submission {
   clientKey    String?      @unique
   createdAt    DateTime     @default(now())
   judgeClaimedAt DateTime?
+  judgeClaimId String?
   results      TestResult[]
 
   // 提交列表依使用者過濾並以 id 倒序、題目/比賽統計與首頁 AC 統計都會用到
@@ -455,6 +459,8 @@ model Submission {
   @@index([contestId, status])
   @@index([status])
   @@index([status, judgeClaimedAt])
+  @@index([status, judgeClaimId])
+  @@index([status, userId, problemId])
 }
 
 model RecognitionReview {

@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/db";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import { execute } from "@/lib/execute";
+import { randomUUID } from "node:crypto";
 
-// 單機用的循序判題佇列（promise chain），一次只跑一筆，避免壓垮機器。
-// 存在 globalThis 上，dev 熱重載時不會產生多條佇列。
+// Worker 透過資料庫的狀態轉換領取工作；同一筆提交只能被一個有效 claim 寫入。
 const STALE_CLAIM_MS = 15 * 60 * 1000;
 
-export async function claimNextSubmission(): Promise<number | null> {
+type JudgeClaim = { submissionId: number; claimId: string };
+
+export async function claimNextSubmission(): Promise<JudgeClaim | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     const next = await prisma.submission.findFirst({
       where: { status: "PENDING" },
@@ -15,11 +17,12 @@ export async function claimNextSubmission(): Promise<number | null> {
     });
     if (!next) return null;
 
+    const claimId = randomUUID();
     const claimed = await prisma.submission.updateMany({
       where: { id: next.id, status: "PENDING" },
-      data: { status: "JUDGING", judgeClaimedAt: new Date() },
+      data: { status: "JUDGING", judgeClaimedAt: new Date(), judgeClaimId: claimId },
     });
-    if (claimed.count === 1) return next.id;
+    if (claimed.count === 1) return { submissionId: next.id, claimId };
   }
   return null;
 }
@@ -33,7 +36,7 @@ export async function recoverStaleJudgingSubmissions(now = new Date()) {
         { judgeClaimedAt: { lt: new Date(now.getTime() - STALE_CLAIM_MS) } },
       ],
     },
-    data: { status: "PENDING", judgeClaimedAt: null },
+    data: { status: "PENDING", judgeClaimedAt: null, judgeClaimId: null },
   });
 }
 
@@ -46,13 +49,13 @@ export async function getQueueSnapshot(submissionId: number) {
 }
 
 export async function claimAndJudgeOne(): Promise<number | null> {
-  const submissionId = await claimNextSubmission();
-  if (!submissionId) return null;
-  await judgeSubmission(submissionId);
-  return submissionId;
+  const claim = await claimNextSubmission();
+  if (!claim) return null;
+  await judgeSubmission(claim.submissionId, claim.claimId);
+  return claim.submissionId;
 }
 
-// 伺服器啟動時把上次沒判完的提交撿回來（instrumentation.ts 會呼叫）
+// Worker 啟動與每次取工作前都會回收逾期 claim。
 export async function resumePendingSubmissions() {
   return recoverStaleJudgingSubmissions();
 }
@@ -102,7 +105,15 @@ export function runVerdict(
   return actual === want ? "AC" : "WA";
 }
 
-export async function judgeSubmission(submissionId: number) {
+async function refreshClaim(submissionId: number, claimId: string) {
+  const result = await prisma.submission.updateMany({
+    where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
+    data: { judgeClaimedAt: new Date() },
+  });
+  return result.count === 1;
+}
+
+export async function judgeSubmission(submissionId: number, claimId: string) {
   const submission = await prisma.submission.findUnique({
     where: { id: submissionId },
     include: {
@@ -121,27 +132,28 @@ export async function judgeSubmission(submissionId: number) {
   });
   if (!submission) return;
   // 被重新排入但其實已判完（例如重啟後重複 enqueue）就跳過
-  if (submission.status !== "JUDGING") return;
+  if (submission.status !== "JUDGING" || submission.judgeClaimId !== claimId) return;
 
   // 識別題在提交 API 就即時判定、不進判題佇列；萬一被排進來（例如舊資料
   // 重啟後被 resume 撿到），這裡直接補判，避免卡在 PENDING。
   if (submission.problem.type === "RECOGNITION") {
     const correct = submission.selectedIndex === submission.problem.answerIndex;
-    await prisma.submission.update({
-      where: { id: submissionId },
+    await prisma.submission.updateMany({
+      where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
       data: {
         status: correct ? "AC" : "WA",
         score: correct ? 100 : 0,
         judgeClaimedAt: null,
+        judgeClaimId: null,
       },
     });
     return;
   }
 
   if (!isLanguageKey(submission.language)) {
-    await prisma.submission.update({
-      where: { id: submissionId },
-      data: { status: "IE", compileError: "不支援的語言" },
+    await prisma.submission.updateMany({
+      where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
+      data: { status: "IE", compileError: "不支援的語言", judgeClaimedAt: null, judgeClaimId: null },
     });
     return;
   }
@@ -149,14 +161,23 @@ export async function judgeSubmission(submissionId: number) {
   const { problem } = submission;
 
   if (problem.testCases.length === 0) {
-    await prisma.submission.update({
-      where: { id: submissionId },
-      data: { status: "IE", compileError: "此題目沒有測資" },
+    await prisma.submission.updateMany({
+      where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
+      data: { status: "IE", compileError: "此題目沒有測資", judgeClaimedAt: null, judgeClaimId: null },
     });
     return;
   }
 
-  await prisma.testResult.deleteMany({ where: { submissionId } });
+  const started = await prisma.$transaction(async (tx) => {
+    const claim = await tx.submission.updateMany({
+      where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
+      data: { judgeClaimedAt: new Date() },
+    });
+    if (claim.count !== 1) return false;
+    await tx.testResult.deleteMany({ where: { submissionId } });
+    return true;
+  });
+  if (!started) return;
 
   const timeLimitMs = problem.timeLimitMs * lang.timeMultiplier;
   const memoryLimitBytes =
@@ -198,6 +219,7 @@ export async function judgeSubmission(submissionId: number) {
       let groupPassed = true;
 
       for (const tc of group.testCases) {
+        if (!(await refreshClaim(submissionId, claimId))) return;
         resultOrder++;
         const result = await execute(submission.language, {
           language: lang.piston,
@@ -212,11 +234,12 @@ export async function judgeSubmission(submissionId: number) {
 
         // 編譯失敗 → CE，直接結束
         if (result.compile && result.compile.code !== 0) {
-          await prisma.submission.update({
-            where: { id: submissionId },
+          await prisma.submission.updateMany({
+            where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
             data: {
               status: "CE",
               judgeClaimedAt: null,
+              judgeClaimId: null,
               compileError:
                 result.compile.stderr || result.compile.output || "編譯失敗",
             },
@@ -241,18 +264,27 @@ export async function judgeSubmission(submissionId: number) {
           group.checkMode,
         );
 
-        await prisma.testResult.create({
-          data: {
-            submissionId,
-            order: resultOrder,
-            subtaskOrder: group.subtaskOrder,
-            verdict,
-            timeMs,
-            memoryKb,
-            testCaseId: tc.id,
-            actualOutput: truncateOutput(run.stdout),
-          },
+        const persisted = await prisma.$transaction(async (tx) => {
+          const claim = await tx.submission.updateMany({
+            where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
+            data: { judgeClaimedAt: new Date() },
+          });
+          if (claim.count !== 1) return false;
+          await tx.testResult.create({
+            data: {
+              submissionId,
+              order: resultOrder,
+              subtaskOrder: group.subtaskOrder,
+              verdict,
+              timeMs,
+              memoryKb,
+              testCaseId: tc.id,
+              actualOutput: truncateOutput(run.stdout),
+            },
+          });
+          return true;
         });
+        if (!persisted) return;
 
         if (verdict !== "AC") {
           groupPassed = false;
@@ -264,25 +296,27 @@ export async function judgeSubmission(submissionId: number) {
       if (hasSubtasks && groupPassed) score! += group.points!;
     }
 
-    await prisma.submission.update({
-      where: { id: submissionId },
+    await prisma.submission.updateMany({
+      where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
       data: {
         status: overall,
         timeMs: maxTimeMs,
         memoryKb: maxMemoryKb,
         score,
         judgeClaimedAt: null,
+        judgeClaimId: null,
       },
     });
   } catch (err) {
     console.error(`[judge] submission ${submissionId} internal error:`, err);
     await prisma.submission.updateMany({
-      where: { id: submissionId },
-      data: { judgeClaimedAt: null },
-    });
-    await prisma.submission.update({
-      where: { id: submissionId },
-      data: { status: "IE", compileError: "評測系統內部錯誤，請稍後重新提交" },
+      where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
+      data: {
+        status: "IE",
+        compileError: "評測系統內部錯誤，請稍後重新提交",
+        judgeClaimedAt: null,
+        judgeClaimId: null,
+      },
     });
   }
 }

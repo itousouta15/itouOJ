@@ -80,7 +80,7 @@ export async function assertContestProblemAccess(
 
   const contestProblem = await prisma.contestProblem.findUnique({
     where: { contestId_problemId: { contestId, problemId } },
-    include: { problem: true },
+    select: { id: true },
   });
   if (!contestProblem) {
     return { ok: false as const, error: "此題不屬於本比賽", status: 404 };
@@ -95,7 +95,7 @@ export async function assertContestProblemAccess(
     };
   }
 
-  return { ok: true as const, contest, problem: contestProblem.problem };
+  return { ok: true as const, contest };
 }
 
 export type ScoreMode = "ICPC" | "IOI";

@@ -5,6 +5,8 @@ import { getDiscussionAccess } from "@/lib/problemDiscussion";
 import { problemSolutionSchema } from "@/lib/problemDiscussionSchema";
 import { summarizeReactions } from "@/lib/reactions";
 
+const PAGE_SIZE = 10;
+
 async function loadProblem(problemId: number, isAdmin: boolean) {
   const problem = await prisma.problem.findUnique({
     where: { id: problemId },
@@ -16,7 +18,7 @@ async function loadProblem(problemId: number, isAdmin: boolean) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ problemId: string }> }
 ) {
   const { problemId: raw } = await params;
@@ -43,9 +45,13 @@ export async function GET(
     return Response.json({ access, solutions: [], total });
   }
 
-  const solutions = await prisma.problemSolution.findMany({
+  const rawCursor = Number(new URL(request.url).searchParams.get("cursor"));
+  const cursor = Number.isInteger(rawCursor) && rawCursor > 0 ? rawCursor : null;
+  const solutionRows = await prisma.problemSolution.findMany({
     where: { problemId },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     select: {
       id: true,
       title: true,
@@ -68,6 +74,7 @@ export async function GET(
   });
 
   const isAdmin = session?.role === "ADMIN";
+  const solutions = solutionRows.slice(0, PAGE_SIZE);
   return Response.json({
     access,
     total,
@@ -86,6 +93,7 @@ export async function GET(
       canDelete: isAdmin || s.authorId === session?.userId,
       reactions: summarizeReactions(s.reactions, session?.userId),
     })),
+    nextCursor: solutionRows.length > PAGE_SIZE ? solutions.at(-1)?.id ?? null : null,
   });
 }
 
