@@ -216,10 +216,11 @@ body {
   position: sticky;
   top: 0;
   z-index: 80;
-  background: var(--panel2-a);
-  border-bottom: 1px solid var(--bd2);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--panel2) 72%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--bd2) 78%, transparent);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.06);
+  backdrop-filter: blur(20px) saturate(145%);
+  -webkit-backdrop-filter: blur(20px) saturate(145%);
   /* viewport-fit=cover 下讓內容避開瀏海 / 圓角 */
   padding-top: env(safe-area-inset-top);
   /* 停在 itHeaderDrop 的 0% 幀（via "both"），等 loader 滑出畫面後
@@ -1841,7 +1842,7 @@ html[data-app] [data-app-section="promo"] {
 }
 .oj-footer-inner {
   max-width: 1024px;
-  padding: 48px 20px 28px;
+  padding: 48px 16px 28px;
 }
 .oj-footer-grid {
   display: grid;
@@ -1981,7 +1982,7 @@ html[data-app] [data-app-section="promo"] {
 }
 @media (max-width: 760px) {
   .oj-footer-inner {
-    padding: 40px 20px calc(30px + env(safe-area-inset-bottom) + 56px);
+    padding: 40px 16px calc(30px + env(safe-area-inset-bottom) + 56px);
   }
   .oj-footer-grid {
     grid-template-columns: 1fr;
