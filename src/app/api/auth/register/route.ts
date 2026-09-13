@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
 import { clientIp, enforceRateLimit } from "@/lib/rateLimit";
+import { isOfflineMode } from "@/lib/offline";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 const schema = z.object({
   username: z
@@ -11,6 +13,7 @@ const schema = z.object({
     .max(20, "使用者名稱最多 20 個字元")
     .regex(/^[a-zA-Z0-9_]+$/, "只能使用英數字與底線"),
   password: z.string().min(6, "密碼至少 6 個字元").max(72),
+  turnstileToken: z.string().min(1).max(2048).optional(),
 });
 
 export async function POST(request: Request) {
@@ -31,6 +34,10 @@ export async function POST(request: Request) {
     60 * 60_000
   );
   if (limited) return limited;
+
+  if (!isOfflineMode() && !(await verifyTurnstile(parsed.data.turnstileToken, "register", request))) {
+    return Response.json({ error: "安全驗證失敗，請再試一次" }, { status: 403 });
+  }
 
   const existing = await prisma.user.findUnique({ where: { username } });
   if (existing) {

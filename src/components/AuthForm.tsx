@@ -1,10 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { GoogleIcon, DiscordIcon } from "@/components/OAuthIcons";
 import { isNativeApp } from "@/lib/capacitor";
+
+const TURNSTILE_SITE_KEY = "0x4AAAAAAEyxZqhNBQsZiB0g";
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        container: HTMLElement,
+        options: {
+          sitekey: string;
+          action: "login" | "register";
+          size: "flexible";
+        },
+      ) => string;
+      getResponse: (widgetId: string) => string;
+      reset: (widgetId: string) => void;
+      remove: (widgetId: string) => void;
+    };
+  }
+}
 
 export default function AuthForm({
   mode,
@@ -12,6 +33,7 @@ export default function AuthForm({
   googleError = false,
   discordEnabled = false,
   discordError = false,
+  turnstileEnabled = true,
   next = null,
 }: {
   mode: "login" | "register";
@@ -19,6 +41,7 @@ export default function AuthForm({
   googleError?: boolean;
   discordEnabled?: boolean;
   discordError?: boolean;
+  turnstileEnabled?: boolean;
   // 登入後導回的站內路徑（已由 safeNextPath 驗證過）
   next?: string | null;
 }) {
@@ -34,8 +57,46 @@ export default function AuthForm({
   );
   const [loading, setLoading] = useState(false);
   const [oauthBusy, setOauthBusy] = useState(false);
+  const [turnstileLoaded, setTurnstileLoaded] = useState(false);
+  const turnstileContainer = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
   const isLogin = mode === "login";
   const isApp = typeof window !== "undefined" && isNativeApp();
+  const turnstileReady =
+    turnstileLoaded || (typeof window !== "undefined" && Boolean(window.turnstile));
+
+  useEffect(
+    () => () => {
+      if (turnstileWidgetId.current) {
+        window.turnstile?.remove(turnstileWidgetId.current);
+        turnstileWidgetId.current = null;
+      }
+    },
+    [isLogin],
+  );
+
+  useEffect(() => {
+    if (
+      !turnstileEnabled ||
+      !turnstileReady ||
+      !turnstileContainer.current ||
+      !window.turnstile ||
+      turnstileWidgetId.current
+    ) {
+      return;
+    }
+    turnstileWidgetId.current = window.turnstile.render(turnstileContainer.current, {
+      sitekey: TURNSTILE_SITE_KEY,
+      action: isLogin ? "login" : "register",
+      size: "flexible",
+    });
+  }, [turnstileEnabled, turnstileReady, isLogin]);
+
+  function resetTurnstile() {
+    if (turnstileWidgetId.current) {
+      window.turnstile?.reset(turnstileWidgetId.current);
+    }
+  }
 
   // App 內 OAuth：開系統瀏覽器跑登入，完成後用一次性 code 換 session，
   // 不會污染瀏覽器的登入狀態，也不會被 WebView 封鎖。
@@ -92,19 +153,29 @@ export default function AuthForm({
     }
   }
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const turnstileToken = turnstileEnabled
+      ? turnstileWidgetId.current
+        ? window.turnstile?.getResponse(turnstileWidgetId.current)
+        : ""
+      : undefined;
+    if (turnstileEnabled && !turnstileToken) {
+      setError("請完成安全驗證");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
       const res = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, turnstileToken }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "發生錯誤");
+        resetTurnstile();
         setLoading(false);
         return;
       }
@@ -112,6 +183,7 @@ export default function AuthForm({
       router.refresh();
     } catch {
       setError("發生錯誤，請稍後再試");
+      resetTurnstile();
       setLoading(false);
     }
   }
@@ -146,6 +218,17 @@ export default function AuthForm({
               required
             />
           </div>
+          {turnstileEnabled && (
+            <>
+              <Script
+                id="cloudflare-turnstile"
+                src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+                strategy="afterInteractive"
+                onReady={() => setTurnstileLoaded(true)}
+              />
+              <div ref={turnstileContainer} className="w-full" />
+            </>
+          )}
           {error && <p className="text-sm text-[#ff6b6b]">{error}</p>}
           <button className="btn-primary w-full" disabled={loading}>
             {loading ? "處理中…" : isLogin ? "登入" : "註冊"}
