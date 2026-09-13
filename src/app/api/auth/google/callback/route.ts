@@ -140,12 +140,9 @@ let savedState: string | undefined;
       });
     }
     if (!user) {
-      // 第一次用這個 Google 帳號登入 → 自動建立帳號（規則同註冊：第一個使用者是管理員）
+      // OAuth 帳號一律以一般使用者建立；管理員由受控的部署程序指派。
       const base = payload.email?.split("@")[0] || payload.name || "user";
-      const [username, userCount] = await Promise.all([
-        uniqueUsername(base),
-        prisma.user.count(),
-      ]);
+      const username = await uniqueUsername(base);
       user = await prisma.user.create({
         data: {
           username,
@@ -154,7 +151,7 @@ let savedState: string | undefined;
           email: payload.email ?? null,
           displayName: payload.name ?? null,
           avatarUrl: payload.picture ?? null,
-          role: userCount === 0 ? "ADMIN" : "USER",
+          role: "USER",
         },
       });
     }

@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.COOKIE_SECURE === "1",
+        secure: process.env.NODE_ENV === "production" || process.env.COOKIE_SECURE === "1",
       maxAge: 600,
       path: "/",
     }

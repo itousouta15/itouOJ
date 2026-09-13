@@ -7,9 +7,14 @@ import {
   parseAllowedLanguages,
   languageLabels,
 } from "@/lib/contest";
+import { enforceRateLimit } from "@/lib/rateLimit";
+import { acquireSubmissionAdmission } from "@/lib/submissionAdmission";
+
+const MAX_ACTIVE_PER_USER = 3;
+const MAX_PENDING_SUBMISSIONS = 100;
 
 // 斷網比賽的整批上傳：收件程式把程式碼存在本機，連網後一次送上來。
-// 與 /api/submissions 分開，因為賽後仍要收、且計時得用選手當下按提交的時間。
+// 一般選手只可在賽事進行中上傳，並以伺服器收到的時間計分。
 const schema = z.object({
   submissions: z
     .array(
@@ -34,6 +39,12 @@ export async function POST(
   if (!session) {
     return Response.json({ error: "請先登入" }, { status: 401 });
   }
+  const rateLimited = enforceRateLimit(
+    `offline-submission:${session.userId}`,
+    10,
+    60_000
+  );
+  if (rateLimited) return rateLimited;
 
   const { id } = await params;
   const contestId = Number(id);
@@ -68,9 +79,15 @@ export async function POST(
     }
   }
 
-  // 比賽還沒開始就沒有東西好上傳；結束後才上傳正是這條路存在的目的，所以不擋
-  if (getContestPhase(contest) === "upcoming") {
+  const phase = getContestPhase(contest);
+  if (phase === "upcoming") {
     return Response.json({ error: "比賽尚未開始" }, { status: 403 });
+  }
+  // A client clock is not evidence of when code was submitted. Participants
+  // must upload while the contest is running; trusted administrators can
+  // still import supervised offline collections after it ends.
+  if (phase === "ended" && !isAdmin) {
+    return Response.json({ error: "比賽已結束，無法再上傳" }, { status: 403 });
   }
 
   const contestProblemIds = new Set(contest.problems.map((p) => p.problemId));
@@ -98,8 +115,38 @@ export async function POST(
     }
   }
 
-  // 時間戳是選手機器給的，理論上可以被竄改。夾制在比賽區間內擋掉最離譜的情況
-  // （賽前寫好、賽後補交都會被拉回邊界）；區間內的微調擋不住，要靠監考。
+  const releaseAdmission = await acquireSubmissionAdmission();
+  try {
+  const [activeCount, pendingCount] = await Promise.all([
+    prisma.submission.count({
+      where: { userId: session.userId, status: { in: ["PENDING", "JUDGING"] } },
+    }),
+    prisma.submission.count({ where: { status: "PENDING" } }),
+  ]);
+  if (activeCount >= MAX_ACTIVE_PER_USER) {
+    return Response.json({ error: "已有太多提交等待評測" }, { status: 429 });
+  }
+  if (pendingCount >= MAX_PENDING_SUBMISSIONS) {
+    return Response.json(
+      { error: "評測佇列已滿，請稍後再試" },
+      { status: 503, headers: { "Retry-After": "30" } }
+    );
+  }
+  if (parsed.data.submissions.length > MAX_ACTIVE_PER_USER - activeCount) {
+    return Response.json(
+      { error: "這批提交超過個人待評測上限" },
+      { status: 429 }
+    );
+  }
+  if (parsed.data.submissions.length > MAX_PENDING_SUBMISSIONS - pendingCount) {
+    return Response.json(
+      { error: "這批提交超過目前佇列容量" },
+      { status: 503, headers: { "Retry-After": "30" } }
+    );
+  }
+
+  // Participant submissions always use the server receipt time. Administrators
+  // are the only trusted actors permitted to import supervised offline work.
   const startMs = contest.startTime.getTime();
   const endMs = contest.endTime.getTime();
   const clamp = (at: Date) =>
@@ -149,7 +196,7 @@ export async function POST(
         code: s.code,
         status: "PENDING",
         clientKey,
-        createdAt: clamp(s.submittedAt),
+        createdAt: isAdmin ? clamp(s.submittedAt) : new Date(),
       },
       select: { id: true },
     });
@@ -168,4 +215,7 @@ export async function POST(
     submissionIds: accepted,
     results,
   });
+  } finally {
+    releaseAdmission();
+  }
 }

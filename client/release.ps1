@@ -11,7 +11,9 @@ param(
     # 發行標題，不給就用 "itouOJ 收件程式 <Tag>"
     [string]$Title,
     # 略過「工作區有未提交變更」的確認
-    [switch]$Yes
+    [switch]$Yes,
+    # CurrentUser\My 中用來簽署更新程式的 Authenticode 憑證指紋
+    [string]$CertificateThumbprint
 )
 
 $ErrorActionPreference = "Stop"
@@ -43,6 +45,9 @@ if ($Tag) {
     if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
         throw "找不到 gh CLI，無法發布。安裝：https://cli.github.com/"
     }
+    if (-not $CertificateThumbprint) {
+        throw "發布自動更新程式必須提供 -CertificateThumbprint。"
+    }
     $existing = $null
     try {
         $existing = & gh release view $Tag --json tagName 2>$null
@@ -71,6 +76,17 @@ if ($LASTEXITCODE -ne 0) { throw "建置失敗" }
 
 $exe = Join-Path $here "itouOJ-Submit.exe"
 if (-not (Test-Path $exe)) { throw "建置沒有產出 itouOJ-Submit.exe" }
+
+if ($Tag) {
+    Step "簽署更新程式"
+    $thumbprint = $CertificateThumbprint.Replace(" ", "")
+    $cert = Get-ChildItem "Cert:\CurrentUser\My\$thumbprint" -ErrorAction Stop
+    $signature = Set-AuthenticodeSignature -FilePath $exe -Certificate $cert
+    if ($signature.Status -ne "Valid") {
+        throw "程式簽章失敗：$($signature.Status) $($signature.StatusMessage)"
+    }
+    Ok "已用 $thumbprint 簽署 itouOJ-Submit.exe"
+}
 
 # ── 打包 ────────────────────────────────────────────
 Step "打包佈署包"

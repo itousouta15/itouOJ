@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { prisma } from "@/lib/db";
 
 const DEV_SECRET = "dev-secret-please-change";
 
@@ -40,8 +41,7 @@ export async function createSession(session: Session) {
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
-    // 尚未上 HTTPS 前不能開 secure，上了之後在 .env 設 COOKIE_SECURE=1
-    secure: process.env.COOKIE_SECURE === "1",
+    secure: process.env.NODE_ENV === "production" || process.env.COOKIE_SECURE === "1",
     maxAge: MAX_AGE,
     path: "/",
   });
@@ -65,10 +65,18 @@ export const getSession = cache(async (): Promise<Session | null> => {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret);
+    if (typeof payload.userId !== "string") return null;
+    // Roles are mutable server state. Loading the account also invalidates
+    // tokens belonging to deleted users immediately.
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, username: true, role: true },
+    });
+    if (!user) return null;
     return {
-      userId: payload.userId as string,
-      username: payload.username as string,
-      role: payload.role as string,
+      userId: user.id,
+      username: user.username,
+      role: user.role,
     };
   } catch {
     return null;

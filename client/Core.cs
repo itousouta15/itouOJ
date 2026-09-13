@@ -10,6 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
@@ -201,6 +203,7 @@ namespace ItouOJ
                 string json = File.ReadAllText(ConfigPath, Encoding.UTF8);
                 Config c = new JavaScriptSerializer().Deserialize<Config>(json);
                 if (c == null) return new Config();
+                c.Cookie = UnprotectCookie(c.Cookie);
                 if (c.Problems == null) c.Problems = new List<ProblemEntry>();
                 if (c.AllowedLanguages == null) c.AllowedLanguages = new List<string>();
                 if (c.ProblemFiles == null) c.ProblemFiles = new List<ProblemFile>();
@@ -218,7 +221,42 @@ namespace ItouOJ
         {
             EnsureDirs();
             JavaScriptSerializer ser = new JavaScriptSerializer();
-            File.WriteAllText(ConfigPath, ser.Serialize(c), new UTF8Encoding(false));
+            // Keep the live object usable by callers while persisting its bearer
+            // token with a key scoped to this Windows user profile.
+            Config stored = ser.Deserialize<Config>(ser.Serialize(c));
+            stored.Cookie = ProtectCookie(c.Cookie);
+            File.WriteAllText(ConfigPath, ser.Serialize(stored), new UTF8Encoding(false));
+        }
+
+        static string ProtectCookie(string cookie)
+        {
+            if (string.IsNullOrEmpty(cookie)) return "";
+            try
+            {
+                byte[] plain = Encoding.UTF8.GetBytes(cookie);
+                byte[] protectedBytes = ProtectedData.Protect(
+                    plain, Encoding.UTF8.GetBytes("itouOJ-session-v1"),
+                    DataProtectionScope.CurrentUser);
+                return "dpapi:" + Convert.ToBase64String(protectedBytes);
+            }
+            catch { return ""; }
+        }
+
+        static string UnprotectCookie(string stored)
+        {
+            if (string.IsNullOrEmpty(stored)) return "";
+            // Existing installations used plaintext config.json. Retain the
+            // token for one load, then SaveConfig migrates it to DPAPI.
+            if (!stored.StartsWith("dpapi:")) return stored;
+            try
+            {
+                byte[] protectedBytes = Convert.FromBase64String(stored.Substring(6));
+                byte[] plain = ProtectedData.Unprotect(
+                    protectedBytes, Encoding.UTF8.GetBytes("itouOJ-session-v1"),
+                    DataProtectionScope.CurrentUser);
+                return Encoding.UTF8.GetString(plain);
+            }
+            catch { return ""; }
         }
 
         // 一筆提交一個檔：整批寫在同一個 manifest 的話，寫到一半當掉會整包壞掉
@@ -1246,6 +1284,10 @@ namespace ItouOJ
         // 讓呼叫端照舊開目前版本——版本檢查絕不能變成「開不了程式」。
         public static bool CheckAndSelfUpdate(string[] launchArgs)
         {
+            string expectedSigner = SignedFileThumbprint(Application.ExecutablePath);
+            // An unsigned client cannot safely establish a trusted update
+            // publisher. It must be updated manually to the first signed build.
+            if (string.IsNullOrEmpty(expectedSigner)) return false;
             LatestRelease latest = FetchLatestRelease();
             if (latest == null || string.IsNullOrEmpty(latest.ExeDownloadUrl)) return false;
             if (!IsOlderThan(ClientVersion, latest.Tag)) return false;
@@ -1266,6 +1308,11 @@ namespace ItouOJ
                 Directory.CreateDirectory(tempDir);
                 string newExePath = Path.Combine(tempDir, "itouOJ-Submit.new.exe");
                 File.WriteAllBytes(newExePath, newExeBytes);
+                if (SignedFileThumbprint(newExePath) != expectedSigner)
+                {
+                    File.Delete(newExePath);
+                    return false;
+                }
 
                 // 用 PowerShell 而非 .bat：機房路徑常帶中文，.bat 靠系統內碼頁容易亂碼；
                 // 這裡用 -EncodedCommand（UTF-16LE + base64）傳，不受內碼頁影響。本行程
@@ -1300,6 +1347,18 @@ namespace ItouOJ
         static string PsQuote(string s)
         {
             return "'" + s.Replace("'", "''") + "'";
+        }
+
+        static string SignedFileThumbprint(string file)
+        {
+            try
+            {
+                X509Certificate cert = X509Certificate.CreateFromSignedFile(file);
+                X509Certificate2 cert2 = new X509Certificate2(cert);
+                if (!cert2.Verify()) return null;
+                return cert2.Thumbprint.Replace(" ", "").ToUpperInvariant();
+            }
+            catch { return null; }
         }
     }
 }

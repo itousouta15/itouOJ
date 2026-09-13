@@ -140,7 +140,7 @@ DATABASE_URL="file:./prisma/data/dev.db"
 AUTH_SECRET="<openssl rand -hex 32>"
 PISTON_URL="http://localhost:2000"   # Piston address (Java)
 SANDBOX_URL="http://localhost:8090"  # sandbox-runner address (C/C++/Python/JavaScript; this is also the default)
-COOKIE_SECURE="0"                    # set to 1 once behind HTTPS
+COOKIE_SECURE="0"                    # development only; production cookies are always Secure
 JUDGE_WORKER_SECRET=""               # a long random value; required by online-judge-worker.service
 
 # Google login (optional; the button is hidden when unset)
@@ -156,11 +156,20 @@ DISCORD_CLIENT_SECRET=""
 # OFFLINE_MODE="0"                   # set to 1 to disable Google/Discord login (offline contest rooms)
 ```
 
+### First administrator
+New accounts are always regular users. After creating the intended account, run this command directly on the trusted server once:
+
+```bash
+node scripts/bootstrap-admin.mjs <username>
+```
+
+It refuses to run when an administrator already exists.
+
 ### Google login setup
-Create an "OAuth client ID" (type: Web application) in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials), and add `http://localhost:3000/api/auth/google/callback` as an authorized redirect URI. In production, add a second URI `https://<your-domain>/api/auth/google/callback` — Google rejects plain IPs and http for production, so the live site needs a domain + HTTPS before Google login can be enabled; also set `APP_URL` in `.env`. The first Google login auto-creates an account (following the "first user is admin" rule).
+Create an "OAuth client ID" (type: Web application) in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials), and add `http://localhost:3000/api/auth/google/callback` as an authorized redirect URI. In production, add a second URI `https://<your-domain>/api/auth/google/callback` — Google rejects plain IPs and http for production, so the live site needs a domain + HTTPS before Google login can be enabled; also set `APP_URL` in `.env`. The first Google login auto-creates a regular account.
 
 ### Discord login setup
-Create an Application in the [Discord Developer Portal](https://discord.com/developers/applications), take the Client ID / Client Secret from the OAuth2 tab, and add `http://localhost:3000/api/auth/discord/callback` to Redirects. In production, add `https://<your-domain>/api/auth/discord/callback` as well and set `APP_URL` in `.env`. The first Discord login also auto-creates an account.
+Create an Application in the [Discord Developer Portal](https://discord.com/developers/applications), take the Client ID / Client Secret from the OAuth2 tab, and add `http://localhost:3000/api/auth/discord/callback` to Redirects. In production, add `https://<your-domain>/api/auth/discord/callback` as well and set `APP_URL` in `.env`. The first Discord login also auto-creates a regular account.
 
 If Piston is not running locally, you can tunnel to a remote one: `ssh -N -L 2000:localhost:2000 user@server`.
 
@@ -297,7 +306,7 @@ npx cap run android     # or run from Android Studio
 
    It must run as root (the namespace/cgroup setup can't be granted to unprivileged users) and binds only to `127.0.0.1:8090`. Architecture and security model in [sandbox-runner/README.md](sandbox-runner/README.md). Set `SANDBOX_URL="http://127.0.0.1:8090"` in the server `.env` (this is also the default).
 
-4. Deploy the app itself: `npm ci && npx prisma migrate deploy && npm run build`, run `next start` under systemd (example in [deploy/online-judge.service](deploy/online-judge.service)), with nginx as reverse proxy in front ([deploy/nginx-oj.conf](deploy/nginx-oj.conf)).
+4. Deploy the app itself: `npm ci && npm run generate && npx prisma migrate deploy && npm run build`, run `next start` under systemd (example in [deploy/online-judge.service](deploy/online-judge.service)), with nginx as reverse proxy in front ([deploy/nginx-oj.conf](deploy/nginx-oj.conf)).
 
 5. Domain and HTTPS (live site `https://oj.itousouta.me`): add an A record pointing at the server (DNS only on Cloudflare), install `certbot python3-certbot-nginx`, then run `certbot --nginx -d oj.itousouta.me --redirect` (auto-renewal handled by certbot.timer). In the server `.env`, set `APP_URL="https://oj.itousouta.me"`, `COOKIE_SECURE="1"`, and the Google / Discord credentials.
 

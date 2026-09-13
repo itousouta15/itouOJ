@@ -5,6 +5,7 @@ import { getQueueSnapshot } from "@/lib/judge";
 import { LANGUAGE_KEYS } from "@/lib/languages";
 import { assertContestProblemAccess } from "@/lib/contest";
 import { clientIp, enforceRateLimit } from "@/lib/rateLimit";
+import { acquireSubmissionAdmission } from "@/lib/submissionAdmission";
 
 const USER_SUBMISSION_LIMIT = 10;
 const IP_SUBMISSION_LIMIT = 30;
@@ -78,35 +79,41 @@ export async function POST(request: Request) {
     return Response.json({ error: "題目不存在" }, { status: 404 });
   }
 
-  const [activeCount, pendingCount] = await Promise.all([
-    prisma.submission.count({
-      where: { userId: session.userId, status: { in: ["PENDING", "JUDGING"] } },
-    }),
-    prisma.submission.count({ where: { status: "PENDING" } }),
-  ]);
-  if (activeCount >= MAX_ACTIVE_PER_USER) {
-    return Response.json(
-      { error: "You already have too many submissions waiting to be judged." },
-      { status: 429 }
-    );
-  }
-  if (pendingCount >= MAX_PENDING_SUBMISSIONS) {
-    return Response.json(
-      { error: "The judging queue is currently full. Please try again shortly." },
-      { status: 503, headers: { "Retry-After": "30" } }
-    );
-  }
+  const releaseAdmission = await acquireSubmissionAdmission();
+  let submission: { id: number };
+  try {
+    const [activeCount, pendingCount] = await Promise.all([
+      prisma.submission.count({
+        where: { userId: session.userId, status: { in: ["PENDING", "JUDGING"] } },
+      }),
+      prisma.submission.count({ where: { status: "PENDING" } }),
+    ]);
+    if (activeCount >= MAX_ACTIVE_PER_USER) {
+      return Response.json(
+        { error: "You already have too many submissions waiting to be judged." },
+        { status: 429 }
+      );
+    }
+    if (pendingCount >= MAX_PENDING_SUBMISSIONS) {
+      return Response.json(
+        { error: "The judging queue is currently full. Please try again shortly." },
+        { status: 503, headers: { "Retry-After": "30" } }
+      );
+    }
 
-  const submission = await prisma.submission.create({
-    data: {
-      userId: session.userId,
-      problemId,
-      language,
-      code,
-      status: "PENDING",
-      contestId: contestId ?? null,
-    },
-  });
+    submission = await prisma.submission.create({
+      data: {
+        userId: session.userId,
+        problemId,
+        language,
+        code,
+        status: "PENDING",
+        contestId: contestId ?? null,
+      },
+    });
+  } finally {
+    releaseAdmission();
+  }
 
   const queue = await getQueueSnapshot(submission.id);
   return Response.json({ id: submission.id, queue });
