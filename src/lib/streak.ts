@@ -16,16 +16,20 @@ function shiftDay(key: string, delta: number): string {
 export interface UserStreak {
   current: number;
   longest: number;
+  winCurrent: number;
+  winLongest: number;
 }
 
 // 連續解題：當天有實作題 AC 或識讀答對都算「有解題」。目前連續在
 // 「今天有活動」或「今天還沒寫但昨天有」時都算延續（寬限一天），
-// 不會因為今天還沒開工就顯示中斷。
+// 不會因為今天還沒開工就顯示中斷。連勝則是依提交順序計算連續 AC，
+// 中間任何非 AC 結果都會重置。
 export async function getUserStreak(userId: string): Promise<UserStreak> {
-  const [acs, recognition] = await Promise.all([
+  const [submissions, recognition] = await Promise.all([
     prisma.submission.findMany({
-      where: { userId, status: "AC" },
-      select: { createdAt: true },
+      where: { userId },
+      orderBy: { id: "asc" },
+      select: { status: true, createdAt: true },
     }),
     prisma.recognitionAnswer.findMany({
       where: { userId, isCorrect: true },
@@ -34,9 +38,25 @@ export async function getUserStreak(userId: string): Promise<UserStreak> {
   ]);
 
   const days = new Set<string>();
-  for (const s of acs) days.add(dayKey(s.createdAt));
+  for (const s of submissions) {
+    if (s.status === "AC") days.add(dayKey(s.createdAt));
+  }
   for (const r of recognition) days.add(dayKey(r.updatedAt));
-  if (days.size === 0) return { current: 0, longest: 0 };
+
+  let winLongest = 0;
+  let winRun = 0;
+  for (const submission of submissions) {
+    winRun = submission.status === "AC" ? winRun + 1 : 0;
+    if (winRun > winLongest) winLongest = winRun;
+  }
+
+  let winCurrent = 0;
+  for (let i = submissions.length - 1; i >= 0; i--) {
+    if (submissions[i].status !== "AC") break;
+    winCurrent++;
+  }
+
+  if (days.size === 0) return { current: 0, longest: 0, winCurrent, winLongest };
 
   const sorted = [...days].sort();
 
@@ -56,5 +76,5 @@ export async function getUserStreak(userId: string): Promise<UserStreak> {
     cursor = shiftDay(cursor, -1);
   }
 
-  return { current, longest };
+  return { current, longest, winCurrent, winLongest };
 }
