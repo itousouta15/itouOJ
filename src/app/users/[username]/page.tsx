@@ -112,6 +112,7 @@ export default async function UserProfilePage({
     solvedCount,
     recognitionCorrect,
     streakLongest: streak.longest,
+    winStreakLongest: streak.winLongest,
   });
 
   return (
@@ -245,7 +246,9 @@ export default async function UserProfilePage({
           <span className="text-sm text-dim">
             連續解題{" "}
             <span className="mono font-semibold text-tx">{streak.current}</span>{" "}
-            天（最長 {streak.longest} 天）
+            天（最長 {streak.longest} 天） ・ 連勝{" "}
+            <span className="mono font-semibold text-tx">{streak.winCurrent}</span>{" "}
+            次（最長 {streak.winLongest} 次）
           </span>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

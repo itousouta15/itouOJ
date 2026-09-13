@@ -4,6 +4,7 @@ export interface AchievementStats {
   solved: number;
   recognitionCorrect: number;
   streakLongest: number;
+  winStreakLongest: number;
   solutions: number;
   comments: number;
   contests: number;
@@ -95,6 +96,22 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     value: (s) => s.streakLongest,
   },
   {
+    id: "win-streak-3",
+    glyph: "✓",
+    name: "連勝 3",
+    description: "連續 3 次提交 AC",
+    target: 3,
+    value: (s) => s.winStreakLongest,
+  },
+  {
+    id: "win-streak-10",
+    glyph: "✔",
+    name: "連勝 10",
+    description: "連續 10 次提交 AC",
+    target: 10,
+    value: (s) => s.winStreakLongest,
+  },
+  {
     id: "first-solution",
     glyph: "✎",
     name: "首次題解",
@@ -134,6 +151,7 @@ export async function getAchievementStats(
     solvedCount: number;
     recognitionCorrect: number;
     streakLongest: number;
+    winStreakLongest: number;
   }
 ): Promise<AchievementStats> {
   const [solutions, comments, contests, proposals] = await Promise.all([
@@ -148,6 +166,7 @@ export async function getAchievementStats(
     solved: base.solvedCount,
     recognitionCorrect: base.recognitionCorrect,
     streakLongest: base.streakLongest,
+    winStreakLongest: base.winStreakLongest,
     solutions,
     comments,
     contests,
