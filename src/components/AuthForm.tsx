@@ -47,6 +47,7 @@ export default function AuthForm({
 }) {
   const router = useRouter();
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(
     googleError
@@ -170,7 +171,7 @@ export default function AuthForm({
       const res = await fetch(`/api/auth/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, turnstileToken }),
+        body: JSON.stringify({ username, password, email: isLogin ? undefined : email, turnstileToken }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -207,6 +208,20 @@ export default function AuthForm({
               required
             />
           </div>
+          {!isLogin && (
+            <div>
+              <label className="mb-1 block text-sm font-medium">Recovery Email</label>
+              <input
+                className="input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+              />
+              <p className="mt-1 text-xs text-mute">用於重設密碼，不會公開顯示。</p>
+            </div>
+          )}
           <div>
             <label className="mb-1 block text-sm font-medium">密碼</label>
             <input
@@ -234,6 +249,13 @@ export default function AuthForm({
             {loading ? "處理中…" : isLogin ? "登入" : "註冊"}
           </button>
         </form>
+        {isLogin && (
+          <p className="mt-3 text-right text-sm">
+            <Link href="/forgot-password" className="text-blue hover:underline">
+              忘記密碼？
+            </Link>
+          </p>
+        )}
         {(googleEnabled || discordEnabled) && (
           <>
             <div className="my-4 flex items-center gap-3 text-xs text-mute">

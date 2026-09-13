@@ -94,6 +94,7 @@ export default async function SettingsPage({
         <ProfileForm
           initialDisplayName={user.displayName ?? ""}
           initialBio={user.bio ?? ""}
+          initialEmail={user.email ?? ""}
         />
       </section>
 
