@@ -153,6 +153,10 @@ GOOGLE_CLIENT_SECRET=""
 DISCORD_CLIENT_ID=""
 DISCORD_CLIENT_SECRET=""
 
+# Cloudflare Turnstile (required for password login and registration outside offline mode)
+TURNSTILE_SECRET=""
+TURNSTILE_HOSTNAMES="localhost,127.0.0.1" # production: oj.itousouta.me only
+
 # APP_URL="https://oj.example.tw"    # public URL in production (used to build OAuth redirect URIs)
 # DEPLOY_SERVER="root@<server-ip>"   # deployment target (read by deploy/deploy.ps1; the IP is not hardcoded)
 # OFFLINE_MODE="0"                   # set to 1 to disable Google/Discord login (offline contest rooms)
