@@ -19,6 +19,7 @@ $refs = @(
     "System.dll",
     "System.Core.dll",
     "System.Drawing.dll",
+    "System.Security.dll",
     "System.Windows.Forms.dll",
     "System.Web.Extensions.dll"
 ) -join ","

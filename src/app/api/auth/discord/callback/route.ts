@@ -149,16 +149,13 @@ export async function GET(request: Request) {
       });
     }
     if (!user) {
-      // 第一次用這個 Discord 帳號登入 → 自動建立帳號（規則同註冊：第一個使用者是管理員）
+      // OAuth 帳號一律以一般使用者建立；管理員由受控的部署程序指派。
       const base =
         discordUser.email?.split("@")[0] ||
         discordUser.global_name ||
         discordUser.username ||
         "user";
-      const [username, userCount] = await Promise.all([
-        uniqueUsername(base),
-        prisma.user.count(),
-      ]);
+      const username = await uniqueUsername(base);
       user = await prisma.user.create({
         data: {
           username,
@@ -167,7 +164,7 @@ export async function GET(request: Request) {
           email: discordUser.email ?? null,
           displayName: discordUser.global_name ?? discordUser.username ?? null,
           avatarUrl: avatar,
-          role: userCount === 0 ? "ADMIN" : "USER",
+          role: "USER",
         },
       });
     }

@@ -68,6 +68,8 @@
 #define COMPILE_PIDS_MAX "64" // cc1/cc1plus, as, collect2, ld -- a handful
 #define PYTHON_HOME "/opt/piston-data/packages/python/3.12.0"
 #define NODE_HOME "/opt/piston-data/packages/node/20.11.1"
+#define MAX_CAPTURE_BYTES (1024 * 1024)
+#define MAX_REQUEST_BYTES (256 * 1024)
 
 struct lang_info {
   const char *key; // matches src/lib/languages.ts's `lang.piston` value
@@ -125,13 +127,19 @@ static const char *signal_name(int sig) {
 
 // ---- growable buffer ----
 
-static void buf_append(char **buf, size_t *len, const char *data, size_t n) {
+// Return false once a stream reaches its limit. Capturing is performed by the
+// privileged server process, so child cgroup limits do not protect this heap.
+static int buf_append(char **buf, size_t *len, const char *data, size_t n) {
+  if (*len >= MAX_CAPTURE_BYTES) return 0;
+  size_t original_n = n;
+  if (n > MAX_CAPTURE_BYTES - *len) n = MAX_CAPTURE_BYTES - *len;
   char *grown = realloc(*buf, *len + n + 1);
-  if (!grown) return; // best-effort; drop the append rather than crash
+  if (!grown) return 0;
   *buf = grown;
   memcpy(*buf + *len, data, n);
   *len += n;
   (*buf)[*len] = '\0';
+  return n == original_n;
 }
 
 // ---- subprocess execution with non-blocking multiplexed I/O ----
@@ -175,6 +183,7 @@ static int run_child(char *const argv[], const char *stdin_data,
     return -1;
   }
   if (pid == 0) {
+    setpgid(0, 0);
     dup2(in_pipe[0], 0);
     dup2(out_pipe[1], 1);
     dup2(err_pipe[1], 2);
@@ -192,6 +201,10 @@ static int run_child(char *const argv[], const char *stdin_data,
     execvp(argv[0], argv);
     _exit(127);
   }
+
+  // Make group signalling reliable even if the child has not reached its own
+  // setpgid call by the time an output cap is hit.
+  setpgid(pid, pid);
 
   close(in_pipe[0]);
   close(out_pipe[1]);
@@ -211,6 +224,7 @@ static int run_child(char *const argv[], const char *stdin_data,
   struct timespec start;
   clock_gettime(CLOCK_MONOTONIC, &start);
   int killed_for_timeout = 0;
+  int killed_for_output = 0;
 
   while (out_open || err_open || meta_open) {
     struct pollfd fds[4];
@@ -267,7 +281,11 @@ static int run_child(char *const argv[], const char *stdin_data,
       char tmp[4096];
       ssize_t n = read(out_pipe[0], tmp, sizeof(tmp));
       if (n > 0) {
-        buf_append(&out->stdout_buf, &out->stdout_len, tmp, (size_t)n);
+        if (!buf_append(&out->stdout_buf, &out->stdout_len, tmp, (size_t)n) &&
+            !killed_for_output) {
+          kill(-pid, SIGKILL);
+          killed_for_output = 1;
+        }
       } else {
         close(out_pipe[0]);
         out_open = 0;
@@ -277,7 +295,11 @@ static int run_child(char *const argv[], const char *stdin_data,
       char tmp[4096];
       ssize_t n = read(err_pipe[0], tmp, sizeof(tmp));
       if (n > 0) {
-        buf_append(&out->stderr_buf, &out->stderr_len, tmp, (size_t)n);
+        if (!buf_append(&out->stderr_buf, &out->stderr_len, tmp, (size_t)n) &&
+            !killed_for_output) {
+          kill(-pid, SIGKILL);
+          killed_for_output = 1;
+        }
       } else {
         close(err_pipe[0]);
         err_open = 0;
@@ -287,7 +309,11 @@ static int run_child(char *const argv[], const char *stdin_data,
       char tmp[4096];
       ssize_t n = read(meta_pipe[0], tmp, sizeof(tmp));
       if (n > 0) {
-        buf_append(&out->meta_buf, &out->meta_len, tmp, (size_t)n);
+        if (!buf_append(&out->meta_buf, &out->meta_len, tmp, (size_t)n) &&
+            !killed_for_output) {
+          kill(-pid, SIGKILL);
+          killed_for_output = 1;
+        }
       } else {
         close(meta_pipe[0]);
         meta_open = 0;
@@ -861,6 +887,7 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
 struct conn_ctx {
   char *body;
   size_t body_len;
+  int too_large;
 };
 
 static enum MHD_Result handle_request(void *cls, struct MHD_Connection *conn,
@@ -887,6 +914,11 @@ static enum MHD_Result handle_request(void *cls, struct MHD_Connection *conn,
 
   struct conn_ctx *ctx = *con_cls;
   if (*upload_data_size > 0) {
+    if (ctx->too_large || *upload_data_size > MAX_REQUEST_BYTES - ctx->body_len) {
+      ctx->too_large = 1;
+      *upload_data_size = 0;
+      return MHD_YES;
+    }
     char *grown = realloc(ctx->body, ctx->body_len + *upload_data_size + 1);
     if (!grown) return MHD_NO;
     ctx->body = grown;
@@ -897,8 +929,9 @@ static enum MHD_Result handle_request(void *cls, struct MHD_Connection *conn,
     return MHD_YES;
   }
 
-  enum MHD_Result rc = process_execute(conn, ctx->body ? ctx->body : "",
-                                        ctx->body_len);
+  enum MHD_Result rc = ctx->too_large
+      ? send_text_response(conn, 413, "request body too large\n")
+      : process_execute(conn, ctx->body ? ctx->body : "", ctx->body_len);
   free(ctx->body);
   free(ctx);
   *con_cls = NULL;

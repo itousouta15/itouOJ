@@ -44,7 +44,19 @@ export default function AuthForm({
     setOauthBusy(true);
     setError("");
     try {
-      const res = await fetch(`/api/auth/app/start?provider=${provider}`);
+      const verifier = `${crypto.randomUUID()}${crypto.randomUUID()}`;
+      const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(verifier)
+      );
+      const codeChallenge = Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, "0")
+      ).join("");
+      const res = await fetch("/api/auth/app/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, codeChallenge }),
+      });
       const data = await res.json();
       if (!res.ok || !data.code) {
         setError(data.error ?? "無法開始登入");
@@ -57,7 +69,7 @@ export default function AuthForm({
           const done = await fetch("/api/auth/app/complete", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code: data.code }),
+            body: JSON.stringify({ code: data.code, verifier }),
           });
           const result = await done.json();
           if (done.ok) {

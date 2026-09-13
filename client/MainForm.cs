@@ -123,6 +123,17 @@ namespace ItouOJ
         {
             Store.EnsureDirs();
             cfg = Store.LoadConfig();
+            string normalizedServer;
+            if (!IsTrustedServerUrl(cfg.ServerUrl, out normalizedServer))
+            {
+                cfg.ServerUrl = "";
+                ClearSession();
+                Store.SaveConfig(cfg);
+            }
+            else
+            {
+                cfg.ServerUrl = normalizedServer;
+            }
             ApplyLaunchUrl(launchUrl);
             BuildUi();
             LoadFromConfig();
@@ -176,10 +187,10 @@ namespace ItouOJ
                     else if (k == "user") launchUser = v;
                 }
 
-                if (!string.IsNullOrEmpty(server) &&
-                    (server.StartsWith("http://") || server.StartsWith("https://")))
+                string trustedServer;
+                if (IsTrustedServerUrl(server, out trustedServer))
                 {
-                    cfg.ServerUrl = server.TrimEnd('/');
+                    cfg.ServerUrl = trustedServer;
                 }
                 // 比賽編號只是記下來，真正的題目與時間仍要登入後向伺服器要
                 if (contest > 0 && contest != cfg.ContestId)
@@ -1943,9 +1954,26 @@ namespace ItouOJ
 
         string BaseUrl()
         {
-            string u = txtServer.Text.Trim();
-            while (u.EndsWith("/")) u = u.Substring(0, u.Length - 1);
-            return u;
+            string trusted;
+            return IsTrustedServerUrl(txtServer.Text, out trusted) ? trusted : "";
+        }
+
+        // The protocol handler may be invoked by any web page. Accept only the
+        // production HTTPS origin, with no credentials, path, or custom port.
+        static bool IsTrustedServerUrl(string value, out string normalized)
+        {
+            normalized = null;
+            Uri uri;
+            if (string.IsNullOrEmpty(value) || !Uri.TryCreate(value, UriKind.Absolute, out uri))
+                return false;
+            if (uri.Scheme != Uri.UriSchemeHttps ||
+                !string.Equals(uri.Host, "oj.itousouta.me", StringComparison.OrdinalIgnoreCase) ||
+                !uri.IsDefaultPort || !string.IsNullOrEmpty(uri.UserInfo) ||
+                uri.AbsolutePath != "/" || !string.IsNullOrEmpty(uri.Query) ||
+                !string.IsNullOrEmpty(uri.Fragment))
+                return false;
+            normalized = uri.GetLeftPart(UriPartial.Authority);
+            return true;
         }
 
         // ── 賽前：登入 → 抓比賽清單 ────────────────

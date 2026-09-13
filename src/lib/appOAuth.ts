@@ -5,6 +5,7 @@
 interface PendingLogin {
   provider: "google" | "discord";
   createdAt: number;
+  codeChallenge: string;
   userId?: string;
 }
 
@@ -18,10 +19,13 @@ function cleanup() {
   }
 }
 
-export function createAppLogin(provider: "google" | "discord"): string {
+export function createAppLogin(
+  provider: "google" | "discord",
+  codeChallenge: string
+): string {
   cleanup();
   const code = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
-  store.set(code, { provider, createdAt: Date.now() });
+  store.set(code, { provider, createdAt: Date.now(), codeChallenge });
   return code;
 }
 
@@ -46,10 +50,11 @@ export function completeAppLogin(code: string, userId: string): boolean {
 
 // App 回來領 session；領走就刪（一次性）
 export function consumeAppLogin(
-  code: string
+  code: string,
+  codeChallenge: string
 ): { provider: "google" | "discord"; userId: string } | null {
   const p = store.get(code);
-  if (!p || !p.userId) return null;
+  if (!p || !p.userId || p.codeChallenge !== codeChallenge) return null;
   if (Date.now() - p.createdAt > TTL_MS) {
     store.delete(code);
     return null;

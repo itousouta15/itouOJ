@@ -37,13 +37,11 @@ export async function POST(request: Request) {
     return Response.json({ error: "使用者名稱已被使用" }, { status: 400 });
   }
 
-  // 第一個註冊的使用者自動成為管理員
-  const userCount = await prisma.user.count();
   const user = await prisma.user.create({
     data: {
       username,
       passwordHash: await bcrypt.hash(password, 10),
-      role: userCount === 0 ? "ADMIN" : "USER",
+      role: "USER",
     },
   });
 
