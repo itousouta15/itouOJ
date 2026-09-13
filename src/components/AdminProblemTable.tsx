@@ -23,6 +23,52 @@ export interface AdminProblemRow {
   author: { username: string; displayName: string | null } | null;
 }
 
+function SelectionCheckbox({
+  checked,
+  onChange,
+  disabled,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled: boolean;
+  label: string;
+}) {
+  return (
+    <label
+      className={`inline-flex h-5 w-5 items-center justify-center ${
+        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+      }`}
+      title={label}
+    >
+      <input
+        type="checkbox"
+        className="peer sr-only"
+        aria-label={label}
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+      />
+      <span className="flex h-4 w-4 items-center justify-center rounded border border-bd2 bg-panel transition-colors peer-checked:border-blue peer-checked:bg-blue peer-focus-visible:ring-2 peer-focus-visible:ring-blue/70">
+        <svg
+          viewBox="0 0 12 12"
+          className="hidden h-3 w-3 text-white peer-checked:block"
+          aria-hidden
+        >
+          <path
+            d="m2.5 6 2.1 2.1L9.5 3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+    </label>
+  );
+}
+
 export default function AdminProblemTable({
   problems,
   type,
@@ -216,12 +262,11 @@ export default function AdminProblemTable({
         <thead>
           <tr>
             <th className="table-head w-10">
-              <input
-                type="checkbox"
-                aria-label="選取全部題目"
+              <SelectionCheckbox
                 checked={allSelected}
-                onChange={toggleAllSelected}
                 disabled={saving || rows.length === 0}
+                label="選取全部題目"
+                onChange={toggleAllSelected}
               />
             </th>
             <th className="table-head w-16">#</th>
@@ -261,7 +306,7 @@ export default function AdminProblemTable({
           {rows.map((p, i) => (
             <tr
               key={p.id}
-              className={`hover:bg-panel2 ${dragIndex === i ? "opacity-40" : ""} ${
+              className={`${selected.has(p.id) ? "bg-blue/10" : "hover:bg-panel2"} ${dragIndex === i ? "opacity-40" : ""} ${
                 overIndex === i && dragIndex !== null && dragIndex !== i
                   ? "border-t-2 border-t-blue"
                   : ""
@@ -283,14 +328,13 @@ export default function AdminProblemTable({
                 setDragIndex(null);
                 setOverIndex(null);
               }}
-            >
+              >
               <td className="table-cell">
-                <input
-                  type="checkbox"
-                  aria-label={`選取 ${p.title}`}
+                <SelectionCheckbox
                   checked={selected.has(p.id)}
-                  onChange={() => toggleSelected(p.id)}
                   disabled={saving}
+                  label={`選取 ${p.title}`}
+                  onChange={() => toggleSelected(p.id)}
                 />
               </td>
               <td className="table-cell text-dim">
