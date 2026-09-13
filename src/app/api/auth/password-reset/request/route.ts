@@ -10,7 +10,7 @@ import {
 const schema = z.object({ username: z.string().trim().min(1).max(20) });
 const RESPONSE = {
   ok: true,
-  message: "若帳號已設定 recovery email，重設連結將寄到該信箱。",
+  message: "若帳號已設定 Email，重設連結將寄到該信箱。",
 };
 
 export async function POST(request: Request) {

@@ -48,7 +48,7 @@ export default function ProfileForm({
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
-        <label className="mb-1 block text-sm font-medium">Recovery Email</label>
+        <label className="mb-1 block text-sm font-medium">Email</label>
         <input
           className="input"
           type="email"
