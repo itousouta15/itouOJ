@@ -2,11 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 const EXPLORE_LINKS = [
-  { label: "實做", href: "/problems" },
+  { label: "實作", href: "/problems" },
   { label: "比賽", href: "/contests" },
   { label: "識讀", href: "/recognition" },
   { label: "排行榜", href: "/ranking" },
   { label: "提交紀錄", href: "/submissions" },
+  { label: "關於 itouOJ", href: "/about" },
 ];
 
 const RESOURCE_LINKS = [

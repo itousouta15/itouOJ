@@ -19,13 +19,21 @@ export async function generateMetadata({
 
   const announcement = await prisma.announcement.findUnique({
     where: { id: announcementId },
-    select: { title: true, content: true },
+    select: { title: true, content: true, createdAt: true },
   });
   if (!announcement) return {};
 
   return {
     title: announcement.title,
     description: markdownSnippet(announcement.content),
+    alternates: { canonical: `/announcements/${announcementId}` },
+    openGraph: {
+      type: "article",
+      title: `${announcement.title} | itouOJ`,
+      description: markdownSnippet(announcement.content),
+      url: `/announcements/${announcementId}`,
+      publishedTime: announcement.createdAt.toISOString(),
+    },
   };
 }
 
@@ -43,9 +51,28 @@ export default async function AnnouncementPage({
     where: { id: announcementId },
   });
   if (!announcement) notFound();
+  const articleStructuredData = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: announcement.title,
+    description: markdownSnippet(announcement.content),
+    datePublished: announcement.createdAt.toISOString(),
+    dateModified: announcement.createdAt.toISOString(),
+    mainEntityOfPage: `${process.env.APP_URL ?? "https://oj.itousouta.me"}/announcements/${announcement.id}`,
+    publisher: {
+      "@type": "Organization",
+      name: "itouOJ",
+      url: process.env.APP_URL ?? "https://oj.itousouta.me",
+    },
+  }).replace(/</g, "\\u003c");
 
   return (
-    <div className="space-y-6">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: articleStructuredData }}
+      />
+      <div className="space-y-6">
       <div>
         <div className="flex flex-wrap items-center gap-3">
           {announcement.isPinned && (
@@ -72,6 +99,7 @@ export default async function AnnouncementPage({
       <div className="card p-6">
         <Markdown>{announcement.content}</Markdown>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

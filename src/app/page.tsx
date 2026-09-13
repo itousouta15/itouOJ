@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getActivityFeed, type FeedItem } from "@/lib/activityFeed";
@@ -12,6 +14,9 @@ import VerdictBadge from "@/components/VerdictBadge";
 import FeedList from "@/components/FeedList";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage() {
   const session = await getSession();
@@ -85,12 +90,13 @@ export default async function HomePage() {
       {/* Hero（GitHub 風格：置中 LOGO + 標語 + CTA） */}
       <section className="pt-4" data-app-section="hero">
         <div className="flex flex-col items-center text-center">
-          <img
+          <Image
             src="/brand/itouOJ.png"
             alt="itouOJ"
             className="logo-hero"
             width={88}
             height={88}
+            priority
           />
           <h1 className="serif mt-6 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
             寫程式、送出、拿下 AC
@@ -212,7 +218,13 @@ export default async function HomePage() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="card flex flex-col gap-4 p-6">
             <div className="flex items-center gap-3">
-              <img src="/brand/itouOJ.png" alt="" className="h-14 w-14 rounded-xl" />
+              <Image
+                src="/brand/itouOJ.png"
+                alt=""
+                className="h-14 w-14 rounded-xl"
+                width={56}
+                height={56}
+              />
               <div>
                 <h2 className="section-title">itouOJ Android App</h2>
                 <p className="text-sm text-dim">手機隨時寫題・判題通知・比賽提醒</p>
@@ -234,15 +246,21 @@ export default async function HomePage() {
 
           <div className="card flex flex-col gap-4 p-6">
             <div className="flex items-center gap-3">
-              <img src="/brand/port.png" alt="" className="h-14 w-14 rounded-xl" />
+              <Image
+                src="/brand/port.png"
+                alt=""
+                className="h-14 w-14 rounded-xl"
+                width={56}
+                height={56}
+              />
               <div>
                 <h2 className="section-title">收件程式（Windows）</h2>
                 <p className="text-sm text-dim">桌面端離線收題・測資上傳</p>
               </div>
             </div>
             <p className="text-sm leading-relaxed text-dim">
-              在電腦上收考卷、寫程式、上傳解答；支援離線比賽與測資批次上傳，
-              適合學校資訊課與模擬考。
+              離線競賽用的 Windows 收件程式，可在本機測試與暫存提交，連線後再批次上傳；
+              適合機房斷網或網路受限的比賽。
             </p>
 <a
               href="https://github.com/itousouta15/itouOJ/releases/tag/v1.3.2"

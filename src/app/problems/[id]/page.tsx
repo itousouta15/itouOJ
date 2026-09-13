@@ -33,6 +33,12 @@ export async function generateMetadata({
   return {
     title: `#${problemOrder}. ${problem.title}`,
     description: markdownSnippet(problem.statement),
+    alternates: { canonical: `/problems/${problemOrder}` },
+    openGraph: {
+      title: `#${problemOrder}. ${problem.title} | itouOJ`,
+      description: markdownSnippet(problem.statement),
+      url: `/problems/${problemOrder}`,
+    },
   };
 }
 
@@ -75,9 +81,33 @@ export default async function ProblemPage({
     notFound();
   }
   const accepted = acceptedSub !== null;
+  const learningResourceStructuredData = problem.isPublic
+    ? JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "LearningResource",
+        name: `#${problem.order}. ${problem.title}`,
+        description: markdownSnippet(problem.statement),
+        url: `${process.env.APP_URL ?? "https://oj.itousouta.me"}/problems/${problem.order}`,
+        inLanguage: "zh-Hant-TW",
+        isAccessibleForFree: true,
+        learningResourceType: "Programming problem",
+        keywords: problem.tags.map((pt) => pt.tag.name).join(", "),
+        additionalProperty: [
+          { "@type": "PropertyValue", name: "Time limit", value: `${problem.timeLimitMs} ms` },
+          { "@type": "PropertyValue", name: "Memory limit", value: `${problem.memoryLimitMb} MB` },
+        ],
+      }).replace(/</g, "\\u003c")
+    : null;
 
   return (
-    <div className="space-y-6">
+    <>
+      {learningResourceStructuredData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: learningResourceStructuredData }}
+        />
+      )}
+      <div className="space-y-6">
       <QuestionHeader
         title={`#${problem.order}. ${problem.title}`}
         badges={<DifficultyBadge difficulty={problem.difficulty} />}
@@ -183,6 +213,7 @@ export default async function ProblemPage({
         <h2 className="mb-3 section-title">討論與題解</h2>
         <ProblemDiscussion problemId={problem.id} loggedIn={!!session} />
       </div>
-    </div>
+      </div>
+    </>
   );
 }
