@@ -9,7 +9,7 @@ User=oj
 Group=oj
 WorkingDirectory=/opt/online-judge
 Environment=NODE_ENV=production
-ExecStart=/bin/bash -lc 'set -a; . /opt/online-judge/.env; set +a; while true; do curl --fail --silent --show-error -o /dev/null --max-time 900 -X POST -H "x-judge-worker-secret: $JUDGE_WORKER_SECRET" "http://127.0.0.1:3000/api/internal/judge?action=work" || true; sleep 1; done'
+ExecStart=/bin/bash -lc 'set -a; . /opt/online-judge/.env; set +a; while true; do curl --fail --silent --show-error -o /dev/null --max-time 30 -X POST -H "x-judge-worker-secret: $JUDGE_WORKER_SECRET" "http://127.0.0.1:3000/api/internal/judge?action=recover" || true; curl --fail --silent --show-error -o /dev/null --max-time 900 -X POST -H "x-judge-worker-secret: $JUDGE_WORKER_SECRET" "http://127.0.0.1:3000/api/internal/judge?action=work" || true; sleep 1; done'
 Restart=always
 RestartSec=3
 NoNewPrivileges=true

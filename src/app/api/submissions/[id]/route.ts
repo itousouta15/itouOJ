@@ -3,13 +3,59 @@ import { getSession } from "@/lib/auth";
 import { isContestRevealed } from "@/lib/contest";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const submissionId = Number(id);
   if (!Number.isInteger(submissionId)) {
     return Response.json({ error: "not found" }, { status: 404 });
+  }
+
+  const statusOnly = new URL(request.url).searchParams.get("view") === "status";
+  if (statusOnly) {
+    const submission = await prisma.submission.findUnique({
+      where: { id: submissionId },
+      select: {
+        id: true,
+        userId: true,
+        contestId: true,
+        status: true,
+        score: true,
+        timeMs: true,
+        memoryKb: true,
+        problem: { select: { title: true } },
+        contest: true,
+      },
+    });
+    if (!submission) {
+      return Response.json({ error: "not found" }, { status: 404 });
+    }
+
+    const session = await getSession();
+    const isOwner = session?.userId === submission.userId;
+    const isAdmin = session?.role === "ADMIN";
+    if (
+      submission.contest &&
+      !isContestRevealed(submission.contest) &&
+      !isOwner &&
+      !isAdmin
+    ) {
+      return Response.json({
+        id: submission.id,
+        contestId: submission.contestId,
+        hidden: true,
+      });
+    }
+
+    return Response.json({
+      id: submission.id,
+      status: submission.status,
+      score: submission.score,
+      timeMs: submission.timeMs,
+      memoryKb: submission.memoryKb,
+      problemTitle: submission.problem.title,
+    });
   }
 
   const submission = await prisma.submission.findUnique({

@@ -24,7 +24,21 @@ export default async function CoursePage({
     include: {
       problems: {
         orderBy: [{ order: "asc" }, { id: "asc" }],
-        include: { problem: true },
+        select: {
+          id: true,
+          problemId: true,
+          problem: {
+            select: {
+              id: true,
+              order: true,
+              title: true,
+              type: true,
+              isPublic: true,
+              category: true,
+              difficulty: true,
+            },
+          },
+        },
       },
       _count: { select: { members: true } },
     },

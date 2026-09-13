@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { getActivityFeed, type FeedItem } from "@/lib/activityFeed";
 import { getDailyProblem } from "@/lib/dailyProblem";
 import { getNextLearningAction } from "@/lib/nextLearningAction";
+import { getTopSolvedUsers } from "@/lib/ranking";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import HomeSubmissionRow from "@/components/HomeSubmissionRow";
@@ -44,26 +45,7 @@ export default async function HomePage() {
     },
   });
 
-  // 排行前 5 名（同 /ranking 的計法：不同題目的 AC 才算解題數）
-  const acPairs = await prisma.submission.findMany({
-    where: { status: "AC" },
-    distinct: ["userId", "problemId"],
-    select: { user: { select: { username: true, displayName: true } } },
-  });
-  const solvedByUser = new Map<string, number>();
-  const nameByUser = new Map<string, string | null>();
-  for (const { user } of acPairs) {
-    solvedByUser.set(user.username, (solvedByUser.get(user.username) ?? 0) + 1);
-    nameByUser.set(user.username, user.displayName);
-  }
-  const topUsers = [...solvedByUser.entries()]
-    .map(([username, solved]) => ({
-      username,
-      displayName: nameByUser.get(username) ?? null,
-      solved,
-    }))
-    .sort((a, b) => b.solved - a.solved || a.username.localeCompare(b.username))
-    .slice(0, 5);
+  const topUsers = await getTopSolvedUsers(5);
 
   const stats = [
     { label: "題目", value: problemCount },

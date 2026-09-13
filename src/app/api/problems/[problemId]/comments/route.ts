@@ -6,6 +6,8 @@ import { problemCommentSchema } from "@/lib/problemDiscussionSchema";
 import { enforceRateLimit } from "@/lib/rateLimit";
 import { summarizeReactions } from "@/lib/reactions";
 
+const PAGE_SIZE = 20;
+
 // 這裡的 problemId 是資料庫的 Problem.id，不是網址上的題號（order）。
 // 題目頁把 problem.id 傳給元件，元件再打這支 API——跟 SubmitPanel 一樣。
 async function loadProblem(problemId: number, isAdmin: boolean) {
@@ -19,7 +21,7 @@ async function loadProblem(problemId: number, isAdmin: boolean) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ problemId: string }> }
 ) {
   const { problemId: raw } = await params;
@@ -39,10 +41,15 @@ export async function GET(
     return Response.json({ access, comments: [] });
   }
 
-  const comments = await prisma.problemComment.findMany({
-    where: { problemId },
-    orderBy: { createdAt: "asc" },
-    select: {
+  const rawCursor = Number(new URL(request.url).searchParams.get("cursor"));
+  const cursor = Number.isInteger(rawCursor) && rawCursor > 0 ? rawCursor : null;
+  const [commentRows, total, solutionTotal] = await Promise.all([
+    prisma.problemComment.findMany({
+      where: { problemId, parentId: null },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      take: PAGE_SIZE + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      select: {
       id: true,
       content: true,
       parentId: true,
@@ -50,6 +57,26 @@ export async function GET(
       updatedAt: true,
       authorId: true,
       reactions: { select: { emoji: true, userId: true } },
+      replies: {
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          updatedAt: true,
+          authorId: true,
+          reactions: { select: { emoji: true, userId: true } },
+          author: {
+            select: {
+              username: true,
+              displayName: true,
+              role: true,
+              avatarUrl: true,
+              avatarUpdatedAt: true,
+            },
+          },
+        },
+      },
       author: {
         select: {
           username: true,
@@ -59,11 +86,17 @@ export async function GET(
           avatarUpdatedAt: true,
         },
       },
-    },
-  });
+      },
+    }),
+    prisma.problemComment.count({ where: { problemId } }),
+    prisma.problemSolution.count({ where: { problemId } }),
+  ]);
 
   const isAdmin = session?.role === "ADMIN";
-  const shape = (c: (typeof comments)[number]) => ({
+  const comments = commentRows.slice(0, PAGE_SIZE);
+  const shape = (
+    c: (typeof comments)[number] | (typeof comments)[number]["replies"][number],
+  ) => ({
     id: c.id,
     content: c.content,
     createdAt: c.createdAt,
@@ -81,22 +114,15 @@ export async function GET(
     reactions: summarizeReactions(c.reactions, session?.userId),
   });
 
-  // 一層樹：先把主留言排好，再把回覆掛到各自的父留言底下
-  const roots = comments.filter((c) => c.parentId === null);
-  const byParent = new Map<number, typeof comments>();
-  for (const c of comments) {
-    if (c.parentId === null) continue;
-    const list = byParent.get(c.parentId) ?? [];
-    list.push(c);
-    byParent.set(c.parentId, list);
-  }
-
   return Response.json({
     access,
-    comments: roots.map((c) => ({
+    comments: comments.map((c) => ({
       ...shape(c),
-      replies: (byParent.get(c.id) ?? []).map(shape),
+      replies: c.replies.map(shape),
     })),
+    total,
+    solutionTotal,
+    nextCursor: commentRows.length > PAGE_SIZE ? comments.at(-1)?.id ?? null : null,
   });
 }
 

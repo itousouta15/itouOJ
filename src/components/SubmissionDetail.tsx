@@ -51,6 +51,15 @@ interface HiddenSubmission {
   hidden: true;
 }
 
+interface SubmissionStatus {
+  id: number;
+  status: string;
+  score: number | null;
+  timeMs: number | null;
+  memoryKb: number | null;
+  problemTitle: string;
+}
+
 const TERMINAL = ["AC", "WA", "TLE", "MLE", "RE", "CE", "IE"];
 
 function TestCasePanel({
@@ -98,7 +107,17 @@ export default function SubmissionDetail({ id }: { id: number }) {
   useEffect(() => {
     let cancelled = false;
     notified.current = false;
-    async function poll() {
+    function notifyIfTerminal(status: string, submissionId: number, problemTitle: string) {
+      if (!TERMINAL.includes(status) || notified.current) return;
+      notified.current = true;
+      notifyJudged({ submissionId, problemTitle, status });
+    }
+
+    function retry(callback: () => void, delay = 3000) {
+      if (!cancelled) timer.current = setTimeout(callback, delay);
+    }
+
+    async function loadDetail() {
       try {
         const res = await fetch(`/api/submissions/${id}`, {
           cache: "no-store",
@@ -114,22 +133,57 @@ export default function SubmissionDetail({ id }: { id: number }) {
           return;
         }
         setData(json);
-        if (TERMINAL.includes(json.status) && !notified.current) {
-          notified.current = true;
-          notifyJudged({
-            submissionId: json.id,
-            problemTitle: json.problem.title,
-            status: json.status,
-          });
-        }
+        notifyIfTerminal(json.status, json.id, json.problem.title);
         if (!TERMINAL.includes(json.status)) {
-          timer.current = setTimeout(poll, 1200);
+          retry(pollStatus, 1200);
         }
       } catch {
-        if (!cancelled) timer.current = setTimeout(poll, 3000);
+        retry(loadDetail);
       }
     }
-    poll();
+
+    async function pollStatus() {
+      if (document.visibilityState === "hidden") {
+        retry(pollStatus, 3000);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/submissions/${id}?view=status`, {
+          cache: "no-store",
+        });
+        if (res.status === 404) {
+          if (!cancelled) setNotFound(true);
+          return;
+        }
+        const json: SubmissionStatus | HiddenSubmission = await res.json();
+        if (cancelled) return;
+        if ("hidden" in json) {
+          setHidden(true);
+          return;
+        }
+        setData((current) =>
+          current
+            ? {
+                ...current,
+                status: json.status,
+                score: json.score,
+                timeMs: json.timeMs,
+                memoryKb: json.memoryKb,
+              }
+            : current,
+        );
+        notifyIfTerminal(json.status, json.id, json.problemTitle);
+        if (TERMINAL.includes(json.status)) {
+          await loadDetail();
+        } else {
+          retry(pollStatus, 1200);
+        }
+      } catch {
+        retry(pollStatus);
+      }
+    }
+
+    loadDetail();
     return () => {
       cancelled = true;
       if (timer.current) clearTimeout(timer.current);
