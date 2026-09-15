@@ -23,7 +23,7 @@ interface RankRow {
   submissions: number;
 }
 
-// 全站排行：實作與識讀合併，名次依「解題數 + 識讀答對數」總和
+// 營隊排行：只採計營隊課程內題目的解題數與提交數
 async function campRanking(): Promise<RankRow[]> {
   const courses = await prisma.course.findMany({
     where: { title: { in: CAMP_COURSE_TITLES } },
@@ -171,6 +171,7 @@ export default async function RankingPage({
                 <th className="table-head">使用者</th>
                 <th className="table-head w-24 text-right">解題數</th>
                 <th className="table-head w-24 text-right">識讀答對</th>
+                <th className="table-head w-24 text-right">分數</th>
                 <th className="table-head w-24 text-right">提交數</th>
               </tr>
             </thead>
@@ -178,7 +179,7 @@ export default async function RankingPage({
               {combinedRows.length === 0 && (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="table-cell py-10 text-center text-mute"
                   >
                     還沒有人提交或練過識讀題
@@ -201,6 +202,9 @@ export default async function RankingPage({
                   </td>
                   <td className="table-cell text-right font-semibold text-[var(--green)]">
                     {r.recognitionCorrect}
+                  </td>
+                  <td className="table-cell text-right font-semibold">
+                    {Number(r.score).toFixed(1)}
                   </td>
                   <td className="table-cell text-right text-dim">
                     {r.submissions}

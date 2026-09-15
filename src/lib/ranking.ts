@@ -7,6 +7,7 @@ export interface SiteWideRankRow {
   submissions: number;
   recognitionCorrect: number;
   recognitionAnswered: number;
+  score: number;
 }
 
 // Keep distinct counts and ordering in SQLite so public ranking reads do not
@@ -36,13 +37,14 @@ export async function getSiteWideRanking(limit: number): Promise<SiteWideRankRow
       COALESCE(s.solved, 0) AS solved,
       COALESCE(sb.submissions, 0) AS submissions,
       COALESCE(r.recognitionCorrect, 0) AS recognitionCorrect,
-      COALESCE(r.recognitionAnswered, 0) AS recognitionAnswered
+      COALESCE(r.recognitionAnswered, 0) AS recognitionAnswered,
+      (COALESCE(s.solved, 0) * 6 + COALESCE(r.recognitionCorrect, 0) * 4) / 10.0 AS score
     FROM "User" u
     LEFT JOIN solved s ON s."userId" = u."id"
     LEFT JOIN submissions sb ON sb."userId" = u."id"
     LEFT JOIN recognition r ON r."userId" = u."id"
     WHERE COALESCE(sb.submissions, 0) > 0 OR COALESCE(r.recognitionAnswered, 0) > 0
-    ORDER BY solved + recognitionCorrect DESC, submissions ASC
+    ORDER BY score DESC, submissions ASC
     LIMIT ${limit}
   `;
 }
