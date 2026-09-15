@@ -490,6 +490,17 @@ opacity: 0;
   color: var(--mute);
 }
 @media (max-width: 640px) {
+  /* 手機上展開時直接延伸到導覽列左緣，避免只遮住 logo 一半。
+     定位基準是 header 的 padding box（backdrop-filter 會產生定位上下文），
+     所以 100% 就是整條 header 的寬度。 */
+  .header-search.is-open .header-search-pill {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 9px);
+    right: 12px;
+    width: calc(100% - 24px);
+    /* 位置從右側圖示跳到整條 header，保留原本的寬度動畫會顯得跳動 */
+    transition: none;
+  }
   /* 手機上頭像／登入鈕把搜尋框擠到左邊，下拉改成滿版貼在 header 底下 */
   .header-search-list {
     position: fixed;
