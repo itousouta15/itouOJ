@@ -251,6 +251,7 @@ export default function RecognitionQuiz({
         <QuestionHeader
           compact
           title={q.title}
+          sharePath={`?q=${index + 1}`}
           badges={<CategoryBadge category={q.category} />}
           sub={
             <>

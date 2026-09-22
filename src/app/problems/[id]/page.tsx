@@ -110,6 +110,7 @@ export default async function ProblemPage({
       <div className="space-y-6">
       <QuestionHeader
         title={`#${problem.order}. ${problem.title}`}
+        sharePath={`/problems/${problem.order}`}
         badges={<DifficultyBadge difficulty={problem.difficulty} />}
         tags={problem.tags.map((pt) => ({ id: pt.tagId, name: pt.tag.name }))}
         adminHref={

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import TagBadge from "@/components/TagBadge";
+import AppShareButton from "@/components/AppShareButton";
 
 // 題目頁共用的頁首：標題 + badges（難度/結果）+ 標籤 + 管理員編輯連結。
 // 實作題、識別題、比賽題目頁都用同一份，維持版面一致。
@@ -10,6 +11,7 @@ export default function QuestionHeader({
   tags,
   adminHref,
   sub,
+  sharePath,
   compact = false,
 }: {
   title: string;
@@ -18,6 +20,8 @@ export default function QuestionHeader({
   adminHref?: string;
   // 標題下方的資訊列（例如時間/記憶體限制、卷別/原題號）
   sub?: ReactNode;
+  // App 沒有網址列；提供路徑時顯示原生分享按鈕。
+  sharePath?: string;
   // 練習頁等標題不想當主標題（h1）時用 h2
   compact?: boolean;
 }) {
@@ -31,6 +35,7 @@ export default function QuestionHeader({
         )}
         {badges}
         {tags?.map((t) => <TagBadge key={t.id} name={t.name} />)}
+        {sharePath && <AppShareButton title={title} path={sharePath} />}
         {adminHref && (
           <Link
             href={adminHref}

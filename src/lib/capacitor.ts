@@ -7,6 +7,18 @@ export function isNativeApp(): boolean {
   return Capacitor.isNativePlatform();
 }
 
+export async function shareUrl(opts: { title: string; path: string }) {
+  if (!isNativeApp()) return;
+  const { Share } = await import("@capacitor/share");
+  const url = new URL(opts.path, window.location.href).toString();
+  await Share.share({
+    title: opts.title,
+    text: opts.title,
+    url,
+    dialogTitle: "分享題目",
+  });
+}
+
 // 狀態列顏色跟隨網站亮暗主題（淺色狀態列配深色文字，反之亦然）
 export async function syncStatusBar(dark: boolean) {
   if (!isNativeApp()) return;

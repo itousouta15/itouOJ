@@ -82,6 +82,7 @@ export default async function ContestProblemPage({
 
       <QuestionHeader
         title={`${contestProblem?.label ?? ""}. ${problem.title}`}
+        sharePath={`/contests/${contest.id}/problems/${problem.id}`}
         sub={
           isRecognition ? undefined : (
             <>

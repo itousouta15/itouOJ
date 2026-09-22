@@ -189,7 +189,8 @@ export default function SubmitPanel({
   useEffect(() => {
     // 比賽限定語言時，不要把上次用的語言（可能是別的比賽用的）還原回來
     const saved = localStorage.getItem("oj-language") as LanguageKey | null;
-    if (saved && languageOptions.includes(saved)) switchLanguage(saved);
+    // 即使使用者從未切換過語言，也要還原預設語言的草稿。
+    switchLanguage(saved && languageOptions.includes(saved) ? saved : defaultLanguage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -295,6 +296,8 @@ export default function SubmitPanel({
         setSubmitting(false);
         return;
       }
+      // 導頁前再同步一次，避免編輯器最後一筆變更尚未寫入草稿。
+      localStorage.setItem(draftKey(language), code);
       router.push(`/submissions/${data.id}`);
     } catch {
       setError("提交失敗，請稍後再試");

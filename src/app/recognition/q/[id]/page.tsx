@@ -53,6 +53,7 @@ export default async function RecognitionQuestionPage({
     <div className="space-y-6">
       <QuestionHeader
         title={problem.title}
+        sharePath={`/recognition/q/${problem.id}`}
         badges={<CategoryBadge category={problem.category} />}
         sub={
           <>
