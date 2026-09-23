@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RECOGNITION_CATEGORIES } from "@/lib/problemTypes";
+import { readTestCaseFiles } from "@/lib/testCaseFiles";
 import TagPicker from "@/components/TagPicker";
 
 interface TestCaseInput {
@@ -119,6 +120,8 @@ export default function ProblemForm({
   const [newPdfPassword, setNewPdfPassword] = useState("");
   const [removePdf, setRemovePdf] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [testCasesLoading, setTestCasesLoading] = useState(false);
+  const [testCaseImportError, setTestCaseImportError] = useState("");
 
   const isRecognition = form.type === "RECOGNITION";
 
@@ -224,6 +227,40 @@ export default function ProblemForm({
       setError("讀取 PDF 檔案失敗");
     } finally {
       setPdfLoading(false);
+    }
+  }
+
+  async function onTestCaseFilesSelected(files: File[]) {
+    if (files.length === 0) return;
+
+    const hasExistingTestCases =
+      form.testCases.length > 1 ||
+      form.testCases.some((tc) => tc.input !== "" || tc.output !== "");
+    if (
+      hasExistingTestCases &&
+      !confirm("匯入檔案會取代目前所有測資，確定要繼續嗎？")
+    ) {
+      return;
+    }
+
+    setTestCasesLoading(true);
+    setTestCaseImportError("");
+    try {
+      const imported = await readTestCaseFiles(files);
+      setForm((f) => ({
+        ...f,
+        testCases: imported.map((tc) => ({
+          ...tc,
+          isSample: false,
+          subtaskIndex: null,
+        })),
+      }));
+    } catch (err) {
+      setTestCaseImportError(
+        err instanceof Error ? err.message : "讀取測資檔案失敗"
+      );
+    } finally {
+      setTestCasesLoading(false);
     }
   }
 
@@ -696,22 +733,52 @@ export default function ProblemForm({
           </div>
 
           <div>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h2 className="section-title">
                 測資（{form.testCases.length} 筆）
               </h2>
-              <button
-                className="btn-secondary"
-                onClick={() =>
-                  set("testCases", [
-                    ...form.testCases,
-                    { input: "", output: "", isSample: false, subtaskIndex: null },
-                  ])
-                }
-              >
-                ＋ 新增測資
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="btn-secondary cursor-pointer">
+                  {testCasesLoading ? "匯入中…" : "從檔案匯入"}
+                  <input
+                    className="hidden"
+                    type="file"
+                    accept=".in,.out"
+                    multiple
+                    disabled={testCasesLoading}
+                    onChange={(event) => {
+                      const files = Array.from(event.currentTarget.files ?? []);
+                      event.currentTarget.value = "";
+                      void onTestCaseFilesSelected(files);
+                    }}
+                  />
+                </label>
+                <button
+                  className="btn-secondary"
+                  onClick={() =>
+                    set("testCases", [
+                      ...form.testCases,
+                      {
+                        input: "",
+                        output: "",
+                        isSample: false,
+                        subtaskIndex: null,
+                      },
+                    ])
+                  }
+                >
+                  ＋ 新增測資
+                </button>
+              </div>
             </div>
+            <p className="mb-3 text-xs text-mute">
+              可一次選取 0.in、0.out、1.in、1.out 等檔案；相同主檔名會自動配對並依檔名排序。匯入後會取代目前測資，且預設不公開為範例。
+            </p>
+            {testCaseImportError && (
+              <p className="mb-3 text-sm text-[#ff6b6b]" role="alert">
+                {testCaseImportError}
+              </p>
+            )}
             <div className="space-y-4">
               {form.testCases.map((tc, i) => (
                 <div key={i} className="card p-4">
