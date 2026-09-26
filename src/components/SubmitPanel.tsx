@@ -11,6 +11,7 @@ import { javascript } from "@codemirror/lang-javascript";
 import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
+import { DOCUMENT_WORD_COMPLETIONS, EDITOR_COMPLETIONS } from "@/lib/editorCompletions";
 import {
   isNativeApp,
   onKeyboardWillHide,
@@ -47,12 +48,22 @@ interface RunResponse {
   timeMs?: number;
 }
 
+function withCompletions(key: LanguageKey, support: ReturnType<typeof cpp>): Extension[] {
+  return [
+    support,
+    support.language.data.of({ autocomplete: EDITOR_COMPLETIONS[key] }),
+    ...(["cpp", "c", "java"].includes(key)
+      ? [support.language.data.of({ autocomplete: DOCUMENT_WORD_COMPLETIONS })]
+      : []),
+  ];
+}
+
 const CM_EXTENSIONS: Record<LanguageKey, Extension[]> = {
-  cpp: [cpp()],
-  c: [cpp()],
-  python: [python()],
-  java: [java()],
-  javascript: [javascript()],
+  cpp: withCompletions("cpp", cpp()),
+  c: withCompletions("c", cpp()),
+  python: withCompletions("python", python()),
+  java: withCompletions("java", java()),
+  javascript: withCompletions("javascript", javascript()),
 };
 
 const TEMPLATES: Record<LanguageKey, string> = {
@@ -448,6 +459,18 @@ export default function SubmitPanel({
 
       {runResult && (
         <div className="mt-4 space-y-3 border-t border-bd pt-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-dim">測試結果</h3>
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center text-dim hover:text-tx focus-visible:outline-2 focus-visible:outline-blue"
+              onClick={() => setRunResult(null)}
+              aria-label="關閉測試結果"
+              title="關閉測試結果"
+            >
+              ✕
+            </button>
+          </div>
           {runResult.compileError ? (
             <div>
               <p className="mb-1 text-sm font-medium text-[#ff6b6b]">
