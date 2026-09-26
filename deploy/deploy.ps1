@@ -90,8 +90,11 @@ Invoke-Native "backup" {
 }
 
 Write-Host "== Server: extract / install / migrate / build / restart =="
+# tar 解壓只會覆蓋同名檔，HEAD 已刪除的元件仍會留在伺服器 src 內，
+# Next/TypeScript 會把它當成原始碼編譯。先確認壓縮檔完整，再清除可重建的
+# src（含 prisma generate 產物）與開發模式型別快取；保留 .env、oj.db、備份和正式 .next。
 Invoke-Native "remote deploy" {
-    ssh $Server "cd $AppDir && test -n `$(sed -n 's/^JUDGE_WORKER_SECRET=//p' .env | head -n 1) && tar xzf /tmp/oj.tar.gz && npm ci --include=dev --silent && npm run generate --silent && ./node_modules/.bin/prisma migrate deploy && npm run build && chown -R oj:oj $AppDir && install -m 644 deploy/online-judge-worker.service /etc/systemd/system/online-judge-worker.service && systemctl daemon-reload && systemctl restart online-judge online-judge-worker && sleep 3 && systemctl is-active online-judge online-judge-worker"
+    ssh $Server "cd $AppDir && test -n `$(sed -n 's/^JUDGE_WORKER_SECRET=//p' .env | head -n 1) && tar tzf /tmp/oj.tar.gz >/dev/null && rm -rf -- src .next/dev && tar xzf /tmp/oj.tar.gz && npm ci --include=dev --silent && npm run generate --silent && ./node_modules/.bin/prisma migrate deploy && npm run build && chown -R oj:oj $AppDir && install -m 644 deploy/online-judge-worker.service /etc/systemd/system/online-judge-worker.service && systemctl daemon-reload && systemctl restart online-judge online-judge-worker && sleep 3 && systemctl is-active online-judge online-judge-worker"
 }
 
 # 光看 systemctl is-active 不夠：服務可能還跑著上一版的建置產物。
