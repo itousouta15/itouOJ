@@ -2,7 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { buildScoreboard, isContestRevealed, getContestPhase } from "@/lib/contest";
+import {
+  buildScoreboard,
+  canManageContest,
+  canViewContest,
+  getContestPhase,
+  isContestRevealed,
+} from "@/lib/contest";
 import ContestStatusBadge from "@/components/ContestStatusBadge";
 
 export const dynamic = "force-dynamic";
@@ -17,10 +23,9 @@ export default async function ContestScoreboardPage({
   if (!Number.isInteger(contestId)) notFound();
 
   const session = await getSession();
-  const isAdmin = session?.role === "ADMIN";
-
   const contest = await prisma.contest.findUnique({ where: { id: contestId } });
-  if (!contest || (!contest.isPublic && !isAdmin)) notFound();
+  if (!contest || !canViewContest(session, contest)) notFound();
+  const canManage = canManageContest(session, contest);
 
   const revealed = isContestRevealed(contest);
   const phase = getContestPhase(contest);
@@ -55,9 +60,9 @@ export default async function ContestScoreboardPage({
         <div className="card border-[rgba(250,168,26,0.3)] p-4 text-sm text-[#faa81a]">
           🧊 排名已凍結
           {awaitingReveal
-            ? "，比賽結束後由管理員公開最終成績"
+            ? "，比賽結束後由主辦者公開最終成績"
             : `，最後 ${contest.freezeMinutes} 分鐘的結果暫不公開`}
-          {isAdmin && (
+          {canManage && (
             <Link href={`/admin/contests/${contest.id}/edit`} className="ml-2 underline">
               前往公開
             </Link>

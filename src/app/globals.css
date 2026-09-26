@@ -9,8 +9,9 @@
    見 layout.tsx 的 head（同 itousouta.me）。字體只有細版，
    font-weight:700 時由瀏覽器合成粗體。 */
 
-/* ---- Theme tokens（同 itousouta.me，[data-theme] 切換）---- */
+/* ---- 固定深色主題 ---- */
 :root {
+  color-scheme: dark;
   --bg: #18191c;
   --panel: #232426;
   --panel2: #232426;
@@ -32,28 +33,6 @@
   --shadow: rgba(0, 0, 0, 0.45);
 
   background: var(--bg);
-}
-
-:root[data-theme="light"] {
-  --bg: #dadadd;
-  --panel: #f0f0f5;
-  --panel2: #f0f0f5;
-  --panel2-a: rgba(227, 228, 233, 0.82);
-  --frost: rgba(224, 225, 235, 0.45);
-  --inset: #e1e3ec;
-  --bd: rgba(6, 6, 7, 0.08);
-  --bd2: rgba(20, 24, 40, 0.16);
-  --tx: #22262d;
-  --dim: #494f59; /* was #5b626d — darkened for WCAG AA contrast on panel bg */
-  --mute: #6b7280; /* was #8a909b — darkened to improve readability */
-  --blue: #364a7c;
-  --blue-deep: #364a7c; /* 同 --blue：亮色主題的 --blue 本來就夠深 */
-  --purple: #5c7cbf;
-  --purple-deep: #4a63a5;
-  --green: #3f7d4f;
-  --btn: #2b2f36;
-  --btntx: #f2f4f9;
-  --shadow: rgba(60, 70, 90, 0.16);
 }
 
 @theme inline {
@@ -79,7 +58,6 @@ body {
   background:
     radial-gradient(1100px 560px at 72% -12%, rgba(141, 181, 200, 0.11), transparent 60%),
     var(--bg);
-  transition: background 0.35s ease, color 0.35s ease;
 }
 
 .serif {
@@ -101,6 +79,49 @@ body {
 }
 .page-transition {
   animation: itFade 0.45s ease both;
+}
+
+/* 題目列表換頁、管理頁切換題型時，查詢參數變動也能重播進場動畫。 */
+.problem-page-switch {
+  animation: itFade 0.24s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .problem-page-switch {
+    animation: none;
+  }
+}
+
+/* 識讀練習切題：依前後方向讓新題目輕微滑入。 */
+@keyframes quizQuestionNext {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes quizQuestionPrevious {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.quiz-question[data-direction="next"] {
+  animation: quizQuestionNext 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.quiz-question[data-direction="previous"] {
+  animation: quizQuestionPrevious 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiz-question {
+    animation: none !important;
+  }
 }
 
 /* ---- 首頁 GitHub 風格（LOGO + 程式碼視窗）---- */
@@ -189,8 +210,8 @@ body {
 }
 /* backdrop-filter 要等第一個畫面真的畫完後才加上去：瀏覽器算模糊用的是
    「上一個合成幀」的畫面，網站剛載入的第一幀根本沒有上一幀可以取樣，
-   Chromium 這時候會直接當黑色處理——淺色模式下背景是亮的，就會看到
-   loading 遮罩先閃一下深色才變回正常顏色。用 rAF 延一拍再套用
+   Chromium 這時候會直接當黑色處理，讓 loading 遮罩短暫閃爍。
+   用 rAF 延一拍再套用
    backdrop-filter，確保套用時畫面已經有東西可以模糊。 */
 .site-loader--blurred {
   backdrop-filter: blur(14px);
@@ -1265,7 +1286,7 @@ html.kbd-open .bottom-nav {
     background: rgba(129, 199, 132, 0.1);
     border-color: rgba(129, 199, 132, 0.25);
   }
-  /* 題目已通過時整列淡淡的綠色底（深/淺色主題通用） */
+  /* 題目已通過時整列淡淡的綠色底 */
   .row-solved {
     background: rgba(129, 199, 132, 0.09);
   }
@@ -1646,7 +1667,7 @@ html.kbd-open .bottom-nav {
 }
 
 /* ---- App 專屬外觀（Capacitor 內才套用，瀏覽器完全不變）----
-   html[data-app] 由 layout.tsx 的 themeInit 在首繪前設上，只會在
+   html[data-app] 由 layout.tsx 的 appInit 在首繪前設上，只會在
    Capacitor WebView 裡成立。App 固定深色、隱藏網站頂部導覽列與
    Footer、只留底部導覽，並加大手機上的觸控目標。 */
 
@@ -1670,28 +1691,7 @@ html[data-app] {
   --shadow: rgba(0, 0, 0, 0.5);
 }
 
-/* 就算網站主題被切到 light，App 也維持深色系 */
-html[data-app][data-theme="light"] {
-  --bg: #0f1217;
-  --panel: #171a20;
-  --panel2: #1b1e24;
-  --panel2-a: rgba(27, 30, 36, 0.88);
-  --inset: #0d0f13;
-  --bd: rgba(255, 255, 255, 0.09);
-  --bd2: rgba(255, 255, 255, 0.18);
-  --tx: #e8ebf2;
-  --dim: #9aa1ad;
-  --mute: #6a7280;
-  --blue: #a9b8f2;
-  --blue-deep: #4a5490;
-  --purple: #9fa9df;
-  --purple-deep: #545d9e;
-  --btn: #94a6cc;
-  --btntx: #21252b;
-  --shadow: rgba(0, 0, 0, 0.5);
-}
-
-/* 簡化導覽列：頂部 Navbar 與主題切換在 App 裡不需要 */
+/* 簡化導覽列：App 不顯示網站頂部 Navbar */
 html[data-app] .site-header {
   display: none;
 }

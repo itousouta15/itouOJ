@@ -14,10 +14,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#1b1e23" },
-    { media: "(prefers-color-scheme: light)", color: "#e9e9ee" },
-  ],
+  themeColor: "#1b1e23",
 };
 
 const siteUrl = process.env.APP_URL ?? "https://oj.itousouta.me";
@@ -68,14 +65,10 @@ const websiteStructuredData = JSON.stringify({
   },
 }).replace(/</g, "\\u003c");
 
-// 在 hydration 前套用主題，避免亮→暗閃爍。App（Capacitor WebView）內一律
-// 深色：原生橋接在頁面載入前就會注入 window.Capacitor，這裡可同步判斷。
-const themeInit = `(function(){try{
-  var app=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform();
-  if(app){
+// 在首繪前辨識 Capacitor WebView，套用 App 專屬的深色介面。
+const appInit = `(function(){try{
+  if(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()){
     document.documentElement.setAttribute("data-app","1");
-  }else if(localStorage.getItem("oj-theme")==="light"){
-    document.documentElement.setAttribute("data-theme","light");
   }
 }catch(e){}})();`;
 
@@ -125,7 +118,7 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col">
-        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+        <script dangerouslySetInnerHTML={{ __html: appInit }} />
         <SiteLoader />
         <div className="app-top-mask" aria-hidden="true" />
         <Navbar />

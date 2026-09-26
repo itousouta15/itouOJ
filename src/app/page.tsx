@@ -198,18 +198,18 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 下載宣傳（網站版限定，App 內隱藏） */}
+      {/* 下一步學習建議 */}
       {nextAction && (
         <section>
           <div className="card flex flex-wrap items-center justify-between gap-4 p-5">
             <div className="min-w-0">
-              <p className="page-kicker">Next action</p>
+              <p className="page-kicker">下一步</p>
               <p className="mt-1 text-sm text-dim">{nextAction.detail}</p>
               <Link href={nextAction.href} className="mt-2 block truncate font-semibold text-blue hover:underline">
                 {nextAction.title}
               </Link>
             </div>
-            <Link href={nextAction.href} className="btn-primary shrink-0">Continue</Link>
+            <Link href={nextAction.href} className="btn-primary shrink-0">繼續</Link>
           </div>
         </section>
       )}

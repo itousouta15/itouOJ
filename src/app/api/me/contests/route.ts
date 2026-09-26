@@ -12,7 +12,7 @@ export async function GET() {
 
   const isAdmin = session.role === "ADMIN";
   const contests = await prisma.contest.findMany({
-    where: isAdmin ? {} : { isPublic: true },
+    where: isAdmin ? {} : { OR: [{ isPublic: true }, { ownerId: session.userId }] },
     orderBy: { startTime: "desc" },
     include: {
       participants: {

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getNavInfo } from "@/lib/nav";
 import NavLinks from "@/components/NavLinks";
-import ThemeToggle from "@/components/ThemeToggle";
 import AccountMenu from "@/components/AccountMenu";
 import HeaderSearch from "@/components/HeaderSearch";
 import MobileMenuButton from "@/components/MobileMenuButton";
@@ -19,7 +18,6 @@ export default async function Navbar() {
           <NavLinks isAdmin={isAdmin} />
         </div>
         <div className="ml-auto flex items-center gap-2 sm:gap-3 md:ml-0">
-          <ThemeToggle />
           <HeaderSearch />
           {loggedIn ? (
             <AccountMenu

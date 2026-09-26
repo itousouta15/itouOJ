@@ -217,7 +217,10 @@ export default async function ProblemListPage({
           難度（易到難）
         </Link>
       </div>
-      <div className="card overflow-x-auto">
+      <div
+        key={`${tag ?? ""}:${sort}:${currentPage}`}
+        className="card problem-page-switch overflow-x-auto"
+      >
         <table className="w-full">
           <thead>
             <tr>

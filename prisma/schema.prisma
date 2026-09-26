@@ -32,6 +32,7 @@ model User {
   submissions  Submission[]
   courses      CourseMember[]
   contests     ContestParticipant[]
+  ownedContests Contest[]            @relation("ContestOwner")
   problemProposals ProblemProposal[]
   problemComments  ProblemComment[]
   problemSolutions ProblemSolution[]
@@ -334,6 +335,8 @@ model CourseMember {
 // 有起訖時間的小型比賽：只有比賽期間的提交才計分，罰時排名 + 賽末凍結榜
 model Contest {
   id            Int                  @id @default(autoincrement())
+  ownerId       String?
+  owner         User?                @relation("ContestOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   title         String
   description   String               @default("")
   startTime     DateTime
@@ -347,16 +350,18 @@ model Contest {
   allowedLanguages String            @default("")
   isPublic      Boolean              @default(true)
   joinCode      String? // 加入代碼；null = 開放任何人加入
-  revealedAt    DateTime? // 管理員手動「公開最終成績」的時間；null = 尚未公開
+  revealedAt    DateTime? // 主辦者手動「公開最終成績」的時間；null = 尚未公開
   // 預設關閉：題目文件（PDF/HTML）平常要等開賽才給選手端下載，避免洩題。
-  // 管理員針對個別比賽自行評估風險後才能開啟，讓斷網比賽在賽前設定階段
-  // 就把檔案下載到選手機——開啟後「有沒有洩題風險」是管理員自己承擔的判斷，
+  // 主辦者針對個別比賽自行評估風險後才能開啟，讓斷網比賽在賽前設定階段
+  // 就把檔案下載到選手機——開啟後「有沒有洩題風險」是主辦者自己承擔的判斷，
   // 不是系統預設行為。
   allowEarlyProblemDownload Boolean  @default(false)
   createdAt     DateTime             @default(now())
   problems      ContestProblem[]
   participants  ContestParticipant[]
   submissions   Submission[]
+
+  @@index([ownerId])
 }
 
 model ContestProblem {

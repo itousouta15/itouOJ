@@ -13,7 +13,11 @@ export default async function ContestsPage() {
   const isAdmin = session?.role === "ADMIN";
 
   const contests = await prisma.contest.findMany({
-    where: isAdmin ? {} : { isPublic: true },
+    where: isAdmin
+      ? {}
+      : session
+        ? { OR: [{ isPublic: true }, { ownerId: session.userId }] }
+        : { isPublic: true },
     orderBy: { startTime: "desc" },
     include: { _count: { select: { problems: true, participants: true } } },
   });
@@ -30,7 +34,14 @@ export default async function ContestsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="page-title">比賽</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="page-title">比賽</h1>
+        {session && (
+          <Link href="/contests/new" className="btn-primary">
+            ＋ 建立比賽
+          </Link>
+        )}
+      </div>
       {contests.length === 0 && (
         <p className="text-sm text-mute">還沒有比賽</p>
       )}
@@ -51,6 +62,9 @@ export default async function ContestsPage() {
                         <span className="font-medium">{c.title}</span>
                         <ContestStatusBadge contest={c} />
                         {!c.isPublic && <span className="vbadge vbadge-gray">未公開</span>}
+                        {session?.userId === c.ownerId && (
+                          <span className="vbadge vbadge-blue">我建立的</span>
+                        )}
                       </div>
                       <p className="mono mt-1 text-xs text-mute">
                         {c.startTime.toLocaleString("zh-TW", {

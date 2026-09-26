@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getContestPhase } from "@/lib/contest";
+import { canManageContest, getContestPhase } from "@/lib/contest";
 import ContestStatusBadge from "@/components/ContestStatusBadge";
 import AutoRefresh from "@/components/AutoRefresh";
 
@@ -18,7 +18,7 @@ export default async function ContestStatusPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await getSession();
-  if (session?.role !== "ADMIN") redirect("/");
+  if (!session) redirect("/login");
 
   const { id } = await params;
   const contestId = Number(id);
@@ -36,7 +36,7 @@ export default async function ContestStatusPage({
       problems: { select: { problemId: true } },
     },
   });
-  if (!contest) notFound();
+  if (!contest || !canManageContest(session, contest)) notFound();
 
   // 每位參賽者在這場比賽的提交數
   const counts = await prisma.submission.groupBy({
@@ -78,8 +78,11 @@ export default async function ContestStatusPage({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/admin/contests" className="text-sm text-blue hover:underline">
-          ← 比賽管理
+        <Link
+          href={session.role === "ADMIN" ? "/admin/contests" : `/contests/${contest.id}`}
+          className="text-sm text-blue hover:underline"
+        >
+          ← {session.role === "ADMIN" ? "比賽管理" : "返回比賽"}
         </Link>
         <ContestStatusBadge contest={contest} />
       </div>

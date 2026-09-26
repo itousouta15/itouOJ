@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getContestPhase } from "@/lib/contest";
+import { canManageContest, canViewContest, getContestPhase } from "@/lib/contest";
 import ContestStatusBadge from "@/components/ContestStatusBadge";
 import ContestCountdown from "@/components/ContestCountdown";
 import ContestJoinButton from "@/components/ContestJoinButton";
@@ -33,7 +33,8 @@ export default async function ContestPage({
       _count: { select: { participants: true } },
     },
   });
-  if (!contest || (!contest.isPublic && !isAdmin)) notFound();
+  if (!contest || !canViewContest(session, contest)) notFound();
+  const canManage = canManageContest(session, contest);
 
   const phase = getContestPhase(contest);
 
@@ -54,12 +55,20 @@ export default async function ContestPage({
           <h1 className="page-title">{contest.title}</h1>
           <ContestStatusBadge contest={contest} />
           {!contest.isPublic && <span className="vbadge vbadge-gray">未公開</span>}
-          {isAdmin && (
+          {canManage && (
             <Link
               href={`/admin/contests/${contest.id}/edit`}
               className="text-sm text-blue hover:underline"
             >
               編輯比賽
+            </Link>
+          )}
+          {canManage && (
+            <Link
+              href={`/admin/contests/${contest.id}/status`}
+              className="text-sm text-blue hover:underline"
+            >
+              參賽者狀態
             </Link>
           )}
         </div>
@@ -77,7 +86,7 @@ export default async function ContestPage({
           {contest._count.participants} 位參賽者
           {contest.freezeMinutes > 0 && ` ・ 最後 ${contest.freezeMinutes} 分鐘凍結榜`}
           {contest.joinCode && " ・ 需要加入代碼"}
-          {isAdmin && contest.joinCode && (
+          {canManage && contest.joinCode && (
             <span className="ml-2 text-purple">代碼：{contest.joinCode}</span>
           )}
         </p>

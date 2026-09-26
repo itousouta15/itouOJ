@@ -63,6 +63,7 @@ export default function RecognitionQuiz({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [questionDirection, setQuestionDirection] = useState<"next" | "previous" | null>(null);
   const topRef = useRef<HTMLDivElement | null>(null);
 
   const q = questions[index];
@@ -96,6 +97,8 @@ export default function RecognitionQuiz({
   ).length;
 
   function goTo(i: number) {
+    if (i === index || i < 0 || i >= questions.length) return;
+    setQuestionDirection(i > index ? "next" : "previous");
     setIndex(i);
     // 只更新網址不重新導覽：重整或分享連結時用 ?q= 回到同一題
     if (typeof window !== "undefined") {
@@ -103,7 +106,10 @@ export default function RecognitionQuiz({
       url.searchParams.set("q", String(i + 1));
       window.history.replaceState(null, "", url);
     }
-    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    topRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+    });
   }
 
   async function pick(selectedDisplayIndex: number) {
@@ -247,7 +253,11 @@ export default function RecognitionQuiz({
       </div>
 
       {/* 目前題目（與題目頁共用同一組元件） */}
-      <div className="space-y-6">
+      <div
+        key={q.id}
+        className="quiz-question space-y-6"
+        data-direction={questionDirection ?? undefined}
+      >
         <QuestionHeader
           compact
           title={q.title}

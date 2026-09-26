@@ -16,7 +16,7 @@ export async function getNextLearningAction(userId: string): Promise<NextLearnin
     return {
       href: `/recognition/q/${dueReview.problem.id}`,
       title: dueReview.problem.title,
-      detail: "A recognition review is due.",
+      detail: "有一題識讀題待複習。",
     };
   }
 
@@ -38,7 +38,7 @@ export async function getNextLearningAction(userId: string): Promise<NextLearnin
       return {
         href: `/problems/${next.problem.order}`,
         title: next.problem.title,
-        detail: `Continue ${membership.course.title}.`,
+        detail: `繼續學習「${membership.course.title}」。`,
       };
     }
   }

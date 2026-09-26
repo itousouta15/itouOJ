@@ -10,6 +10,20 @@ type ContestTiming = {
   freezeMinutes: number;
 };
 
+export function canManageContest(
+  session: Session | null,
+  contest: { ownerId: string | null }
+): boolean {
+  return !!session && (session.role === "ADMIN" || contest.ownerId === session.userId);
+}
+
+export function canViewContest(
+  session: Session | null,
+  contest: { ownerId: string | null; isPublic: boolean }
+): boolean {
+  return contest.isPublic || canManageContest(session, contest);
+}
+
 export function getContestPhase(
   contest: ContestTiming,
   now: Date = new Date()

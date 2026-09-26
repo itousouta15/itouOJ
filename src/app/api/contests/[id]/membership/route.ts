@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getContestPhase } from "@/lib/contest";
+import { canManageContest, canViewContest, getContestPhase } from "@/lib/contest";
 
 export async function POST(
   request: Request,
@@ -14,15 +14,16 @@ export async function POST(
   const contestId = Number(id);
 
   const contest = await prisma.contest.findUnique({ where: { id: contestId } });
-  if (!contest || (!contest.isPublic && session.role !== "ADMIN")) {
+  if (!contest || !canViewContest(session, contest)) {
     return Response.json({ error: "比賽不存在" }, { status: 404 });
   }
+  const canManage = canManageContest(session, contest);
   if (getContestPhase(contest) === "ended" && session.role !== "ADMIN") {
     return Response.json({ error: "比賽已結束，無法報名" }, { status: 400 });
   }
 
   // 有設定加入代碼的比賽要驗證代碼（管理員免驗）
-  if (contest.joinCode && session.role !== "ADMIN") {
+  if (contest.joinCode && !canManage) {
     const body = await request.json().catch(() => null);
     const code = typeof body?.code === "string" ? body.code.trim() : "";
     if (code !== contest.joinCode) {

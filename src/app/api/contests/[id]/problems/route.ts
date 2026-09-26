@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { parseAllowedLanguages } from "@/lib/contest";
+import { canViewContest, parseAllowedLanguages } from "@/lib/contest";
 
 // 離線收件程式賽前抓題號對應用（PDF 上的「A 題」是哪個 problemId）。
 // 只給標題和範例測資；完整題敘與隱藏測資走「等開賽才給」的文件 API。
@@ -46,7 +46,7 @@ export async function GET(
   });
 
   const isAdmin = session.role === "ADMIN";
-  if (!contest || (!contest.isPublic && !isAdmin)) {
+  if (!contest || !canViewContest(session, contest)) {
     return Response.json({ error: "比賽不存在" }, { status: 404 });
   }
 

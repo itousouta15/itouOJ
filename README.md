@@ -33,7 +33,7 @@ Live site: [oj.itousouta.me](https://oj.itousouta.me) ・ Android App: [app-v1.2
 - Problem discussions: comments with one level of replies, plus user-published solutions (title + explanation + optional code) that require an AC on the problem first
 - Problem proposals: users can submit a problem (statement, limits, sample test cases) for admin review and approval
 - Admin panel: problems (both programming and recognition types), proposal review, contests, courses, recognition clusters, tags, announcements, and **user management (grant / revoke admin role)**
-- Light / dark theme toggle
+- Fixed dark theme
 - Android App (Capacitor wrapper): installable native app with a fixed dark theme and a layout distinct from the website (see "Android App")
 - Windows offline client: `itouOJ-Submit.exe` (~23 KB, no install) for offline contests, with local spooling, batch upload, local test runs, and clock calibration (see `client/README.md`)
 
@@ -185,11 +185,11 @@ If Piston is not running locally, you can tunnel to a remote one: `ssh -N -L 200
 
 ## Android App
 
-The App is a Capacitor-wrapped WebView: the native shell loads the live site (`https://oj.itousouta.me`), so login, OAuth, and judging all run on the same domain as the browser. When the web side detects a native environment (`html[data-app]`, set by the themeInit in `src/app/layout.tsx` before first paint) it applies App-specific styling — **the App and the website are two distinct interfaces**:
+The App is a Capacitor-wrapped WebView: the native shell loads the live site (`https://oj.itousouta.me`), so login, OAuth, and judging all run on the same domain as the browser. When the web side detects a native environment (`html[data-app]`, set by the appInit in `src/app/layout.tsx` before first paint) it applies App-specific styling — **the App and the website are two distinct interfaces**:
 
 | | Website | App |
 |----|----|----|
-| Theme | light / dark toggle | fixed dark |
+| Theme | fixed dark | fixed dark |
 | Navigation | top Navbar + Footer | bottom navigation only |
 | Home | Hero + code window + promo section | compact layout (Hero decorations and promo section hidden) |
 | Coding | inline editor | fullscreen editor on tap, collapses when the keyboard closes |

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getContestPhase, toScoreMode } from "@/lib/contest";
+import { canManageContest, getContestPhase, toScoreMode } from "@/lib/contest";
 import { toTaipeiInputValue } from "@/lib/contestTime";
 import ContestForm from "@/components/ContestForm";
 import ContestRevealButton from "@/components/ContestRevealButton";
@@ -16,7 +16,7 @@ export default async function EditContestPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await getSession();
-  if (session?.role !== "ADMIN") redirect("/");
+  if (!session) redirect("/login");
 
   const { id } = await params;
   const contestId = Number(id);
@@ -28,9 +28,11 @@ export default async function EditContestPage({
       problems: { orderBy: [{ order: "asc" }, { id: "asc" }] },
     },
   });
-  if (!contest) notFound();
+  if (!contest || !canManageContest(session, contest)) notFound();
+  const isAdmin = session.role === "ADMIN";
 
   const problems = await prisma.problem.findMany({
+    where: isAdmin ? {} : { isPublic: true },
     orderBy: [{ type: "asc" }, { order: "asc" }],
     select: { id: true, title: true, isPublic: true, type: true },
   });
@@ -41,7 +43,7 @@ export default async function EditContestPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="page-title">編輯比賽</h1>
-        {contest.problems.length > 0 && (
+        {isAdmin && contest.problems.length > 0 && (
           <a
             href={`/api/admin/contests/${contest.id}/export-docs`}
             className="btn-secondary"
@@ -50,13 +52,15 @@ export default async function EditContestPage({
           </a>
         )}
       </div>
-      <p className="-mt-4 text-xs text-mute">
-        給斷網比賽用：裡面是每題一份可離線開啟的 HTML（字型已內嵌），檔名對應題目代號。
-        解壓後把資料夾路徑設定到收件程式「賽前設定」的題目路徑即可，或用瀏覽器開啟後
-        Ctrl+P 另存 PDF。這顆按鈕不受比賽是否已開始影響，你隨時看得到完整內容；
-        選手端能不能提前下載則由下面「允許選手端在開賽前下載題目文件」控制，
-        預設關閉（開賽前仍然看不到，見「開啟題目」的鎖定邏輯）。
-      </p>
+      {isAdmin && (
+        <p className="-mt-4 text-xs text-mute">
+          給斷網比賽用：裡面是每題一份可離線開啟的 HTML（字型已內嵌），檔名對應題目代號。
+          解壓後把資料夾路徑設定到收件程式「賽前設定」的題目路徑即可，或用瀏覽器開啟後
+          Ctrl+P 另存 PDF。這顆按鈕不受比賽是否已開始影響，你隨時看得到完整內容；
+          選手端能不能提前下載則由下面「允許選手端在開賽前下載題目文件」控制，
+          預設關閉（開賽前仍然看不到，見「開啟題目」的鎖定邏輯）。
+        </p>
+      )}
 
       {phase === "ended" && !contest.revealedAt && (
         <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
@@ -69,6 +73,9 @@ export default async function EditContestPage({
 
       <ContestForm
         problems={problems}
+        isAdmin={isAdmin}
+        returnHref={isAdmin ? undefined : `/contests/${contest.id}`}
+        deleteHref={isAdmin ? undefined : "/contests"}
         initial={{
           id: contest.id,
           title: contest.title,

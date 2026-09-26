@@ -19,16 +19,6 @@ export async function shareUrl(opts: { title: string; path: string }) {
   });
 }
 
-// 狀態列顏色跟隨網站亮暗主題（淺色狀態列配深色文字，反之亦然）
-export async function syncStatusBar(dark: boolean) {
-  if (!isNativeApp()) return;
-  const { StatusBar, Style } = await import("@capacitor/status-bar");
-  await StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light });
-  await StatusBar.setBackgroundColor({
-    color: dark ? "#1b1e23" : "#e9e9ee",
-  });
-}
-
 export async function ensureNotificationPermission(): Promise<boolean> {
   if (!isNativeApp()) return false;
   const { LocalNotifications } = await import("@capacitor/local-notifications");

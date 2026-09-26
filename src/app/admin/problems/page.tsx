@@ -132,7 +132,7 @@ export default async function AdminProblemsPage({
       <p className="mono mb-2 text-[11px] text-mute sm:hidden">
         ← 左右滑動可看到更多欄位 →
       </p>
-      <div className="card overflow-x-auto">
+      <div key={type} className="card problem-page-switch overflow-x-auto">
           <AdminProblemTable key={type} problems={rows} type={type} users={users} />
       </div>
     </div>

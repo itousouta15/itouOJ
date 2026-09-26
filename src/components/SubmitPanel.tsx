@@ -152,7 +152,6 @@ export default function SubmitPanel({
   const [code, setCode] = useState(TEMPLATES[defaultLanguage]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [darkTheme, setDarkTheme] = useState(true);
   const [running, setRunning] = useState(false);
   const [runResult, setRunResult] = useState<RunResponse | null>(null);
   const [showCustom, setShowCustom] = useState(false);
@@ -235,16 +234,6 @@ export default function SubmitPanel({
     // 即使使用者從未切換過語言，也要還原預設語言的草稿。
     switchLanguage(saved && languageOptions.includes(saved) ? saved : defaultLanguage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 編輯器跟著網站的亮暗主題（<html data-theme>）切換
-  useEffect(() => {
-    const el = document.documentElement;
-    const update = () => setDarkTheme(el.getAttribute("data-theme") !== "light");
-    update();
-    const observer = new MutationObserver(update);
-    observer.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => observer.disconnect();
   }, []);
 
   // 全螢幕編輯時鎖住頁面捲動
@@ -385,7 +374,7 @@ export default function SubmitPanel({
   const editor = (
     <CodeMirror
       value={code}
-      theme={darkTheme ? "dark" : "light"}
+      theme="dark"
       extensions={editorExtensions}
       onChange={updateCode}
       onCreateEditor={(view) => {

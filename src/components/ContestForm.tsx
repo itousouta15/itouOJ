@@ -65,9 +65,17 @@ function nextLabel(existing: string[]) {
 export default function ContestForm({
   problems,
   initial,
+  createEndpoint = "/api/admin/contests",
+  returnHref,
+  deleteHref,
+  isAdmin = true,
 }: {
   problems: ProblemOption[];
   initial?: ContestFormInitial;
+  createEndpoint?: string;
+  returnHref?: string;
+  deleteHref?: string;
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const editing = initial?.id != null;
@@ -123,7 +131,7 @@ export default function ContestForm({
     setError("");
     try {
       const res = await fetch(
-        editing ? `/api/admin/contests/${initial!.id}` : "/api/admin/contests",
+        editing ? `/api/admin/contests/${initial!.id}` : createEndpoint,
         {
           method: editing ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -141,7 +149,10 @@ export default function ContestForm({
         setSaving(false);
         return;
       }
-      router.push("/admin/contests");
+      router.push(
+        returnHref ??
+          (createEndpoint === "/api/contests" ? `/contests/${data.id}` : "/admin/contests")
+      );
       router.refresh();
     } catch {
       setError("儲存失敗，請稍後再試");
@@ -152,9 +163,22 @@ export default function ContestForm({
   async function remove() {
     if (!confirm("確定要刪除這場比賽嗎？報名資料會一併刪除（不影響提交紀錄）。"))
       return;
-    await fetch(`/api/admin/contests/${initial!.id}`, { method: "DELETE" });
-    router.push("/admin/contests");
-    router.refresh();
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/contests/${initial!.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "刪除失敗");
+        return;
+      }
+      router.push(deleteHref ?? "/admin/contests");
+      router.refresh();
+    } catch {
+      setError("刪除失敗，請稍後再試");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -312,7 +336,7 @@ export default function ContestForm({
               setForm((f) => ({ ...f, isPublic: e.target.checked }))
             }
           />
-          公開比賽（未公開時只有管理員看得到）
+          公開比賽（未公開時只有{isAdmin ? "管理員與建立者" : "你和管理員"}看得到）
         </label>
         <label className="flex cursor-pointer items-start gap-2 text-sm">
           <input
@@ -429,7 +453,7 @@ export default function ContestForm({
           {saving ? "儲存中…" : editing ? "儲存變更" : "建立比賽"}
         </button>
         {editing && (
-          <button className="btn-danger" onClick={remove}>
+          <button className="btn-danger" onClick={remove} disabled={saving}>
             刪除比賽
           </button>
         )}
