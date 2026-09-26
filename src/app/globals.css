@@ -941,8 +941,8 @@ html.kbd-open .bottom-nav {
   }
   main:has(.problem-workspace),
   body:has(.problem-workspace) .site-header > nav {
-    max-width: 1500px;
-    padding-inline: clamp(1.5rem, 3.5vw, 3.5rem);
+    max-width: 1600px;
+    padding-inline: clamp(1.5rem, 2.5vw, 3rem);
   }
   .problem-workspace {
     grid-template-columns: minmax(0, var(--problem-share, 4fr)) 16px minmax(0, var(--code-share, 3fr));
