@@ -1,4 +1,10 @@
 import { clientIp } from "@/lib/rateLimit";
+import { isOfflineMode } from "@/lib/offline";
+
+// 本地 next dev 與斷網比賽不需要連 Cloudflare；正式環境仍須驗證。
+export function isTurnstileRequired(): boolean {
+  return process.env.NODE_ENV !== "development" && !isOfflineMode();
+}
 
 function configuredHostnames() {
   return new Set(

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
 import { isOfflineMode } from "@/lib/offline";
 import { clientIp, enforceRateLimit } from "@/lib/rateLimit";
-import { verifyTurnstile } from "@/lib/turnstile";
+import { isTurnstileRequired, verifyTurnstile } from "@/lib/turnstile";
 
 const schema = z.object({
   username: z.string().min(1),
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     enforceRateLimit(`login:user:${ip}:${username.toLowerCase()}`, 10, 5 * 60_000);
   if (limited) return limited;
 
-  if (!isOfflineMode() && !(await verifyTurnstile(parsed.data.turnstileToken, "login", request))) {
+  if (isTurnstileRequired() && !(await verifyTurnstile(parsed.data.turnstileToken, "login", request))) {
     return Response.json({ error: "安全驗證失敗，請再試一次" }, { status: 403 });
   }
 

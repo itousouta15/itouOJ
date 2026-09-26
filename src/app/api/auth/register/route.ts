@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
 import { clientIp, enforceRateLimit } from "@/lib/rateLimit";
 import { isOfflineMode } from "@/lib/offline";
-import { verifyTurnstile } from "@/lib/turnstile";
+import { isTurnstileRequired, verifyTurnstile } from "@/lib/turnstile";
 
 const schema = z.object({
   username: z
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
   );
   if (limited) return limited;
 
-  if (!isOfflineMode() && !(await verifyTurnstile(parsed.data.turnstileToken, "register", request))) {
+  if (isTurnstileRequired() && !(await verifyTurnstile(parsed.data.turnstileToken, "register", request))) {
     return Response.json({ error: "安全驗證失敗，請再試一次" }, { status: 403 });
   }
 

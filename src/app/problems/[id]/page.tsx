@@ -9,6 +9,7 @@ import StatementCard from "@/components/StatementCard";
 import SampleCases from "@/components/SampleCases";
 import SubmitPanel from "@/components/SubmitPanel";
 import ProblemDiscussion from "@/components/ProblemDiscussion";
+import ProblemWorkspace from "@/components/ProblemWorkspace";
 import { markdownSnippet } from "@/lib/textSnippet";
 
 export const dynamic = "force-dynamic";
@@ -107,114 +108,119 @@ export default async function ProblemPage({
           dangerouslySetInnerHTML={{ __html: learningResourceStructuredData }}
         />
       )}
-      <div className="space-y-6">
-      <QuestionHeader
-        title={`#${problem.order}. ${problem.title}`}
-        sharePath={`/problems/${problem.order}`}
-        badges={<DifficultyBadge difficulty={problem.difficulty} />}
-        tags={problem.tags.map((pt) => ({ id: pt.tagId, name: pt.tag.name }))}
-        adminHref={
-          session?.role === "ADMIN"
-            ? `/admin/problems/${problem.id}/edit`
-            : undefined
-        }
-        sub={
-          <>
-            時間限制 {problem.timeLimitMs} ms ・ 記憶體限制{" "}
-            {problem.memoryLimitMb} MB
-          </>
-        }
-      />
+      <ProblemWorkspace enabled={!!session}>
+        <section className="problem-workspace-pane space-y-6" aria-label="題目內容">
+          <QuestionHeader
+            title={`#${problem.order}. ${problem.title}`}
+            sharePath={`/problems/${problem.order}`}
+            badges={<DifficultyBadge difficulty={problem.difficulty} />}
+            tags={problem.tags.map((pt) => ({ id: pt.tagId, name: pt.tag.name }))}
+            adminHref={
+              session?.role === "ADMIN"
+                ? `/admin/problems/${problem.id}/edit`
+                : undefined
+            }
+            sub={
+              <>
+                時間限制 {problem.timeLimitMs} ms ・ 記憶體限制{" "}
+                {problem.memoryLimitMb} MB
+              </>
+            }
+          />
 
-      <StatementCard>{problem.statement}</StatementCard>
+          <StatementCard>{problem.statement}</StatementCard>
 
-      {problem.author && (
-        <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
-          <span className="text-sm text-dim">
-            出題者：{" "}
-            <Link
-              href={`/users/${problem.author.username}`}
-              className="font-medium text-blue hover:underline"
-            >
-              {problem.author.displayName || problem.author.username}
-            </Link>
-          </span>
-          {session?.userId !== problem.author.id && (
-            <Link
-              href={
-                session
-                  ? `/messages/${problem.author.username}?about=${problem.id}`
-                  : `/login?next=${encodeURIComponent(
-                      `/messages/${problem.author.username}`
-                    )}`
-              }
-              className="btn-secondary px-3 py-1.5 text-xs"
-            >
-              聯絡出題者
-            </Link>
+          {problem.author && (
+            <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
+              <span className="text-sm text-dim">
+                出題者：{" "}
+                <Link
+                  href={`/users/${problem.author.username}`}
+                  className="font-medium text-blue hover:underline"
+                >
+                  {problem.author.displayName || problem.author.username}
+                </Link>
+              </span>
+              {session?.userId !== problem.author.id && (
+                <Link
+                  href={
+                    session
+                      ? `/messages/${problem.author.username}?about=${problem.id}`
+                      : `/login?next=${encodeURIComponent(
+                          `/messages/${problem.author.username}`
+                        )}`
+                  }
+                  className="btn-secondary px-3 py-1.5 text-xs"
+                >
+                  聯絡出題者
+                </Link>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      {problem.subtasks.length > 0 && (
-        <div>
-          <h2 className="mb-3 section-title">配分方式</h2>
-          <div className="card overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="table-head w-20">子題</th>
-                  <th className="table-head w-24 text-right">配分</th>
-                  <th className="table-head">比對方式</th>
-                </tr>
-              </thead>
-              <tbody>
-                {problem.subtasks.map((s) => (
-                  <tr key={s.id}>
-                    <td className="table-cell">子題 {s.order}</td>
-                    <td className="table-cell text-right">{s.points} 分</td>
-                    <td className="table-cell text-dim">
-                      {s.checkMode === "firstLine"
-                        ? "只看輸出第一行是否正確"
-                        : "完整輸出需完全正確"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {problem.subtasks.length > 0 && (
+            <div>
+              <h2 className="mb-3 section-title">配分方式</h2>
+              <div className="card overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr>
+                      <th className="table-head w-20">子題</th>
+                      <th className="table-head w-24 text-right">配分</th>
+                      <th className="table-head">比對方式</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {problem.subtasks.map((s) => (
+                      <tr key={s.id}>
+                        <td className="table-cell">子題 {s.order}</td>
+                        <td className="table-cell text-right">{s.points} 分</td>
+                        <td className="table-cell text-dim">
+                          {s.checkMode === "firstLine"
+                            ? "只看輸出第一行是否正確"
+                            : "完整輸出需完全正確"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <SampleCases samples={problem.testCases} />
+
+          {!session && (
+            <div className="card p-6 text-center text-sm text-dim">
+              請先
+              <Link href="/login" className="mx-1 text-blue hover:underline">
+                登入
+              </Link>
+              後再提交程式碼
+            </div>
+          )}
+
+          <div>
+            <h2 className="mb-3 section-title">討論與題解</h2>
+            <ProblemDiscussion problemId={problem.id} loggedIn={!!session} />
           </div>
-        </div>
-      )}
-
-      <SampleCases samples={problem.testCases} />
-
-      {session ? (
-        <SubmitPanel
-          problemId={problem.id}
-          problem={{
-            order: problem.order,
-            title: problem.title,
-            difficulty: problem.difficulty,
-            timeLimitMs: problem.timeLimitMs,
-            memoryLimitMb: problem.memoryLimitMb,
-            accepted,
-          }}
-        />
-      ) : (
-        <div className="card p-6 text-center text-sm text-dim">
-          請先
-          <Link href="/login" className="mx-1 text-blue hover:underline">
-            登入
-          </Link>
-          後再提交程式碼
-        </div>
-      )}
-
-      <div>
-        <h2 className="mb-3 section-title">討論與題解</h2>
-        <ProblemDiscussion problemId={problem.id} loggedIn={!!session} />
-      </div>
-      </div>
+        </section>
+        {session && (
+          <aside className="problem-workspace-pane problem-workspace-code" aria-label="程式編輯器">
+            <SubmitPanel
+              problemId={problem.id}
+              problem={{
+                order: problem.order,
+                title: problem.title,
+                difficulty: problem.difficulty,
+                timeLimitMs: problem.timeLimitMs,
+                memoryLimitMb: problem.memoryLimitMb,
+                accepted,
+              }}
+            />
+          </aside>
+        )}
+      </ProblemWorkspace>
     </>
   );
 }

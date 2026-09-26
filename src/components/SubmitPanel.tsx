@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import CodeMirror from "@uiw/react-codemirror";
@@ -9,7 +9,7 @@ import { python } from "@codemirror/lang-python";
 import { java } from "@codemirror/lang-java";
 import { javascript } from "@codemirror/lang-javascript";
 import type { Extension } from "@codemirror/state";
-import type { EditorView } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
 import {
   isNativeApp,
@@ -23,6 +23,9 @@ import VerdictBadge from "@/components/VerdictBadge";
 // 兩排各 9 鍵（共 18），等寬塞滿螢幕不捲動；只在手機鍵盤出現時顯示。
 const KBD_ROW1 = ["Tab", "{", "}", "(", ")", "[", "]", ";", ":"];
 const KBD_ROW2 = ["'", '"', "#", "|", "&", "_", "*", "%", "^"];
+const DEFAULT_EDITOR_FONT_SIZE = 15;
+const MIN_EDITOR_FONT_SIZE = 10;
+const MAX_EDITOR_FONT_SIZE = 24;
 
 interface SampleRunResult {
   order: number;
@@ -128,11 +131,21 @@ export default function SubmitPanel({
   const [runResult, setRunResult] = useState<RunResponse | null>(null);
   const [showCustom, setShowCustom] = useState(false);
   const [customInput, setCustomInput] = useState("");
+  const [editorFontSize, setEditorFontSize] = useState(DEFAULT_EDITOR_FONT_SIZE);
   const [fullscreen, setFullscreen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [kbdVisible, setKbdVisible] = useState(false);
   const [isApp] = useState(() => isNativeApp());
   const viewRef = useRef<EditorView | null>(null);
+  const wheelDeltaRef = useRef(0);
+  // 讓 CodeMirror 自己處理字級變更與重新測量，行號才會跟程式碼維持同一行高。
+  const editorExtensions = useMemo(
+    () => [
+      ...CM_EXTENSIONS[language],
+      EditorView.theme({ "&": { fontSize: `${editorFontSize}px` } }),
+    ],
+    [language, editorFontSize],
+  );
   const restoreFocusRef = useRef(false);
   const closingRef = useRef(false);
   // 這次全螢幕是不是「點編輯器自動開」的：自動開的才在收鍵盤時自動關
@@ -236,6 +249,26 @@ export default function SubmitPanel({
     localStorage.setItem(draftKey(language), value);
   }
 
+  function handleEditorWheel(event: WheelEvent) {
+    if (!event.ctrlKey) {
+      wheelDeltaRef.current = 0;
+      return;
+    }
+    event.preventDefault();
+    if (!event.deltaY) return;
+
+    // 滑鼠滾輪一格約 100px；觸控板的細小位移累積後才調整，避免縮放過快。
+    const delta = event.deltaY * (event.deltaMode === 1 ? 40 : event.deltaMode === 2 ? 100 : 1);
+    if (Math.sign(delta) !== Math.sign(wheelDeltaRef.current)) wheelDeltaRef.current = 0;
+    wheelDeltaRef.current += delta;
+    const steps = Math.trunc(wheelDeltaRef.current / 100);
+    if (!steps) return;
+    wheelDeltaRef.current -= steps * 100;
+    setEditorFontSize((size) =>
+      Math.max(MIN_EDITOR_FONT_SIZE, Math.min(MAX_EDITOR_FONT_SIZE, size - steps))
+    );
+  }
+
   // 鍵盤符號列：在游標處插入文字（Tab 用兩格空白）
   function insertText(text: string) {
     const view = viewRef.current;
@@ -323,10 +356,11 @@ export default function SubmitPanel({
     <CodeMirror
       value={code}
       theme={darkTheme ? "dark" : "light"}
-      extensions={CM_EXTENSIONS[language]}
+      extensions={editorExtensions}
       onChange={updateCode}
       onCreateEditor={(view) => {
         viewRef.current = view;
+        view.dom.addEventListener("wheel", handleEditorWheel, { passive: false });
         if (fullscreen || restoreFocusRef.current) {
           restoreFocusRef.current = false;
           requestAnimationFrame(() => view.focus());
@@ -362,7 +396,7 @@ export default function SubmitPanel({
   );
 
   return (
-    <div className="card p-4">
+    <div className="card submit-panel p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="section-title">提交</h2>
         <div className="flex items-center gap-2">

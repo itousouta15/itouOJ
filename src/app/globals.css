@@ -855,10 +855,10 @@ html.kbd-open .bottom-nav {
   font-size: 11px;
   font-weight: 700;
 }
-/* 手機上編輯器字級調到 16px：太小 iOS 聚焦會自動放大縮放整個頁面 */
+/* 手機編輯區最低 16px，行號和程式碼一起縮放，避免 iOS 聚焦自動放大頁面。 */
 @media (max-width: 767px) {
-  .oj-editor .cm-editor .cm-content {
-    font-size: 16px;
+  .oj-editor .cm-editor .cm-scroller {
+    font-size: max(16px, 1em);
   }
 }
 
@@ -917,6 +917,134 @@ html.kbd-open .bottom-nav {
 }
 .oj-editor--inline .cm-editor {
   min-height: 378px;
+}
+.oj-editor .cm-editor,
+.oj-editor .cm-content,
+.oj-editor .cm-gutters {
+  font-family: "Fira Code", "JetBrains Mono", monospace;
+}
+
+/* 程式題：桌面版置中分欄並保留留白；窄螢幕保持上下排列。 */
+.problem-workspace {
+  display: grid;
+  gap: 1.5rem;
+}
+.problem-workspace-pane {
+  min-width: 0;
+}
+@media (min-width: 1024px) {
+  main,
+  .site-header > nav {
+    transition: max-width 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      padding-inline-start 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      padding-inline-end 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  main:has(.problem-workspace),
+  body:has(.problem-workspace) .site-header > nav {
+    max-width: 1500px;
+    padding-inline: clamp(1.5rem, 3.5vw, 3.5rem);
+  }
+  .problem-workspace {
+    grid-template-columns: minmax(0, var(--problem-share, 4fr)) 16px minmax(0, var(--code-share, 3fr));
+    gap: 4px;
+    height: calc(100dvh - 9rem);
+    min-height: 520px;
+  }
+  .problem-workspace-divider {
+    position: relative;
+    cursor: col-resize;
+    touch-action: none;
+  }
+  .problem-workspace-divider::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: var(--bd2);
+    transform: translateX(-50%);
+  }
+  .problem-workspace-divider:hover::before,
+  .problem-workspace-divider:focus-visible::before,
+  .problem-workspace-divider[data-dragging="true"]::before {
+    background: var(--blue);
+  }
+  .problem-workspace-divider:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+  .problem-workspace:has(.problem-workspace-divider[data-dragging="true"]) {
+    user-select: none;
+  }
+  .problem-workspace--contest {
+    height: calc(100dvh - 15rem);
+    min-height: 480px;
+  }
+  .problem-workspace-pane {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+  .problem-workspace > section {
+    padding: clamp(1rem, 1.6vw, 1.5rem);
+    border: 1px solid var(--bd);
+    background: var(--panel);
+    scrollbar-width: auto;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.12s ease-out;
+  }
+  .problem-workspace > section[data-scrolling="true"] {
+    scrollbar-color: color-mix(in srgb, var(--dim) 25%, transparent) transparent;
+  }
+  .problem-workspace > section::-webkit-scrollbar {
+    width: 10px;
+  }
+  .problem-workspace > section::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    transition: background-color 0.12s ease-out;
+  }
+  .problem-workspace > section[data-scrolling="true"]::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--dim) 25%, transparent);
+  }
+  .problem-workspace > section .card {
+    background: var(--inset);
+  }
+  .problem-workspace .card,
+  .problem-workspace .oj-editor--inline,
+  .problem-workspace pre {
+    border-radius: 0;
+  }
+  .problem-workspace-code .submit-panel {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    padding: clamp(1rem, 1.6vw, 1.5rem);
+  }
+  .problem-workspace-code .oj-editor--inline {
+    display: flex;
+    flex: 1 0 380px;
+    flex-direction: column;
+  }
+  .problem-workspace-code .oj-editor--inline > div,
+  .problem-workspace-code .oj-editor--inline .cm-editor {
+    height: 100%;
+  }
+  .problem-workspace-code .oj-editor--inline .cm-scroller {
+    overflow: auto;
+  }
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  main,
+  .site-header > nav {
+    transition: none;
+  }
+}
+@media (max-width: 1023px) {
+  .problem-workspace-divider {
+    display: none;
+  }
 }
 
 /* ---- 帳號下拉選單 ---- */

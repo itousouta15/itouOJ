@@ -14,6 +14,7 @@ import CodeBlock from "@/components/CodeBlock";
 import ContestStatusBadge from "@/components/ContestStatusBadge";
 import ContestCountdown from "@/components/ContestCountdown";
 import SubmitPanel from "@/components/SubmitPanel";
+import ProblemWorkspace from "@/components/ProblemWorkspace";
 import RecognitionAnswerPanel from "@/components/RecognitionAnswerPanel";
 import { shuffledOrder } from "@/lib/shuffle";
 
@@ -62,6 +63,42 @@ export default async function ContestProblemPage({
 
   const phase = getContestPhase(contest);
   const options = isRecognition ? (JSON.parse(problem.options ?? "[]") as string[]) : [];
+  const questionContent = (
+    <>
+      <QuestionHeader
+        title={`${contestProblem?.label ?? ""}. ${problem.title}`}
+        sharePath={`/contests/${contest.id}/problems/${problem.id}`}
+        sub={
+          isRecognition ? undefined : (
+            <>
+              時間限制 {problem.timeLimitMs} ms ・ 記憶體限制{" "}
+              {problem.memoryLimitMb} MB
+            </>
+          )
+        }
+      />
+      <StatementCard>{problem.statement}</StatementCard>
+      <CodeBlock code={problem.code ?? ""} />
+      <SampleCases samples={problem.testCases} />
+    </>
+  );
+  const submissionPanel = !isRecognition && (
+    <SubmitPanel
+      problemId={problem.id}
+      problem={{
+        order: problem.order,
+        title: problem.title,
+        difficulty: problem.difficulty,
+        timeLimitMs: problem.timeLimitMs,
+        memoryLimitMb: problem.memoryLimitMb,
+        accepted,
+      }}
+      contestId={contest.id}
+      // assertContestProblemAccess 已經擋掉 upcoming，這裡只會是 running/frozen/ended
+      contestPhase={phase as "running" | "frozen" | "ended"}
+      allowedLanguages={parseAllowedLanguages(contest.allowedLanguages)}
+    />
+  );
 
   return (
     <div className="space-y-6">
@@ -80,49 +117,28 @@ export default async function ContestProblemPage({
         />
       </div>
 
-      <QuestionHeader
-        title={`${contestProblem?.label ?? ""}. ${problem.title}`}
-        sharePath={`/contests/${contest.id}/problems/${problem.id}`}
-        sub={
-          isRecognition ? undefined : (
-            <>
-              時間限制 {problem.timeLimitMs} ms ・ 記憶體限制{" "}
-              {problem.memoryLimitMb} MB
-            </>
-          )
-        }
-      />
-
-      <StatementCard>{problem.statement}</StatementCard>
-
-      <CodeBlock code={problem.code ?? ""} />
-
-      <SampleCases samples={problem.testCases} />
-
-      {isRecognition ? (
-        <RecognitionAnswerPanel
-          options={options}
-          displayOrder={shuffledOrder(options.length)}
-          explanation={problem.explanation}
-          answerIndex={problem.answerIndex ?? 0}
-          locked={phase === "ended"}
-        />
+      {isRecognition || !session ? (
+        <div className="space-y-6">
+          {questionContent}
+          {isRecognition ? (
+            <RecognitionAnswerPanel
+              options={options}
+              displayOrder={shuffledOrder(options.length)}
+              explanation={problem.explanation}
+              answerIndex={problem.answerIndex ?? 0}
+              locked={phase === "ended"}
+            />
+          ) : submissionPanel}
+        </div>
       ) : (
-        <SubmitPanel
-          problemId={problem.id}
-          problem={{
-            order: problem.order,
-            title: problem.title,
-            difficulty: problem.difficulty,
-            timeLimitMs: problem.timeLimitMs,
-            memoryLimitMb: problem.memoryLimitMb,
-            accepted,
-          }}
-          contestId={contest.id}
-          // assertContestProblemAccess 已經擋掉 upcoming，這裡只會是 running/frozen/ended
-          contestPhase={phase as "running" | "frozen" | "ended"}
-          allowedLanguages={parseAllowedLanguages(contest.allowedLanguages)}
-        />
+        <ProblemWorkspace contest>
+          <section className="problem-workspace-pane space-y-6" aria-label="題目內容">
+            {questionContent}
+          </section>
+          <aside className="problem-workspace-pane problem-workspace-code" aria-label="程式編輯器">
+            {submissionPanel}
+          </aside>
+        </ProblemWorkspace>
       )}
     </div>
   );
