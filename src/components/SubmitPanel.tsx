@@ -8,8 +8,15 @@ import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";
 import { java } from "@codemirror/lang-java";
 import { javascript } from "@codemirror/lang-javascript";
-import type { Extension } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
+import {
+  acceptCompletion,
+  clearSnippet,
+  nextSnippetField,
+  prevSnippetField,
+  snippetKeymap,
+} from "@codemirror/autocomplete";
+import { Prec, type Extension } from "@codemirror/state";
+import { EditorView, keymap, tooltips } from "@codemirror/view";
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
 import { DOCUMENT_WORD_COMPLETIONS, EDITOR_COMPLETIONS } from "@/lib/editorCompletions";
 import {
@@ -27,6 +34,14 @@ const KBD_ROW2 = ["'", '"', "#", "|", "&", "_", "*", "%", "^"];
 const DEFAULT_EDITOR_FONT_SIZE = 15;
 const MIN_EDITOR_FONT_SIZE = 10;
 const MAX_EDITOR_FONT_SIZE = 24;
+// 補全開啟時 Tab 選取建議；沒有建議時退回原本的縮排或片段欄位切換。
+const ACCEPT_COMPLETION_WITH_TAB = Prec.highest(keymap.of([
+  { key: "Tab", run: acceptCompletion },
+]));
+const SNIPPET_KEYS = snippetKeymap.of([
+  { key: "Tab", run: (view) => acceptCompletion(view) || nextSnippetField(view), shift: prevSnippetField },
+  { key: "Escape", run: clearSnippet },
+]);
 
 interface SampleRunResult {
   order: number;
@@ -153,6 +168,10 @@ export default function SubmitPanel({
   const editorExtensions = useMemo(
     () => [
       ...CM_EXTENSIONS[language],
+      ACCEPT_COMPLETION_WITH_TAB,
+      SNIPPET_KEYS,
+      // 編輯器與側欄有 overflow，選單放在 body 才不會被裁掉，也能用滑鼠點選。
+      ...(typeof document !== "undefined" ? [tooltips({ parent: document.body })] : []),
       EditorView.theme({ "&": { fontSize: `${editorFontSize}px` } }),
     ],
     [language, editorFontSize],
