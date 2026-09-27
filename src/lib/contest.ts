@@ -144,6 +144,7 @@ export interface ScoreboardProblem {
   id: number;
   label: string;
   title: string;
+  problemCode: string | null;
 }
 
 const WRONG_VERDICTS = new Set(["WA", "TLE", "MLE", "RE"]);
@@ -162,7 +163,9 @@ export async function buildScoreboard(
     include: {
       problems: {
         orderBy: [{ order: "asc" }, { id: "asc" }],
-        include: { problem: { select: { id: true, title: true } } },
+        include: {
+          problem: { select: { id: true, problemCode: true, title: true } },
+        },
       },
       participants: {
         include: { user: { select: { id: true, username: true, displayName: true } } },
@@ -177,6 +180,7 @@ export async function buildScoreboard(
     id: cp.problemId,
     label: cp.label,
     title: cp.problem.title,
+    problemCode: cp.problem.problemCode,
   }));
 
   const freezeStart = new Date(

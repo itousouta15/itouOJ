@@ -13,7 +13,7 @@ export default async function NewContestPage() {
 
   const problems = await prisma.problem.findMany({
     where: { isPublic: true },
-    orderBy: [{ type: "asc" }, { order: "asc" }],
+    orderBy: [{ type: "asc" }, { problemCode: "asc" }],
     select: { id: true, title: true, isPublic: true, type: true },
   });
 

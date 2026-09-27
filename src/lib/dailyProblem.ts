@@ -8,7 +8,7 @@ export function taipeiDateString(date = new Date()): string {
 
 export interface DailyProblem {
   id: number;
-  order: number;
+  problemCode: string | null;
   title: string;
   difficulty: string;
   date: string;
@@ -28,9 +28,9 @@ export async function getDailyProblem(): Promise<DailyProblem | null> {
 
   const problem = await prisma.problem.findFirst({
     where: { type: "PROGRAMMING", isPublic: true },
-    orderBy: [{ order: "asc" }, { id: "asc" }],
+    orderBy: [{ problemCode: "asc" }, { id: "asc" }],
     skip,
-    select: { id: true, order: true, title: true, difficulty: true },
+    select: { id: true, problemCode: true, title: true, difficulty: true },
   });
   return problem ? { ...problem, date } : null;
 }

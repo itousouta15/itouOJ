@@ -13,7 +13,7 @@ interface SubmissionData {
   username: string;
   problem: {
     id: number;
-    order: number;
+    problemCode: string | null;
     title: string;
     type: string;
     paper: string | null;

@@ -752,12 +752,13 @@ opacity: 0;
   }
 }
 
-/* ---- 手機底部導覽列（App 專用，網站版不用）---- */
+/* ---- 手機底部導覽列（App 全站導覽；題目分頁另有一列）---- */
 html:not([data-app]) .bottom-nav {
   display: none;
 }
 /* 手機鍵盤開啟時隱藏，避免導覽列浮到鍵盤上方（BottomNavLinks 掛 kbd-open） */
-html.kbd-open .bottom-nav {
+html.kbd-open .bottom-nav,
+html.kbd-open .problem-workspace-nav {
   display: none;
 }
 .bottom-nav {
@@ -1002,13 +1003,18 @@ html.kbd-open .bottom-nav {
     height: calc(100dvh - 15rem);
     min-height: 480px;
   }
+  .problem-workspace--tabs {
+    height: auto;
+    min-height: 0;
+    display: block;
+  }
   .problem-workspace-pane {
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-gutter: stable;
   }
-  .problem-workspace > section {
+  :is(.problem-workspace > section, .problem-page > section) {
     padding: clamp(1rem, 1.6vw, 1.5rem);
     border: 1px solid var(--bd);
     background: var(--panel);
@@ -1016,20 +1022,20 @@ html.kbd-open .bottom-nav {
     scrollbar-color: transparent transparent;
     transition: scrollbar-color 0.12s ease-out;
   }
-  .problem-workspace > section[data-scrolling="true"] {
+  :is(.problem-workspace > section, .problem-page > section)[data-scrolling="true"] {
     scrollbar-color: color-mix(in srgb, var(--dim) 25%, transparent) transparent;
   }
-  .problem-workspace > section::-webkit-scrollbar {
+  :is(.problem-workspace > section, .problem-page > section)::-webkit-scrollbar {
     width: 10px;
   }
-  .problem-workspace > section::-webkit-scrollbar-thumb {
+  :is(.problem-workspace > section, .problem-page > section)::-webkit-scrollbar-thumb {
     background-color: transparent;
     transition: background-color 0.12s ease-out;
   }
-  .problem-workspace > section[data-scrolling="true"]::-webkit-scrollbar-thumb {
+  :is(.problem-workspace > section, .problem-page > section)[data-scrolling="true"]::-webkit-scrollbar-thumb {
     background-color: color-mix(in srgb, var(--dim) 25%, transparent);
   }
-  .problem-workspace > section .card {
+  :is(.problem-workspace > section, .problem-page > section) .card {
     background: var(--inset);
   }
   .problem-workspace .card,
@@ -1066,7 +1072,70 @@ html.kbd-open .bottom-nav {
   .problem-workspace-divider {
     display: none;
   }
+
+  /* 手機分頁模式：左右滑切換「題目 / 程式」，一次只顯示一頁。 */
+  .problem-workspace--tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  /* 網頁版只有題目分頁列；App 版會在它下方保留全站導覽列。 */
+  .problem-workspace-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  main:has(.problem-workspace--tabs) {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  }
+  .problem-page {
+    display: none;
+  }
+  .problem-page.is-active {
+    display: block;
+  }
+  /* 切換時的左右滑入動畫，對應 quiz 的方向動畫。 */
+  .problem-pages[data-direction="problem"] .problem-page.is-active {
+    animation: problemPageSlideLeft 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .problem-pages[data-direction="code"] .problem-page.is-active {
+    animation: problemPageSlideRight 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 }
+
+@keyframes problemPageSlideLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes problemPageSlideRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .problem-page.is-active {
+    animation: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .problem-workspace-nav {
+    display: none;
+  }
+  /* 桌面維持分欄：兩頁同時顯示，分隔線照原本的方式運作。 */
+  .problem-pages {
+    display: grid;
+    grid-template-columns: minmax(0, var(--problem-share, 4fr)) 16px minmax(0, var(--code-share, 3fr));
+    gap: 4px;
+    height: calc(100dvh - 9rem);
+    min-height: 520px;
+  }
+  .problem-workspace--contest .problem-pages {
+    height: calc(100dvh - 15rem);
+    min-height: 480px;
+  }
+  .problem-page {
+    display: contents;
+  }
+}
+
 
 /* ---- 帳號下拉選單 ---- */
 @keyframes menuPop {
@@ -1707,6 +1776,25 @@ html[data-app] .footer {
 /* Navbar 拿掉後主內容的頂部留白跟著縮小 */
 html[data-app] main {
   padding-top: calc(env(safe-area-inset-top, 0px) + 2rem);
+}
+
+/* App 程式題保留原本導覽列，在其上方加題目／程式列。 */
+html[data-app] .problem-workspace-nav {
+  bottom: calc(60px + env(safe-area-inset-bottom));
+  padding-bottom: 0;
+}
+html[data-app] .problem-workspace-nav .bottom-nav-link {
+  height: 52px;
+}
+@media (max-width: 1023px) {
+  html[data-app] main:has(.problem-workspace--tabs) {
+    padding-bottom: calc(9rem + env(safe-area-inset-bottom));
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  html[data-app]:not(.kbd-open):has(.problem-workspace--tabs) .bottom-nav {
+    display: flex;
+  }
 }
 
 /* 手機化細節：底部導覽增高、圖示放大、點擊不閃灰塊 */

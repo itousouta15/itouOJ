@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { PROBLEM_CODE_RE, formatProblemCode } from "@/lib/problemCode";
 
 export const dynamic = "force-dynamic";
 
@@ -7,7 +8,7 @@ const MAX_RESULTS = 8;
 const MAX_TAGS = 6;
 
 // Header 搜尋的即時推薦，只搜實作題（管理員含未公開）。
-// - q：文字，比對標題、題號，也拿來推薦符合的標籤。
+// - q：文字，比對標題、題目代碼，也拿來推薦符合的標籤。
 // - tags：已選的標籤 token（逗號分隔），題目必須同時具備全部標籤（交集）。
 export async function GET(request: Request) {
   const session = await getSession();
@@ -46,16 +47,24 @@ export async function GET(request: Request) {
       })
     : [];
 
-  const n = Number(q);
+  // 代碼查詢：輸入 a001 直接比對代碼；輸入純數字（舊習慣）也換算成代碼。
+  const lower = q.toLowerCase();
+  const codeMatch: { problemCode: string }[] = [];
+  if (PROBLEM_CODE_RE.test(lower)) {
+    codeMatch.push({ problemCode: lower });
+  } else if (/^\d+$/.test(q)) {
+    const n = Number(q);
+    if (n >= 1 && n <= 26 * 999) {
+      codeMatch.push({ problemCode: formatProblemCode(n) });
+    }
+  }
+
   const problems = await prisma.problem.findMany({
     where: {
       ...visibleProblem,
       ...(q
         ? {
-            OR: [
-              { title: { contains: q } },
-              ...(Number.isInteger(n) ? [{ order: n }] : []),
-            ],
+            OR: [{ title: { contains: q } }, ...codeMatch],
           }
         : {}),
       ...(selected.length
@@ -66,11 +75,11 @@ export async function GET(request: Request) {
           }
         : {}),
     },
-    orderBy: [{ order: "asc" }, { id: "asc" }],
+    orderBy: [{ problemCode: "asc" }, { id: "asc" }],
     take: MAX_RESULTS,
     select: {
       id: true,
-      order: true,
+      problemCode: true,
       title: true,
       difficulty: true,
     },

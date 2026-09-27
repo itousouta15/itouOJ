@@ -12,7 +12,7 @@ import DifficultyBadge from "@/components/DifficultyBadge";
 
 interface Suggestion {
   id: number;
-  order: number;
+  problemCode: string | null;
   title: string;
   difficulty: string;
 }
@@ -142,7 +142,7 @@ export default function HeaderSearch({
 
   function go(problem: Suggestion) {
     reset();
-    router.push(`/problems/${problem.order}`);
+    router.push(`/problems/${problem.problemCode}`);
   }
 
   const text = input.trim();

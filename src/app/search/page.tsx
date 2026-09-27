@@ -4,13 +4,14 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { markdownSnippet } from "@/lib/textSnippet";
 import { problemHref } from "@/lib/problemTypes";
+import { PROBLEM_CODE_RE, formatProblemCode } from "@/lib/problemCode";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import TagBadge from "@/components/TagBadge";
 import CategoryBadge from "@/components/CategoryBadge";
 
 export const metadata: Metadata = {
   title: "題目搜尋",
-  description: "搜尋全站實作題與識讀題（標題、題敘、標籤、題號）。",
+  description: "搜尋全站實作題與識讀題（標題、題敘、標籤、題目代碼）。",
   robots: { index: false, follow: true },
 };
 export const dynamic = "force-dynamic";
@@ -37,6 +38,14 @@ export default async function SearchPage({
           ...(isAdmin ? {} : { isPublic: true }),
           AND: terms.map((t) => {
             const n = Number(t);
+            const lower = t.toLowerCase();
+            const codeMatch: { problemCode: string }[] = [];
+            if (PROBLEM_CODE_RE.test(lower)) {
+              codeMatch.push({ problemCode: lower });
+            } else if (Number.isInteger(n) && n >= 1 && n <= 26 * 999) {
+              // 純數字也可以直接找實作題代碼（舊習慣）
+              codeMatch.push({ problemCode: formatProblemCode(n) });
+            }
             return {
               OR: [
                 { title: { contains: t } },
@@ -45,15 +54,14 @@ export default async function SearchPage({
                 { category: { contains: t } },
                 { paper: { contains: t } },
                 { tags: { some: { tag: { name: { contains: t } } } } },
-                // 純數字也可以直接找題號（實作題 order、識讀題原題號）
-                ...(Number.isInteger(n)
-                  ? [{ order: n }, { sourceNumber: n }]
-                  : []),
+                ...codeMatch,
+                // 識別題沿用自己的整數 order，純數字也直接比對
+                ...(Number.isInteger(n) ? [{ order: n }, { sourceNumber: n }] : []),
               ],
             };
           }),
         },
-        orderBy: [{ type: "asc" }, { order: "asc" }, { id: "asc" }],
+        orderBy: [{ type: "asc" }, { problemCode: "asc" }, { id: "asc" }],
         take: MAX_RESULTS,
         omit: { pdfData: true },
         include: {

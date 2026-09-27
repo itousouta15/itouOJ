@@ -11,6 +11,7 @@ import SubmitPanel from "@/components/SubmitPanel";
 import ProblemDiscussion from "@/components/ProblemDiscussion";
 import ProblemWorkspace from "@/components/ProblemWorkspace";
 import { markdownSnippet } from "@/lib/textSnippet";
+import { PROBLEM_CODE_RE } from "@/lib/problemCode";
 
 export const dynamic = "force-dynamic";
 
@@ -20,25 +21,25 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const problemOrder = Number(id);
-  if (!Number.isInteger(problemOrder)) return {};
+  const problemCode = id.toLowerCase();
+  if (!PROBLEM_CODE_RE.test(problemCode)) return {};
 
   // 私人題目不給標題/摘要——頁面本身對非管理員會 404，這裡也不能讓
   // generateMetadata 把題名先洩漏到 <head> 裡。
   const problem = await prisma.problem.findFirst({
-    where: { order: problemOrder, type: "PROGRAMMING" },
+    where: { problemCode, type: "PROGRAMMING" },
     select: { title: true, statement: true, isPublic: true },
   });
   if (!problem || !problem.isPublic) return {};
 
   return {
-    title: `#${problemOrder}. ${problem.title}`,
+    title: `${problemCode}. ${problem.title}`,
     description: markdownSnippet(problem.statement),
-    alternates: { canonical: `/problems/${problemOrder}` },
+    alternates: { canonical: `/problems/${problemCode}` },
     openGraph: {
-      title: `#${problemOrder}. ${problem.title} | itouOJ`,
+      title: `${problemCode}. ${problem.title} | itouOJ`,
       description: markdownSnippet(problem.statement),
-      url: `/problems/${problemOrder}`,
+      url: `/problems/${problemCode}`,
     },
   };
 }
@@ -49,13 +50,13 @@ export default async function ProblemPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const problemOrder = Number(id);
-  if (!Number.isInteger(problemOrder)) notFound();
+  const problemCode = id.toLowerCase();
+  if (!PROBLEM_CODE_RE.test(problemCode)) notFound();
 
   const session = await getSession();
   const [problem, acceptedSub] = await Promise.all([
     prisma.problem.findFirst({
-      where: { order: problemOrder, type: "PROGRAMMING" },
+      where: { problemCode, type: "PROGRAMMING" },
       omit: { pdfData: true },
       include: {
         author: { select: { id: true, username: true, displayName: true } },
@@ -71,7 +72,7 @@ export default async function ProblemPage({
       ? prisma.submission.findFirst({
           where: {
             userId: session.userId,
-            problem: { order: problemOrder, type: "PROGRAMMING" },
+            problem: { problemCode, type: "PROGRAMMING" },
             status: "AC",
           },
           select: { id: true },
@@ -86,9 +87,9 @@ export default async function ProblemPage({
     ? JSON.stringify({
         "@context": "https://schema.org",
         "@type": "LearningResource",
-        name: `#${problem.order}. ${problem.title}`,
+        name: `${problem.problemCode}. ${problem.title}`,
         description: markdownSnippet(problem.statement),
-        url: `${process.env.APP_URL ?? "https://oj.itousouta.me"}/problems/${problem.order}`,
+        url: `${process.env.APP_URL ?? "https://oj.itousouta.me"}/problems/${problem.problemCode}`,
         inLanguage: "zh-Hant-TW",
         isAccessibleForFree: true,
         learningResourceType: "Programming problem",
@@ -111,8 +112,8 @@ export default async function ProblemPage({
       <ProblemWorkspace enabled={!!session}>
         <section className="problem-workspace-pane space-y-6" aria-label="題目內容">
           <QuestionHeader
-            title={`#${problem.order}. ${problem.title}`}
-            sharePath={`/problems/${problem.order}`}
+            title={`${problem.problemCode}. ${problem.title}`}
+            sharePath={`/problems/${problem.problemCode}`}
             badges={<DifficultyBadge difficulty={problem.difficulty} />}
             tags={problem.tags.map((pt) => ({ id: pt.tagId, name: pt.tag.name }))}
             adminHref={
@@ -210,7 +211,7 @@ export default async function ProblemPage({
             <SubmitPanel
               problemId={problem.id}
               problem={{
-                order: problem.order,
+                problemCode: problem.problemCode,
                 title: problem.title,
                 difficulty: problem.difficulty,
                 timeLimitMs: problem.timeLimitMs,

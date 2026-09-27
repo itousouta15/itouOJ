@@ -22,9 +22,9 @@ export default async function MyProposalsPage() {
     .filter((id): id is number => id != null);
   const approvedProblems = await prisma.problem.findMany({
     where: { id: { in: approvedProblemIds } },
-    select: { id: true, order: true },
+    select: { id: true, problemCode: true },
   });
-  const orderByProblemId = new Map(approvedProblems.map((p) => [p.id, p.order]));
+  const orderByProblemId = new Map(approvedProblems.map((p) => [p.id, p.problemCode]));
 
   return (
     <div>

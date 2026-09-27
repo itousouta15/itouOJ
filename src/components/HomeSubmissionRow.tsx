@@ -11,7 +11,7 @@ export interface HomeSubmissionRowData {
   createdAtLabel: string;
   username: string;
   displayName?: string | null;
-  problem: { id: number; order: number; title: string; type: string };
+  problem: { id: number; problemCode: string | null; title: string; type: string };
 }
 
 // 同 SubmissionRow：< md 卡片、≥ md 表格列

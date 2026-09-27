@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { nextProblemCode } from "@/lib/problemCode";
 
 async function requireAdmin() {
   const session = await getSession();
@@ -38,8 +39,8 @@ export async function POST(
 
     const last = await tx.problem.findFirst({
       where: { type: "PROGRAMMING" },
-      orderBy: { order: "desc" },
-      select: { order: true },
+      orderBy: { problemCode: "desc" },
+      select: { problemCode: true },
     });
     const created = await tx.problem.create({
       data: {
@@ -50,7 +51,7 @@ export async function POST(
         timeLimitMs: proposal.timeLimitMs,
         memoryLimitMb: proposal.memoryLimitMb,
         isPublic,
-        order: (last?.order ?? 0) + 1,
+        problemCode: nextProblemCode(last?.problemCode),
         authorId: proposal.authorId,
         testCases: {
           create: proposal.testCases.map((tc, i) => ({

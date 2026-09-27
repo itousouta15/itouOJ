@@ -65,7 +65,7 @@ export async function GET(
       problem: {
         select: {
           id: true,
-          order: true,
+          problemCode: true,
           title: true,
           type: true,
           paper: true,
@@ -119,7 +119,7 @@ export async function GET(
     username: submission.user.username,
     problem: {
       id: submission.problem.id,
-      order: submission.problem.order,
+      problemCode: submission.problem.problemCode,
       title: submission.problem.title,
       type: submission.problem.type,
       paper: submission.problem.paper,

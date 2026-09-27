@@ -1,5 +1,6 @@
 import "dotenv/config";
 import Database from "better-sqlite3";
+import { nextProblemCode } from "../scripts/lib/problemCode.mjs";
 
 const dbPath = (process.env.DATABASE_URL ?? "file:./prisma/data/dev.db").replace(/^file:/, "");
 const db = new Database(dbPath);
@@ -356,10 +357,10 @@ const days: DaySeed[] = [
 ];
 
 const findCourse = db.prepare("SELECT id FROM Course WHERE title = ?");
-const findMaxOrder = db.prepare(`SELECT MAX("order") AS maxOrder FROM Problem`);
+const findMaxCode = db.prepare(`SELECT MAX("problemCode") AS maxCode FROM Problem`);
 const insertProblem = db.prepare(
-  `INSERT INTO Problem (title, statement, difficulty, timeLimitMs, memoryLimitMb, isPublic, "order", createdAt)
-   VALUES (@title, @statement, @difficulty, @timeLimitMs, @memoryLimitMb, 1, @order, datetime('now'))`
+  `INSERT INTO Problem (title, statement, difficulty, timeLimitMs, memoryLimitMb, isPublic, "problemCode", createdAt)
+   VALUES (@title, @statement, @difficulty, @timeLimitMs, @memoryLimitMb, 1, @problemCode, datetime('now'))`
 );
 const insertTestCase = db.prepare(
   `INSERT INTO TestCase (problemId, input, output, isSample, "order")
@@ -373,9 +374,9 @@ const insertCourseProblem = db.prepare(
 );
 
 const run = db.transaction(() => {
-  let nextOrder = (
-    (findMaxOrder.get() as { maxOrder: number | null }).maxOrder ?? 0
-  ) + 1;
+  let problemCode = nextProblemCode(
+    (findMaxCode.get() as { maxCode: string | null }).maxCode ?? null
+  );
 
   for (const day of days) {
     const existing = findCourse.get(day.courseTitle) as { id: number } | undefined;
@@ -386,13 +387,15 @@ const run = db.transaction(() => {
 
     const problemIds: number[] = [];
     for (const p of day.problems) {
+      const code = problemCode;
+      problemCode = nextProblemCode(code);
       const info = insertProblem.run({
         title: p.title,
         statement: p.statement,
         difficulty: p.difficulty,
         timeLimitMs: p.timeLimitMs ?? 1000,
         memoryLimitMb: p.memoryLimitMb ?? 256,
-        order: nextOrder++,
+        problemCode: code,
       });
       const problemId = Number(info.lastInsertRowid);
       p.testCases.forEach((tc, i) => {
@@ -405,7 +408,7 @@ const run = db.transaction(() => {
         });
       });
       problemIds.push(problemId);
-      console.log(`  建立題目：${p.title} (id=${problemId})`);
+      console.log(`  建立題目：${p.title} (id=${problemId}, problemCode=${code})`);
     }
 
     const courseInfo = insertCourse.run({

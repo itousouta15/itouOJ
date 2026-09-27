@@ -36,7 +36,7 @@ export default function FeedList({ items }: { items: FeedItem[] }) {
         const meta = KIND_META[f.kind];
         const href = problemHref({
           type: f.problemType,
-          order: f.problemOrder,
+          problemCode: f.problemCode,
           id: f.problemId,
         });
         return (
@@ -55,7 +55,8 @@ export default function FeedList({ items }: { items: FeedItem[] }) {
                 </Link>
                 <span className="text-dim"> {meta.verb} </span>
                 <Link href={href} className="text-blue hover:underline">
-                  #{f.problemOrder} {f.problemTitle}
+                  {f.problemCode ? `${f.problemCode} ` : ""}
+                  {f.problemTitle}
                 </Link>
               </p>
               {f.detail && (

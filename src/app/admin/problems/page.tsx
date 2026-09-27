@@ -26,7 +26,7 @@ export default async function AdminProblemsPage({
 
   const problems = await prisma.problem.findMany({
     where: { type },
-    orderBy: { order: "asc" },
+    orderBy: { problemCode: "asc" },
     omit: { pdfData: true },
     include: {
       _count: { select: { testCases: true, submissions: true } },
@@ -36,6 +36,7 @@ export default async function AdminProblemsPage({
   });
   const rows = problems.map((p) => ({
     id: p.id,
+    problemCode: p.problemCode,
     order: p.order,
     type: p.type,
     title: p.title,

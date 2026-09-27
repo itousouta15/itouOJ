@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { problemHref } from "@/lib/problemTypes";
 
 export type NextLearningAction = {
   href: string;
@@ -23,7 +24,7 @@ export async function getNextLearningAction(userId: string): Promise<NextLearnin
   const membership = await prisma.courseMember.findFirst({
     where: { userId },
     orderBy: { joinedAt: "asc" },
-    include: { course: { include: { problems: { orderBy: { order: "asc" }, include: { problem: { select: { id: true, order: true, title: true } } } } } } },
+    include: { course: { include: { problems: { orderBy: { order: "asc" }, include: { problem: { select: { id: true, problemCode: true, title: true, type: true } } } } } } },
   });
   if (membership?.course.problems.length) {
     const problemIds = membership.course.problems.map((item) => item.problemId);
@@ -36,7 +37,7 @@ export async function getNextLearningAction(userId: string): Promise<NextLearnin
     const next = membership.course.problems.find((item) => !solvedIds.has(item.problemId));
     if (next) {
       return {
-        href: `/problems/${next.problem.order}`,
+        href: problemHref(next.problem),
         title: next.problem.title,
         detail: `繼續學習「${membership.course.title}」。`,
       };

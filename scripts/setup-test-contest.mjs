@@ -47,7 +47,7 @@ const problems = db
   .prepare(
     `SELECT p.id, p.title FROM Problem p
      WHERE p.isPublic = 1 AND EXISTS (SELECT 1 FROM TestCase t WHERE t.problemId = p.id)
-     ORDER BY p."order" LIMIT 3`
+     ORDER BY p."problemCode" LIMIT 3`
   )
   .all();
 

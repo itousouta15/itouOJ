@@ -33,7 +33,7 @@ export default async function EditContestPage({
 
   const problems = await prisma.problem.findMany({
     where: isAdmin ? {} : { isPublic: true },
-    orderBy: [{ type: "asc" }, { order: "asc" }],
+    orderBy: [{ type: "asc" }, { problemCode: "asc" }],
     select: { id: true, title: true, isPublic: true, type: true },
   });
 

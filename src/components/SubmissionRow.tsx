@@ -15,7 +15,7 @@ export interface SubmissionRowData {
   createdAtLabel: string;
   username: string;
   displayName?: string | null;
-  problem: { id: number; order: number; title: string; type: string };
+  problem: { id: number; problemCode: string | null; title: string; type: string };
 }
 
 // 同一筆資料渲染兩種版型：< md 是卡片，≥ md 是表格列。

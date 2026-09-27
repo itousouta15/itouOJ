@@ -40,7 +40,7 @@ export default async function SubmissionsPage({
     take: pageSize + 1,
     include: {
       user: { select: { username: true, displayName: true } },
-      problem: { select: { id: true, order: true, title: true, type: true } },
+      problem: { select: { id: true, problemCode: true, title: true, type: true } },
       contest: true,
     },
   });

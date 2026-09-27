@@ -23,7 +23,7 @@ export default async function EditProblemPage({
       // 這裡只需要檔名判斷「有沒有上傳」，畫面上顯示用。
       select: {
         id: true,
-        order: true,
+        problemCode: true,
         type: true,
         title: true,
         statement: true,
@@ -64,7 +64,7 @@ export default async function EditProblemPage({
       <h1 className="mb-4 page-title">
         {problem.type === "RECOGNITION"
           ? `編輯識別題：${problem.title}`
-          : `編輯題目 #${problem.order}`}
+          : `編輯題目 ${problem.problemCode}`}
       </h1>
       <ProblemForm
         availableTags={tags}

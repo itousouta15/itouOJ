@@ -20,7 +20,7 @@ export default async function ReviewPage() {
       where: { userId: session.userId, status: { in: ["WA", "TLE", "MLE", "RE", "CE"] } },
       orderBy: { id: "desc" },
       take: 10,
-      select: { id: true, status: true, problem: { select: { order: true, title: true } } },
+      select: { id: true, status: true, problem: { select: { order: true, problemCode: true, title: true } } },
     }),
   ]);
 
@@ -49,7 +49,7 @@ export default async function ReviewPage() {
           <div className="card divide-y divide-bd">
             {recentMisses.map((submission) => (
               <Link key={submission.id} href={`/submissions/${submission.id}`} className="flex items-center justify-between gap-4 p-4 hover:bg-panel2">
-                <span>#{submission.problem.order} {submission.problem.title}</span>
+                <span>{submission.problem.problemCode ?? submission.problem.order} {submission.problem.title}</span>
                 <span className="mono text-sm text-dim">{submission.status}</span>
               </Link>
             ))}

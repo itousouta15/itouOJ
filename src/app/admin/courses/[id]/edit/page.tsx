@@ -28,7 +28,7 @@ export default async function EditCoursePage({
   if (!course) notFound();
 
   const problems = await prisma.problem.findMany({
-    orderBy: [{ type: "asc" }, { order: "asc" }],
+    orderBy: [{ type: "asc" }, { problemCode: "asc" }],
     select: { id: true, title: true, isPublic: true, type: true },
   });
 

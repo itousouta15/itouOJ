@@ -100,7 +100,12 @@ model Problem {
   timeLimitMs     Int              @default(1000)
   memoryLimitMb   Int              @default(256)
   isPublic        Boolean          @default(true)
-  order           Int              @default(0) // 題型內排序；實作題同時是對外題號（網址 /problems/{order}）
+  // 對外題目代碼，一碼小寫英文＋三碼數字（例如 a001），同時決定題型內排序。
+  // 只有實作題有值（網址就是 /problems/{problemCode}）；識別題沿用整數 order。
+  // 產生與解析見 lib/problemCode.ts。
+  problemCode     String?
+  // 識別題的排序／原題號，實作題不使用。識別題網址走 /recognition/q/{id}。
+  order           Int              @default(0)
   // 出題者（送審核准自動帶入、管理員也可指定）。只給實作題顯示與聯絡用。
   authorId        String?
   author          User?            @relation("ProblemAuthor", fields: [authorId], references: [id], onDelete: SetNull)
@@ -129,6 +134,7 @@ model Problem {
   recognitionReviews RecognitionReview[]
 
   @@unique([type, order])
+  @@unique([type, problemCode])
   @@index([clusterId])
   @@index([authorId])
 }

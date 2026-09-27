@@ -54,12 +54,12 @@ export default async function MessageThreadPage({
     Number.isInteger(aboutId) && aboutId > 0
       ? await prisma.problem.findUnique({
           where: { id: aboutId },
-          select: { order: true, title: true, type: true },
+          select: { problemCode: true, order: true, title: true, type: true },
         })
       : null;
   const initialDraft =
     aboutProblem?.type === "PROGRAMMING"
-      ? `關於題目 #${aboutProblem.order}「${aboutProblem.title}」：\n`
+      ? `關於題目 ${aboutProblem.problemCode ?? aboutProblem.order}「${aboutProblem.title}」：\n`
       : "";
 
   // 只取最近 200 則（往前比較久的訊息之後有需要再做分頁）

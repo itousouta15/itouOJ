@@ -4,6 +4,7 @@
 
 import "dotenv/config";
 import Database from "better-sqlite3";
+import { nextProblemCode } from "./lib/problemCode.mjs";
 
 const argv = process.argv.slice(2);
 function flag(name, fallback) {
@@ -186,12 +187,13 @@ if (existing) {
   process.exit(0);
 }
 
-const nextOrder =
-  ((db.prepare(`SELECT MAX("order") AS m FROM Problem`).get() ?? {}).m ?? 0) + 1;
+const problemCode = nextProblemCode(
+  (db.prepare(`SELECT MAX("problemCode") AS m FROM Problem`).get() ?? {}).m ?? null
+);
 
 const insertProblem = db.prepare(
-  `INSERT INTO Problem (title, statement, difficulty, timeLimitMs, memoryLimitMb, isPublic, "order", createdAt)
-   VALUES (@title, @statement, @difficulty, @timeLimitMs, @memoryLimitMb, 1, @order, datetime('now'))`
+  `INSERT INTO Problem (title, statement, difficulty, timeLimitMs, memoryLimitMb, isPublic, "problemCode", createdAt)
+   VALUES (@title, @statement, @difficulty, @timeLimitMs, @memoryLimitMb, 1, @problemCode, datetime('now'))`
 );
 const insertSubtask = db.prepare(
   `INSERT INTO Subtask (problemId, "order", points, checkMode) VALUES (@problemId, @order, @points, @checkMode)`
@@ -213,7 +215,7 @@ const run = db.transaction(() => {
       difficulty: "easy",
       timeLimitMs: 1000,
       memoryLimitMb: 256,
-      order: nextOrder,
+      problemCode,
     }).lastInsertRowid
   );
 
@@ -259,7 +261,7 @@ const run = db.transaction(() => {
 });
 
 const { problemId, tagged } = run();
-console.log(`建立題目：${TITLE} (id=${problemId}, order=${nextOrder})`);
+console.log(`建立題目：${TITLE} (id=${problemId}, problemCode=${problemCode})`);
 console.log(`  子題一 40 分（firstLine）／子題二 60 分（full），共 ${cases.length} 筆測資 x 2 子題`);
 console.log(`  掛上 ${tagged}/${TAGS.length} 個標籤`);
 db.close();

@@ -38,7 +38,7 @@ export default async function HomePage() {
     where: { isPublic: true, type: "PROGRAMMING" },
     orderBy: { id: "desc" },
     take: 5,
-    select: { id: true, order: true, title: true, difficulty: true },
+    select: { id: true, problemCode: true, title: true, difficulty: true },
   });
 
   const latestSubmissions = await prisma.submission.findMany({
@@ -46,7 +46,7 @@ export default async function HomePage() {
     take: 8,
     include: {
       user: { select: { username: true, displayName: true } },
-      problem: { select: { id: true, order: true, title: true, type: true } },
+      problem: { select: { id: true, problemCode: true, title: true, type: true } },
     },
   });
 
@@ -180,10 +180,10 @@ export default async function HomePage() {
             <div className="min-w-0">
               <p className="page-kicker">每日一題</p>
               <Link
-                href={`/problems/${daily.order}`}
+                href={`/problems/${daily.problemCode}`}
                 className="mt-1 block truncate font-semibold text-blue hover:underline"
               >
-                #{daily.order} {daily.title}
+                {daily.problemCode} {daily.title}
               </Link>
             </div>
             <div className="flex shrink-0 items-center gap-3">
@@ -329,9 +329,9 @@ export default async function HomePage() {
                 key={p.id}
                 className="flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
               >
-                <span className="mono w-8 text-sm text-mute">{p.order}</span>
+                <span className="mono w-12 text-sm text-mute">{p.problemCode}</span>
                 <Link
-                  href={`/problems/${p.order}`}
+                  href={`/problems/${p.problemCode}`}
                   className="flex-1 truncate font-medium text-blue hover:underline"
                 >
                   {p.title}

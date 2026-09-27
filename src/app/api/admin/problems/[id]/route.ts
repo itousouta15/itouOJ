@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { problemSchema } from "@/lib/problemSchema";
 import { pdfUpdateData, PdfUploadError } from "@/lib/problemPdf";
 import { resolveAuthorId } from "@/lib/problemAuthor";
+import { nextProblemCode } from "@/lib/problemCode";
 
 async function requireAdmin() {
   const session = await getSession();
@@ -61,10 +62,31 @@ export async function PUT(
 
   const existing = await prisma.problem.findUnique({
     where: { id: problemId },
-    select: { id: true },
+    select: { id: true, type: true, order: true, problemCode: true },
   });
   if (!existing) {
     return Response.json({ error: "題目不存在" }, { status: 404 });
+  }
+
+  // 切換題型時補上對應的識別欄位：實作題要有 problemCode，識別題要有整数 order。
+  const switchingToProgramming = type === "PROGRAMMING" && existing.type !== "PROGRAMMING";
+  const switchingToRecognition = type === "RECOGNITION" && existing.type !== "RECOGNITION";
+  let newProblemCode: string | undefined;
+  let newOrder: number | undefined;
+  if (switchingToProgramming) {
+    const last = await prisma.problem.findFirst({
+      where: { type: "PROGRAMMING" },
+      orderBy: { problemCode: "desc" },
+      select: { problemCode: true },
+    });
+    newProblemCode = nextProblemCode(last?.problemCode);
+  } else if (switchingToRecognition) {
+    const last = await prisma.problem.findFirst({
+      where: { type: "RECOGNITION" },
+      orderBy: { order: "desc" },
+      select: { order: true },
+    });
+    newOrder = (last?.order ?? -1) + 1;
   }
 
   // 測資、子題與標籤整批換新（簡單且不易出錯）。PDF 不在此列——沒有明確
@@ -88,6 +110,7 @@ export async function PUT(
           paper: paper?.trim() || null,
           sourceNumber: sourceNumber ?? null,
           category: category?.trim() || null,
+          ...(switchingToRecognition ? { order: newOrder, problemCode: null } : {}),
         },
       });
       return;
@@ -100,6 +123,7 @@ export async function PUT(
         type,
         ...pdf,
         authorId: author.authorId,
+        ...(switchingToProgramming ? { problemCode: newProblemCode } : {}),
         // 從識別題改回實作題時清掉識別欄位
         code: null,
         options: null,

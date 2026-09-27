@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { PROBLEM_TYPES } from "@/lib/problemTypes";
+import { formatProblemCode } from "@/lib/problemCode";
 
 export async function PUT(request: Request) {
   const session = await getSession();
@@ -26,13 +27,23 @@ export async function PUT(request: Request) {
       if (count !== ids.length) {
         throw new Error("ids 與題型不符");
       }
-      // order 有 [type, order] UNIQUE 限制，照新順序直接寫會暫時撞號。
-      // 先把整批移到負數區間，再寫回正數，才不會在交易中途違反限制。
-      for (const [i, id] of ids.entries()) {
-        await tx.problem.update({ where: { id }, data: { order: -(i + 1) } });
-      }
-      for (const [i, id] of ids.entries()) {
-        await tx.problem.update({ where: { id }, data: { order: i + 1 } });
+      // 實作題的 problemCode 有 [type, problemCode] UNIQUE 限制，照新順序直接寫會
+      // 暫時撞號；先把整批移到不撞號的暫存值，再依新順序寫回正式代碼。
+      // 識別題沿用整數 order，同樣先移出再寫回。
+      if (type === "RECOGNITION") {
+        for (const id of ids) {
+          await tx.problem.update({ where: { id }, data: { order: -(id + 1) } });
+        }
+        for (const [i, id] of ids.entries()) {
+          await tx.problem.update({ where: { id }, data: { order: i } });
+        }
+      } else {
+        for (const id of ids) {
+          await tx.problem.update({ where: { id }, data: { problemCode: `__tmp__${id}` } });
+        }
+        for (const [i, id] of ids.entries()) {
+          await tx.problem.update({ where: { id }, data: { problemCode: formatProblemCode(i + 1) } });
+        }
       }
     });
   } catch {

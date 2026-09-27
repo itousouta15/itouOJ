@@ -10,14 +10,14 @@ export function isRecognitionType(type: string | null | undefined): boolean {
 
 export interface ProblemLinkInfo {
   type: string;
-  order: number;
+  problemCode: string | null;
   id: number;
 }
 
 // 依題型產生題目詳情頁連結：
-// 實作題 /problems/{order}、識別題 /recognition/q/{id}（兩套編號各自獨立）。
+// 實作題 /problems/{problemCode}、識別題 /recognition/q/{id}（兩套編號各自獨立）。
 export function problemHref(p: ProblemLinkInfo): string {
   return isRecognitionType(p.type)
     ? `/recognition/q/${p.id}`
-    : `/problems/${p.order}`;
+    : `/problems/${p.problemCode}`;
 }

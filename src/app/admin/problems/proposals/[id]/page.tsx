@@ -32,7 +32,7 @@ export default async function AdminProposalDetailPage({
   const approvedProblem = proposal.approvedProblemId
     ? await prisma.problem.findUnique({
         where: { id: proposal.approvedProblemId },
-        select: { order: true },
+        select: { problemCode: true },
       })
     : null;
 
@@ -85,10 +85,10 @@ export default async function AdminProposalDetailPage({
         <div className="card p-6 text-sm">
           已核准，建立為{" "}
           <Link
-            href={`/problems/${approvedProblem.order}`}
+            href={`/problems/${approvedProblem.problemCode}`}
             className="text-blue hover:underline"
           >
-            #{approvedProblem.order}
+            {approvedProblem.problemCode}
           </Link>
         </div>
       ) : proposal.status === "APPROVED" ? (

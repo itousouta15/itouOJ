@@ -95,9 +95,9 @@ export default async function ProblemListPage({
             WHEN 'hard' THEN 3
             ELSE 4
           END ASC,
-          p."order" ASC
+          p."problemCode" ASC
         `
-      : Prisma.sql`p."order" ASC`;
+      : Prisma.sql`p."problemCode" ASC`;
   const pageRows = await prisma.$queryRaw<{ id: number }[]>`
     SELECT p."id"
     FROM "Problem" p
@@ -149,8 +149,8 @@ export default async function ProblemListPage({
         itemListElement: problems.map((problem, index) => ({
           "@type": "ListItem",
           position: index + 1,
-          name: `#${problem.order}. ${problem.title}`,
-          url: `${process.env.APP_URL ?? "https://oj.itousouta.me"}/problems/${problem.order}`,
+          name: `${problem.problemCode}. ${problem.title}`,
+          url: `${process.env.APP_URL ?? "https://oj.itousouta.me"}/problems/${problem.problemCode}`,
         })),
       }).replace(/</g, "\\u003c")
     : null;
@@ -208,7 +208,7 @@ export default async function ProblemListPage({
           href={problemsHref({ tag, sort: "order" })}
           className={`pill ${sort === "order" ? "pill-active" : ""}`}
         >
-          題號
+          代碼
         </Link>
         <Link
           href={problemsHref({ tag, sort: "difficulty" })}
@@ -224,7 +224,7 @@ export default async function ProblemListPage({
         <table className="w-full">
           <thead>
             <tr>
-              <th className="table-head w-16">#</th>
+              <th className="table-head w-16">代碼</th>
               <th className="table-head">標題</th>
               <th className="table-head">標籤</th>
               <th className="table-head w-24">難度</th>
@@ -260,10 +260,10 @@ export default async function ProblemListPage({
                   solvedSet.has(p.id) ? "row-solved" : "hover:bg-panel2"
                 }
               >
-                <td className="table-cell text-dim">{p.order}</td>
+                <td className="table-cell text-dim">{p.problemCode}</td>
                 <td className="table-cell">
                   <Link
-                    href={`/problems/${p.order}`}
+                    href={`/problems/${p.problemCode}`}
                     className="font-medium text-blue hover:underline"
                   >
                     {p.title}

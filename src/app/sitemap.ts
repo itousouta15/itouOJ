@@ -9,8 +9,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [problems, announcements] = await Promise.all([
     prisma.problem.findMany({
       where: { isPublic: true, type: "PROGRAMMING" },
-      select: { order: true, createdAt: true },
-      orderBy: { order: "asc" },
+      select: { problemCode: true, createdAt: true },
+      orderBy: { problemCode: "asc" },
     }),
     prisma.announcement.findMany({
       select: { id: true, createdAt: true },
@@ -24,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/problems`, changeFrequency: "daily", priority: 0.9 },
     { url: `${base}/announcements`, changeFrequency: "weekly", priority: 0.5 },
     ...problems.map((p) => ({
-      url: `${base}/problems/${p.order}`,
+      url: `${base}/problems/${p.problemCode}`,
       lastModified: p.createdAt,
       changeFrequency: "monthly" as const,
       priority: 0.7,

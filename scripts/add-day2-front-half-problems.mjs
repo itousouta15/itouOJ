@@ -4,6 +4,7 @@
 
 import "dotenv/config";
 import Database from "better-sqlite3";
+import { nextProblemCode } from "./lib/problemCode.mjs";
 
 const argv = process.argv.slice(2);
 function flag(name, fallback) {
@@ -251,8 +252,8 @@ if (!course) {
 const findTag = db.prepare("SELECT id FROM Tag WHERE name = ?");
 const insertProblemTag = db.prepare("INSERT INTO ProblemTag (problemId, tagId) VALUES (?, ?)");
 const insertProblem = db.prepare(
-  `INSERT INTO Problem (title, statement, difficulty, timeLimitMs, memoryLimitMb, isPublic, "order", createdAt)
-   VALUES (@title, @statement, @difficulty, @timeLimitMs, @memoryLimitMb, 1, @order, datetime('now'))`
+  `INSERT INTO Problem (title, statement, difficulty, timeLimitMs, memoryLimitMb, isPublic, "problemCode", createdAt)
+   VALUES (@title, @statement, @difficulty, @timeLimitMs, @memoryLimitMb, 1, @problemCode, datetime('now'))`
 );
 const insertTestCase = db.prepare(
   `INSERT INTO TestCase (problemId, input, output, isSample, "order")
@@ -266,13 +267,16 @@ const insertCourseProblem = db.prepare(
 );
 
 const run = db.transaction(() => {
-  let nextOrder =
-    ((db.prepare(`SELECT MAX("order") AS m FROM Problem`).get() ?? {}).m ?? 0) + 1;
+  let problemCode = nextProblemCode(
+    (db.prepare(`SELECT MAX("problemCode") AS m FROM Problem`).get() ?? {}).m ?? null
+  );
 
   bumpCourseOrder.run(course.id);
 
   const created = [];
   problems.forEach((p, courseOrder) => {
+    const code = problemCode;
+    problemCode = nextProblemCode(code);
     const problemId = Number(
       insertProblem.run({
         title: p.title,
@@ -280,7 +284,7 @@ const run = db.transaction(() => {
         difficulty: p.difficulty,
         timeLimitMs: 1000,
         memoryLimitMb: 256,
-        order: nextOrder++,
+        problemCode: code,
       }).lastInsertRowid
     );
     p.cases.forEach((c, i) => {
@@ -301,7 +305,7 @@ const run = db.transaction(() => {
       }
     }
     insertCourseProblem.run({ courseId: course.id, problemId, order: courseOrder + 1 });
-    created.push({ title: p.title, problemId, order: nextOrder - 1, tagged, tagCount: p.tags.length });
+    created.push({ title: p.title, problemId, problemCode: code, tagged, tagCount: p.tags.length });
   });
 
   return created;
@@ -310,7 +314,7 @@ const run = db.transaction(() => {
 const created = run();
 for (const c of created) {
   console.log(
-    `建立題目：${c.title} (id=${c.problemId}, order=${c.order}, ${c.tagged}/${c.tagCount} 標籤)`
+    `建立題目：${c.title} (id=${c.problemId}, problemCode=${c.problemCode}, ${c.tagged}/${c.tagCount} 標籤)`
   );
 }
 console.log(`插入課程「${COURSE_TITLE}」最前面兩格，原本的題目往後推兩格`);

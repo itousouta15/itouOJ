@@ -61,7 +61,7 @@ export default async function UserProfilePage({
         orderBy: { id: "desc" },
         take: 20,
         include: {
-          problem: { select: { id: true, order: true, title: true, type: true } },
+          problem: { select: { id: true, problemCode: true, title: true, type: true } },
         },
       }),
       prisma.follow.count({ where: { followingId: user.id } }),

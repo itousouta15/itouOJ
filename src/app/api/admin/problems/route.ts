@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { problemSchema } from "@/lib/problemSchema";
 import { pdfUpdateData, PdfUploadError } from "@/lib/problemPdf";
 import { resolveAuthorId } from "@/lib/problemAuthor";
+import { nextProblemCode } from "@/lib/problemCode";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -50,19 +51,18 @@ export async function POST(request: Request) {
     return Response.json({ error: author.error }, { status: 400 });
   }
 
-  // The unique (type, order) constraint serializes concurrent admin creates.
+  // The unique (type, problemCode) constraint serializes concurrent admin creates.
   // Retry a conflicting allocation rather than returning a spurious server error.
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const problem = await prisma.$transaction(async (tx) => {
-        const last = await tx.problem.findFirst({
-          where: { type },
-          orderBy: { order: "desc" },
-          select: { order: true },
-        });
-        const order = (last?.order ?? 0) + 1;
-
         if (type === "RECOGNITION") {
+          // 識別題沿用整數 order（不給代碼），挑目前最大的 +1。
+          const last = await tx.problem.findFirst({
+            where: { type },
+            orderBy: { order: "desc" },
+            select: { order: true },
+          });
           return tx.problem.create({
             data: {
               ...base,
@@ -75,10 +75,18 @@ export async function POST(request: Request) {
               paper: paper?.trim() || null,
               sourceNumber: sourceNumber ?? null,
               category: category?.trim() || null,
-              order,
+              order: (last?.order ?? -1) + 1,
             },
           });
         }
+
+        // 實作題配發「一碼英文＋三碼數字」代碼。
+        const last = await tx.problem.findFirst({
+          where: { type },
+          orderBy: { problemCode: "desc" },
+          select: { problemCode: true },
+        });
+        const problemCode = nextProblemCode(last?.problemCode);
 
         const created = await tx.problem.create({
           data: {
@@ -86,7 +94,7 @@ export async function POST(request: Request) {
             type,
             ...pdf,
             authorId: author.authorId,
-            order,
+            problemCode,
             subtasks: {
               create: subtasks.map((s, i) => ({
                 order: i + 1,

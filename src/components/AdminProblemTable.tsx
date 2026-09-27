@@ -9,6 +9,7 @@ import { problemHref } from "@/lib/problemTypes";
 
 export interface AdminProblemRow {
   id: number;
+  problemCode: string | null;
   order: number;
   type: string;
   title: string;
@@ -269,7 +270,7 @@ export default function AdminProblemTable({
                 onChange={toggleAllSelected}
               />
             </th>
-            <th className="table-head w-16">#</th>
+            <th className="table-head w-16">代碼</th>
             <th className="table-head">標題</th>
             {isRecognition ? (
               <>
@@ -345,7 +346,7 @@ export default function AdminProblemTable({
                   >
                     ⠿
                   </span>
-                  {i + 1}
+                  {p.problemCode ?? p.order}
                 </div>
               </td>
               <td className="table-cell font-medium">

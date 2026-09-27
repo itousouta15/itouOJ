@@ -86,7 +86,7 @@ export default async function ContestProblemPage({
     <SubmitPanel
       problemId={problem.id}
       problem={{
-        order: problem.order,
+        problemCode: problem.problemCode,
         title: problem.title,
         difficulty: problem.difficulty,
         timeLimitMs: problem.timeLimitMs,

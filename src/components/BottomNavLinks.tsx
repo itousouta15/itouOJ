@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { isNavActive } from "@/lib/navLinks";
+import {
+  setProblemWorkspaceTab,
+  useProblemWorkspaceState,
+} from "@/lib/problemWorkspaceTab";
 
 const MAIN_ITEMS = [
   { href: "/", label: "首頁", glyph: "⌂" },
@@ -24,6 +28,7 @@ export default function BottomNavLinks({
 }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const workspace = useProblemWorkspaceState();
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -110,6 +115,36 @@ export default function BottomNavLinks({
           <span className="bottom-nav-label">更多</span>
         </button>
       </nav>
+
+      {workspace.active && (
+        <nav
+          className="problem-workspace-nav fixed inset-x-0 bottom-0 z-[69] flex border-t border-bd2 bg-panel2-a backdrop-blur-xl"
+          aria-label="題目與程式"
+        >
+          <div className="flex w-full" role="tablist" aria-label="題目與程式">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={workspace.tab === "problem"}
+              className={`bottom-nav-link${workspace.tab === "problem" ? " active" : ""}`}
+              onClick={() => setProblemWorkspaceTab("problem")}
+            >
+              <span className="bottom-nav-glyph" aria-hidden="true">▤</span>
+              <span className="bottom-nav-label">題目</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={workspace.tab === "code"}
+              className={`bottom-nav-link${workspace.tab === "code" ? " active" : ""}`}
+              onClick={() => setProblemWorkspaceTab("code")}
+            >
+              <span className="bottom-nav-glyph" aria-hidden="true">{"</>"}</span>
+              <span className="bottom-nav-label">程式</span>
+            </button>
+          </div>
+        </nav>
+      )}
 
       <dialog
         ref={dialogRef}

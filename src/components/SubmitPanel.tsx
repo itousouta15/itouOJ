@@ -118,7 +118,7 @@ interface SubmitPanelProps {
   contestId?: number;
   // 全螢幕編輯器題目頭顯示用（App 寫程式時）
   problem?: {
-    order: number;
+    problemCode: string | null;
     title: string;
     difficulty: string;
     timeLimitMs: number;
@@ -582,7 +582,7 @@ export default function SubmitPanel({
                 </div>
                 {problem && (
                   <p className="mono pl-1 text-[11px] text-mute">
-                    #{problem.order} ・ 時間 {problem.timeLimitMs} ms ・ 記憶體{" "}
+                    {problem.problemCode} ・ 時間 {problem.timeLimitMs} ms ・ 記憶體{" "}
                     {problem.memoryLimitMb} MB
                   </p>
                 )}

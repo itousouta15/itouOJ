@@ -31,6 +31,7 @@ export default async function CoursePage({
             select: {
               id: true,
               order: true,
+              problemCode: true,
               title: true,
               type: true,
               isPublic: true,
@@ -215,14 +216,16 @@ export default async function CoursePage({
                   }
                 >
                   <td className="table-cell text-dim">
-                    {isRecognition ? "選擇" : e.problem.order}
+                    {isRecognition
+                      ? "選擇"
+                      : (e.problem.problemCode ?? e.problem.order)}
                   </td>
                   <td className="table-cell">
                     <Link
                       href={
                         isRecognition
                           ? `/recognition/q/${e.problem.id}`
-                          : `/problems/${e.problem.order}`
+                          : `/problems/${e.problem.problemCode}`
                       }
                       className="font-medium text-blue hover:underline"
                     >
