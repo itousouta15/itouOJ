@@ -4,7 +4,6 @@ import "katex/dist/katex.min.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BottomNav from "@/components/BottomNav";
-import PageTransition from "@/components/PageTransition";
 import SiteLoader from "@/components/SiteLoader";
 import { isOfflineMode } from "@/lib/offline";
 
@@ -123,7 +122,7 @@ export default function RootLayout({
         <div className="app-top-mask" aria-hidden="true" />
         <Navbar />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-8 md:pb-8">
-          <PageTransition>{children}</PageTransition>
+          {children}
         </main>
         <Footer />
         <BottomNav />

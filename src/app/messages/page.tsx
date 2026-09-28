@@ -97,7 +97,7 @@ export default async function MessagesPage() {
         <p className="text-sm text-dim">一對一私訊，僅雙方看得到。</p>
       </div>
 
-      <div className="card motion-list">
+      <div className="card">
         {conversations.length === 0 && (
           <p className="py-10 text-center text-sm text-mute">
             還沒有訊息。到別人的個人頁點「傳訊息」開始對話吧。

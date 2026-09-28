@@ -120,7 +120,7 @@ export default async function RankingPage({
           </Link>
         </div>
       </div>
-      <div key={isCamp ? "camp" : "all"} className="card motion-enter overflow-x-auto">
+      <div key={isCamp ? "camp" : "all"} className="card overflow-x-auto">
         {isCamp ? (
           <table className="motion-table w-full">
             <thead>

@@ -50,7 +50,7 @@ export default async function ContestsPage() {
           section.items.length > 0 && (
             <div key={section.title}>
               <h2 className="section-title mb-3">{section.title}</h2>
-              <div className="motion-list space-y-2">
+              <div className="space-y-2">
                 {section.items.map((c) => (
                   <Link
                     key={c.id}

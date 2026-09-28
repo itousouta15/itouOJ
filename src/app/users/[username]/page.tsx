@@ -116,7 +116,7 @@ export default async function UserProfilePage({
   });
 
   return (
-    <div className="motion-list mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <section className="card p-6">
         <div className="mb-4 flex items-center gap-4">
           <Avatar

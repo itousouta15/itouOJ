@@ -77,27 +77,8 @@ body {
     transform: none;
   }
 }
-.page-transition {
-  animation: itFade 0.45s ease both;
-}
-
-/* 首頁與主要列表共用的輕量進場；長列表只錯開前幾筆，避免等待內容逐列出現。 */
-.motion-enter,
-.motion-list > * {
-  animation: motionAppear 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes motionAppear {
-  from { opacity: 0; translate: 0 12px; }
-  to { opacity: 1; translate: 0 0; }
-}
-.motion-list > :nth-child(2) { animation-delay: 0.04s; }
-.motion-list > :nth-child(3) { animation-delay: 0.08s; }
-.motion-list > :nth-child(4) { animation-delay: 0.12s; }
-.motion-list > :nth-child(5) { animation-delay: 0.16s; }
-.motion-list > :nth-child(n + 6) { animation-delay: 0.2s; }
-
-/* 首次進站時先等 loader 離場，否則動畫會在遮罩後面播完。 */
-body:has(.site-loader) :is(.page-transition, .motion-enter, .motion-list > *, .motion-progress) {
+/* 進度條等遮罩退場後才開始填滿。 */
+body:has(.site-loader) .motion-progress {
   animation-play-state: paused;
 }
 
@@ -133,7 +114,7 @@ body:has(.site-loader) :is(.page-transition, .motion-enter, .motion-list > *, .m
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :is(.page-transition, .motion-enter, .motion-list > *, .motion-progress) {
+  .motion-progress {
     animation: none !important;
   }
   .motion-card {

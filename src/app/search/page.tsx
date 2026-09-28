@@ -105,7 +105,7 @@ export default async function SearchPage({
           </div>
         ))}
 
-      <div key={q} className="motion-list space-y-2">
+      <div key={q} className="space-y-2">
         {problems.map((p) => {
           const isRecognition = p.type === "RECOGNITION";
           const snippet = markdownSnippet(p.statement, 160);

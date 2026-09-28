@@ -31,7 +31,7 @@ export default function FeedList({ items }: { items: FeedItem[] }) {
     );
   }
   return (
-    <div className="card motion-list">
+    <div className="card">
       {items.map((f) => {
         const meta = KIND_META[f.kind];
         const href = problemHref({

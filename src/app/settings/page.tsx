@@ -51,7 +51,7 @@ export default async function SettingsPage({
   ];
 
   return (
-    <div className="motion-list mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="page-title">帳號設定</h1>
 
       <section className="card p-6">

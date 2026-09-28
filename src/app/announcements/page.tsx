@@ -13,7 +13,7 @@ export default async function AnnouncementsPage() {
   return (
     <div>
       <h1 className="mb-4 page-title">公告</h1>
-      <div className="motion-list space-y-3">
+      <div className="space-y-3">
         {announcements.length === 0 && (
           <p className="card p-10 text-center text-sm text-mute">
             還沒有公告

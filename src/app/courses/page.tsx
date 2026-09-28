@@ -79,7 +79,7 @@ export default async function CoursesPage() {
           )}
         </div>
       ) : (
-        <div className="motion-list grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {courses.map((c) => {
             const joined = joinedSet.has(c.id);
             const solved = progressMap.get(c.id) ?? 0;

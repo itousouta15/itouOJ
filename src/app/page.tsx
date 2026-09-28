@@ -86,10 +86,10 @@ export default async function HomePage() {
   const nextAction = session ? await getNextLearningAction(session.userId) : null;
 
   return (
-    <div className="motion-list space-y-10" data-app-section="root">
+    <div className="space-y-10" data-app-section="root">
       {/* Hero（GitHub 風格：置中 LOGO + 標語 + CTA） */}
       <section className="pt-4" data-app-section="hero">
-        <div className="motion-list flex flex-col items-center text-center">
+        <div className="flex flex-col items-center text-center">
           <Image
             src="/brand/itouOJ.png"
             alt="itouOJ"
@@ -164,7 +164,7 @@ export default async function HomePage() {
       </section>
 
       {/* 統計數據 */}
-      <section className="motion-list grid grid-cols-2 gap-3 md:grid-cols-4" data-app-section="stats">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4" data-app-section="stats">
         {stats.map((s) => (
           <div key={s.label} className="card p-5">
             <p className="page-kicker">{s.label}</p>
@@ -215,7 +215,7 @@ export default async function HomePage() {
       )}
 
       <section data-app-section="promo">
-        <div className="motion-list grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="card flex flex-col gap-4 p-6">
             <div className="flex items-center gap-3">
               <Image

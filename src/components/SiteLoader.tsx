@@ -94,7 +94,7 @@ export default function SiteLoader() {
           .site-header {
             animation: none !important;
           }
-          .page-transition, .motion-enter, .motion-list > *, .motion-progress {
+          .motion-progress {
             animation: none !important;
           }
           .logo { opacity: 1 !important; }
