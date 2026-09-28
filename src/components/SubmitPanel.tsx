@@ -205,7 +205,7 @@ export default function SubmitPanel({
   }
 
   const fullscreenSwipe = useHorizontalSwipe((direction) => {
-    showFullscreenView(direction === "left" ? "problem" : "code");
+    showFullscreenView(direction === "left" ? "code" : "problem");
   });
 
   // 全螢幕開啟後把焦點移到編輯器（鍵盤隨之彈出）

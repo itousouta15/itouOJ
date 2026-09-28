@@ -45,8 +45,8 @@ export default function ProblemWorkspace({
   const [slideDirection, setSlideDirection] = useState<MobileTab | null>(null);
   const prevTabRef = useRef<MobileTab>(mobileTab);
   const swipe = useHorizontalSwipe((direction) => {
-    // 左滑看題目、右滑回程式；桌面版不切換分頁。
-    setProblemWorkspaceTab(direction === "left" ? "problem" : "code");
+    // 一般題目頁：左滑到右側的程式、右滑回左側的題目。
+    setProblemWorkspaceTab(direction === "left" ? "code" : "problem");
   });
 
   // 不論是滑動或點底部導覽列切換，都依切換方向播放滑入動畫。
