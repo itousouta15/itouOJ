@@ -27,6 +27,7 @@ import {
 } from "@/lib/capacitor";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import VerdictBadge from "@/components/VerdictBadge";
+import InteractiveTerminal from "@/components/InteractiveTerminal";
 import { setProblemWorkspaceTab } from "@/lib/problemWorkspaceTab";
 import { useHorizontalSwipe } from "@/lib/useHorizontalSwipe";
 
@@ -161,6 +162,9 @@ export default function SubmitPanel({
   const [runResult, setRunResult] = useState<RunResponse | null>(null);
   const [showCustom, setShowCustom] = useState(false);
   const [customInput, setCustomInput] = useState("");
+  const [terminalRun, setTerminalRun] = useState(0);
+  const [showTerminal, setShowTerminal] = useState(false);
+  const [terminalBusy, setTerminalBusy] = useState(false);
   const [editorFontSize, setEditorFontSize] = useState(DEFAULT_EDITOR_FONT_SIZE);
   const [fullscreen, setFullscreen] = useState(false);
   const [fullscreenView, setFullscreenView] = useState<"code" | "problem">("code");
@@ -391,6 +395,8 @@ export default function SubmitPanel({
   const langSelect = (
     <select
       className="input w-auto"
+      aria-label="程式語言"
+      disabled={terminalBusy}
       value={language}
       onChange={(e) => switchLanguage(e.target.value as LanguageKey)}
     >
@@ -431,23 +437,32 @@ export default function SubmitPanel({
       <button
         className="btn-secondary"
         onClick={runTest}
-        disabled={running || submitting || locked}
+        disabled={running || submitting || terminalBusy || locked}
       >
         {running ? "執行中…" : "測試執行"}
       </button>
       <button
         className="btn-primary"
         onClick={submit}
-        disabled={running || submitting || locked}
+        disabled={running || submitting || terminalBusy || locked}
       >
         {submitting ? "送出中…" : "送出解答"}
       </button>
     </>
   );
 
+  const customInputField = (
+    <textarea
+      className="input mono min-h-24 resize-y text-[13px]"
+      value={customInput}
+      onChange={(e) => setCustomInput(e.target.value)}
+      placeholder="測試執行時會用這裡的內容當輸入"
+    />
+  );
+
   return (
     <div className="card submit-panel p-4">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between lg:hidden">
         <h2 className="section-title">提交</h2>
         <div className="flex items-center gap-2">
           {langSelect}
@@ -464,29 +479,77 @@ export default function SubmitPanel({
       </div>
       {!fullscreen && (
         <div className="oj-editor oj-editor--inline overflow-hidden rounded-md border border-bd">
-          {editor}
+          <div className="submit-panel-editor-head hidden lg:flex">
+            <h2 className="section-title">提交</h2>
+            {langSelect}
+          </div>
+          <div className="submit-panel-editor-body">
+            <div className="submit-panel-editor-viewport">{editor}</div>
+            <div className="submit-panel-editor-toolbar hidden lg:flex">
+              <button
+                type="button"
+                className={`pill ${showCustom ? "pill-active" : ""}`}
+                disabled={terminalBusy}
+                onClick={() => {
+                  setShowTerminal(false);
+                  setShowCustom((v) => !v);
+                }}
+              >
+                自訂輸入
+              </button>
+              <div className="submit-panel-editor-actions">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={running || submitting || terminalBusy || locked || language === "java"}
+                  title={language === "java" ? "Java 尚未支援互動執行" : "開啟終端機互動執行"}
+                  onClick={() => {
+                    setShowCustom(false);
+                    setRunResult(null);
+                    setTerminalRun((value) => value + 1);
+                    setShowTerminal(true);
+                  }}
+                >
+                  Terminal
+                </button>
+                {actionButtons}
+              </div>
+            </div>
+          </div>
+          {showTerminal && (
+            <InteractiveTerminal
+              key={terminalRun}
+              problemId={problemId}
+              contestId={contestId}
+              language={language}
+              code={code}
+              onBusyChange={setTerminalBusy}
+              onClose={() => setShowTerminal(false)}
+            />
+          )}
+          {showCustom && (
+            <div className="submit-panel-editor-custom hidden lg:block">
+              <label className="mb-1 block text-sm font-medium">自訂輸入（stdin）</label>
+              {customInputField}
+            </div>
+          )}
         </div>
       )}
       {showCustom && (
-        <div className="mt-3">
+        <div className="mt-3 lg:hidden">
           <label className="mb-1 block text-sm font-medium">
             自訂輸入（stdin）
           </label>
-          <textarea
-            className="input mono min-h-24 resize-y text-[13px]"
-            value={customInput}
-            onChange={(e) => setCustomInput(e.target.value)}
-            placeholder="測試執行時會用這裡的內容當輸入"
-          />
+          {customInputField}
         </div>
       )}
 
       {locked && (
-        <p className="mt-2 text-sm text-[#faa81a]">比賽已結束，無法再測試執行或提交</p>
+        <p className="submit-panel-notice mt-2 text-sm text-[#faa81a]">比賽已結束，無法再測試執行或提交</p>
       )}
-      {error && <p className="mt-2 text-sm text-[#ff6b6b]">{error}</p>}
+      {error && <p className="submit-panel-notice mt-2 text-sm text-[#ff6b6b]">{error}</p>}
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 lg:hidden">
         <button
           className={`pill ${showCustom ? "pill-active" : ""}`}
           onClick={() => setShowCustom((v) => !v)}
@@ -497,7 +560,7 @@ export default function SubmitPanel({
       </div>
 
       {runResult && (
-        <div className="mt-4 space-y-3 border-t border-bd pt-4">
+        <div className="submit-panel-result mt-4 space-y-3 border-t border-bd pt-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-dim">測試結果</h3>
             <button

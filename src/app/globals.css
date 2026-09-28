@@ -1040,6 +1040,7 @@ html.kbd-open .problem-workspace-nav {
 /* 編輯器填滿包住它的容器（內嵌 380px 或全螢幕 flex 區塊） */
 .oj-editor--inline {
   min-height: 380px;
+  background: var(--panel);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 .oj-editor--inline:focus-within {
@@ -1053,6 +1054,10 @@ html.kbd-open .problem-workspace-nav {
 .oj-editor .cm-content,
 .oj-editor .cm-gutters {
   font-family: "Fira Code", "JetBrains Mono", monospace;
+}
+.oj-editor .cm-editor,
+.oj-editor .cm-editor .cm-gutters {
+  background-color: var(--panel);
 }
 
 /* 程式題：桌面版置中分欄並保留留白；窄螢幕保持上下排列。 */
@@ -1152,23 +1157,271 @@ html.kbd-open .problem-workspace-nav {
   .problem-workspace pre {
     border-radius: 0;
   }
+  .problem-workspace-code {
+    overflow: hidden;
+    scrollbar-gutter: auto;
+  }
   .problem-workspace-code .submit-panel {
     display: flex;
-    min-height: 100%;
+    height: 100%;
+    min-height: 0;
     flex-direction: column;
-    padding: clamp(1rem, 1.6vw, 1.5rem);
+    padding: 0;
+    border: 0;
+    background: transparent;
   }
   .problem-workspace-code .oj-editor--inline {
     display: flex;
-    flex: 1 0 380px;
+    flex: 1 1 0;
     flex-direction: column;
+    min-height: 0;
   }
-  .problem-workspace-code .oj-editor--inline > div,
+  .problem-workspace-code .submit-panel-editor-head,
+  .problem-workspace-code .submit-panel-editor-toolbar {
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--panel);
+  }
+  .problem-workspace-code .submit-panel-editor-head {
+    justify-content: space-between;
+    border-bottom: 1px solid var(--bd);
+  }
+  .problem-workspace-code .submit-panel-editor-head .section-title {
+    margin-left: 4px;
+  }
+  .problem-workspace-code .submit-panel-editor-toolbar {
+    /* 浮動按鈕不參與編輯區的高度分配。 */
+    position: absolute;
+    inset: auto 12px 12px;
+    z-index: 2;
+    flex: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 0;
+    background: transparent;
+    pointer-events: none;
+  }
+  .problem-workspace-code .submit-panel-editor-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .problem-workspace-code .submit-panel-editor-toolbar button {
+    pointer-events: auto;
+    min-height: 44px;
+    padding: 10px 18px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .problem-workspace-code .submit-panel-editor-toolbar .btn-secondary {
+    background: var(--panel);
+  }
+  .problem-workspace-code .submit-panel-editor-toolbar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .problem-workspace-code .submit-panel-editor-custom {
+    flex: none;
+    padding: 10px 12px;
+    border-top: 1px solid var(--bd);
+    background: var(--panel);
+  }
+  .problem-workspace-code .submit-panel-editor-custom textarea {
+    max-height: min(25vh, 200px);
+  }
+  .problem-workspace-code .submit-panel-editor-body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .problem-workspace-code .submit-panel-editor-viewport,
+  .problem-workspace-code .submit-panel-editor-viewport > div,
   .problem-workspace-code .oj-editor--inline .cm-editor {
-    height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    height: auto;
+    min-height: 0;
+    min-width: 0;
+  }
+  .problem-workspace-code .submit-panel-editor-viewport {
+    width: 100%;
+  }
+  .problem-workspace-code .submit-panel-editor-body .cm-content {
+    padding-bottom: 140px;
   }
   .problem-workspace-code .oj-editor--inline .cm-scroller {
+    flex: 1 1 0;
+    min-height: 0;
     overflow: auto;
+  }
+  .problem-workspace-code .submit-panel-notice,
+  .problem-workspace-code .submit-panel-result {
+    margin-inline: 12px;
+  }
+  .problem-workspace-code .submit-panel-notice {
+    flex: none;
+  }
+  .problem-workspace-code .submit-panel-result {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 35%;
+    overflow: auto;
+    padding-bottom: 12px;
+  }
+}
+
+.interactive-terminal {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 clamp(200px, 40%, 320px);
+  height: 300px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-top: 1px solid var(--bd2);
+  background: #141619;
+  color: var(--tx);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  animation: terminalOpen 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.interactive-terminal--closing {
+  pointer-events: none;
+  animation: terminalClose 0.18s ease-in both;
+}
+@keyframes terminalOpen {
+  from { flex-basis: 0; opacity: 0; transform: translateY(12px); }
+  to { flex-basis: clamp(200px, 40%, 320px); opacity: 1; transform: translateY(0); }
+}
+@keyframes terminalClose {
+  from { flex-basis: clamp(200px, 40%, 320px); opacity: 1; transform: translateY(0); }
+  to { flex-basis: 0; opacity: 0; transform: translateY(12px); }
+}
+.interactive-terminal-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--bd);
+}
+.interactive-terminal-head > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--dim);
+  font-size: 12px;
+}
+.interactive-terminal-head [role="status"]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mute);
+}
+.interactive-terminal:is([data-status="starting"], [data-status="compiling"]) [role="status"]::before {
+  background: #faa81a;
+  animation: terminalPulse 1.5s ease-in-out infinite;
+}
+.interactive-terminal[data-status="running"] [role="status"]::before {
+  background: var(--green);
+  animation: terminalPulse 1.5s ease-in-out infinite;
+}
+@keyframes terminalPulse {
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+.interactive-terminal-controls {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.interactive-terminal button {
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--bd2);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.interactive-terminal button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.interactive-terminal button:focus-visible,
+.interactive-terminal textarea:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.interactive-terminal-screen {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px;
+  line-height: 1.6;
+}
+.interactive-terminal-history {
+  margin: 0;
+  padding: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+}
+.interactive-terminal-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.interactive-terminal-entry {
+  display: flex;
+  flex: 1 1 10rem;
+  align-items: baseline;
+  gap: 6px;
+}
+.interactive-terminal-entry > span {
+  color: var(--dim);
+}
+.interactive-terminal-entry textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 1.6em;
+  max-height: 6em;
+  resize: none;
+  field-sizing: content;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  box-shadow: none;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  line-height: inherit;
+  caret-color: var(--tx);
+}
+.interactive-terminal-entry textarea:focus-visible {
+  outline: 0;
+  box-shadow: none;
+}
+.interactive-terminal-entry:focus-within > span {
+  color: var(--blue);
+}
+@media (prefers-reduced-motion: reduce) {
+  .interactive-terminal,
+  .interactive-terminal--closing,
+  .interactive-terminal-head [role="status"]::before {
+    animation: none;
   }
 }
 @media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
