@@ -2,7 +2,7 @@
 
 # itouOJ
 
-一套可自行架設的 Online Judge，提供程式題、識讀練習、比賽、課程與離線收件。網站採用 Next.js；正式提交依語言交給自建的 Linux 沙箱或 Piston 判題。
+一套可自行架設的 Online Judge，提供程式題、識讀練習、比賽、課程與離線收件。網站採用 Next.js；正式提交由自建的 Linux 沙箱判題。
 
 ![itouOJ 首頁](public/brand/Hero.png)
 
@@ -12,8 +12,8 @@
 
 | 功能 | 說明 |
 | --- | --- |
-| 程式題 | Markdown／數學式題敘、範例測資、標籤、子題配分、提交紀錄與排行榜；支援 C++、C、Python、Java、JavaScript。 |
-| 寫程式 | CodeMirror 編輯器、每題每語言的本機草稿、範例測試，以及先備妥 stdin 的「自訂輸入」。桌機可左右拖曳調整題目與程式欄寬。 |
+| 程式題 | Markdown／數學式題敘、範例測資、標籤、子題配分、提交紀錄與排行榜；支援 C++、C、Python、JavaScript。 |
+| 寫程式 | CodeMirror 編輯器、每題每語言的本機草稿與範例測試；手機可先備妥 stdin 再測試。桌機可左右拖曳調整題目與程式欄寬。 |
 | Terminal | 桌機版可直接在終端機中逐行輸入、即時看輸出；支援 C++、C、Python、JavaScript|
 | 識讀練習 | 選擇題即時對答案、詳解、題組進度與複習紀錄；不列入一般程式提交紀錄。 |
 | 比賽與課程 | ICPC／IOI 計分、封榜與揭榜、參賽代碼、語言限制、PDF 題本；課程可整理題目與追蹤解題進度。 |
@@ -31,14 +31,13 @@
     Next.js（頁面與 API）──── SQLite／Prisma
          │
          ├─ 提交與「測試執行」
-         │    ├─ C／C++／Python／JavaScript → sandbox-server :8090
-         │    └─ Java                    → Piston :2000
+         │    └─ C／C++／Python／JavaScript → sandbox-server :8090
          │
          └─ 桌機 Terminal（持續執行、即時輸入輸出）
               └─ C／C++／Python／JavaScript → sandbox-interactive :8091
 ```
 
-技術組成：**Next.js 16（App Router）／React 19／TypeScript／Tailwind CSS 4**、**SQLite／Prisma 7**、**CodeMirror 6**、**Capacitor 8**。提交由判題 worker 領取；`npm run dev` 會在開發模式啟動本機 worker，正式環境則使用 `deploy/online-judge-worker.service`。`sandbox-runner` 透過 Linux namespace、cgroup v2 與 seccomp 隔離程式碼；Java 仍走 Piston。
+技術組成：**Next.js 16（App Router）／React 19／TypeScript／Tailwind CSS 4**、**SQLite／Prisma 7**、**CodeMirror 6**、**Capacitor 8**。提交由判題 worker 領取；`npm run dev` 會在開發模式啟動本機 worker，正式環境則使用 `deploy/online-judge-worker.service`。`sandbox-runner` 透過 Linux namespace、cgroup v2 與 seccomp 隔離程式碼。舊的 Java 提交紀錄仍可查看，但已停止接受新的 Java 提交。
 
 編輯器顯示的語言版本定義在 [`src/lib/languages.ts`](src/lib/languages.ts)。自建沙箱的 C／C++ 實際編譯器取決於部署主機，請讓主機版本與網站顯示相符。
 
@@ -48,13 +47,12 @@
 | C | GCC 10.2 | sandbox-runner | ✓ |
 | Python | 3.12 | sandbox-runner | ✓ |
 | JavaScript | Node 20 | sandbox-runner | ✓ |
-| Java | 15 | Piston | — |
 
 Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一行、**Shift＋Enter** 換行、**Ctrl＋D／EOF** 結束標準輸入，**Ctrl＋C／停止** 可終止執行。讀取到檔尾的程式要送出 EOF 才會結束。Terminal 最多執行兩分鐘，CPU 時間另依題目限制。詳見 [沙箱與互動服務說明](sandbox-runner/README.md)。
 
 ## 在本機啟動
 
-需要 **Node.js 20.9 以上** 與 npm。網站和資料庫可在 Windows、macOS 或 Linux 開發；要真正執行使用者程式，還需要可連線的沙箱服務（Java 另需 Piston）。
+需要 **Node.js 20.9 以上** 與 npm。網站和資料庫可在 Windows、macOS 或 Linux 開發；要真正執行使用者程式，還需要可連線的沙箱服務。
 
 1. 安裝套件：
 
@@ -94,7 +92,6 @@ Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一�
 ### 本機執行程式
 
 - **C／C++／Python／JavaScript 提交及測試**：安裝 Linux 的 [sandbox-runner](sandbox-runner/README.md)，預設連到 `127.0.0.1:8090`；也可用 `SANDBOX_URL` 指向可連線的沙箱。
-- **Java 提交及測試**：需自行部署 Piston 並安裝 Java 15.0.2，預設連到 `localhost:2000`；可用 `PISTON_URL` 覆寫。這兩項服務都不應公開到網際網路。
 - **桌機 Terminal**：另需 `sandbox-interactive`（`127.0.0.1:8091`）；它與一般測試執行是不同服務。Windows 使用 WSL2 的建置與啟動指令在 [sandbox-runner/README.md](sandbox-runner/README.md) 的「Windows 本機開發」段落；Linux 可使用 `sandbox-runner/deploy/sandbox-interactive.service`。
 
 ### 環境變數
@@ -104,7 +101,7 @@ Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一�
 | `DATABASE_URL` | SQLite 路徑；本機可用已被 `.gitignore` 排除的 `file:./dev.db`，既有部署腳本則預期正式資料庫為 `file:./oj.db`。 |
 | `AUTH_SECRET` | 簽署登入 session；正式環境必填。 |
 | `APP_URL` | 對外網址，用於 OAuth 回呼與站點連結；正式環境設定成 HTTPS 網址。 |
-| `SANDBOX_URL`／`PISTON_URL` | 一般判題服務網址；預設分別為 `http://127.0.0.1:8090`／`http://localhost:2000`。 |
+| `SANDBOX_URL` | 一般判題服務網址；預設為 `http://127.0.0.1:8090`。 |
 | `INTERACTIVE_SANDBOX_URL` | 互動式 Terminal 服務網址；預設 `http://127.0.0.1:8091`。 |
 | `JUDGE_WORKER_SECRET` | 正式環境判題 worker 呼叫內部 API 的密鑰。 |
 | `TURNSTILE_SECRET`／`TURNSTILE_HOSTNAMES` | 正式環境帳密登入與註冊的 Turnstile 驗證密鑰、允許的主機名稱。前端 site key 目前在 `src/components/AuthForm.tsx` 設定；自行換網域部署時需對應調整。 |
@@ -121,9 +118,8 @@ Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一�
 此專案的既有部署流程以 **Linux + systemd + nginx + SQLite** 為基礎：
 
 1. 部署 [sandbox-runner](sandbox-runner/README.md) 到 `/opt/sandbox-runner`：`make` 建置 `jail` 和 `sandbox-server`，啟用 [`sandbox-server.service`](sandbox-runner/deploy/sandbox-server.service)。如需 Terminal，另外啟用 [`sandbox-interactive.service`](sandbox-runner/deploy/sandbox-interactive.service)。沙箱需 Linux namespace／cgroup v2，服務只應監聽本機位址。
-2. 如需 Java，部署 Piston 並安裝對應語言套件，僅對本機開放 `:2000`。
-3. 在 `/opt/online-judge` 安裝網站：`npm ci`、`npm run generate`、`npx prisma migrate deploy`、`npm run build`；正式 `.env` 設定 `DATABASE_URL="file:./oj.db"`，再設定 [`online-judge.service`](deploy/online-judge.service) 與 [`online-judge-worker.service`](deploy/online-judge-worker.service)，由 [nginx 設定](deploy/nginx-oj.conf)代理到 `:3000`。
-4. 若從 Windows 更新既有伺服器，可設定 `DEPLOY_SERVER` 後執行 `./deploy/deploy.ps1`。腳本以 **已提交的 `HEAD`** 打包、備份 `oj.db`、上傳網站、執行遷移與建置，最後重啟網站及判題 worker；工作區未提交的修改不會被部署。沙箱二進位檔與互動服務需分別更新，這支腳本不會重新建置它們。
+2. 在 `/opt/online-judge` 安裝網站：`npm ci`、`npm run generate`、`npx prisma migrate deploy`、`npm run build`；正式 `.env` 設定 `DATABASE_URL="file:./oj.db"`，再設定 [`online-judge.service`](deploy/online-judge.service) 與 [`online-judge-worker.service`](deploy/online-judge-worker.service)，由 [nginx 設定](deploy/nginx-oj.conf)代理到 `:3000`。
+3. 若從 Windows 更新既有伺服器，可設定 `DEPLOY_SERVER` 後執行 `./deploy/deploy.ps1`。腳本以 **已提交的 `HEAD`** 打包、備份 `oj.db`、上傳網站、執行遷移與建置，最後重啟網站及判題 worker；工作區未提交的修改不會被部署。沙箱二進位檔與互動服務需分別更新，這支腳本不會重新建置它們。
 
 新部署請先確認服務設定檔中的 `/opt/...` 路徑與實際安裝位置一致，並提供 `JUDGE_WORKER_SECRET`、`AUTH_SECRET`、Turnstile 設定及正式站網址。更完整的沙箱建置、資源限制與驗證方式請看 [sandbox-runner 文件](sandbox-runner/README.md)。
 

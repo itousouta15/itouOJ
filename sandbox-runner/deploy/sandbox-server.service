@@ -1,6 +1,6 @@
 # M8: production judge sandbox, wired into judge.ts/route.ts via
 # src/lib/execute.ts (see itouOJ's own repo) for c/c++/python/javascript.
-# Java still goes through Piston until sandbox-runner grows a Java profile.
+# Java has been retired; this is the only judging engine for new submissions.
 # Runs as root: jail itself needs CAP_SYS_ADMIN-class privilege to create
 # namespaces/cgroups (see sandbox-runner/src/jail.c and the plan's
 # privilege-model notes) -- sandbox-server just fork/execs jail as a

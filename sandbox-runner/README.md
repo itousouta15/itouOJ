@@ -2,7 +2,7 @@
 
 > 從零實作的 Linux 判題沙箱：namespace 隔離 + cgroup v2 資源限制 + seccomp-bpf syscall 白名單。跑在正式站 [oj.itousouta.me](https://oj.itousouta.me) 上，取代原本的 [Piston](https://github.com/engineer-man/piston)。
 
-C / C++ / Python / JavaScript 判題現在都走這裡。Java 還沒做，暫時繼續用 Piston（見〈語言支援現況〉）。
+C / C++ / Python / JavaScript 的提交與測試執行都走這裡；Java 已停止接受新提交，舊提交紀錄仍保留。
 
 ## 為什麼要自己刻
 
@@ -16,11 +16,11 @@ Piston 的沙箱只管 CPU / 記憶體 / 時間跟檔案系統範圍，**不管�
 Browser ──HTTPS──> nginx ──:3000──> Next.js (judge.ts)
                                           │
                                  src/lib/execute.ts
-                                    （依語言分流）
-                          ┌───────────────┴───────────────┐
-                    C/C++/Python/JS                      Java
-                          │                                 │
-              sandbox-server :8090                Piston :2000 (Docker)
+                                   （呼叫沙箱）
+                           │
+                     C/C++/Python/JS
+                           │
+               sandbox-server :8090
               ┌─────────────────────┐
               │ jail（每個請求一次）   │
               │  namespaces          │
@@ -29,7 +29,7 @@ Browser ──HTTPS──> nginx ──:3000──> Next.js (judge.ts)
               └─────────────────────┘
 ```
 
-兩條路徑互相獨立，一邊掛掉不影響另一邊（見〈驗證方式〉）。
+桌機 Terminal 另外使用 `sandbox-interactive :8091`，也會呼叫同一個 `jail`。
 
 ## 三層防護
 
@@ -97,7 +97,7 @@ jail <rootfs-dir> <mem-limit-mb> <pids-max> <timeout-ms> <seccomp-profile> <prog
 
 `jail` 只是單次呼叫的 CLI 工具；`sandbox-server` 包成跟 Piston `/api/v2/execute` 欄位相容的 HTTP 服務（只綁 `127.0.0.1:8090`），讓 itouOJ 只需要換一個 client 模組。
 
-- 編譯階段目前不進沙箱（host 上跑 `gcc`/`g++ -O2 -static`）——攻擊者控制的是原始碼、不是機器碼，風險模型不同，刻意簡化。
+- C/C++ 編譯階段也使用獨立的 `compile` 沙箱與 seccomp profile，不會直接讀取主機上的網站檔案。
 - Python / JavaScript 沒有編譯階段，bind mount `/opt/piston-data` 裡的直譯器進沙箱 rootfs，執行完就 `umount`。
 - 每個請求獨立暫存目錄 + `poll()` 多工處理 stdin/stdout/stderr，避免管線緩衝區塞滿死結。
 - 單執行緒，同一時間只判一筆——簡單但有效的併發保護。
@@ -109,9 +109,10 @@ jail <rootfs-dir> <mem-limit-mb> <pids-max> <timeout-ms> <seccomp-profile> <prog
 | C / C++ | ✅ 正式站使用中 | 靜態編譯，seccomp 白名單最窄 |
 | Python 3.12 | ✅ 正式站使用中 | |
 | JavaScript (Node 20) | ✅ 正式站使用中 | fork-bomb 防線靠 `pids.max` |
-| Java | ❌ 未實作 | JVM 的 syscall 面最廣，留到最後 |
 
-`judge.ts` 用 [`src/lib/execute.ts`](../src/lib/execute.ts) 按語言分流，兩條路徑互相獨立（已用「關掉 sandbox-server，確認 Java 提交照樣正常」實測驗證）。
+Java 已停止接受新提交；歷史判題資料仍保留。
+
+`judge.ts` 透過 [`src/lib/execute.ts`](../src/lib/execute.ts) 使用沙箱；Python 與 Node 執行檔仍從 `/opt/piston-data` 的既有套件目錄掛入，關掉 Piston 容器後請保留此目錄。
 
 ## 驗證方式
 
@@ -148,7 +149,6 @@ cd sandbox-runner && make        # 產出 jail、sandbox-server
 它不會重跑先前的 stdin，也不建立提交／判分紀錄。
 
 - C／C++：編譯與執行都使用原本的 `jail`；Python／JavaScript 使用同一組語言隔離設定。
-- Java 尚未接入互動模式，Terminal 按鈕會停用；原本測試執行及提交仍走 Piston。
 - Terminal 中 Enter 送出一行、Shift+Enter 換行、EOF（Ctrl+D）結束 stdin、停止（Ctrl+C）終止程式。
 - `fs.readFileSync(0)`、`sys.stdin.read()`、`while (cin >> x)` 等讀到檔尾的程式，需要按 EOF 才會繼續／結束。
 - C/C++ 若關閉 `cin.tie`，無換行的提示請自行 `std::flush`／`fflush(stdout)`；Python 以 `-u` 啟動。
@@ -201,8 +201,6 @@ sudo PYTHON_HOME=/usr python3 -m unittest discover -s test -p test_interactive.p
 
 ## 其他已知限制
 
-- Java 語言支援
-- 編譯階段（`gcc`/`g++`）本身還沒沙箱化
+- Java 已下線，既有歷史提交仍可查閱
 - rootfs 直接 bind mount 整個 host `/usr`，還沒收斂成只含實際用到的 `.so`
 - 逾時偵測是 5ms 輪詢，不是 `timerfd`，精度夠用但不是最優
-- Piston（Java 用）的三個補丁是 `docker exec ... sed -i` 直接改 container 內部檔案（見主 [README.md](../README.md#部署)）——Piston image 更新後 `sed` 可能悄悄不匹配、補丁靜默失效。比較耐用的做法是維護自己的 patch 檔 + 自建 image，目前 Java 量還小，先沒做這個重構
