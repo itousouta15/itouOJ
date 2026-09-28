@@ -63,6 +63,13 @@ export default async function ContestProblemPage({
 
   const phase = getContestPhase(contest);
   const options = isRecognition ? (JSON.parse(problem.options ?? "[]") as string[]) : [];
+  const questionBody = (
+    <>
+      <StatementCard>{problem.statement}</StatementCard>
+      <CodeBlock code={problem.code ?? ""} />
+      <SampleCases samples={problem.testCases} />
+    </>
+  );
   const questionContent = (
     <>
       <QuestionHeader
@@ -77,14 +84,13 @@ export default async function ContestProblemPage({
           )
         }
       />
-      <StatementCard>{problem.statement}</StatementCard>
-      <CodeBlock code={problem.code ?? ""} />
-      <SampleCases samples={problem.testCases} />
+      {questionBody}
     </>
   );
   const submissionPanel = !isRecognition && (
     <SubmitPanel
       problemId={problem.id}
+      question={questionBody}
       problem={{
         problemCode: problem.problemCode,
         title: problem.title,

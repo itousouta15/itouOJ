@@ -843,6 +843,45 @@ html.kbd-open .problem-workspace-nav {
 .editor-fullscreen .editor-fullscreen-body .cm-scroller {
   overflow: auto;
 }
+.editor-fullscreen-tabs {
+  flex: none;
+  display: flex;
+  border-bottom: 1px solid var(--bd);
+  background: var(--panel);
+}
+.editor-fullscreen-tabs button {
+  flex: 1;
+  min-height: 44px;
+  color: var(--dim);
+  font-size: 14px;
+  font-weight: 600;
+}
+.editor-fullscreen-tabs button[aria-selected="true"] {
+  color: var(--blue);
+  box-shadow: inset 0 -2px var(--blue);
+}
+.editor-fullscreen-tabs button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -3px;
+}
+.editor-fullscreen-question {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  overscroll-behavior: contain;
+}
+.editor-fullscreen[data-view="problem"] .editor-fullscreen-question {
+  display: block;
+}
+.editor-fullscreen[data-view="problem"] .editor-fullscreen-body,
+.editor-fullscreen[data-view="problem"] .editor-fullscreen-custom,
+.editor-fullscreen[data-view="problem"] .editor-fullscreen-toolbar,
+.editor-fullscreen[data-view="problem"] .editor-kbd {
+  display: none;
+}
 .editor-fullscreen-toolbar {
   flex: none;
   display: flex;
@@ -2007,6 +2046,9 @@ html[data-app] .editor-fullscreen-toolbar .pill {
   padding: 0 18px;
 }
 html[data-app] .editor-fullscreen .theme-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 44px;
   height: 44px;
   font-size: 17px;

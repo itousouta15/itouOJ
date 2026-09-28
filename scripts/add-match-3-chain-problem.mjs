@@ -1,4 +1,4 @@
-// 新增獨立題目「三消連鎖」，含 40 / 60 分子題與測資。
+// 新增題目「彩磚回收站」，含 40 / 60 分子題與測資；已存在時只更新標題與題幹。
 // 用法：node scripts/add-match-3-chain-problem.mjs [--db oj.db]
 // 預設使用 DATABASE_URL（未設定時為 prisma/data/dev.db）；重跑不會重複新增。
 
@@ -19,32 +19,33 @@ function flag(name, fallback) {
 const dbPath = flag("db", (process.env.DATABASE_URL ?? "file:./prisma/data/dev.db").replace(/^file:/, ""));
 if (!existsSync(dbPath)) throw new Error(`資料庫不存在：${dbPath}`);
 
-const TITLE = "三消連鎖";
+const PREVIOUS_TITLE = "三消連鎖";
+const TITLE = "彩磚回收站";
 const TAGS = ["模擬", "陣列"];
 
 const STATEMENT = `## 題目描述
 
-快樂 TLE 牧場的羊最近迷上一款消除遊戲。遊戲盤面有 \`R\` 個橫列、\`C\` 個直行，每一格是空格（以 0 表示）或是一個方塊，方塊共有 1 到 5 五種顏色。
+回收站有一面彩磚牆，分成 \`R\` 個橫列、\`C\` 個直行。每個位置可能是空位（以 0 表示），也可能放著一塊彩磚；彩磚的顏色以 1 到 5 表示。
 
-同一橫列中連續 **3 個以上**左右相鄰且顏色相同的方塊，或同一直行中連續 **3 個以上**上下相鄰且顏色相同的方塊，稱為一條連線。空格不屬於任何顏色，不會形成連線。
+回收設備會辨識同一橫列中左右相鄰、顏色相同且連續 **3 塊以上**的彩磚，也會辨識同一直行中上下相鄰、顏色相同且連續 **3 塊以上**的彩磚。空位不算任何一種顏色，不會被回收。
 
-遊戲以輪為單位進行，每一輪依序執行下列三個步驟：
+設備反覆執行以下流程，每完成一次回收，就算一輪：
 
-1. 找出目前盤面上所有屬於連線的方塊。一個方塊同時屬於橫向與直向連線時只算一次。若找不到任何這樣的方塊，遊戲結束。
-2. 將步驟 1 找到的方塊**全部同時消除**，變成空格。
-3. 所有方塊往下掉落，直到正下方是盤面底部或其他方塊為止；同一直行的方塊掉落後上下順序保持不變。
+1. 找出目前所有符合上述條件的彩磚。若一塊彩磚同時屬於橫向和直向的組合，只計算一次；若一塊都找不到，設備停止運作。
+2. 將找到的彩磚**同時回收**，原本的位置變為空位。
+3. 剩下的彩磚因重力向下掉落，直到下方是底部或另一塊彩磚。同一直行中，彩磚掉落後的上下順序不變。
 
-步驟 3 結束後若盤面又出現連線，就會接著進行下一輪，形成連鎖。
+掉落後若又有彩磚符合回收條件，就會繼續下一輪。
 
-給定初始盤面，請輸出總共進行了幾輪消除、總共消除了幾個方塊，以及遊戲結束時的盤面。
+給定彩磚牆的初始狀態，請輸出回收輪數、回收的彩磚總數，以及設備停止後彩磚牆的狀態。
 
 ## 輸入格式
 
-第一行有兩個正整數 \`R\`、\`C\`，分別是盤面的橫列數與直行數。
+第一行有兩個正整數 \`R\`、\`C\`，分別代表彩磚牆的橫列數與直行數。
 
-接下來 \`R\` 行依序是由上而下的每一個橫列，每行有 \`C\` 個 0 到 5 的整數，由左而右排列，兩數字之間以一個空白間隔。
+接下來 \`R\` 行依序表示由上到下的每個橫列，每行有 \`C\` 個 0 到 5 的整數，由左到右排列，數字之間以一個空白間隔。
 
-保證初始盤面沒有懸空的方塊，也就是若某一格是空格，它正上方的格子（若存在）也是空格。
+保證初始狀態沒有懸空的彩磚：若某個位置是空的，它正上方的位置（若存在）也一定是空的。
 
 ## 限制與子題
 
@@ -54,9 +55,9 @@ const STATEMENT = `## 題目描述
 
 ## 輸出格式
 
-第一行輸出兩個整數 \`K\`、\`S\`，以一個空白間隔，\`K\` 是總共進行了幾輪消除，\`S\` 是總共消除了幾個方塊。
+第一行輸出兩個整數 \`K\`、\`S\`，以一個空白間隔，\`K\` 是回收輪數，\`S\` 是回收的彩磚總數。
 
-接下來輸出遊戲結束時的盤面，共 \`R\` 行，每行 \`C\` 個整數，以一個空白間隔。
+接下來輸出設備停止後的彩磚牆，共 \`R\` 行，每行 \`C\` 個整數，以一個空白間隔。
 
 ## 範例一
 
@@ -80,7 +81,7 @@ const STATEMENT = `## 題目描述
 4 1 1 2
 \`\`\`
 
-第二橫列的三個 2 與第二直行的三個 2 交會，共消除 5 個方塊；第四直行的三個 3 也被消除。第一輪共消除 8 個方塊，掉落後不再有連線。
+第二橫列的三塊 2 與第二直行的三塊 2 交會，因此這兩組合計回收 5 塊；第四直行的三塊 3 也同時回收。第一輪共回收 8 塊，剩下的彩磚掉落後，沒有新的組合。
 
 ## 範例二
 
@@ -106,7 +107,7 @@ const STATEMENT = `## 題目描述
 3 3 1
 \`\`\`
 
-第一輪消除第二直行的三個 1；上方的 2 掉落後與左右兩個 2 形成橫向連線，第二輪再消除這三個 2。
+第一輪回收第二直行的三塊 1；上方的 2 掉落後，與左右兩塊 2 排成一列，第二輪再回收這三塊 2。
 `;
 
 function solve(board) {
@@ -244,9 +245,10 @@ const cases = rawCases.map(({ board, subtask, isSample = false, expected }) => {
 const db = new Database(dbPath, { fileMustExist: true });
 try {
   db.pragma("foreign_keys = ON");
-  const existing = db.prepare("SELECT id, \"problemCode\" FROM Problem WHERE title = ? AND type = 'PROGRAMMING'").get(TITLE);
+  const existing = db.prepare("SELECT id, \"problemCode\" FROM Problem WHERE title IN (?, ?) AND type = 'PROGRAMMING'").get(PREVIOUS_TITLE, TITLE);
   if (existing) {
-    console.log(`跳過（已存在）：${TITLE} (id=${existing.id}, problemCode=${existing.problemCode})`);
+    db.prepare("UPDATE Problem SET title = ?, statement = ? WHERE id = ?").run(TITLE, STATEMENT, existing.id);
+    console.log(`更新題目：${TITLE} (id=${existing.id}, problemCode=${existing.problemCode})`);
   } else {
     const insertProblem = db.prepare(
       `INSERT INTO Problem (title, statement, difficulty, timeLimitMs, memoryLimitMb, isPublic, "problemCode", createdAt)

@@ -100,6 +100,7 @@ export default async function ProblemPage({
         ],
       }).replace(/</g, "\\u003c")
     : null;
+  const statementContent = <StatementCard>{problem.statement}</StatementCard>;
 
   return (
     <>
@@ -129,7 +130,7 @@ export default async function ProblemPage({
             }
           />
 
-          <StatementCard>{problem.statement}</StatementCard>
+          {statementContent}
 
           {problem.author && (
             <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
@@ -210,6 +211,12 @@ export default async function ProblemPage({
           <aside className="problem-workspace-pane problem-workspace-code" aria-label="程式編輯器">
             <SubmitPanel
               problemId={problem.id}
+              question={
+                <>
+                  {statementContent}
+                  <SampleCases samples={problem.testCases} />
+                </>
+              }
               problem={{
                 problemCode: problem.problemCode,
                 title: problem.title,

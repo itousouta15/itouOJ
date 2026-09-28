@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import CodeMirror from "@uiw/react-codemirror";
@@ -26,6 +27,8 @@ import {
 } from "@/lib/capacitor";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import VerdictBadge from "@/components/VerdictBadge";
+import { setProblemWorkspaceTab } from "@/lib/problemWorkspaceTab";
+import { useHorizontalSwipe } from "@/lib/useHorizontalSwipe";
 
 // App 鍵盤符號列：手機鍵盤要翻符號頁才打得出來的按鍵，點擊插入游標處。
 // 兩排各 9 鍵（共 18），等寬塞滿螢幕不捲動；只在手機鍵盤出現時顯示。
@@ -116,6 +119,7 @@ public class Main {
 interface SubmitPanelProps {
   problemId: number;
   contestId?: number;
+  question?: ReactNode;
   // 全螢幕編輯器題目頭顯示用（App 寫程式時）
   problem?: {
     problemCode: string | null;
@@ -134,6 +138,7 @@ interface SubmitPanelProps {
 export default function SubmitPanel({
   problemId,
   contestId,
+  question,
   problem,
   contestPhase,
   allowedLanguages,
@@ -158,6 +163,7 @@ export default function SubmitPanel({
   const [customInput, setCustomInput] = useState("");
   const [editorFontSize, setEditorFontSize] = useState(DEFAULT_EDITOR_FONT_SIZE);
   const [fullscreen, setFullscreen] = useState(false);
+  const [fullscreenView, setFullscreenView] = useState<"code" | "problem">("code");
   const [closing, setClosing] = useState(false);
   const [kbdVisible, setKbdVisible] = useState(false);
   const [isApp] = useState(() => isNativeApp());
@@ -179,6 +185,28 @@ export default function SubmitPanel({
   const closingRef = useRef(false);
   // 這次全螢幕是不是「點編輯器自動開」的：自動開的才在收鍵盤時自動關
   const autoOpenedRef = useRef(false);
+  const fullscreenViewRef = useRef<"code" | "problem">("code");
+
+  function showFullscreenView(view: "code" | "problem") {
+    if (!question || fullscreenViewRef.current === view) return;
+    fullscreenViewRef.current = view;
+    if (view === "problem") {
+      // 收鍵盤時仍留在全螢幕，回來後沿用原本的 CodeMirror 與草稿。
+      viewRef.current?.contentDOM.blur();
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLElement && activeElement.matches("textarea, input, select")) {
+        activeElement.blur();
+      }
+      setKbdVisible(false);
+    }
+    setFullscreenView(view);
+    setProblemWorkspaceTab(view);
+    if (view === "code") requestAnimationFrame(() => viewRef.current?.requestMeasure());
+  }
+
+  const fullscreenSwipe = useHorizontalSwipe((direction) => {
+    showFullscreenView(direction === "left" ? "problem" : "code");
+  });
 
   // 全螢幕開啟後把焦點移到編輯器（鍵盤隨之彈出）
   useEffect(() => {
@@ -208,7 +236,7 @@ export default function SubmitPanel({
     Promise.all([
       onKeyboardWillHide(() => {
         setKbdVisible(false);
-        if (autoOpenedRef.current) closeFullscreen();
+        if (autoOpenedRef.current && fullscreenViewRef.current === "code") closeFullscreen();
       }),
       onKeyboardWillShow(() => setKbdVisible(true)),
     ]).then(([unsubHide, unsubShow]) => {
@@ -224,6 +252,9 @@ export default function SubmitPanel({
     closingRef.current = false;
     setClosing(false);
     autoOpenedRef.current = !manual;
+    fullscreenViewRef.current = "code";
+    setFullscreenView("code");
+    setProblemWorkspaceTab("code");
     setFullscreen(true);
   }
 
@@ -566,6 +597,19 @@ export default function SubmitPanel({
         createPortal(
           <div
             className={`editor-fullscreen${closing ? " editor-fullscreen--closing" : ""}`}
+            data-view={fullscreenView}
+            onTouchStart={(event) => {
+              event.stopPropagation();
+              fullscreenSwipe.onTouchStart(event);
+            }}
+            onTouchEnd={(event) => {
+              event.stopPropagation();
+              fullscreenSwipe.onTouchEnd(event);
+            }}
+            onTouchCancel={(event) => {
+              event.stopPropagation();
+              fullscreenSwipe.onTouchCancel();
+            }}
           >
             <div className="editor-fullscreen-head">
               <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -588,7 +632,7 @@ export default function SubmitPanel({
                 )}
               </div>
               <div className="flex flex-none items-center gap-2">
-                {langSelect}
+                {fullscreenView === "code" && langSelect}
                 <button
                   type="button"
                   className="theme-btn"
@@ -600,11 +644,49 @@ export default function SubmitPanel({
                 </button>
               </div>
             </div>
-            <div className="editor-fullscreen-body oj-editor overflow-hidden">
+            {question && (
+              <div className="editor-fullscreen-tabs" role="tablist" aria-label="題目與程式">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={fullscreenView === "problem"}
+                  aria-controls="fullscreen-question"
+                  onClick={() => showFullscreenView("problem")}
+                >
+                  題目
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={fullscreenView === "code"}
+                  aria-controls="fullscreen-code"
+                  onClick={() => showFullscreenView("code")}
+                >
+                  程式
+                </button>
+              </div>
+            )}
+            {question && (
+              <section
+                id="fullscreen-question"
+                role="tabpanel"
+                className="editor-fullscreen-question space-y-6"
+                inert={fullscreenView !== "problem"}
+                aria-label="題目內容"
+              >
+                {question}
+              </section>
+            )}
+            <div
+              id="fullscreen-code"
+              role={question ? "tabpanel" : undefined}
+              className="editor-fullscreen-body oj-editor overflow-hidden"
+              inert={fullscreenView === "problem"}
+            >
               {editor}
             </div>
             {showCustom && (
-              <div className="flex-none px-4 pb-2">
+              <div className="editor-fullscreen-custom flex-none px-4 pb-2">
                 <textarea
                   className="input mono min-h-20 resize-y text-[13px]"
                   value={customInput}

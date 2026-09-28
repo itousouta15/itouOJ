@@ -10,6 +10,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
+import { useHorizontalSwipe } from "@/lib/useHorizontalSwipe";
 import {
   setProblemWorkspaceTab,
   setProblemWorkspaceActive,
@@ -20,10 +21,6 @@ import {
 const DEFAULT_DESCRIPTION_SHARE = (4 / 7) * 100;
 const MIN_DESCRIPTION_SHARE = 35;
 const MAX_DESCRIPTION_SHARE = 65;
-
-// 手機左右滑分頁：要超過這個水平位移、且大於垂直位移，才判定為翻頁，
-// 避免跟頁面垂直捲動、編輯器水平捲動打架。
-const SWIPE_THRESHOLD = 50;
 
 type MobileTab = ProblemWorkspaceTab;
 
@@ -47,7 +44,10 @@ export default function ProblemWorkspace({
   const { tab: mobileTab } = useProblemWorkspaceState();
   const [slideDirection, setSlideDirection] = useState<MobileTab | null>(null);
   const prevTabRef = useRef<MobileTab>(mobileTab);
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const swipe = useHorizontalSwipe((direction) => {
+    // 左滑看題目、右滑回程式；桌面版不切換分頁。
+    setProblemWorkspaceTab(direction === "left" ? "problem" : "code");
+  });
 
   // 不論是滑動或點底部導覽列切換，都依切換方向播放滑入動畫。
   useEffect(() => {
@@ -167,28 +167,6 @@ export default function ProblemWorkspace({
 
   // ---- 手機分頁模式：兩個 pane 都有時，左右滑切換題目 / 程式 ----
   if (hasTwoPanes) {
-    function showTab(tab: MobileTab) {
-      setProblemWorkspaceTab(tab);
-    }
-
-    function onPointerDown(event: PointerEvent<HTMLDivElement>) {
-      if (event.pointerType === "mouse") return;
-      // 從編輯器或可橫向捲動的區塊起始的手勢不翻頁（那是使用者在選字/滑程式碼）。
-      if ((event.target as HTMLElement).closest(".cm-editor, [data-no-swipe]")) return;
-      touchStart.current = { x: event.clientX, y: event.clientY };
-    }
-
-    function onPointerUp(event: PointerEvent<HTMLDivElement>) {
-      const start = touchStart.current;
-      touchStart.current = null;
-      if (!start) return;
-      const dx = event.clientX - start.x;
-      const dy = event.clientY - start.y;
-      if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return;
-      // 左滑（dx<0）→ 看題目；右滑（dx>0）→ 寫程式。
-      showTab(dx < 0 ? "problem" : "code");
-    }
-
     return (
       <div
         ref={workspaceRef}
@@ -201,8 +179,7 @@ export default function ProblemWorkspace({
         <div
           className="problem-pages"
           data-direction={slideDirection ?? undefined}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
+          {...swipe}
         >
           <div className={`problem-page${mobileTab === "problem" ? " is-active" : ""}`}>
             {description}
