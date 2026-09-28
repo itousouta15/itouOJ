@@ -6,7 +6,7 @@
 
 A self-hosted online judge (OJ) for programming contests. The frontend and backend are built together with Next.js. The judging engine splits by language into two paths: C/C++/Python/JavaScript run on the self-hosted [sandbox-runner](sandbox-runner/README.md) (a sandbox built from scratch with Linux namespaces + cgroup v2 + seccomp-bpf), while Java still runs on [Piston](https://github.com/engineer-man/piston).
 
-Live site: [oj.itousouta.me](https://oj.itousouta.me) ・ Android App: [app-v1.2.0](https://github.com/itousouta15/itouOJ/releases/tag/app-v1.2.0) ・ Windows submission client: [v1.3.2](https://github.com/itousouta15/itouOJ/releases/tag/v1.3.2)
+Live site: [oj.itousouta.me](https://oj.itousouta.me) ・ Android App: [app-v1.3.0](https://github.com/itousouta15/itouOJ/releases/tag/app-v1.3.0) ・ Windows submission client: [v1.3.2](https://github.com/itousouta15/itouOJ/releases/tag/v1.3.2)
 
 ## Table of Contents
 
@@ -190,7 +190,7 @@ The App is a Capacitor-wrapped WebView: the native shell loads the live site (`h
 | | Website | App |
 |----|----|----|
 | Theme | fixed dark | fixed dark |
-| Navigation | top Navbar + Footer | bottom navigation only |
+| Navigation | top Navbar + Footer | bottom navigation; programming problems add a problem/editor row above it |
 | Home | Hero + code window + promo section | compact layout (Hero decorations and promo section hidden) |
 | Coding | inline editor | fullscreen editor on tap, collapses when the keyboard closes |
 
