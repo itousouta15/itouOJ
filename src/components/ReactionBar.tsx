@@ -34,7 +34,7 @@ export default function ReactionBar({
             aria-pressed={active}
             title={canReact ? "點一下切換表情" : "登入後可以回應"}
             onClick={() => onToggle?.(emoji)}
-            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm transition-colors ${
+            className={`reaction-option inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm ${
               active
                 ? "border-blue bg-inset text-tx"
                 : "border-bd2 text-dim"

@@ -113,8 +113,8 @@ export default async function RecognitionPage({
         </div>
       )}
 
-      <div className="card overflow-x-auto">
-        <table className="w-full">
+      <div key={tag ?? "all"} className="card motion-enter overflow-x-auto">
+        <table className="motion-table w-full">
           <thead>
             <tr>
               <th className="table-head w-16">#</th>

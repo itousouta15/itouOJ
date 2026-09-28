@@ -221,7 +221,7 @@ export default async function ProblemListPage({
         key={`${tag ?? ""}:${sort}:${currentPage}`}
         className="card problem-page-switch overflow-x-auto"
       >
-        <table className="w-full">
+        <table className="motion-table w-full">
           <thead>
             <tr>
               <th className="table-head w-16">代碼</th>

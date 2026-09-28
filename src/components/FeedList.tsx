@@ -31,7 +31,7 @@ export default function FeedList({ items }: { items: FeedItem[] }) {
     );
   }
   return (
-    <div className="card">
+    <div className="card motion-list">
       {items.map((f) => {
         const meta = KIND_META[f.kind];
         const href = problemHref({
@@ -42,7 +42,7 @@ export default function FeedList({ items }: { items: FeedItem[] }) {
         return (
           <div
             key={f.key}
-            className="flex items-start gap-3 border-b border-bd px-4 py-3 last:border-b-0"
+            className="motion-row flex items-start gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
           >
             <span className={`vbadge ${meta.cls} shrink-0`}>{meta.label}</span>
             <div className="min-w-0 flex-1 text-sm">

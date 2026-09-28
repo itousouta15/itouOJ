@@ -23,7 +23,7 @@ export default function AnswerOptions({
         const isCorrect = i === answerIndex;
         const isPicked = picked === i;
         let cls =
-          "w-full rounded-lg border border-bd2 px-4 py-2.5 text-left text-sm transition-colors";
+          "answer-option w-full rounded-lg border border-bd2 px-4 py-2.5 text-left text-sm";
         if (!revealed) {
           cls += disabled ? " opacity-60" : " hover:bg-inset";
         } else if (isCorrect) {

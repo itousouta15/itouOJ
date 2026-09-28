@@ -105,12 +105,12 @@ export default async function SearchPage({
           </div>
         ))}
 
-      <div className="space-y-2">
+      <div key={q} className="motion-list space-y-2">
         {problems.map((p) => {
           const isRecognition = p.type === "RECOGNITION";
           const snippet = markdownSnippet(p.statement, 160);
           return (
-            <div key={p.id} className="card p-4">
+            <div key={p.id} className="card motion-row p-4 hover:bg-panel2">
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={`vbadge ${

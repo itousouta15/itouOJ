@@ -79,7 +79,7 @@ export default async function CoursesPage() {
           )}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="motion-list grid gap-4 md:grid-cols-2">
           {courses.map((c) => {
             const joined = joinedSet.has(c.id);
             const solved = progressMap.get(c.id) ?? 0;
@@ -89,7 +89,7 @@ export default async function CoursesPage() {
               <Link
                 key={c.id}
                 href={`/courses/${c.id}`}
-                className="card block p-5 transition-colors hover:bg-panel2"
+                className="card motion-card block p-5 hover:bg-panel2"
               >
                 <div className="flex items-center gap-2">
                   <h2 className="section-title flex-1 truncate">{c.title}</h2>
@@ -119,7 +119,7 @@ export default async function CoursesPage() {
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-inset">
                       <div
-                        className="h-full rounded-full bg-[var(--green)]"
+                        className="motion-progress h-full rounded-full bg-[var(--green)]"
                         style={{ width: `${pct}%` }}
                       />
                     </div>

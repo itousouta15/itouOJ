@@ -86,10 +86,10 @@ export default async function HomePage() {
   const nextAction = session ? await getNextLearningAction(session.userId) : null;
 
   return (
-    <div className="space-y-10" data-app-section="root">
+    <div className="motion-list space-y-10" data-app-section="root">
       {/* Hero（GitHub 風格：置中 LOGO + 標語 + CTA） */}
       <section className="pt-4" data-app-section="hero">
-        <div className="flex flex-col items-center text-center">
+        <div className="motion-list flex flex-col items-center text-center">
           <Image
             src="/brand/itouOJ.png"
             alt="itouOJ"
@@ -164,7 +164,7 @@ export default async function HomePage() {
       </section>
 
       {/* 統計數據 */}
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4" data-app-section="stats">
+      <section className="motion-list grid grid-cols-2 gap-3 md:grid-cols-4" data-app-section="stats">
         {stats.map((s) => (
           <div key={s.label} className="card p-5">
             <p className="page-kicker">{s.label}</p>
@@ -215,7 +215,7 @@ export default async function HomePage() {
       )}
 
       <section data-app-section="promo">
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="motion-list grid gap-4 md:grid-cols-2">
           <div className="card flex flex-col gap-4 p-6">
             <div className="flex items-center gap-3">
               <Image
@@ -291,7 +291,7 @@ export default async function HomePage() {
               <Link
                 key={a.id}
                 href={`/announcements/${a.id}`}
-                className="flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
+                className="motion-row flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
               >
                 {a.isPinned && <span className="vbadge vbadge-green">置頂</span>}
                 <span className="flex-1 truncate font-medium text-blue">
@@ -327,7 +327,7 @@ export default async function HomePage() {
             {latestProblems.map((p) => (
               <div
                 key={p.id}
-                className="flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
+                className="motion-row flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
               >
                 <span className="mono w-12 text-sm text-mute">{p.problemCode}</span>
                 <Link
@@ -406,7 +406,7 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className="card overflow-x-auto">
-          <table className="w-full">
+          <table className="motion-table w-full">
             <thead>
               <tr>
                 <th className="table-head w-16">#</th>

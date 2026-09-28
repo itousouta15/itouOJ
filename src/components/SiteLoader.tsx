@@ -40,7 +40,7 @@ export default function SiteLoader() {
       removeTimer = setTimeout(() => {
         document.body.classList.add("site-revealed");
         setGone(true);
-      }, SLIDE_MS);
+      }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : SLIDE_MS);
     };
 
     if (document.readyState === "complete") {
@@ -92,6 +92,9 @@ export default function SiteLoader() {
         <style>{`
           .site-loader { display: none !important; }
           .site-header {
+            animation: none !important;
+          }
+          .page-transition, .motion-enter, .motion-list > *, .motion-progress {
             animation: none !important;
           }
           .logo { opacity: 1 !important; }

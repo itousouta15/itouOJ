@@ -50,12 +50,12 @@ export default async function ContestsPage() {
           section.items.length > 0 && (
             <div key={section.title}>
               <h2 className="section-title mb-3">{section.title}</h2>
-              <div className="space-y-2">
+              <div className="motion-list space-y-2">
                 {section.items.map((c) => (
                   <Link
                     key={c.id}
                     href={`/contests/${c.id}`}
-                    className="card flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-panel2"
+                    className="card motion-card flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-panel2"
                   >
                     <div>
                       <div className="flex items-center gap-3">

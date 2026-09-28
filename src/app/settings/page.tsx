@@ -51,7 +51,7 @@ export default async function SettingsPage({
   ];
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="motion-list mx-auto max-w-2xl space-y-6">
       <h1 className="page-title">帳號設定</h1>
 
       <section className="card p-6">
@@ -136,7 +136,7 @@ export default async function SettingsPage({
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-inset">
                   <div
-                    className="h-full rounded-full transition-all"
+                    className="motion-progress h-full rounded-full transition-all"
                     style={{ width: `${pct}%`, background: d.color }}
                   />
                 </div>

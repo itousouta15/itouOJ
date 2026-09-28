@@ -290,7 +290,7 @@ export default function RecognitionQuiz({
 
           {answered && (
             <div
-              className={`mt-2 rounded-lg px-4 py-3 text-sm ${
+              className={`quiz-answer-feedback mt-2 rounded-lg px-4 py-3 text-sm ${
                 state.correct
                   ? "bg-[rgba(76,175,80,0.08)] text-tx"
                   : "bg-[rgba(237,66,69,0.06)] text-tx"
@@ -345,7 +345,7 @@ export default function RecognitionQuiz({
                 id="question-palette"
                 role="dialog"
                 aria-label="題號總覽"
-                className="card absolute bottom-full left-1/2 z-50 mb-3 max-h-[60vh] w-[min(90vw,26rem)] -translate-x-1/2 overflow-y-auto p-4 shadow-xl"
+                className="card question-palette absolute bottom-full left-1/2 z-50 mb-3 max-h-[60vh] w-[min(90vw,26rem)] -translate-x-1/2 overflow-y-auto p-4 shadow-xl"
               >
                 <div className="flex flex-wrap items-center gap-1.5">
                   {questions.map((qq, i) => {

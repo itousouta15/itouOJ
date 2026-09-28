@@ -28,11 +28,17 @@ export default function BottomNavLinks({
 }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [moreClosing, setMoreClosing] = useState(false);
   const workspace = useProblemWorkspaceState();
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const wasMoreOpen = useRef(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (closeTimerRef.current !== null) clearTimeout(closeTimerRef.current);
+  }, []);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -71,7 +77,15 @@ export default function BottomNavLinks({
     pathname.startsWith("/messages") ||
     pathname.startsWith("/admin") ||
     isNavActive(pathname, accountHref);
-  const closeMore = () => setMoreOpen(false);
+  const closeMore = () => {
+    if (!moreOpen || closeTimerRef.current !== null) return;
+    setMoreClosing(true);
+    closeTimerRef.current = setTimeout(() => {
+      closeTimerRef.current = null;
+      setMoreOpen(false);
+      setMoreClosing(false);
+    }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 180);
+  };
 
   return (
     <>
@@ -149,7 +163,7 @@ export default function BottomNavLinks({
       <dialog
         ref={dialogRef}
         id="app-more-nav"
-        className="app-more-dialog"
+        className={`app-more-dialog${moreClosing ? " is-closing" : ""}`}
         aria-labelledby="app-more-nav-title"
         onCancel={(event) => {
           event.preventDefault();

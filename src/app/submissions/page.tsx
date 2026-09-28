@@ -177,8 +177,11 @@ export default async function SubmissionsPage({
           </div>
         )}
       </div>
-      <div className="card overflow-x-auto">
-        <table className="w-full">
+      <div
+        key={`${onlyMine ? "mine" : "all"}:${filteredContest?.id ?? ""}:${validBefore ?? ""}`}
+        className="card motion-enter overflow-x-auto"
+      >
+        <table className="motion-table w-full">
           <thead>
             <tr>
               <th className="table-head w-20">#</th>
@@ -256,8 +259,8 @@ export default async function SubmissionsPage({
       {session && recognitionRows.length > 0 && (
         <div className="mt-8">
           <h2 className="mb-3 section-title">我的識讀練習紀錄</h2>
-          <div className="card overflow-x-auto">
-            <table className="w-full">
+          <div className="card motion-enter overflow-x-auto">
+            <table className="motion-table w-full">
               <thead>
                 <tr>
                   <th className="table-head w-16">#</th>

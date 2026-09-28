@@ -97,7 +97,7 @@ export default async function MessagesPage() {
         <p className="text-sm text-dim">一對一私訊，僅雙方看得到。</p>
       </div>
 
-      <div className="card">
+      <div className="card motion-list">
         {conversations.length === 0 && (
           <p className="py-10 text-center text-sm text-mute">
             還沒有訊息。到別人的個人頁點「傳訊息」開始對話吧。
@@ -109,7 +109,7 @@ export default async function MessagesPage() {
             <Link
               key={c.user.id}
               href={`/messages/${c.user.username}`}
-              className="flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
+              className="motion-row flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
             >
               <Avatar
                 name={c.user.displayName || c.user.username}

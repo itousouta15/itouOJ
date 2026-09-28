@@ -116,7 +116,7 @@ export default async function UserProfilePage({
   });
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="motion-list mx-auto max-w-2xl space-y-6">
       <section className="card p-6">
         <div className="mb-4 flex items-center gap-4">
           <Avatar
@@ -196,7 +196,7 @@ export default async function UserProfilePage({
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-inset">
                   <div
-                    className="h-full rounded-full transition-all"
+                    className="motion-progress h-full rounded-full transition-all"
                     style={{ width: `${pct}%`, background: d.color }}
                   />
                 </div>
@@ -230,7 +230,7 @@ export default async function UserProfilePage({
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-inset">
             <div
-              className="h-full rounded-full transition-all"
+              className="motion-progress h-full rounded-full transition-all"
               style={{
                 width: `${recognitionProgressRate}%`,
                 background: "var(--green)",

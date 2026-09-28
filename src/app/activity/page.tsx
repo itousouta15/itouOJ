@@ -87,7 +87,7 @@ export default async function ActivityPage() {
               逛逛吧。
             </p>
           ) : (
-            <div className="mt-3 space-y-2">
+            <div className="motion-list mt-3 space-y-2">
               {recommended.map((r) => (
                 <div
                   key={r.username}
