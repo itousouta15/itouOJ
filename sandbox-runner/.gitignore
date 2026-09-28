@@ -1,0 +1,6 @@
+/jail
+/sandbox-server
+/work/
+/interactive-work*/
+__pycache__/
+*.o

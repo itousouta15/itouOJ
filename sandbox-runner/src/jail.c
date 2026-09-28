@@ -23,6 +23,7 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
+#include <signal.h>
 
 #include "caps.h"
 #include "cgroup.h"
@@ -40,6 +41,28 @@
 // any real host account (oj=995, system users are all <1000).
 #define HOST_ID_BASE 200000
 #define HOST_ID_RANGE 65536
+
+// The interactive service stops the supervisor, which must kill the whole
+// cgroup and reap the namespace child before exiting (not orphan a live run).
+static volatile sig_atomic_t stop_requested = 0;
+static void request_stop(int sig) {
+  (void)sig;
+  stop_requested = 1;
+}
+
+static long cpu_time_ms(const char *cgroup_path) {
+  char path[CGROUP_PATH_MAX + 32];
+  snprintf(path, sizeof(path), "%s/cpu.stat", cgroup_path);
+  FILE *file = fopen(path, "r");
+  if (!file) return -1;
+  char key[64];
+  long value, result = -1;
+  while (fscanf(file, "%63s %ld", key, &value) == 2) {
+    if (strcmp(key, "usage_usec") == 0) { result = value / 1000; break; }
+  }
+  fclose(file);
+  return result;
+}
 
 struct child_args {
   const char *rootfs;
@@ -293,7 +316,9 @@ static int child_main(void *arg) {
     _exit(125);
   }
 
-  char *envp[] = {"PATH=/bin:/usr/bin", "HOME=/", NULL};
+  // libuv must use the existing epoll sandbox policy, not io_uring (which can
+  // perform operations outside seccomp's syscall-by-syscall filtering).
+  char *envp[] = {"PATH=/bin:/usr/bin", "HOME=/", "UV_USE_IO_URING=0", NULL};
   execve(a->argv[0], a->argv, envp);
   perror("execve");
   _exit(127);
@@ -320,6 +345,10 @@ static int wait_with_timeout(pid_t pid, const char *cgroup_path,
   struct timespec start;
   clock_gettime(CLOCK_MONOTONIC, &start);
   *out_timed_out = 0;
+  // Optional trusted supervisor configuration. Waiting for stdin consumes wall
+  // time but almost no CPU; interactive runs get separate budgets.
+  const char *cpu_env = getenv("JAIL_CPU_LIMIT_MS");
+  long cpu_limit = cpu_env ? atol(cpu_env) : 0;
 
   for (;;) {
     pid_t wp = waitpid(pid, out_status, WNOHANG);
@@ -328,14 +357,22 @@ static int wait_with_timeout(pid_t pid, const char *cgroup_path,
       return 0;
     }
     if (wp == -1) {
+      if (errno == EINTR) continue;
       perror("waitpid");
       return -1;
     }
 
-    if (elapsed_ms(&start) >= timeout_ms) {
-      *out_timed_out = 1;
+    long cpu_ms = cpu_limit > 0 ? cpu_time_ms(cgroup_path) : 0;
+    if (stop_requested || elapsed_ms(&start) >= timeout_ms ||
+        (cpu_limit > 0 && (cpu_ms < 0 || cpu_ms >= cpu_limit))) {
+      *out_timed_out = !stop_requested;
       cg_kill(cgroup_path);
-      if (waitpid(pid, out_status, 0) == -1) {
+      // Stop can arrive while the namespace child is still bootstrapping and
+      // has not joined its cgroup yet. Kill PID 1 as well so waitpid cannot hang.
+      kill(pid, SIGKILL);
+      pid_t reaped;
+      do { reaped = waitpid(pid, out_status, 0); } while (reaped < 0 && errno == EINTR);
+      if (reaped == -1) {
         perror("waitpid after cgroup.kill");
         return -1;
       }
@@ -356,6 +393,11 @@ static int write_id_map(pid_t pid, const char *map_name) {
 }
 
 int main(int argc, char *argv[]) {
+  struct sigaction stop_action = {0};
+  stop_action.sa_handler = request_stop;
+  sigemptyset(&stop_action.sa_mask);
+  sigaction(SIGTERM, &stop_action, NULL);
+  sigaction(SIGINT, &stop_action, NULL);
   if (argc < 8) {
     fprintf(stderr,
             "usage: %s <rootfs-dir> <mem-limit-mb> <pids-max> <timeout-ms> "
@@ -454,6 +496,7 @@ int main(int argc, char *argv[]) {
   }
 
   long mem_peak = cg_read_memory_peak(cgroup_path);
+  cg_kill(cgroup_path);
   cg_destroy(cgroup_path);
 
   // When jail is spawned by sandbox-server (M5), fd 3 is an inherited pipe
@@ -464,16 +507,17 @@ int main(int argc, char *argv[]) {
   // human-readable stderr summary for plain CLI/manual use, where fd 3 was
   // never opened by the caller.
   int have_meta_fd = (fcntl(3, F_GETFD) != -1);
+  int quiet = getenv("JAIL_QUIET") != NULL;
   if (have_meta_fd) {
     dprintf(3, "wall_time_ms=%ld\nmemory_peak_bytes=%ld\ntimed_out=%d\n",
             wall_ms, mem_peak, timed_out);
-  } else {
+  } else if (!quiet) {
     fprintf(stderr, "[jail] wall_time_ms=%ld memory_peak_bytes=%ld\n",
             wall_ms, mem_peak);
   }
 
   if (timed_out) {
-    if (!have_meta_fd) {
+    if (!have_meta_fd && !quiet) {
       fprintf(stderr, "[jail] TIMEOUT: killed via cgroup.kill after %ldms\n",
               timeout_ms);
     }
@@ -481,14 +525,14 @@ int main(int argc, char *argv[]) {
   }
   if (WIFEXITED(status)) {
     int code = WEXITSTATUS(status);
-    if (!have_meta_fd) {
+    if (!have_meta_fd && !quiet) {
       fprintf(stderr, "[jail] child exited with code %d\n", code);
     }
     return code;
   }
   if (WIFSIGNALED(status)) {
     int sig = WTERMSIG(status);
-    if (!have_meta_fd) {
+    if (!have_meta_fd && !quiet) {
       // A SIGKILL that wasn't our own timeout kill, before the timeout
       // elapsed, is the cgroup memory controller's OOM kill.
       if (sig == SIGKILL) {
@@ -500,7 +544,7 @@ int main(int argc, char *argv[]) {
     }
     return 128 + sig;
   }
-  if (!have_meta_fd) {
+  if (!have_meta_fd && !quiet) {
     fprintf(stderr, "[jail] child ended in unknown state\n");
   }
   return 1;

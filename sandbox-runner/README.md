@@ -142,7 +142,64 @@ cd sandbox-runner && make        # 產出 jail、sandbox-server
 
 正式環境用 [`deploy/sandbox-server.service`](deploy/sandbox-server.service) 跑成 systemd 服務，跟 `jail` 一樣必須用 root 執行（建立 namespace/cgroup 需要的權限沒辦法給非特權使用者）。真正的安全邊界不是「這支程式不是 root」，而是〈`jail`〉第 5 點那串嚴格順序——root 權限只存在於短暫的 bootstrap 期間，受評測程式從來沒機會拿到它。
 
-## 已知限制
+## Terminal（互動執行）
+
+桌機編輯器的 **Terminal** 會啟動一個真正持續運作的程式，可逐行輸入及接收輸出。
+它不會重跑先前的 stdin，也不建立提交／判分紀錄。
+
+- C／C++：編譯與執行都使用原本的 `jail`；Python／JavaScript 使用同一組語言隔離設定。
+- Java 尚未接入互動模式，Terminal 按鈕會停用；原本測試執行及提交仍走 Piston。
+- Terminal 中 Enter 送出一行、Shift+Enter 換行、EOF（Ctrl+D）結束 stdin、停止（Ctrl+C）終止程式。
+- `fs.readFileSync(0)`、`sys.stdin.read()`、`while (cin >> x)` 等讀到檔尾的程式，需要按 EOF 才會繼續／結束。
+- C/C++ 若關閉 `cin.tie`，無換行的提示請自行 `std::flush`／`fflush(stdout)`；Python 以 `-u` 啟動。
+- 每次執行最長 120 秒（另有 15 秒編譯限制），CPU 時間仍依題目限制（最多 30 秒）；等待輸入不耗 CPU 額度。
+- 每人最多一個互動工作階段、全站最多四個；輸入 64 KiB、輸出 256 KiB。關閉頁面會停止，斷線超過 30 秒自動清理。
+
+`interactive.py` 是 Python 3 標準函式庫服務，僅監聽 `127.0.0.1:8091`。
+Next.js `/api/terminal` 驗證登入、題目可見性、比賽權限與限定語言；後續的輸入／輸出／停止操作
+都以登入者 ID 驗證工作階段擁有者。請勿把 8091 直接開放到網際網路。
+前端以 long polling 接收增量輸出，輸入另用 POST，所以不需要額外的 WebSocket 反向代理設定。
+
+### Linux 正式環境
+
+更新 `jail`（本版加入可清理 cgroup 的 SIGTERM 停止與獨立 CPU 時間限制），再啟用服務：
+
+```sh
+cd /opt/sandbox-runner
+make jail
+sudo cp deploy/sandbox-interactive.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now sandbox-interactive
+```
+
+Next.js 預設連線 `http://127.0.0.1:8091`，不同位置可設定 `INTERACTIVE_SANDBOX_URL`。
+沙箱端可設定 `PYTHON_HOME`、`NODE_HOME`、`INTERACTIVE_WORK_ROOT`；正式環境預設沿用 `/opt/piston-data` 的 runtime。
+
+### Windows 本機開發（WSL2 Ubuntu 24.04）
+
+沙箱需要 Linux namespace／cgroup，不能直接在 Windows Node.js 中跑使用者程式。
+在專案的 `sandbox-runner` 目錄，另開 PowerShell 執行：
+
+```powershell
+wsl -u root -- apt-get install -y gcc g++ libseccomp-dev python3 nodejs
+wsl -u root -- gcc -O2 -Wall -Wextra -o jail src/jail.c src/cgroup.c src/caps.c src/seccomp.c -lseccomp
+wsl -u root -- python3 dev-wsl.py
+```
+
+保持這個視窗運作，原本 Windows 上的 `npm run dev` 透過 localhost:8091 連線。
+`dev-wsl.py` 僅在私有 mount namespace 裡處理 WSL 的掛載差異，工作目錄使用暫存 tmpfs，
+不會修改宿主機的 WSL 驅動掛載。此開發環境使用 Ubuntu 的 GCC／Python／Node 版本，可能與正式站標籤不同。
+
+### 整合測試
+
+```sh
+sudo PYTHON_HOME=/usr python3 -m unittest discover -s test -p test_interactive.py -v
+```
+
+需要已建置的 jail 與可用的 cgroup v2；測試涵蓋多輪輸入、UTF-8、EOF、停止、斷線清理、
+跨使用者存取、編譯錯誤、CPU 與輸出限制。
+
+## 其他已知限制
 
 - Java 語言支援
 - 編譯階段（`gcc`/`g++`）本身還沒沙箱化
