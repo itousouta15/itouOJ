@@ -1,356 +1,150 @@
-<img width="80" height="80" alt="LOGO" src="public/brand/itouOJ.png" />
+<img src="public/brand/itouOJ.png" alt="itouOJ 標誌" width="80" height="80" />
 
 # itouOJ
 
-<img width="1595" alt="image" src="public/brand/Hero.png" />
+一套可自行架設的 Online Judge，提供程式題、識讀練習、比賽、課程與離線收件。網站採用 Next.js；正式提交依語言交給自建的 Linux 沙箱或 Piston 判題。
 
-A self-hosted online judge (OJ) for programming contests. The frontend and backend are built together with Next.js. The judging engine splits by language into two paths: C/C++/Python/JavaScript run on the self-hosted [sandbox-runner](sandbox-runner/README.md) (a sandbox built from scratch with Linux namespaces + cgroup v2 + seccomp-bpf), while Java still runs on [Piston](https://github.com/engineer-man/piston).
+![itouOJ 首頁](public/brand/Hero.png)
 
-Live site: [oj.itousouta.me](https://oj.itousouta.me) ・ Android App: [app-v1.3.0](https://github.com/itousouta15/itouOJ/releases/tag/app-v1.3.0) ・ Windows submission client: [v1.3.2](https://github.com/itousouta15/itouOJ/releases/tag/v1.3.2)
+[網站](https://oj.itousouta.me) · [下載版本（Android App／Windows 收件程式）](https://github.com/itousouta15/itouOJ/releases) · [貢獻指南](CONTRIBUTING.md)
 
-## Table of Contents
+## 能做什麼
 
-- [Features](#features)
-- [Tech Architecture](#tech-architecture)
-- [Project Structure](#project-structure)
-- [Local Development](#local-development)
-- [Android App](#android-app)
-- [Deployment](#deployment)
-- [Daily Updates (after changing code)](#daily-updates-after-changing-code)
-- [Adding a Language](#adding-a-language)
+| 功能 | 說明 |
+| --- | --- |
+| 程式題 | Markdown／數學式題敘、範例測資、標籤、子題配分、提交紀錄與排行榜；支援 C++、C、Python、Java、JavaScript。 |
+| 寫程式 | CodeMirror 編輯器、每題每語言的本機草稿、範例測試，以及先備妥 stdin 的「自訂輸入」。桌機可左右拖曳調整題目與程式欄寬。 |
+| Terminal | 桌機版可直接在終端機中逐行輸入、即時看輸出；支援 C++、C、Python、JavaScript|
+| 識讀練習 | 選擇題即時對答案、詳解、題組進度與複習紀錄；不列入一般程式提交紀錄。 |
+| 比賽與課程 | ICPC／IOI 計分、封榜與揭榜、參賽代碼、語言限制、PDF 題本；課程可整理題目與追蹤解題進度。 |
+| 社群與管理 | 討論、題解、公告、站內訊息、個人檔案；管理後台可審核題目提案並管理題目、比賽、課程與使用者。 |
+| 離線與行動裝置 | Windows 收件程式可在斷網比賽中保存提交、復網後補傳；Android App 使用 Capacitor，提供手機編輯器及原生通知。 |
 
-## Features
+可使用帳密註冊／登入；Google、Discord 登入及密碼重設信件可另外設定。識讀題庫中的 C／Python 125 題經 Bangye Wu 教授同意，供非營利教育用途使用，題目頁會標示來源。
 
-- Account registration / login, Google / Discord login support; the first administrator is created with the trusted-server bootstrap command
-- Problem list with tags, page-number navigation, number / difficulty sorting, Markdown + KaTeX math statements, sample test cases, subtask scoring
-- CodeMirror code editor (C++ / C / Python / Java / JavaScript) with automatic draft autosave
-- Real-time judging: AC / WA / TLE / MLE / RE / CE, with per-test-case time and memory display
-- **Code Recognition practice (識讀)**: multiple-choice questions showing a C or Python snippet ("what does this program output / do?"), organized into clusters (e.g. APCS past exam papers plus the C / Python 125-question banks — 391 questions in 15 clusters already imported); practice one at a time with instant answer checking and explanations. Answers are recorded separately (`RecognitionAnswer`, not submissions), with per-cluster progress and a reviewable answer history. The C / Python 125-question banks are used with permission from Prof. Bangye Wu for non-profit educational use, with the source credited on the recognition pages
-- **Contests**: ICPC / IOI scoring modes, scoreboard freeze + admin-controlled reveal, join codes, per-contest language restrictions, PDF problem statements (optionally AES-256 encrypted for pre-deployment), participant readiness tracking, and an offline mode for no-network contest rooms
-- Submission history, leaderboard, user profiles, account settings (linked OAuth accounts, password, delete account)
-- Courses (problem lists): a set of problems + description; members track their solving progress; public join or join-by-code
-- Announcements: pinned announcements with Markdown content, admin can create / edit / delete (at `/announcements`)
-- Problem discussions: comments with one level of replies, plus user-published solutions (title + explanation + optional code) that require an AC on the problem first
-- Problem proposals: users can submit a problem (statement, limits, sample test cases) for admin review and approval
-- Admin panel: problems (both programming and recognition types), proposal review, contests, courses, recognition clusters, tags, announcements, and **user management (grant / revoke admin role)**
-- Fixed dark theme
-- Android App (Capacitor wrapper): installable native app with a fixed dark theme and a layout distinct from the website (see "Android App")
-- Windows offline client: `itouOJ-Submit.exe` (~23 KB, no install) for offline contests, with local spooling, batch upload, local test runs, and clock calibration (see `client/README.md`)
+## 系統怎麼運作
 
-## Tech Architecture
-
-| Layer | Technology |
-|----|------|
-| Frontend + Backend | Next.js 16 (App Router) + TypeScript + Tailwind CSS v4 |
-| Database | SQLite + Prisma 7 (better-sqlite3 driver adapter) |
-| Android App | Capacitor 8 (`android/` native project, WebView loading the live site) + browser / local-notifications / status-bar / keyboard / splash-screen plugins |
-| Judging engine | [sandbox-runner](sandbox-runner/README.md) (self-hosted, C/C++/Python/JavaScript) + Piston (Docker, Java) |
-| Judging queue | supervised `online-judge-worker.service` claims one submission at a time through `src/lib/judge.ts`; lease IDs prevent stale workers from writing results, and expired claims are recovered automatically. `next dev` starts an equivalent local worker |
-| Compile cache | the compiled binary from the first test case is reused for the rest of the same submission |
-
-```
-                                  ┌──> sandbox-server (127.0.0.1:8090)
-Browser ──> nginx ──> Next.js (:3000)─┤     C/C++/Python/JavaScript
-                       │  SQLite   └──> Piston (127.0.0.1:2000, Docker)
-                       │                 Java
+```text
+瀏覽器／Android App
+         │
+         ▼
+    Next.js（頁面與 API）──── SQLite／Prisma
+         │
+         ├─ 提交與「測試執行」
+         │    ├─ C／C++／Python／JavaScript → sandbox-server :8090
+         │    └─ Java                    → Piston :2000
+         │
+         └─ 桌機 Terminal（持續執行、即時輸入輸出）
+              └─ C／C++／Python／JavaScript → sandbox-interactive :8091
 ```
 
-`src/lib/execute.ts` routes by language; the two paths are independent (one failing does not affect the other). sandbox-runner is the sandbox built in this project (namespace isolation + cgroup resource limits + seccomp syscall whitelist) — details, motivations, and architecture diagrams in [sandbox-runner/README.md](sandbox-runner/README.md).
+技術組成：**Next.js 16（App Router）／React 19／TypeScript／Tailwind CSS 4**、**SQLite／Prisma 7**、**CodeMirror 6**、**Capacitor 8**。提交由判題 worker 領取；`npm run dev` 會在開發模式啟動本機 worker，正式環境則使用 `deploy/online-judge-worker.service`。`sandbox-runner` 透過 Linux namespace、cgroup v2 與 seccomp 隔離程式碼；Java 仍走 Piston。
 
-Supported languages (versions map to `src/lib/languages.ts`; time / memory multipliers relax the problem's original limits):
+編輯器顯示的語言版本定義在 [`src/lib/languages.ts`](src/lib/languages.ts)。自建沙箱的 C／C++ 實際編譯器取決於部署主機，請讓主機版本與網站顯示相符。
 
-| Language | Version | Time mult. | Memory mult. | Judging engine |
-|----|----|:---:|:---:|----|
-| C++ | GCC 10.2.0 | 1x | 1x | sandbox-runner |
-| C | GCC 10.2.0 | 1x | 1x | sandbox-runner |
-| Python | 3.12.0 | 3x | 1x | sandbox-runner |
-| JavaScript | Node 20.11.1 | 3x | 2x | sandbox-runner |
-| Java | 15.0.2 | 2x | 2x | Piston |
+| 語言 | 編輯器標籤 | 判題 | 互動式 Terminal |
+| --- | --- | --- | --- |
+| C++ | GCC 10.2 | sandbox-runner | ✓ |
+| C | GCC 10.2 | sandbox-runner | ✓ |
+| Python | 3.12 | sandbox-runner | ✓ |
+| JavaScript | Node 20 | sandbox-runner | ✓ |
+| Java | 15 | Piston | — |
 
-## Project Structure
+Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一行、**Shift＋Enter** 換行、**Ctrl＋D／EOF** 結束標準輸入，**Ctrl＋C／停止** 可終止執行。讀取到檔尾的程式要送出 EOF 才會結束。Terminal 最多執行兩分鐘，CPU 時間另依題目限制。詳見 [沙箱與互動服務說明](sandbox-runner/README.md)。
 
-```
-src/
-├─ app/               # Next.js App Router pages and API routes
-│  ├─ admin/          # admin panel (problems, proposals, contests, courses, recognition, tags, users, announcements)
-│  ├─ api/            # backend API (auth, contests, submissions, run, recognition, tags...)
-│  ├─ problems/       # problem list / detail, proposals
-│  ├─ recognition/    # code recognition practice (cluster list, cluster practice, single question)
-│  ├─ contests/       # contest list / detail
-│  ├─ courses/        # course list / detail
-│  ├─ announcements/  # announcement list / detail
-│  ├─ submissions/    # submission history (incl. recognition answer history)
-│  ├─ ranking/        # leaderboard
-│  ├─ settings/       # account settings
-│  ├─ users/          # user profiles
-│  └─ desktop-auth/   # browser-based login for the Windows client
-├─ components/        # shared React components
-├─ lib/               # judging logic, language config, shared utilities (judge.ts, languages.ts, contest.ts...)
-└─ generated/prisma/  # `prisma generate` output (do not edit manually)
+## 在本機啟動
 
-prisma/
-├─ schema.prisma      # database schema
-├─ seed-data/         # bundled seed data (e.g. recognition/ — APCS past exam papers)
-└─ migrations/        # migration history
+需要 **Node.js 20.9 以上** 與 npm。網站和資料庫可在 Windows、macOS 或 Linux 開發；要真正執行使用者程式，還需要可連線的沙箱服務（Java 另需 Piston）。
 
-scripts/               # seed & maintenance scripts (contest accounts, recognition import, tags, mock judge...)
+1. 安裝套件：
 
-deploy/                # deployment scripts and config (see "Deployment")
-
-sandbox-runner/         # self-hosted judging sandbox (for C/C++/Python/JavaScript), see its README
-
-client/                 # Windows submission client and build tooling, see `client/README.md`
-
-android/                # Capacitor Android native project (Android App), see "Android App"
-android/scripts/        # icon generation script (generate-icons.mjs, sharp converts public/brand/itouOJ.svg to per-density mipmaps)
-capacitor.config.ts     # Capacitor config (App URL, plugin behavior)
-```
-
-## Local Development
-
-```bash
-npm install                 # runs prisma generate automatically
-npx prisma migrate dev      # create the SQLite database
-npm run dev
-```
-
-`next dev` also starts a local judging worker. It still needs a reachable sandbox-runner / Piston instance; use the SSH tunnel below when judging against the remote development services.
-
-Optional seeds and helpers:
-
-```bash
-node scripts/import-recognition-questions.mjs  # import the bundled APCS recognition papers (idempotent, --dry-run to validate)
-node scripts/parse-reading-bank.mjs --self-test # parser that turns a reading-bank PDF into prisma/seed-data/recognition/*.json
-node scripts/tag-problems.mjs                 # seed the tag library and assign tags by title (idempotent)
-node scripts/setup-test-contest.mjs           # build a disposable test.db with a running IOI-mode C++-only contest
-node scripts/mock-judge.mjs                   # fill test.db submission results (for Windows dev without a Linux sandbox)
-```
-
-Re-generating the recognition question JSON from the original PDF (`--dump-text` first
-to inspect the extracted layout, `--answers` if answers are in a separate key):
-
-```bash
-node scripts/parse-reading-bank.mjs --pdf <pdf> --category C --source "C 程式識讀 125 題"
-node scripts/parse-reading-bank.mjs --pdf <pdf> --category Python --source "Python 程式識讀 125 題"
-node scripts/import-recognition-questions.mjs --dry-run   # validate before importing
-```
-
-`.env` configuration (reference):
-
-```env
-DATABASE_URL="file:./prisma/data/dev.db"
-AUTH_SECRET="<openssl rand -hex 32>"
-PISTON_URL="http://localhost:2000"   # Piston address (Java)
-SANDBOX_URL="http://localhost:8090"  # sandbox-runner address (C/C++/Python/JavaScript; this is also the default)
-COOKIE_SECURE="0"                    # development only; production cookies are always Secure
-JUDGE_WORKER_SECRET=""               # a long random value; required by online-judge-worker.service
-
-# Google login (optional; the button is hidden when unset)
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-
-# Discord login (optional; the button is hidden when unset)
-DISCORD_CLIENT_ID=""
-DISCORD_CLIENT_SECRET=""
-
-# Resend (password reset email)
-RESEND_API_KEY=""
-RESEND_FROM="itouOJ <noreply@account.example.tw>"
-
-# Cloudflare Turnstile (required for password login and registration outside offline mode)
-TURNSTILE_SECRET=""
-TURNSTILE_HOSTNAMES="localhost,127.0.0.1" # production: oj.itousouta.me only
-
-# APP_URL="https://oj.example.tw"    # public URL in production (used to build OAuth redirect URIs)
-# DEPLOY_SERVER="root@<server-ip>"   # deployment target (read by deploy/deploy.ps1; the IP is not hardcoded)
-# OFFLINE_MODE="0"                   # set to 1 to disable Google/Discord login (offline contest rooms)
-```
-
-### First administrator
-New accounts are always regular users. After creating the intended account, run this command directly on the trusted server once:
-
-```bash
-node scripts/bootstrap-admin.mjs <username>
-```
-
-It refuses to run when an administrator already exists.
-
-### Google login setup
-Create an "OAuth client ID" (type: Web application) in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials), and add `http://localhost:3000/api/auth/google/callback` as an authorized redirect URI. In production, add a second URI `https://<your-domain>/api/auth/google/callback` — Google rejects plain IPs and http for production, so the live site needs a domain + HTTPS before Google login can be enabled; also set `APP_URL` in `.env`. The first Google login auto-creates a regular account.
-
-### Discord login setup
-Create an Application in the [Discord Developer Portal](https://discord.com/developers/applications), take the Client ID / Client Secret from the OAuth2 tab, and add `http://localhost:3000/api/auth/discord/callback` to Redirects. In production, add `https://<your-domain>/api/auth/discord/callback` as well and set `APP_URL` in `.env`. The first Discord login also auto-creates a regular account.
-
-If Piston is not running locally, you can tunnel to a remote one: `ssh -N -L 2000:localhost:2000 user@server`.
-
-## Android App
-
-The App is a Capacitor-wrapped WebView: the native shell loads the live site (`https://oj.itousouta.me`), so login, OAuth, and judging all run on the same domain as the browser. When the web side detects a native environment (`html[data-app]`, set by the appInit in `src/app/layout.tsx` before first paint) it applies App-specific styling — **the App and the website are two distinct interfaces**:
-
-| | Website | App |
-|----|----|----|
-| Theme | fixed dark | fixed dark |
-| Navigation | top Navbar + Footer | bottom navigation; programming problems add a problem/editor row above it |
-| Home | Hero + code window + promo section | compact layout (Hero decorations and promo section hidden) |
-| Coding | inline editor | fullscreen editor on tap, collapses when the keyboard closes |
-
-### Building
-
-Requires JDK 17+ and the Android SDK (Android Studio is enough):
-
-```bash
-npm install
-npx cap sync android     # sync plugins and config into the android/ project
-npx cap open android     # open in Android Studio, run on a device or emulator
-# or build an APK from the CLI:
-cd android && ./gradlew assembleRelease
-```
-
-Release signing uses `android/keystore.properties` (not committed); `assembleDebug` works without it. Icons are generated by `android/scripts/generate-icons.mjs`, which uses sharp to convert `public/brand/itouOJ.svg` into per-density launcher / round / adaptive foreground icons; re-run the script after changing the LOGO.
-
-### Development flow
-
-The App loads the live site by default (`server.url` in `capacitor.config.ts`). To point it at a local dev server:
-
-```bash
-CAP_SERVER_URL=http://localhost:3000 npx cap sync android
-adb reverse tcp:3000 tcp:3000
-npx cap run android     # or run from Android Studio
-```
-
-### App-specific features
-
-- **Login**: Google / Discord login inside the App opens the system browser (Custom Tab) to run OAuth; when it completes, the tab closes and you're logged in — the session is written only into the App's own WebView jar, never polluting the site's login state in the phone's browser (flow in `src/lib/appOAuth.ts` and `/api/auth/app/*`)
-- **Keyboard symbol row**: the fullscreen editor shows two rows of code-symbol buttons above the phone keyboard (`{ } ( ) [ ] ; : ' " # | & _ * % ^` — 18 keys), inserted at the cursor; auto-hides when the keyboard closes
-- **Contest start reminder**: while viewing a contest page in the App, a local notification is scheduled 10 minutes before the start (deduplicated per contest; schedule stored in the device's localStorage)
-- **Judging result notification**: while staying on the judging page after submitting, a local notification fires when the verdict is ready (AC/WA/...)
-- **Status bar**: follows the App's fixed dark theme; a gradient blur mask at the top
-- **Admin**: an extra "管理" (Admin) entry in the bottom navigation
-- The website's mobile experience (fullscreen editor, sticky bottom toolbar, card lists, safe-area handling) also works in a normal mobile browser, but the App-specific look is only applied in a native environment
-
-> iOS requires macOS + Xcode to build; only Android is available so far. When a Mac is available, the same `capacitor.config.ts` can be used with `npx cap add ios`.
-
-## Deployment
-
-1. Start Piston on the server (**bind to localhost only; Piston has no authentication**):
-
-   ```bash
-   docker run --privileged -v /opt/piston-data:/piston --tmpfs /tmp:exec \
-     -dit --restart=always -p 127.0.0.1:2000:2000 \
-     -e PISTON_COMPILE_TIMEOUT=15000 -e PISTON_RUN_TIMEOUT=20000 \
-     -e PISTON_OUTPUT_MAX_SIZE=33554432 \
-     --memory=4g --memory-swap=4g --cpus=3 --pids-limit=1024 \
-     --name piston_api ghcr.io/engineer-man/piston
+   ```sh
+   npm ci
    ```
 
-   `--memory` / `--cpus` / `--pids-limit` cap the **container's total resource usage against the host** (separate from per-run judging limits — those come from `judge.ts` per problem settings and are enforced per run by the internal isolate/cgroup, which SIGKILLs and reports TLE/MLE). Without this layer, the Piston container can eat all CPU/RAM of the host by default, and an isolate bug or an oversized problem limit would take down nginx / Next.js on the same machine. Tune the numbers to the host specs (the example targets a 4-core 8 GB host, keeping 1 core for the system).
+2. 在專案根目錄建立 `.env`。最精簡的本機設定如下；請換成自己產生的隨機密鑰：
 
-   If the container is already running, apply without rebuilding:
-
-   ```bash
-   docker update --memory=4g --memory-swap=4g --cpus=3 --pids-limit=1024 piston_api
+   ```dotenv
+   DATABASE_URL="file:./dev.db"
+   AUTH_SECRET="請替換成至少 32 位元組的隨機字串"
    ```
 
-   Stock Piston has three bugs that corrupt large test data (>100 KB) or even crash the whole judging service. **Re-apply the patches after every container rebuild** (`docker restart` keeps them; `docker rm` + `docker run` does not):
+   可以用 `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` 產生密鑰。正式環境沒有 `AUTH_SECRET` 會拒絕啟動。`.env` 與資料庫檔不應提交到 Git。
 
-   ```bash
-   # 1) HTTP API body limit defaults to 100KB, so large test data can't be sent → raise to 16MB
+3. 產生 Prisma Client、建立資料表並啟動網站：
 
-   docker exec piston_api sed -i \
-     "s/body_parser.json()/body_parser.json({ limit: '16mb' })/; s/body_parser.urlencoded({ extended: true })/body_parser.urlencoded({ extended: true, limit: '16mb' })/" \
-     /piston_api/src/index.js
-
-   # 2) stdin is destroyed right after write, discarding the buffer before it finishes flushing
-   #    (programs only receive the first ~200KB) → remove that line
-
-   docker exec piston_api sed -i '/proc.stdin.destroy();/d' /piston_api/src/job.js
-
-   # 3) If the user program exits before stdin finishes writing (early return / RE), the parent keeps
-   #    writing into a closed pipe → uncaught EPIPE crashes the whole Piston process (affecting every
-   #    submission at that moment) → add an empty error handler
-
-   docker exec piston_api sed -i \
-     "s/proc.stdin.write(this.stdin);/proc.stdin.on('error', () => {}); proc.stdin.write(this.stdin);/" \
-     /piston_api/src/job.js
-   docker restart piston_api
+   ```sh
+   npm run generate
+   npx prisma migrate dev
+   npm run dev
    ```
 
-   > `docker cp` into this container's `/tmp` often silently fails (`/tmp` is a tmpfs); use a normal directory like `/root` when copying files in.
+   開啟 <http://localhost:3000>。新資料庫一開始沒有題目；可以在後台建立題目，或用 `node scripts/import-recognition-questions.mjs` 匯入隨專案提供的識讀題。
 
-   Piston's own sandbox only constrains resources (CPU/memory/time) and filesystem scope — it does **not** prevent user code from spawning subprocesses. A submission that directly uses `import subprocess` / `os.system` can run arbitrary commands inside the container.
+4. 註冊帳號後，若需要第一位管理員，在受信任的機器上執行（將 `YOUR_USERNAME` 換成帳號）：
 
-   In production only Java still goes through Piston; C/C++/Python/JavaScript have moved to [sandbox-runner](sandbox-runner/README.md)'s kernel-level protection and don't rely on these patches. Piston's bundled Python packages are still installed by the "Adding a Language" step, so this `sitecustomize.py` still needs to be in place.
-
-   The patch file is at [deploy/piston-python-sitecustomize.py](deploy/piston-python-sitecustomize.py). Installed into the Python package's `site-packages`, it uses `sys.addaudithook` to block, at the interpreter level:
-
-   - `subprocess`
-   - `os.system` / `os.popen` / `os.fork`
-   - `ctypes`
-   - `socket`
-
-   Once the audit hook is installed, user code cannot remove it — much sturdier than a string blacklist blocking `import`:
-
-   ```bash
-   scp deploy/piston-python-sitecustomize.py root@<server>:/root/sitecustomize.py
-   ssh root@<server> "docker cp /root/sitecustomize.py piston_api:/piston/packages/python/3.12.0/lib/python3.12/site-packages/sitecustomize.py"
+   ```sh
+   node scripts/bootstrap-admin.mjs YOUR_USERNAME
    ```
 
-   This file lives under `/piston/packages/...`, on the same `/opt/piston-data` volume as the language packages, so a `docker rm` + `docker run` rebuild keeps it (unlike the 3 patches above); it only needs to be re-installed when switching Python versions or wiping `/opt/piston-data` to reinstall packages.
+   此指令只允許在尚無管理員時使用。
 
-2. Install languages (per the versions in `src/lib/languages.ts`):
+網站可以先用來瀏覽題目、設計頁面；**提交、測試執行與 Terminal 都需要後端執行服務**。開發模式的帳密註冊／登入不要求 Cloudflare Turnstile，正式環境則會驗證。
 
-   ```bash
-   curl -X POST http://localhost:2000/api/v2/packages -H 'Content-Type: application/json' \
-     -d '{"language":"python","version":"3.12.0"}'
-   # same for gcc 10.2.0 / java 15.0.2 / node 20.11.1
-   ```
+### 本機執行程式
 
-3. Start sandbox-runner (the judging engine for C/C++/Python/JavaScript, replacing Piston):
+- **C／C++／Python／JavaScript 提交及測試**：安裝 Linux 的 [sandbox-runner](sandbox-runner/README.md)，預設連到 `127.0.0.1:8090`；也可用 `SANDBOX_URL` 指向可連線的沙箱。
+- **Java 提交及測試**：需自行部署 Piston 並安裝 Java 15.0.2，預設連到 `localhost:2000`；可用 `PISTON_URL` 覆寫。這兩項服務都不應公開到網際網路。
+- **桌機 Terminal**：另需 `sandbox-interactive`（`127.0.0.1:8091`）；它與一般測試執行是不同服務。Windows 使用 WSL2 的建置與啟動指令在 [sandbox-runner/README.md](sandbox-runner/README.md) 的「Windows 本機開發」段落；Linux 可使用 `sandbox-runner/deploy/sandbox-interactive.service`。
 
-   ```bash
-   apt install libseccomp-dev libmicrohttpd-dev libcjson-dev build-essential
-   cd sandbox-runner && make
-   cp deploy/sandbox-server.service /etc/systemd/system/
-   systemctl daemon-reload && systemctl enable --now sandbox-server
-   ```
+### 環境變數
 
-   It must run as root (the namespace/cgroup setup can't be granted to unprivileged users) and binds only to `127.0.0.1:8090`. Architecture and security model in [sandbox-runner/README.md](sandbox-runner/README.md). Set `SANDBOX_URL="http://127.0.0.1:8090"` in the server `.env` (this is also the default).
+| 變數 | 用途 |
+| --- | --- |
+| `DATABASE_URL` | SQLite 路徑；本機可用已被 `.gitignore` 排除的 `file:./dev.db`，既有部署腳本則預期正式資料庫為 `file:./oj.db`。 |
+| `AUTH_SECRET` | 簽署登入 session；正式環境必填。 |
+| `APP_URL` | 對外網址，用於 OAuth 回呼與站點連結；正式環境設定成 HTTPS 網址。 |
+| `SANDBOX_URL`／`PISTON_URL` | 一般判題服務網址；預設分別為 `http://127.0.0.1:8090`／`http://localhost:2000`。 |
+| `INTERACTIVE_SANDBOX_URL` | 互動式 Terminal 服務網址；預設 `http://127.0.0.1:8091`。 |
+| `JUDGE_WORKER_SECRET` | 正式環境判題 worker 呼叫內部 API 的密鑰。 |
+| `TURNSTILE_SECRET`／`TURNSTILE_HOSTNAMES` | 正式環境帳密登入與註冊的 Turnstile 驗證密鑰、允許的主機名稱。前端 site key 目前在 `src/components/AuthForm.tsx` 設定；自行換網域部署時需對應調整。 |
+| `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` | 選用的 Google 登入；需設定 `/api/auth/google/callback` 為回呼網址。 |
+| `DISCORD_CLIENT_ID`／`DISCORD_CLIENT_SECRET` | 選用的 Discord 登入；需設定 `/api/auth/discord/callback` 為回呼網址。 |
+| `RESEND_API_KEY`／`RESEND_FROM` | 選用的密碼重設信件。 |
+| `OFFLINE_MODE=1` | 斷網比賽模式，停用對外 OAuth 登入等依賴網路的功能。 |
+| `DEPLOY_SERVER` | `deploy/deploy.ps1` 使用的 SSH 伺服器位址（也可設同名環境變數）。 |
 
-4. Deploy the app itself: `npm ci && npm run generate && npx prisma migrate deploy && npm run build`, run `next start` under systemd (example in [deploy/online-judge.service](deploy/online-judge.service)), with nginx as reverse proxy in front ([deploy/nginx-oj.conf](deploy/nginx-oj.conf)).
+正式環境可用 `TURNSTILE_HOSTNAMES="oj.example.com"` 指定站點主機名稱；自訂網域需配置相符的 Turnstile widget 和 server secret。勿將真實密鑰寫進 README 或原始碼。
 
-5. Domain and HTTPS (live site `https://oj.itousouta.me`): add an A record pointing at the server (DNS only on Cloudflare), install `certbot python3-certbot-nginx`, then run `certbot --nginx -d oj.itousouta.me --redirect` (auto-renewal handled by certbot.timer). In the server `.env`, set `APP_URL="https://oj.itousouta.me"`, `COOKIE_SECURE="1"`, and the Google / Discord credentials.
+## 部署與更新
 
-## Daily Updates (after changing code)
+此專案的既有部署流程以 **Linux + systemd + nginx + SQLite** 為基礎：
 
-```powershell
-# 1. Commit your changes (the deploy script packages committed content; uncommitted changes won't ship)
-git add -A
-git commit -m "what you changed"
+1. 部署 [sandbox-runner](sandbox-runner/README.md) 到 `/opt/sandbox-runner`：`make` 建置 `jail` 和 `sandbox-server`，啟用 [`sandbox-server.service`](sandbox-runner/deploy/sandbox-server.service)。如需 Terminal，另外啟用 [`sandbox-interactive.service`](sandbox-runner/deploy/sandbox-interactive.service)。沙箱需 Linux namespace／cgroup v2，服務只應監聽本機位址。
+2. 如需 Java，部署 Piston 並安裝對應語言套件，僅對本機開放 `:2000`。
+3. 在 `/opt/online-judge` 安裝網站：`npm ci`、`npm run generate`、`npx prisma migrate deploy`、`npm run build`；正式 `.env` 設定 `DATABASE_URL="file:./oj.db"`，再設定 [`online-judge.service`](deploy/online-judge.service) 與 [`online-judge-worker.service`](deploy/online-judge-worker.service)，由 [nginx 設定](deploy/nginx-oj.conf)代理到 `:3000`。
+4. 若從 Windows 更新既有伺服器，可設定 `DEPLOY_SERVER` 後執行 `./deploy/deploy.ps1`。腳本以 **已提交的 `HEAD`** 打包、備份 `oj.db`、上傳網站、執行遷移與建置，最後重啟網站及判題 worker；工作區未提交的修改不會被部署。沙箱二進位檔與互動服務需分別更新，這支腳本不會重新建置它們。
 
-# 2. One-click deploy: package → upload → npm ci → prisma generate → migrate → build → restart services
-.\deploy\deploy.ps1
+新部署請先確認服務設定檔中的 `/opt/...` 路徑與實際安裝位置一致，並提供 `JUDGE_WORKER_SECRET`、`AUTH_SECRET`、Turnstile 設定及正式站網址。更完整的沙箱建置、資源限制與驗證方式請看 [sandbox-runner 文件](sandbox-runner/README.md)。
 
-# 3. Sync to GitHub
-git push
+## Android App 與 Windows 收件程式
+
+**Android App**：由 Capacitor WebView 載入網站，行動版有分頁、全螢幕程式編輯器、鍵盤符號列與通知。原生專案在 `android/`；`capacitor.config.ts` 預設連到線上網站。安裝 Android SDK／JDK 後可用 `npx cap sync android`、`npx cap open android` 建置或測試；要切換開發網址可設 `CAP_SERVER_URL` 並重新同步。網站內容更新不需要重裝 App，原生資源或外掛變更則需要重建。
+
+**Windows 收件程式**：`client/` 下的獨立 .NET Framework 工具，供選手機在離線比賽寫程式、保存草稿與提交，復網後補傳；詳細設定、建置與使用流程請看 [client/README.md](client/README.md)。
+
+## 專案目錄
+
+```text
+src/app/              頁面、API 與全站樣式
+src/components/       編輯器、Terminal、題目／比賽 UI
+src/lib/              認證、語言設定、判題與執行服務介面
+prisma/               SQLite 資料模型、遷移與題庫資料
+sandbox-runner/       Linux 沙箱、互動服務、整合測試與 systemd 設定
+client/               Windows 離線收件程式
+android/              Capacitor Android 原生專案
+deploy/               網站部署腳本、nginx 與判題 worker 設定
+scripts/              題庫匯入、管理與維護指令
 ```
 
-- Preview locally: `npm run dev` at http://localhost:3000
-- Judging needs the servers reachable: `ssh -N -L 2000:localhost:2000 -L 8090:localhost:8090 root@<server>` (2000 = Piston, Java; 8090 = sandbox-runner, other languages)
-- If `prisma/schema.prisma` changed, run `npx prisma migrate dev --name <name>` locally to generate a migration, then commit it; the deploy script applies it on the server automatically
-
-### App update flow
-
-Web-side changes (App appearance, keyboard symbol row, login flow, etc.) take effect on the App immediately after the site is deployed — no reinstall needed. Only native-side changes (new Capacitor plugins, icons, version bump) require:
-
-```powershell
-npx cap sync android
-cd android && .\gradlew.bat assembleRelease   # produces app/build/outputs/apk/release/app-release.apk
-gh release create app-vX.Y.Z app-release.apk --title "itouOJ Android App X.Y" --notes "release notes"
-```
-
-## Adding a Language
-
-Two paths, depending on whether it uses sandbox-runner:
-
-- **Via Piston** (currently only Java): install the package on Piston (`POST /api/v2/packages`), then add a matching entry in `src/lib/languages.ts` (filename, version, time/memory multipliers).
-- **Via sandbox-runner**: first create/extend the language's seccomp whitelist in `sandbox-runner/src/seccomp.c` (methodology in [sandbox-runner/README.md](sandbox-runner/README.md#seccomp-白名單怎麼建的)), add an entry to the `LANGS` table in `sandbox-runner/src/server.c`, then add the matching entry in `src/lib/languages.ts` and add the language to the `SANDBOX_LANGUAGES` set in `src/lib/execute.ts`.
+開發前可執行 `npm run lint` 與 `npm run build`。問題回報與 PR 說明見 [CONTRIBUTING.md](CONTRIBUTING.md)。程式碼以 [MIT License](LICENSE) 授權；第三方授權提供的識讀題庫另依其使用條件。
