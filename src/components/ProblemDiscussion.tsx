@@ -10,7 +10,7 @@ import CommentItem, {
 } from "@/components/CommentItem";
 import ReactionBar from "@/components/ReactionBar";
 import { toggleReaction, type ReactionSummary } from "@/lib/reactions";
-import { LANGUAGES, LANGUAGE_KEYS, isLanguageKey } from "@/lib/languages";
+import { LANGUAGES, LANGUAGE_KEYS, languageLabel } from "@/lib/languages";
 
 interface Access {
   visible: boolean;
@@ -622,9 +622,7 @@ export default function ProblemDiscussion({
                     {s.code && (
                       <div className="mt-3">
                         <p className="mb-1 text-xs text-dim">
-                          {s.language && isLanguageKey(s.language)
-                            ? LANGUAGES[s.language].label
-                            : "程式碼"}
+                          {s.language ? languageLabel(s.language) : "程式碼"}
                         </p>
                         <pre className="overflow-x-auto rounded-lg bg-inset p-4 font-mono text-[13px] leading-6 text-tx">
                           {s.code}

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import { execute } from "@/lib/execute";
+import type { ExecutionPhase } from "@/lib/sandbox";
 import { randomUUID } from "node:crypto";
 
 // Worker 透過資料庫的狀態轉換領取工作；同一筆提交只能被一個有效 claim 寫入。
@@ -82,7 +83,7 @@ export function normalizeOutput(text: string): string {
 // 單筆測資的判定（判題與測試執行共用）。checkMode=firstLine 只比第一行，
 // 對應「只要某一行對就給分、後面明細寫錯不扣分」的子題配分規則。
 export function runVerdict(
-  run: import("@/lib/piston").PistonPhase,
+  run: ExecutionPhase,
   timeLimitMs: number,
   memoryLimitBytes: number,
   expected: string,
@@ -221,8 +222,8 @@ export async function judgeSubmission(submissionId: number, claimId: string) {
       for (const tc of group.testCases) {
         if (!(await refreshClaim(submissionId, claimId))) return;
         resultOrder++;
-        const result = await execute(submission.language, {
-          language: lang.piston,
+        const result = await execute({
+          language: lang.runtime,
           version: lang.version,
           filename: lang.filename,
           code: submission.code,

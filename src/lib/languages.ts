@@ -1,9 +1,8 @@
-// 對應到伺服器上 Piston 已安裝的 runtime。
-// 新增語言時：先在 Piston 裝好套件，再在這裡加一筆。
+// 可提交語言及 sandbox-server 對應的 runtime。
 export const LANGUAGES = {
   cpp: {
     label: "C++ (GCC 10.2)",
-    piston: "c++",
+    runtime: "c++",
     version: "10.2.0",
     filename: "main.cpp",
     timeMultiplier: 1,
@@ -11,7 +10,7 @@ export const LANGUAGES = {
   },
   c: {
     label: "C (GCC 10.2)",
-    piston: "c",
+    runtime: "c",
     version: "10.2.0",
     filename: "main.c",
     timeMultiplier: 1,
@@ -19,23 +18,15 @@ export const LANGUAGES = {
   },
   python: {
     label: "Python 3.12",
-    piston: "python",
+    runtime: "python",
     version: "3.12.0",
     filename: "main.py",
     timeMultiplier: 3, // 直譯語言慣例給較寬的時限
     memoryMultiplier: 1,
   },
-  java: {
-    label: "Java 15",
-    piston: "java",
-    version: "15.0.2",
-    filename: "Main.java",
-    timeMultiplier: 2, // JVM 啟動慢、吃記憶體，比照一般 OJ 放寬
-    memoryMultiplier: 2,
-  },
   javascript: {
     label: "JavaScript (Node 20)",
-    piston: "javascript",
+    runtime: "javascript",
     version: "20.11.1",
     filename: "main.js",
     timeMultiplier: 3,
@@ -49,4 +40,11 @@ export const LANGUAGE_KEYS = Object.keys(LANGUAGES) as LanguageKey[];
 
 export function isLanguageKey(value: string): value is LanguageKey {
   return value in LANGUAGES;
+}
+
+// 歷史 Java 提交仍需顯示原本的名稱，但新提交不能再選 Java。
+export function languageLabel(value: string): string {
+  if (value === "java") return "Java 15";
+  if (value === "choice") return "選擇題";
+  return isLanguageKey(value) ? LANGUAGES[value].label : value;
 }

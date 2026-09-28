@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { Session } from "@/lib/auth";
-import { LANGUAGES, isLanguageKey } from "@/lib/languages";
+import { languageLabel } from "@/lib/languages";
 
 export type ContestPhase = "upcoming" | "running" | "frozen" | "ended";
 
@@ -59,7 +59,7 @@ export function parseAllowedLanguages(value: string): string[] | null {
 
 export function languageLabels(keys: string[]): string {
   return keys
-    .map((k) => (isLanguageKey(k) ? LANGUAGES[k].label : k))
+    .map(languageLabel)
     .join("、");
 }
 

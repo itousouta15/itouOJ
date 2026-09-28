@@ -2471,14 +2471,13 @@ namespace ItouOJ
 
         // ── 比賽中：選檔 → 提交到本機 ──────────────
         static readonly string[] AllLanguages =
-            { "cpp", "c", "python", "java", "javascript" };
+            { "cpp", "c", "python", "javascript" };
 
         static string ExtensionsFor(string lang)
         {
             if (lang == "cpp") return "*.cpp;*.cc;*.cxx";
             if (lang == "c") return "*.c";
             if (lang == "python") return "*.py";
-            if (lang == "java") return "*.java";
             if (lang == "javascript") return "*.js";
             return "";
         }
@@ -2503,13 +2502,19 @@ namespace ItouOJ
         List<string> EffectiveLanguages()
         {
             if (cfg.AllowedLanguages != null && cfg.AllowedLanguages.Count > 0)
-                return cfg.AllowedLanguages;
+                return cfg.AllowedLanguages.FindAll(
+                    delegate(string lang) { return Array.IndexOf(AllLanguages, lang) >= 0; });
             return new List<string>(AllLanguages);
         }
 
         void OnBrowse(object sender, EventArgs e)
         {
             List<string> langs = EffectiveLanguages();
+            if (langs.Count == 0)
+            {
+                Status("此比賽沒有可用語言", true);
+                return;
+            }
             List<string> pats = new List<string>();
             foreach (string l in langs)
             {
@@ -2550,7 +2555,6 @@ namespace ItouOJ
             if (ext == ".cpp" || ext == ".cc" || ext == ".cxx") return "cpp";
             if (ext == ".c") return "c";
             if (ext == ".py") return "python";
-            if (ext == ".java") return "java";
             if (ext == ".js") return "javascript";
             return null;
         }
@@ -2559,7 +2563,10 @@ namespace ItouOJ
         {
             if (cfg.AllowedLanguages != null && cfg.AllowedLanguages.Count > 0)
             {
-                lblLangHint.Text = "本比賽限用 " + LanguageNames(cfg.AllowedLanguages);
+                List<string> available = EffectiveLanguages();
+                lblLangHint.Text = available.Count > 0
+                    ? "本比賽限用 " + LanguageNames(available)
+                    : "此比賽沒有可用語言";
                 lblLangHint.ForeColor = Color.SaddleBrown;
             }
             else
@@ -2604,7 +2611,6 @@ namespace ItouOJ
             if (lang == "cpp") return ".cpp";
             if (lang == "c") return ".c";
             if (lang == "python") return ".py";
-            if (lang == "java") return ".java";
             if (lang == "javascript") return ".js";
             return ".txt";
         }
@@ -2693,14 +2699,17 @@ namespace ItouOJ
                 ? SelectedTypedLanguage() : LanguageFromPath(txtFile.Text.Trim());
             if (lang == null)
             {
-                Status("不支援的副檔名（支援 .cpp .c .py .java .js）", true);
+                Status("不支援的副檔名（支援 .cpp .c .py .js）", true);
                 return;
             }
             // 伺服器也會擋，但在這裡就攔下來，選手才不會以為交成功了、賽後才發現
             if (!EffectiveLanguages().Contains(lang))
             {
-                Status(string.Format("本比賽只收 {0}，這是 {1} 檔案",
-                    LanguageNames(cfg.AllowedLanguages), DisplayName(lang)), true);
+                List<string> available = EffectiveLanguages();
+                Status(available.Count > 0
+                    ? string.Format("本比賽只收 {0}，這是 {1} 檔案",
+                        LanguageNames(available), DisplayName(lang))
+                    : "此比賽沒有可用語言", true);
                 return;
             }
 

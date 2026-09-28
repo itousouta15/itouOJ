@@ -1209,6 +1209,7 @@ html.kbd-open .problem-workspace-nav {
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 8px;
+    margin-left: auto;
   }
   .problem-workspace-code .submit-panel-editor-toolbar button {
     pointer-events: auto;
@@ -1224,14 +1225,13 @@ html.kbd-open .problem-workspace-nav {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  .problem-workspace-code .submit-panel-editor-custom {
-    flex: none;
-    padding: 10px 12px;
-    border-top: 1px solid var(--bd);
-    background: var(--panel);
+  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action {
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.18s ease, filter 0.18s ease, background-color 0.18s ease;
   }
-  .problem-workspace-code .submit-panel-editor-custom textarea {
-    max-height: min(25vh, 200px);
+  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action:not(:disabled):active {
+    transform: translateY(0) scale(0.95);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
   }
   .problem-workspace-code .submit-panel-editor-body {
     position: relative;
@@ -1276,6 +1276,38 @@ html.kbd-open .problem-workspace-nav {
     max-height: 35%;
     overflow: auto;
     padding-bottom: 12px;
+  }
+}
+
+@media (min-width: 1024px) and (hover: hover) {
+  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action:not(:disabled):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.submit-panel-action-spinner {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: submitPanelSpin 0.7s linear infinite;
+}
+@keyframes submitPanelSpin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .submit-panel-action-spinner {
+    animation: none;
+  }
+  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action {
+    transition: none;
+  }
+  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action:not(:disabled):hover,
+  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action:not(:disabled):active {
+    transform: none;
   }
 }
 

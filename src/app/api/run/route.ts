@@ -92,8 +92,8 @@ export async function POST(request: Request) {
       problem.memoryLimitMb * lang.memoryMultiplier * 1024 * 1024;
 
     const exec = (stdin: string) =>
-      execute(language, {
-        language: lang.piston,
+      execute({
+        language: lang.runtime,
         version: lang.version,
         filename: lang.filename,
         code,

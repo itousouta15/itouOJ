@@ -56,7 +56,7 @@ export default async function AboutPage() {
         <h2 className="section-title">平台功能</h2>
         <ul className="list-disc space-y-2 pl-5 leading-relaxed text-dim">
           <li>程式題庫支援標籤、難度排序、Markdown 題敘、數學公式、範例測資與子題配分。</li>
-          <li>支援 C、C++、Python、JavaScript 與 Java，提交後可查看 AC、WA、TLE、MLE、RE、CE、IE 等結果，以及時間與記憶體用量。</li>
+          <li>支援 C、C++、Python 與 JavaScript，提交後可查看 AC、WA、TLE、MLE、RE、CE、IE 等結果，以及時間與記憶體用量。</li>
           <li>提供程式碼識讀練習、答題紀錄與複習進度，適合從閱讀程式碼開始建立觀念。</li>
           <li>題目可建立討論串與題解；通過題目後，才能查看其他使用者分享的題解內容。</li>
           <li>課程可組織題目與追蹤進度；競賽支援 ICPC、IOI、封榜、加入代碼與限制可用語言。</li>
@@ -66,7 +66,7 @@ export default async function AboutPage() {
       <section className="card space-y-4 p-6">
         <h2 className="section-title">判題與競賽</h2>
         <p className="leading-relaxed text-dim">
-          C、C++、Python 與 JavaScript 使用專案內建的 sandbox-runner 執行，透過 Linux namespace、cgroup v2 與 seccomp-bpf 限制程式執行環境；Java 則由獨立的 Piston 服務處理。判題工作由獨立 worker 依序領取，避免大量提交影響整台主機。
+          C、C++、Python 與 JavaScript 使用專案內建的 sandbox-runner 執行，透過 Linux namespace、cgroup v2 與 seccomp-bpf 限制程式執行環境。判題工作由獨立 worker 依序領取，避免大量提交影響整台主機。
         </p>
         <p className="leading-relaxed text-dim">
           除了線上競賽，itouOJ 也提供 Windows 收件程式。網路不穩或暫時斷線時，選手可先在本機測試與暫存提交，恢復連線後再批次上傳到競賽伺服器。

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { fromTaipeiInputValue } from "@/lib/contestTime";
-import { LANGUAGES, type LanguageKey } from "@/lib/languages";
+import { LANGUAGES, isLanguageKey, type LanguageKey } from "@/lib/languages";
 
 interface ProblemOption {
   id: number;
@@ -79,7 +79,15 @@ export default function ContestForm({
 }) {
   const router = useRouter();
   const editing = initial?.id != null;
-  const [form, setForm] = useState<ContestFormInitial>(initial ?? EMPTY);
+  const [form, setForm] = useState<ContestFormInitial>(() => {
+    const value = initial ?? EMPTY;
+    return {
+      ...value,
+      // 舊比賽可能含已下線的 Java，編輯後只保存仍可提交的語言。
+      allowedLanguages: value.allowedLanguages.split(",").map((key) => key.trim())
+        .filter(isLanguageKey).join(","),
+    };
+  });
   const [addingId, setAddingId] = useState<number | "">("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);

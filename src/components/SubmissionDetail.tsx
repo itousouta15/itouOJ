@@ -4,7 +4,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import VerdictBadge from "@/components/VerdictBadge";
 import Markdown from "@/components/Markdown";
-import { LANGUAGES, isLanguageKey } from "@/lib/languages";
+import { languageLabel } from "@/lib/languages";
 import { problemHref } from "@/lib/problemTypes";
 import { notifyJudged } from "@/lib/capacitor";
 
@@ -205,12 +205,7 @@ export default function SubmissionDetail({ id }: { id: number }) {
   }
 
   const isRecognition = data.problem.type === "RECOGNITION";
-  const langLabel =
-    data.language === "choice"
-      ? "選擇題"
-      : isLanguageKey(data.language)
-        ? LANGUAGES[data.language].label
-        : data.language;
+  const langLabel = languageLabel(data.language);
 
   const hasSubtasks = data.problem.subtasks.length > 0;
   const maxScore = data.problem.subtasks.reduce((s, x) => s + x.points, 0);

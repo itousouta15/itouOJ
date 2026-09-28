@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import VerdictBadge from "@/components/VerdictBadge";
-import { LANGUAGES, isLanguageKey } from "@/lib/languages";
+import { languageLabel } from "@/lib/languages";
 import { problemHref } from "@/lib/problemTypes";
 
 export interface SubmissionRowData {
@@ -29,12 +29,7 @@ export default function SubmissionRow({
 }) {
   const router = useRouter();
   const href = problemHref(s.problem);
-  const langLabel =
-    s.language === "choice"
-      ? "選擇題"
-      : isLanguageKey(s.language)
-        ? LANGUAGES[s.language].label
-        : s.language;
+  const langLabel = languageLabel(s.language);
 
   return (
     <>

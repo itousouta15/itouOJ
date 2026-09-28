@@ -27,7 +27,7 @@ function functions(words: string): Completion[] {
 
 const controlKeywords = keywords("if else for while do switch case break continue return");
 
-// 與各語言套件內建的補全來源並存；C/C++/Java 補齊常用語法與解題片段。
+// 與各語言套件內建的補全來源並存；C/C++ 補齊常用語法與解題片段。
 export const EDITOR_COMPLETIONS: Record<LanguageKey, CompletionSource> = {
   cpp: ifNotIn(NON_CODE_NODES, completeFromList([
     ...controlKeywords,
@@ -54,18 +54,6 @@ export const EDITOR_COMPLETIONS: Record<LanguageKey, CompletionSource> = {
     }),
     snippetCompletion("scanf(\"%d\", &${value});", {
       label: "readint", type: "function", detail: "讀取整數",
-    }),
-  ])),
-  java: ifNotIn(NON_CODE_NODES, completeFromList([
-    ...controlKeywords,
-    ...keywords("abstract boolean catch class extends false final finally implements import instanceof interface new null package private protected public static super synchronized this throw throws true try void"),
-    ...types("String StringBuilder Scanner Arrays Collections List ArrayList Map HashMap Set HashSet Queue PriorityQueue int long double boolean char"),
-    ...functions("println print nextInt nextLine nextLong parseInt sort add get put containsKey size length charAt substring toString max min"),
-    snippetCompletion("for (int ${i} = 0; ${i} < ${n}; ${i}++) {\n\t${}\n}", {
-      label: "fori", type: "keyword", detail: "計數迴圈",
-    }),
-    snippetCompletion("System.out.println(${value});", {
-      label: "sout", type: "function", detail: "輸出並換行",
     }),
   ])),
   python: ifNotIn(NON_CODE_NODES, completeFromList([

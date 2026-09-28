@@ -7,7 +7,6 @@ import { createPortal } from "react-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";
-import { java } from "@codemirror/lang-java";
 import { javascript } from "@codemirror/lang-javascript";
 import {
   acceptCompletion,
@@ -71,7 +70,7 @@ function withCompletions(key: LanguageKey, support: ReturnType<typeof cpp>): Ext
   return [
     support,
     support.language.data.of({ autocomplete: EDITOR_COMPLETIONS[key] }),
-    ...(["cpp", "c", "java"].includes(key)
+    ...(["cpp", "c"].includes(key)
       ? [support.language.data.of({ autocomplete: DOCUMENT_WORD_COMPLETIONS })]
       : []),
   ];
@@ -81,7 +80,6 @@ const CM_EXTENSIONS: Record<LanguageKey, Extension[]> = {
   cpp: withCompletions("cpp", cpp()),
   c: withCompletions("c", cpp()),
   python: withCompletions("python", python()),
-  java: withCompletions("java", java()),
   javascript: withCompletions("javascript", javascript()),
 };
 
@@ -104,15 +102,6 @@ int main(void) {
 }
 `,
   python: ``,
-  java: `import java.util.*;
-
-public class Main {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-
-    }
-}
-`,
   javascript: `const lines = require("fs").readFileSync(0, "utf8").split("\\n");
 `,
 };
@@ -350,7 +339,9 @@ export default function SubmitPanel({
           problemId,
           language,
           code,
-          customInput: showCustom ? customInput : null,
+          customInput: showCustom && (window.innerWidth < 1024 || fullscreen)
+            ? customInput
+            : null,
           contestId,
         }),
       });
@@ -435,17 +426,19 @@ export default function SubmitPanel({
   const actionButtons = (
     <>
       <button
-        className="btn-secondary"
+        className="btn-secondary submit-panel-action"
         onClick={runTest}
         disabled={running || submitting || terminalBusy || locked}
       >
+        {running && <span className="submit-panel-action-spinner" aria-hidden="true" />}
         {running ? "執行中…" : "測試執行"}
       </button>
       <button
-        className="btn-primary"
+        className="btn-primary submit-panel-action"
         onClick={submit}
         disabled={running || submitting || terminalBusy || locked}
       >
+        {submitting && <span className="submit-panel-action-spinner" aria-hidden="true" />}
         {submitting ? "送出中…" : "送出解答"}
       </button>
     </>
@@ -486,23 +479,12 @@ export default function SubmitPanel({
           <div className="submit-panel-editor-body">
             <div className="submit-panel-editor-viewport">{editor}</div>
             <div className="submit-panel-editor-toolbar hidden lg:flex">
-              <button
-                type="button"
-                className={`pill ${showCustom ? "pill-active" : ""}`}
-                disabled={terminalBusy}
-                onClick={() => {
-                  setShowTerminal(false);
-                  setShowCustom((v) => !v);
-                }}
-              >
-                自訂輸入
-              </button>
               <div className="submit-panel-editor-actions">
                 <button
                   type="button"
                   className="btn-secondary"
-                  disabled={running || submitting || terminalBusy || locked || language === "java"}
-                  title={language === "java" ? "Java 尚未支援互動執行" : "開啟終端機互動執行"}
+                  disabled={running || submitting || terminalBusy || locked}
+                  title="開啟終端機互動執行"
                   onClick={() => {
                     setShowCustom(false);
                     setRunResult(null);
@@ -526,12 +508,6 @@ export default function SubmitPanel({
               onBusyChange={setTerminalBusy}
               onClose={() => setShowTerminal(false)}
             />
-          )}
-          {showCustom && (
-            <div className="submit-panel-editor-custom hidden lg:block">
-              <label className="mb-1 block text-sm font-medium">自訂輸入（stdin）</label>
-              {customInputField}
-            </div>
           )}
         </div>
       )}

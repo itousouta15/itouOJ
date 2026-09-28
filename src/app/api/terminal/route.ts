@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "題目不存在" }, { status: 404 });
   }
   if (problem.type === "RECOGNITION") {
-    return Response.json({ error: "識別題不支援 RUN" }, { status: 400 });
+    return Response.json({ error: "識別題不支援 Terminal" }, { status: 400 });
   }
   const lang = LANGUAGES[language];
   return terminalRequest(session.userId, "/sessions", {
