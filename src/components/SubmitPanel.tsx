@@ -435,23 +435,25 @@ export default function SubmitPanel({
     />
   );
 
-  const draftNotice = (
-    <>
-      <div className="submit-panel-notice mt-2 text-xs text-dim" role="status">{draftStatus}</div>
-      {draftConflict && (
-        <div className="submit-panel-notice mt-2 flex flex-wrap items-center gap-2 text-sm" role="alert">
-          <span>此裝置的草稿與帳號中的版本不同。請選擇保留哪一份：</span>
-          <button type="button" className="btn-secondary" onClick={keepLocal}>保留此裝置</button>
-          <button type="button" className="btn-secondary" onClick={keepCloud}>使用帳號版本</button>
-        </div>
-      )}
-    </>
+  const draftStatusLabel = (
+    <span className="min-w-0 truncate text-xs text-dim" role="status" title={draftStatus}>{draftStatus}</span>
+  );
+
+  const draftConflictNotice = draftConflict && (
+    <div className="submit-panel-notice mt-2 flex flex-wrap items-center gap-2 text-sm" role="alert">
+      <span>此裝置的草稿與帳號中的版本不同。請選擇保留哪一份：</span>
+      <button type="button" className="btn-secondary" onClick={keepLocal}>保留此裝置</button>
+      <button type="button" className="btn-secondary" onClick={keepCloud}>使用帳號版本</button>
+    </div>
   );
 
   return (
     <div className="card submit-panel p-4">
       <div className="mb-3 flex items-center justify-between lg:hidden">
-        <h2 className="section-title">提交</h2>
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="section-title shrink-0">提交</h2>
+          {!fullscreen && draftStatusLabel}
+        </div>
         <div className="flex items-center gap-2">
           {langSelect}
           <button
@@ -468,7 +470,10 @@ export default function SubmitPanel({
       {!fullscreen && (
         <div className="oj-editor oj-editor--inline overflow-hidden rounded-md border border-bd">
           <div className="submit-panel-editor-head hidden lg:flex">
-            <h2 className="section-title">提交</h2>
+            <div className="flex min-w-0 items-center gap-2">
+              <h2 className="section-title shrink-0">提交</h2>
+              {draftStatusLabel}
+            </div>
             {langSelect}
           </div>
           <div className="submit-panel-editor-body">
@@ -518,7 +523,7 @@ export default function SubmitPanel({
       {locked && (
         <p className="submit-panel-notice mt-2 text-sm text-[#faa81a]">比賽已結束，無法再測試執行或提交</p>
       )}
-      {draftNotice}
+      {draftConflictNotice}
       {error && <p className="submit-panel-notice mt-2 text-sm text-[#ff6b6b]">{error}</p>}
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 lg:hidden">
@@ -659,12 +664,15 @@ export default function SubmitPanel({
                     <span className="editor-ac-pill">已 AC</span>
                   )}
                 </div>
-                {problem && (
-                  <p className="mono pl-1 text-[11px] text-mute">
-                    {problem.problemCode} ・ 時間 {problem.timeLimitMs} ms ・ 記憶體{" "}
-                    {problem.memoryLimitMb} MB
-                  </p>
-                )}
+                <div className="flex min-w-0 flex-wrap items-center gap-x-2">
+                  {problem && (
+                    <p className="mono pl-1 text-[11px] text-mute">
+                      {problem.problemCode} ・ 時間 {problem.timeLimitMs} ms ・ 記憶體{" "}
+                      {problem.memoryLimitMb} MB
+                    </p>
+                  )}
+                  {draftStatusLabel}
+                </div>
               </div>
               <div className="flex flex-none items-center gap-2">
                 {fullscreenView === "code" && langSelect}
@@ -720,7 +728,7 @@ export default function SubmitPanel({
             >
               {editor}
             </div>
-            <div className="flex-none px-4 pb-2">{draftNotice}</div>
+            {draftConflict && <div className="flex-none px-4 pb-2">{draftConflictNotice}</div>}
             {showCustom && (
               <div className="editor-fullscreen-custom flex-none px-4 pb-2">
                 <textarea

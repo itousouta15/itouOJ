@@ -142,9 +142,14 @@ export function useSyncedDraft({
         return;
       }
       const legacy = local === null ? localStorage.getItem(`oj-draft-${problemId}-${lang}`) : null;
-      if (legacy !== null && legacy !== remote?.code) {
+      if (legacy !== null && legacy !== templates[lang] && legacy !== remote?.code) {
         setCode(legacy);
         showConflict(lang, remote);
+      } else if (local && remote && local.code === templates[lang]) {
+        // 本機只有預設範本時不與帳號草稿衝突，也不要把範本同步上去覆蓋程式。
+        writeLocal(key, { code: remote.code, revision: remote.revision, dirty: false });
+        setCode(remote.code);
+        setStatus("已同步至帳號");
       } else if (!local && remote) {
         writeLocal(key, { code: remote.code, revision: remote.revision, dirty: false });
         setCode(remote.code);
