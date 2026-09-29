@@ -29,6 +29,7 @@ import VerdictBadge from "@/components/VerdictBadge";
 import InteractiveTerminal from "@/components/InteractiveTerminal";
 import { setProblemWorkspaceTab } from "@/lib/problemWorkspaceTab";
 import { useHorizontalSwipe } from "@/lib/useHorizontalSwipe";
+import { useSyncedDraft } from "@/lib/useSyncedDraft";
 
 // App 鍵盤符號列：手機鍵盤要翻符號頁才打得出來的按鍵，點擊插入游標處。
 // 兩排各 9 鍵（共 18），等寬塞滿螢幕不捲動；只在手機鍵盤出現時顯示。
@@ -107,6 +108,7 @@ int main(void) {
 };
 
 interface SubmitPanelProps {
+  userId: string;
   problemId: number;
   contestId?: number;
   question?: ReactNode;
@@ -126,6 +128,7 @@ interface SubmitPanelProps {
 }
 
 export default function SubmitPanel({
+  userId,
   problemId,
   contestId,
   question,
@@ -136,15 +139,20 @@ export default function SubmitPanel({
   const locked = contestPhase === "ended";
   const router = useRouter();
 
-  const languageOptions = (Object.keys(LANGUAGES) as LanguageKey[]).filter(
-    (k) => !allowedLanguages || allowedLanguages.includes(k)
+  const languageOptions = useMemo(
+    () => (Object.keys(LANGUAGES) as LanguageKey[]).filter(
+      (k) => !allowedLanguages || allowedLanguages.includes(k)
+    ),
+    [allowedLanguages]
   );
   const defaultLanguage = languageOptions.includes("cpp")
     ? "cpp"
     : languageOptions[0] ?? "cpp";
 
-  const [language, setLanguage] = useState<LanguageKey>(defaultLanguage);
-  const [code, setCode] = useState(TEMPLATES[defaultLanguage]);
+  const {
+    language, code, status: draftStatus, conflict: draftConflict,
+    switchLanguage, updateCode, keepLocal, keepCloud,
+  } = useSyncedDraft({ userId, problemId, contestId, defaultLanguage, languageOptions, templates: TEMPLATES });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [running, setRunning] = useState(false);
@@ -251,15 +259,6 @@ export default function SubmitPanel({
     setFullscreen(true);
   }
 
-  // 記住上次選的語言、以及每題每語言打到一半的程式碼
-  useEffect(() => {
-    // 比賽限定語言時，不要把上次用的語言（可能是別的比賽用的）還原回來
-    const saved = localStorage.getItem("oj-language") as LanguageKey | null;
-    // 即使使用者從未切換過語言，也要還原預設語言的草稿。
-    switchLanguage(saved && languageOptions.includes(saved) ? saved : defaultLanguage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // 全螢幕編輯時鎖住頁面捲動
   useEffect(() => {
     document.body.style.overflow = fullscreen ? "hidden" : "";
@@ -276,21 +275,6 @@ export default function SubmitPanel({
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [fullscreen, closeFullscreen]);
-
-  function draftKey(lang: LanguageKey) {
-    return `oj-draft-${problemId}-${lang}`;
-  }
-
-  function switchLanguage(lang: LanguageKey) {
-    setLanguage(lang);
-    localStorage.setItem("oj-language", lang);
-    setCode(localStorage.getItem(draftKey(lang)) ?? TEMPLATES[lang]);
-  }
-
-  function updateCode(value: string) {
-    setCode(value);
-    localStorage.setItem(draftKey(language), value);
-  }
 
   function handleEditorWheel(event: WheelEvent) {
     if (!event.ctrlKey) {
@@ -374,8 +358,6 @@ export default function SubmitPanel({
         setSubmitting(false);
         return;
       }
-      // 導頁前再同步一次，避免編輯器最後一筆變更尚未寫入草稿。
-      localStorage.setItem(draftKey(language), code);
       router.push(`/submissions/${data.id}`);
     } catch {
       setError("提交失敗，請稍後再試");
@@ -453,6 +435,19 @@ export default function SubmitPanel({
     />
   );
 
+  const draftNotice = (
+    <>
+      <div className="submit-panel-notice mt-2 text-xs text-dim" role="status">{draftStatus}</div>
+      {draftConflict && (
+        <div className="submit-panel-notice mt-2 flex flex-wrap items-center gap-2 text-sm" role="alert">
+          <span>此裝置的草稿與帳號中的版本不同。請選擇保留哪一份：</span>
+          <button type="button" className="btn-secondary" onClick={keepLocal}>保留此裝置</button>
+          <button type="button" className="btn-secondary" onClick={keepCloud}>使用帳號版本</button>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="card submit-panel p-4">
       <div className="mb-3 flex items-center justify-between lg:hidden">
@@ -523,6 +518,7 @@ export default function SubmitPanel({
       {locked && (
         <p className="submit-panel-notice mt-2 text-sm text-[#faa81a]">比賽已結束，無法再測試執行或提交</p>
       )}
+      {draftNotice}
       {error && <p className="submit-panel-notice mt-2 text-sm text-[#ff6b6b]">{error}</p>}
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 lg:hidden">
@@ -724,6 +720,7 @@ export default function SubmitPanel({
             >
               {editor}
             </div>
+            <div className="flex-none px-4 pb-2">{draftNotice}</div>
             {showCustom && (
               <div className="editor-fullscreen-custom flex-none px-4 pb-2">
                 <textarea

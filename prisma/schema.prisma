@@ -30,6 +30,7 @@ model User {
   avatarUpdatedAt DateTime?
   createdAt    DateTime             @default(now())
   submissions  Submission[]
+  codeDrafts   CodeDraft[]
   courses      CourseMember[]
   contests     ContestParticipant[]
   ownedContests Contest[]            @relation("ContestOwner")
@@ -125,6 +126,7 @@ model Problem {
   testCases       TestCase[]
   subtasks        Subtask[] // 有設定才走部分給分；沒有則維持整題 AC/WA
   submissions     Submission[]
+  codeDrafts      CodeDraft[]
   courseProblems  CourseProblem[]
   contestProblems ContestProblem[]
   tags            ProblemTag[]
@@ -486,6 +488,22 @@ model Submission {
   @@index([status, judgeClaimedAt])
   @@index([status, judgeClaimId])
   @@index([status, userId, problemId])
+}
+
+// 未提交的編輯器草稿：同一帳號、題目與語言只保留一份。
+// revision 用於跨裝置樂觀鎖，避免較舊的頁面覆蓋另一台裝置的修改。
+model CodeDraft {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId Int
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  language  String
+  code      String
+  revision  Int      @default(1)
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, problemId, language])
+  @@index([problemId])
 }
 
 model RecognitionReview {

@@ -210,6 +210,7 @@ export default async function ProblemPage({
         {session && (
           <aside className="problem-workspace-pane problem-workspace-code" aria-label="程式編輯器">
             <SubmitPanel
+              userId={session.userId}
               problemId={problem.id}
               question={
                 <>

@@ -89,6 +89,7 @@ export default async function ContestProblemPage({
   );
   const submissionPanel = !isRecognition && (
     <SubmitPanel
+      userId={session!.userId}
       problemId={problem.id}
       question={questionBody}
       problem={{
