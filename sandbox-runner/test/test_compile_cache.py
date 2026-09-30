@@ -7,6 +7,7 @@ Build the server with -DPORT=18090 so this test never touches the live judge.
 import argparse
 import json
 import os
+import statistics
 import shutil
 import subprocess
 import tempfile
@@ -25,7 +26,9 @@ def main():
     parser.add_argument("--jail", type=Path, required=True)
     parser.add_argument("--port", type=int, default=18090)
     parser.add_argument("--mode", choices=("legacy", "cache"), required=True)
+    parser.add_argument("--samples", type=int, default=4)
     args = parser.parse_args()
+    assert 2 <= args.samples <= 100
 
     server = args.server.resolve(strict=True)
     jail = args.jail.resolve(strict=True)
@@ -100,8 +103,11 @@ def main():
 
         try:
             start_cpu_ms = server_cpu_ms()
-            for number in (1, 2, 3, 4):
+            cleanup_times = []
+            for number in range(1, args.samples + 1):
                 result = execute(SOURCE, number, token=handle, binary=compiled_binary)
+                if "metrics" in result:
+                    cleanup_times.append(result["metrics"]["cleanup_ms"])
                 if args.mode == "cache":
                     handle = result.get("compiled_handle")
                     assert handle and len(handle) == 32, result
@@ -114,7 +120,9 @@ def main():
             sample_peak()
             benchmark = {"request_bytes": requests, "response_bytes": responses,
                          "latency_ms": timings[:], "server_peak_rss_kb": peak_kb,
-                         "server_cpu_ms": server_cpu_ms() - start_cpu_ms}
+                         "server_cpu_ms": server_cpu_ms() - start_cpu_ms,
+                         "warm_median_ms": round(statistics.median(timings[1:]), 1),
+                         "cleanup_median_ms": round(statistics.median(cleanup_times[1:]), 1) if cleanup_times else None}
 
             if args.mode == "cache":
                 # A handle must never execute an executable built from different source.

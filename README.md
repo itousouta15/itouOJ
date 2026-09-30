@@ -119,7 +119,9 @@ Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一�
 
 1. 部署 [sandbox-runner](sandbox-runner/README.md) 到 `/opt/sandbox-runner`：`make` 建置 `jail` 和 `sandbox-server`，啟用 [`sandbox-server.service`](sandbox-runner/deploy/sandbox-server.service)。如需 Terminal，另外啟用 [`sandbox-interactive.service`](sandbox-runner/deploy/sandbox-interactive.service)。沙箱需 Linux namespace／cgroup v2，服務只應監聽本機位址。
 2. 在 `/opt/online-judge` 安裝網站：`npm ci`、`npm run generate`、`npx prisma migrate deploy`、`npm run build`；正式 `.env` 設定 `DATABASE_URL="file:./oj.db"`，再設定 [`online-judge.service`](deploy/online-judge.service) 與 [`online-judge-worker.service`](deploy/online-judge-worker.service)，由 [nginx 設定](deploy/nginx-oj.conf)代理到 `:3000`。
-3. 若從 Windows 更新既有伺服器，可設定 `DEPLOY_SERVER` 後執行 `./deploy/deploy.ps1`。腳本以 **已提交的 `HEAD`** 打包、備份 `oj.db`、上傳網站、執行遷移與建置，最後重啟網站及判題 worker；工作區未提交的修改不會被部署。沙箱二進位檔與互動服務需分別更新，這支腳本不會重新建置它們。
+3. 若從 Windows 更新既有伺服器，可設定 `DEPLOY_SERVER` 後執行 `./deploy/deploy.ps1`。腳本以 **已提交的 `HEAD`** 打包，在隔離目錄建置並驗證沙箱與網站；待判題中的提交結束，使用 SQLite `.backup` 建立一致性備份，依序更新沙箱、網站和 worker，健康檢查失敗時回復程式檔與服務。工作區未提交的修改不會被部署；需要更新 `jail` 時會一併重啟互動服務。備份保留在 `/opt/oj-deploy-backups/`。
+
+正式提交與編輯器測試共用單一沙箱執行名額：正式提交優先，最多兩筆測試等待 15 秒，額滿回傳 503；正式提交若排隊逾時會重新排入判題佇列，不會因此被判系統錯誤。此排隊器以正式站單一 Next.js 伺服器程序為前提，若改為多實例部署，需將名額協調移到跨程序服務。部署腳本需要伺服器上有 `rsync`、`sqlite3`、`make`、GCC 及沙箱編譯依賴；資料庫備份可供回復，但新站開始服務後不會自動回滾資料庫，以免丟失新提交。
 
 新部署請先確認服務設定檔中的 `/opt/...` 路徑與實際安裝位置一致，並提供 `JUDGE_WORKER_SECRET`、`AUTH_SECRET`、Turnstile 設定及正式站網址。更完整的沙箱建置、資源限制與驗證方式請看 [sandbox-runner 文件](sandbox-runner/README.md)。
 

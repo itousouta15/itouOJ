@@ -23,6 +23,7 @@ for number in (2, 3):
     assert result["run"]["stdout"].strip() == str(number * 2), result
     assert result["compiled_cache_hit"] == (handle is not None), result
     assert result["compiled_handle"] and "compiled_binary" not in result, result
+    assert result["metrics"]["total_ms"] >= result["metrics"]["cleanup_ms"] >= 0, result
     handle = result["compiled_handle"]
 
 print("sandbox live cache: compile, reuse and output OK")

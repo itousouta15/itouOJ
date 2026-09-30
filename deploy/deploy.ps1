@@ -80,29 +80,18 @@ Invoke-Native "git archive" { git archive --format=tar.gz -o "$env:TEMP\oj.tar.g
 Write-Host "== Uploading =="
 Invoke-Native "scp" { scp "$env:TEMP\oj.tar.gz" "${Server}:/tmp/oj.tar.gz" }
 
-# 資料庫是 oj.db（.env 的 DATABASE_URL="file:./oj.db"）。目錄下那個 0 bytes 的
-# dev.db 是殘留檔，備份它等於沒備份。
-Write-Host "== Backing up database =="
-# 遠端指令裡避免用雙引號：PowerShell 的跳脫在傳給 ssh 的過程中會被吃掉，
-# bash 收到裸括號就會語法錯誤。要引用就用單引號（PowerShell 原樣傳遞）。
-Invoke-Native "backup" {
-    ssh $Server "cd $AppDir && BK=oj.db.bak-`$(date +%Y%m%d-%H%M%S) && cp oj.db `$BK && stat -c '   backup: %n  %s bytes' `$BK && ls -1t oj.db.bak-* | tail -n +6 | xargs -r rm -f"
+Write-Host "== Staging sandbox and website release =="
+$release = "/tmp/oj-release-$head-$(Get-Date -Format 'yyyyMMddHHmmss')-$PID"
+Invoke-Native "stage release" {
+    ssh $Server "test -d /tmp && test -d $AppDir && test ! -e $release && tar tzf /tmp/oj.tar.gz >/dev/null && mkdir $release && tar xzf /tmp/oj.tar.gz -C $release && ln -s $AppDir/.env $release/.env"
 }
 
-Write-Host "== Server: extract / install / migrate / build / restart =="
-# tar 解壓只會覆蓋同名檔，HEAD 已刪除的元件仍會留在伺服器 src 內，
-# Next/TypeScript 會把它當成原始碼編譯。先確認壓縮檔完整，再清除可重建的
-# src（含 prisma generate 產物）與開發模式型別快取；保留 .env、oj.db、備份和正式 .next。
+Write-Host "== Build / test / promote / verify / rollback on failure =="
 Invoke-Native "remote deploy" {
-    ssh $Server "cd $AppDir && test -n `$(sed -n 's/^JUDGE_WORKER_SECRET=//p' .env | head -n 1) && tar tzf /tmp/oj.tar.gz >/dev/null && rm -rf -- src .next/dev && tar xzf /tmp/oj.tar.gz && npm ci --include=dev --silent && npm run generate --silent && ./node_modules/.bin/prisma migrate deploy && npm run build && chown -R oj:oj $AppDir && install -m 644 deploy/online-judge-worker.service /etc/systemd/system/online-judge-worker.service && systemctl daemon-reload && systemctl restart online-judge online-judge-worker && sleep 3 && systemctl is-active online-judge online-judge-worker"
+    ssh $Server "bash $release/deploy/remote-release.sh $release"
 }
 
-# 光看 systemctl is-active 不夠：服務可能還跑著上一版的建置產物。
-# 確認 .next 是剛剛才產生的，而且網站真的回得了 200。
-Write-Host "== Verifying =="
-Invoke-Native "verify build freshness" {
-    ssh $Server "cd $AppDir && AGE=`$(( `$(date +%s) - `$(stat -c %Y .next) )) && printf '   .next built %ss ago\n' `$AGE && [ `$AGE -lt 600 ]"
-}
+Write-Host "== Verifying public site =="
 
 $status = (Invoke-WebRequest -Uri "https://oj.itousouta.me/" -UseBasicParsing -TimeoutSec 30).StatusCode
 if ($status -ne 200) { throw "網站回應 HTTP $status" }

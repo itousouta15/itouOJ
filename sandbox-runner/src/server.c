@@ -33,6 +33,7 @@
 #define _GNU_SOURCE
 #include <arpa/inet.h>
 #include <cjson/cJSON.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <microhttpd.h>
@@ -454,6 +455,13 @@ static long parse_meta_long(const char *meta, const char *key) {
   return atol(p + strlen(key));
 }
 
+static double elapsed_ms(const struct timespec *start) {
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  return (now.tv_sec - start->tv_sec) * 1000.0 +
+         (now.tv_nsec - start->tv_nsec) / 1000000.0;
+}
+
 // ---- minimal base64 (no external dependency) ----
 //
 // Used to shuttle a compiled binary between server and judge process so the
@@ -541,12 +549,48 @@ static unsigned char *base64_decode(const char *in, size_t *out_len) {
   return out;
 }
 
-static void cleanup_workdir(const char *workdir) {
-  char *argv[] = {"rm", "-rf", (char *)workdir, NULL};
-  int exit_code, term_signal;
-  struct captured_output discard = {0};
-  run_child(argv, NULL, 0, 0, 5000, &discard, &exit_code, &term_signal);
-  free_captured(&discard);
+// Walk beneath a root-owned directory by fd, never following symlinks from a
+// compiler's writable /bin or /tmp. Do not spawn rm for every test case.
+static int remove_tree_at(int parent, const char *name) {
+  struct stat st;
+  if (fstatat(parent, name, &st, AT_SYMLINK_NOFOLLOW) != 0)
+    return errno == ENOENT ? 0 : -1;
+  if (!S_ISDIR(st.st_mode)) return unlinkat(parent, name, 0);
+
+  int fd = openat(parent, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+  if (fd < 0) return -1;
+  DIR *dir = fdopendir(fd);
+  if (!dir) { close(fd); return -1; }
+
+  int rc = 0;
+  struct dirent *entry;
+  errno = 0;
+  while ((entry = readdir(dir)) != NULL) {
+    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+      continue;
+    if (remove_tree_at(dirfd(dir), entry->d_name) != 0) { rc = -1; break; }
+    errno = 0;
+  }
+  if (errno != 0) rc = -1;
+  if (closedir(dir) != 0) rc = -1;
+  if (rc != 0) return -1;
+  return unlinkat(parent, name, AT_REMOVEDIR);
+}
+
+static int cleanup_workdir(const char *workdir) {
+  const size_t prefix = strlen(WORK_ROOT);
+  if (strncmp(workdir, WORK_ROOT "/", prefix + 1) != 0 ||
+      !workdir[prefix + 1] || strchr(workdir + prefix + 1, '/')) {
+    errno = EINVAL;
+    return -1;
+  }
+  int root = open(WORK_ROOT, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+  if (root < 0) return -1;
+  int rc = remove_tree_at(root, workdir + prefix + 1);
+  int saved_errno = errno;
+  close(root);
+  errno = saved_errno;
+  return rc;
 }
 
 // ---- interpreter rootfs bind mounts (Python, unlike statically-linked
@@ -699,6 +743,8 @@ static cJSON *build_phase_json(struct captured_output *o, int exit_code,
 
 static enum MHD_Result process_execute(struct MHD_Connection *conn,
                                         const char *body, size_t body_len) {
+  struct timespec request_start, phase_start;
+  clock_gettime(CLOCK_MONOTONIC, &request_start);
   cJSON *req = cJSON_ParseWithLength(body, body_len);
   if (!req) {
     return send_text_response(conn, 400, "invalid json\n");
@@ -819,6 +865,8 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
   cJSON *resp = cJSON_CreateObject();
   cJSON_AddStringToObject(resp, "language", j_language->valuestring);
   cJSON_AddStringToObject(resp, "version", "sandbox-runner-m7");
+  double setup_ms = elapsed_ms(&request_start);
+  clock_gettime(CLOCK_MONOTONIC, &phase_start);
 
   int cache_hit = 0;
   if (!is_interpreted && want_handle && cJSON_IsString(j_handle)) {
@@ -960,6 +1008,9 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
     }
   }
 
+  double compile_ms = elapsed_ms(&phase_start);
+  clock_gettime(CLOCK_MONOTONIC, &phase_start);
+
   if (compile_failed) {
     struct captured_output empty = {0};
     cJSON_AddItemToObject(resp, "run", build_phase_json(&empty, -1, -1, 0, 0));
@@ -1012,8 +1063,22 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
         build_phase_json(&run_out, run_code, run_signal, mem_peak, (double)wall_ms));
     free_captured(&run_out);
   }
+  double run_ms = elapsed_ms(&phase_start);
   cJSON_Delete(req);
-  cleanup_workdir(workdir);
+  clock_gettime(CLOCK_MONOTONIC, &phase_start);
+  if (cleanup_workdir(workdir) != 0)
+    fprintf(stderr, "[sandbox-server] cleanup %s: %s\n", workdir, strerror(errno));
+  double cleanup_ms = elapsed_ms(&phase_start);
+
+  // Aggregate only timings and sizes in the caller's logs, never source or
+  // test data. These fields describe the HTTP request, not the student's CPU.
+  cJSON *metrics = cJSON_AddObjectToObject(resp, "metrics");
+  cJSON_AddNumberToObject(metrics, "setup_ms", setup_ms);
+  cJSON_AddNumberToObject(metrics, "compile_ms", compile_ms);
+  cJSON_AddNumberToObject(metrics, "run_ms", run_ms);
+  cJSON_AddNumberToObject(metrics, "cleanup_ms", cleanup_ms);
+  cJSON_AddNumberToObject(metrics, "total_ms", elapsed_ms(&request_start));
+  cJSON_AddNumberToObject(metrics, "request_bytes", body_len);
 
   enum MHD_Result rc = send_json_response(conn, 200, resp);
   cJSON_Delete(resp);
@@ -1094,7 +1159,8 @@ int main(void) {
   // Handles are process-local: remove orphaned files from a previous crash.
   // Failure to initialize the cache only costs recompilation, never judging.
   mkdir(WORK_ROOT, 0755);
-  cleanup_workdir(CACHE_ROOT);
+  if (cleanup_workdir(CACHE_ROOT) != 0)
+    fprintf(stderr, "[sandbox-server] stale cache cleanup: %s\n", strerror(errno));
   cache_ready = mkdir(CACHE_ROOT, 0700) == 0;
   if (!cache_ready)
     fprintf(stderr, "[sandbox-server] compiled cache unavailable\n");

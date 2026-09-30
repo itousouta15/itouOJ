@@ -112,6 +112,7 @@ python3 test/test_compile_cache.py --server /tmp/oj-sandbox-test --jail ./jail -
 ```
 
 正式站更新後可執行 `python3 test/smoke_live_cache.py`，只向本機沙箱送兩筆範例執行請求，不會新增或修改提交紀錄。
+沙箱回應的 `metrics` 包含 setup、compile、run、cleanup 與 total 時間（毫秒）及請求位元組數；Next.js 會以 `[sandbox-metrics]` 記錄請求來源、排隊及傳輸時間，不包含使用者程式或測資內容。
 
 ## 語言支援現況
 

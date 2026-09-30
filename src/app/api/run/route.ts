@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { LANGUAGES, LANGUAGE_KEYS, isLanguageKey } from "@/lib/languages";
 import { execute } from "@/lib/execute";
+import { SandboxBusyError } from "@/lib/sandboxQueue";
 import { runVerdict } from "@/lib/judge";
 import { assertContestProblemAccess } from "@/lib/contest";
 import { enforceRateLimit } from "@/lib/rateLimit";
@@ -104,6 +105,8 @@ export async function POST(request: Request) {
         runMemoryLimitBytes: memoryLimitBytes,
         compiledHandle,
         precompiledBinary: compiledBinary,
+        priority: "test",
+        signal: request.signal,
       });
       compiledHandle = result.compiled_handle;
       compiledBinary = compiledHandle ? undefined : result.compiled_binary;
@@ -165,6 +168,9 @@ export async function POST(request: Request) {
       }
       return Response.json({ mode: "samples", results });
     } catch (err) {
+      if (err instanceof SandboxBusyError) {
+        return Response.json({ error: err.message }, { status: 503 });
+      }
       console.error("[run] internal error:", err);
       return Response.json(
         { error: "評測系統暫時無法使用，請稍後再試" },

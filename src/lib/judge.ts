@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import { execute } from "@/lib/execute";
 import type { ExecutionPhase } from "@/lib/sandbox";
+import { SandboxBusyError } from "@/lib/sandboxQueue";
 import { randomUUID } from "node:crypto";
 
 // Worker 透過資料庫的狀態轉換領取工作；同一筆提交只能被一個有效 claim 寫入。
@@ -233,6 +234,7 @@ export async function judgeSubmission(submissionId: number, claimId: string) {
           runMemoryLimitBytes: memoryLimitBytes,
           precompiledBinary: compiledBinary,
           compiledHandle,
+          priority: "judge",
         });
 
         // 編譯失敗 → CE，直接結束
@@ -310,6 +312,15 @@ export async function judgeSubmission(submissionId: number, claimId: string) {
       },
     });
   } catch (err) {
+    if (err instanceof SandboxBusyError) {
+      // No judgement happened while waiting. Retry this claim later instead
+      // of marking a healthy submission as an internal error.
+      await prisma.submission.updateMany({
+        where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
+        data: { status: "PENDING", judgeClaimedAt: null, judgeClaimId: null },
+      });
+      return;
+    }
     console.error(`[judge] submission ${submissionId} internal error:`, err);
     await prisma.submission.updateMany({
       where: { id: submissionId, status: "JUDGING", judgeClaimId: claimId },
