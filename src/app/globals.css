@@ -282,7 +282,8 @@ body:has(.site-loader) .motion-progress {
   position: sticky;
   top: 0;
   z-index: 80;
-  background: color-mix(in srgb, var(--panel2) 72%, transparent);
+  /* Keep scrolled section headings from showing through the sticky header. */
+  background: var(--panel2);
   border-bottom: 1px solid color-mix(in srgb, var(--bd2) 78%, transparent);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.06);
   backdrop-filter: blur(20px) saturate(145%);
@@ -296,6 +297,9 @@ body:has(.site-loader) .motion-progress {
 }
 body.site-revealed .site-header {
   animation-play-state: running;
+}
+[data-app-section] {
+  scroll-margin-top: calc(4rem + env(safe-area-inset-top));
 }
 .logo {
   font-family: "ChenYuLuoYan", "Dancing Script", cursive;

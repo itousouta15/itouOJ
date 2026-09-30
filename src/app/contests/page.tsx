@@ -5,7 +5,10 @@ import { getSession } from "@/lib/auth";
 import { getContestPhase } from "@/lib/contest";
 import ContestStatusBadge from "@/components/ContestStatusBadge";
 
-export const metadata: Metadata = { title: "比賽" };
+export const metadata: Metadata = {
+  title: "比賽",
+  robots: { index: true, follow: true },
+};
 export const dynamic = "force-dynamic";
 
 export default async function ContestsPage() {

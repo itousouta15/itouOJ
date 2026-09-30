@@ -71,8 +71,7 @@ const appInit = `(function(){try{
   }
 }catch(e){}})();`;
 
-// 辰宇落雁體走 emfont 的分塊 subset CSS，先 preload、等瀏覽器閒置才套用；
-// 字體就緒前 logo 由 .fonts-ready 規則隱藏（見 SiteLoader / globals.css）。
+// 辰宇落雁體只用在品牌字樣，等瀏覽器閒置後再載入，不阻塞主要內容。
 const EMFONT_CSS = "https://font.emtech.cc/css/ChenYuLuoYan";
 const fontApply = `(function(){
   function apply(){var l=document.createElement('link');l.rel='stylesheet';l.href='${EMFONT_CSS}';document.head.appendChild(l);}
@@ -80,7 +79,7 @@ const fontApply = `(function(){
 })();`;
 
 const GOOGLE_FONTS_CSS =
-  "https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Fira+Code:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;700&family=Shippori+Mincho:wght@400;600;700&display=swap";
+  "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Shippori+Mincho:wght@400;600;700&display=swap";
 
 export default function RootLayout({
   children,
@@ -104,7 +103,6 @@ export default function RootLayout({
             />
             <link rel="stylesheet" href={GOOGLE_FONTS_CSS} />
             <link rel="preconnect" href="https://font.emtech.cc" />
-            <link rel="preload" as="style" href={EMFONT_CSS} />
             <script dangerouslySetInnerHTML={{ __html: fontApply }} />
             <noscript>
               <link rel="stylesheet" href={EMFONT_CSS} />
