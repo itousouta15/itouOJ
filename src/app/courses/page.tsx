@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
-export const metadata: Metadata = { title: "課程" };
+export const metadata: Metadata = {
+  title: "課程",
+  robots: { index: true, follow: true },
+};
 export const dynamic = "force-dynamic";
 
 export default async function CoursesPage() {

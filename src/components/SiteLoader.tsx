@@ -43,39 +43,30 @@ export default function SiteLoader() {
       }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : SLIDE_MS);
     };
 
-    if (document.readyState === "complete") {
-      hideTimer = setTimeout(startHide, 150);
+    // The page is server-rendered, so waiting for every font and image makes
+    // the loader hide useful content during slow or offline connections.
+    const revealAfterDom = () => {
+      hideTimer = setTimeout(startHide, 120);
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", revealAfterDom, { once: true });
     } else {
-      window.addEventListener("load", startHide);
-      // 保險：資源載入異常緩慢時，最多等 4 秒仍讓網站顯示。
-      hideTimer = setTimeout(startHide, MAX_WAIT_MS);
+      revealAfterDom();
     }
+    // Keep a safety net for unusual hydration stalls.
+    const maxWaitTimer = setTimeout(startHide, MAX_WAIT_MS);
 
     return () => {
-      window.removeEventListener("load", startHide);
+      document.removeEventListener("DOMContentLoaded", revealAfterDom);
       clearTimeout(hideTimer);
       clearTimeout(removeTimer);
+      clearTimeout(maxWaitTimer);
     };
   }, []);
 
-  // 等字體就緒後加 .fonts-ready 讓 logo 淡入。原站把這段放在 Header，
-  // 這裡的 Navbar 是 server component，所以掛在 SiteLoader。
+  // 品牌字體在 idle 時載入；不要讓字體請求阻塞 logo 或頁面顯示。
   useEffect(() => {
-    const reveal = () => document.documentElement.classList.add("fonts-ready");
-    if (!("fonts" in document)) {
-      reveal();
-      return;
-    }
-    let done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      reveal();
-    };
-    document.fonts.load('45px "ChenYuLuoYan"').then(finish).catch(finish);
-    // 保險：字體請求失敗或過慢時，最多等 3 秒仍顯示 logo。
-    const timer = window.setTimeout(finish, 3000);
-    return () => window.clearTimeout(timer);
+    document.documentElement.classList.add("fonts-ready");
   }, []);
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
-// 只讓公開題目相關頁面被搜尋引擎收錄。其他路徑有學生的帳號、提交與名次，
-// 這是營隊練習系統，不該被 Google 索引起來公開查。
+// 公開的題目、課程、比賽與排行頁可被搜尋；帳號、提交紀錄與個人動態
+// 仍不進入搜尋索引，避免把學生資料當成公開內容擴散。
 export default function robots(): MetadataRoute.Robots {
   const base = process.env.APP_URL ?? "https://oj.itousouta.me";
   return {
@@ -10,15 +10,12 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         "/admin",
         "/api",
-        "/contests",
-        "/courses",
         "/desktop-auth",
         "/login",
         "/register",
         "/settings",
         "/submissions",
         "/users",
-        "/ranking",
         "/search",
         "/activity",
         "/problems/propose",

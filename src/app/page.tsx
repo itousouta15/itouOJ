@@ -3,13 +3,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getActivityFeed, type FeedItem } from "@/lib/activityFeed";
+import { getActivityFeed } from "@/lib/activityFeed";
 import { getDailyProblem } from "@/lib/dailyProblem";
 import { getNextLearningAction } from "@/lib/nextLearningAction";
 import { getTopSolvedUsers } from "@/lib/ranking";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import DifficultyBadge from "@/components/DifficultyBadge";
-import HomeSubmissionRow from "@/components/HomeSubmissionRow";
 import VerdictBadge from "@/components/VerdictBadge";
 import FeedList from "@/components/FeedList";
 
@@ -41,15 +40,6 @@ export default async function HomePage() {
     select: { id: true, problemCode: true, title: true, difficulty: true },
   });
 
-  const latestSubmissions = await prisma.submission.findMany({
-    orderBy: { id: "desc" },
-    take: 8,
-    include: {
-      user: { select: { username: true, displayName: true } },
-      problem: { select: { id: true, problemCode: true, title: true, type: true } },
-    },
-  });
-
   const topUsers = await getTopSolvedUsers(5);
 
   const stats = [
@@ -60,18 +50,24 @@ export default async function HomePage() {
   ];
 
   // 追蹤動態：只有登入且真的有關注人時才查
-  let followFeed: FeedItem[] = [];
+  let homeFeed = [] as Awaited<ReturnType<typeof getActivityFeed>>;
+  let homeFeedTitle = "社群動態";
   if (session) {
     const following = await prisma.follow.findMany({
       where: { followerId: session.userId },
       select: { followingId: true },
     });
     if (following.length > 0) {
-      followFeed = await getActivityFeed(
+      homeFeed = await getActivityFeed(
         following.map((f) => f.followingId),
         5
       );
+      if (homeFeed.length > 0) homeFeedTitle = "追蹤動態";
     }
+  }
+  // 未登入或還沒有追蹤動態時，展示公開的 AC、題解與留言。
+  if (homeFeed.length === 0) {
+    homeFeed = await getActivityFeed(null, 6);
   }
 
   // 每日一題；登入者順便看今天這題解過沒
@@ -205,74 +201,19 @@ export default async function HomePage() {
             <div className="min-w-0">
               <p className="page-kicker">下一步</p>
               <p className="mt-1 text-sm text-dim">{nextAction.detail}</p>
-              <Link href={nextAction.href} className="mt-2 block truncate font-semibold text-blue hover:underline">
+            <Link
+              href={nextAction.href}
+              className="mt-2 block truncate font-semibold text-blue hover:underline"
+            >
                 {nextAction.title}
               </Link>
             </div>
-            <Link href={nextAction.href} className="btn-primary shrink-0">繼續</Link>
+            <Link href={nextAction.href} className="btn-primary shrink-0">
+              繼續
+            </Link>
           </div>
         </section>
       )}
-
-      <section data-app-section="promo">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="card flex flex-col gap-4 p-6">
-            <div className="flex items-center gap-3">
-              <Image
-                src="/brand/itouOJ.png"
-                alt=""
-                className="h-14 w-14 rounded-xl"
-                width={56}
-                height={56}
-              />
-              <div>
-                <h2 className="section-title">itouOJ Android App</h2>
-                <p className="text-sm text-dim">手機隨時寫題・判題通知・比賽提醒</p>
-              </div>
-            </div>
-            <p className="text-sm leading-relaxed text-dim">
-              把整座線上評測裝進手機：深色介面、全螢幕程式編輯器、
-              鍵盤符號列，判題結果直接用通知推給你。
-            </p>
-<a
-              href="https://github.com/itousouta15/itouOJ/releases/tag/app-v1.2.0"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary mt-auto self-start"
-            >
-              下載 APK ↓
-            </a>
-          </div>
-
-          <div className="card flex flex-col gap-4 p-6">
-            <div className="flex items-center gap-3">
-              <Image
-                src="/brand/port.png"
-                alt=""
-                className="h-14 w-14 rounded-xl"
-                width={56}
-                height={56}
-              />
-              <div>
-                <h2 className="section-title">收件程式（Windows）</h2>
-                <p className="text-sm text-dim">桌面端離線收題・測資上傳</p>
-              </div>
-            </div>
-            <p className="text-sm leading-relaxed text-dim">
-              離線競賽用的 Windows 收件程式，可在本機測試與暫存提交，連線後再批次上傳；
-              適合機房斷網或網路受限的比賽。
-            </p>
-<a
-              href="https://github.com/itousouta15/itouOJ/releases/tag/v1.3.2"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary mt-auto self-start"
-            >
-              下載收件程式 ↓
-            </a>
-          </div>
-        </div>
-      </section>
 
       {/* 公告 */}
       {announcements.length > 0 && (
@@ -378,77 +319,79 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 追蹤動態（登入且有關注時才顯示） */}
-      {followFeed.length > 0 && (
+      {/* 社群動態：登入者優先看追蹤對象，其他訪客看公開活動 */}
+      {homeFeed.length > 0 && (
         <section data-app-section="feed">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="section-title">追蹤動態</h2>
+            <h2 className="section-title">{homeFeedTitle}</h2>
             <Link
-              href="/activity"
+              href={session ? "/activity" : "/register"}
               className="mono text-xs text-blue hover:underline"
             >
-              更多動態 →
+              {session ? "更多動態 →" : "註冊後追蹤 →"}
             </Link>
           </div>
-          <FeedList items={followFeed} />
+          <FeedList items={homeFeed} />
         </section>
       )}
 
-      {/* 最新提交 */}
-      <section data-app-section="submissions">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="section-title">最新提交</h2>
-          <Link
-            href="/submissions"
-            className="mono text-xs text-blue hover:underline"
-          >
-            所有提交 →
-          </Link>
-        </div>
-        <div className="card overflow-x-auto">
-          <table className="motion-table w-full">
-            <thead>
-              <tr>
-                <th className="table-head w-16">#</th>
-                <th className="table-head">題目</th>
-                <th className="table-head w-32">使用者</th>
-                <th className="table-head w-28">結果</th>
-                <th className="table-head w-36 text-right">時間</th>
-              </tr>
-            </thead>
-            <tbody>
-              {latestSubmissions.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="table-cell py-10 text-center text-mute"
-                  >
-                    還沒有紀錄
-                  </td>
-                </tr>
-              )}
-              {latestSubmissions.map((s) => (
-                <HomeSubmissionRow
-                  key={s.id}
-                  s={{
-                    id: s.id,
-                    status: s.status,
-                    username: s.user.username,
-                    displayName: s.user.displayName,
-                    problem: s.problem,
-                    createdAtLabel: s.createdAt.toLocaleString("zh-TW", {
-                      timeZone: "Asia/Taipei",
-                      hour12: false,
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    }),
-                  }}
-                />
-              ))}
-            </tbody>
-          </table>
+      {/* 下載工具：放在核心內容之後，避免打斷第一次解題流程 */}
+      <section data-app-section="promo">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="card flex flex-col gap-4 p-6">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/brand/itouOJ.png"
+                alt=""
+                className="h-14 w-14 rounded-xl"
+                width={56}
+                height={56}
+              />
+              <div>
+                <h2 className="section-title">itouOJ Android App</h2>
+                <p className="text-sm text-dim">手機隨時寫題・判題通知・比賽提醒</p>
+              </div>
+            </div>
+            <p className="text-sm leading-relaxed text-dim">
+              把整座線上評測裝進手機：深色介面、全螢幕程式編輯器、
+              鍵盤符號列，判題結果直接用通知推給你。
+            </p>
+            <a
+              href="https://github.com/itousouta15/itouOJ/releases/tag/app-v1.2.0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary mt-auto self-start"
+            >
+              下載 APK ↓
+            </a>
+          </div>
+          <div className="card flex flex-col gap-4 p-6">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/brand/port.png"
+                alt=""
+                className="h-14 w-14 rounded-xl"
+                width={56}
+                height={56}
+              />
+              <div>
+                <h2 className="section-title">收件程式（Windows）</h2>
+                <p className="text-sm text-dim">桌面端離線收題・測資上傳</p>
+              </div>
+            </div>
+            <p className="text-sm leading-relaxed text-dim">
+              離線競賽用的 Windows 收件程式，可在本機測試與暫存提交，連線後再批次上傳；
+              適合機房斷網或網路受限的比賽。
+            </p>
+            <a
+              href="https://github.com/itousouta15/itouOJ/releases/tag/v1.3.2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary mt-auto self-start"
+            >
+              下載收件程式 ↓
+            </a>
+          </div>
         </div>
       </section>
 
