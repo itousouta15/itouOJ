@@ -98,6 +98,12 @@ Invoke-Native "remote deploy" {
     ssh $Server "bash $release/deploy/remote-release.sh $release"
 }
 
+# Double-check the persistent database directory after promotion. A release
+# built from an older HEAD may not yet contain the remote ownership fix.
+Invoke-Native "verify database writable by oj" {
+    ssh $Server "chown oj:oj $AppDir && runuser -u oj -- sqlite3 $AppDir/oj.db 'BEGIN IMMEDIATE; CREATE TABLE __oj_deploy_write_probe (id INTEGER); ROLLBACK;'"
+}
+
 Write-Host "== Verifying public site =="
 
 $status = (Invoke-WebRequest -Uri "https://oj.itousouta.me/" -UseBasicParsing -TimeoutSec 30).StatusCode

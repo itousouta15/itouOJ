@@ -52,6 +52,7 @@ rollback() {
     cp "$BACKUP/oj.db" "$APP/oj.db"
     chown oj:oj "$APP/oj.db"
   fi
+  chown oj:oj "$APP" || true
   systemctl start online-judge online-judge-worker || true
   exit "$status"
 }
@@ -146,6 +147,11 @@ rsync -a --exclude='.env' --exclude='oj.db*' --exclude='.next*' \
 rsync -a --delete "$SOURCE/src/" "$APP/src/"
 mv "$SOURCE/.next" "$APP/.next"
 mv "$SOURCE/node_modules" "$APP/node_modules"
+# rsync -a copies the staged directory's root:root metadata onto APP itself.
+# SQLite's DELETE journal must be created beside oj.db by the oj user.
+chown oj:oj "$APP"
+runuser -u oj -- sqlite3 "$APP/oj.db" \
+  'BEGIN IMMEDIATE; CREATE TABLE __oj_deploy_write_probe (id INTEGER); ROLLBACK;'
 install -m 644 "$SOURCE/deploy/online-judge-worker.service" /etc/systemd/system/online-judge-worker.service
 systemctl daemon-reload
 SITE_STARTED=1
