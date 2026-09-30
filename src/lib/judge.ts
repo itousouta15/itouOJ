@@ -211,8 +211,9 @@ export async function judgeSubmission(submissionId: number, claimId: string) {
   let maxMemoryKb = 0;
   let score = hasSubtasks ? 0 : null;
   let resultOrder = 0;
-  // 同一筆 submission 的原始碼相同，第一筆測資編譯出來的執行檔記下來，
-  // 後面測資直接重用，不用每筆重編（只有 sandbox-runner 吃這個欄位）。
+  // 同一筆提交只編譯一次；沙箱重啟或快取淘汰時由沙箱重新編譯。
+  let compiledHandle: string | undefined;
+  // 與尚未支援 handle 的舊版沙箱相容，部署時不必同時切換服務。
   let compiledBinary: string | undefined;
 
   try {
@@ -231,6 +232,7 @@ export async function judgeSubmission(submissionId: number, claimId: string) {
           runTimeoutMs: timeLimitMs,
           runMemoryLimitBytes: memoryLimitBytes,
           precompiledBinary: compiledBinary,
+          compiledHandle,
         });
 
         // 編譯失敗 → CE，直接結束
@@ -247,9 +249,8 @@ export async function judgeSubmission(submissionId: number, claimId: string) {
           });
           return;
         }
-        if (!compiledBinary && result.compiled_binary) {
-          compiledBinary = result.compiled_binary;
-        }
+        compiledHandle = result.compiled_handle;
+        compiledBinary = compiledHandle ? undefined : result.compiled_binary;
 
         const run = result.run;
         const timeMs = Math.round(run.cpu_time ?? run.wall_time ?? 0);

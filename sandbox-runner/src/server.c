@@ -26,17 +26,10 @@
 // deliberate, simple concurrency guard -- see the plan's risk note about
 // /api/run having none today.
 //
-// M9: compile-once caching. judge.ts judges one test case per request, and
-// with no caching that meant recompiling identical source from scratch for
-// every test case of the same submission. An optional `precompiled_binary`
-// request field (base64) skips straight to the run phase using those bytes
-// instead of invoking the compiler; a successful fresh compile echoes the
-// binary back as `compiled_binary` so the caller can hand it back on the
-// submission's remaining test cases. Doesn't change the trust boundary:
-// this API is loopback-only, so the only caller is judge.ts itself, and the
-// cached bytes are always exactly what the real compiler already produced
-// from that submission's own source earlier in the same judging pass --
-// never anything supplied by the student directly.
+// Compile-once caching: the old precompiled_binary/compiled_binary base64
+// protocol is kept for rolling deploys. New callers request a compiled_handle
+// instead; the binary stays in a bounded, private disk cache and each test
+// still runs in a fresh jail. A missing handle re-compiles from source.
 #define _GNU_SOURCE
 #include <arpa/inet.h>
 #include <cjson/cJSON.h>
@@ -50,14 +43,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mount.h>
+#include <sys/random.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 
+#ifndef PORT
 #define PORT 8090
+#endif
 #define JAIL_BIN "./jail"
 #define WORK_ROOT "./work"
+#define CACHE_ROOT WORK_ROOT "/compiled-cache"
 #define DEFAULT_PIDS_MAX "32"
 // Compile-phase jail limits -- independent of the per-problem run_mem_mb
 // (which bounds the *submission's own* program, not the compiler). gcc/g++
@@ -69,7 +66,17 @@
 #define PYTHON_HOME "/opt/piston-data/packages/python/3.12.0"
 #define NODE_HOME "/opt/piston-data/packages/node/20.11.1"
 #define MAX_CAPTURE_BYTES (1024 * 1024)
-#define MAX_REQUEST_BYTES (256 * 1024)
+// Legacy callers still send static C++ binaries as base64 on every test case.
+#define MAX_REQUEST_BYTES (8 * 1024 * 1024)
+// Leave room for source, stdin and JSON escaping in a cached-binary request.
+// Larger executables simply get recompiled on the next test case.
+#define MAX_LEGACY_BINARY_BYTES (4 * 1024 * 1024)
+// The new handle protocol keeps the binary on disk rather than shipping it
+// through Node on every test case. Disk use is bounded even if callers vanish.
+#define CACHE_ENTRIES 16
+#define CACHE_BYTES (64 * 1024 * 1024)
+#define CACHE_ENTRY_BYTES (16 * 1024 * 1024)
+#define CACHE_IDLE_SECONDS (15 * 60)
 
 struct lang_info {
   const char *key; // matches src/lib/languages.ts's `lang.piston` value
@@ -103,6 +110,109 @@ static const struct lang_info *find_lang(const char *key) {
     if (strcmp(LANGS[i].key, key) == 0) return &LANGS[i];
   }
   return NULL;
+}
+
+struct cache_entry {
+  char token[33]; // 128 bits from getrandom, never used as a path from a request
+  char *source;
+  const struct lang_info *lang;
+  size_t bytes;
+  time_t last_used;
+};
+
+static struct cache_entry cache[CACHE_ENTRIES];
+static size_t cache_bytes;
+static int cache_ready;
+
+static void cache_path(char *path, size_t len, const char *token) {
+  snprintf(path, len, "%s/%s", CACHE_ROOT, token);
+}
+
+static void cache_remove(struct cache_entry *entry) {
+  if (!entry->source) return;
+  char path[256];
+  cache_path(path, sizeof(path), entry->token);
+  unlink(path);
+  cache_bytes -= entry->bytes;
+  free(entry->source);
+  memset(entry, 0, sizeof(*entry));
+}
+
+static void cache_expire(time_t now) {
+  for (size_t i = 0; i < CACHE_ENTRIES; i++) {
+    if (cache[i].source && now - cache[i].last_used >= CACHE_IDLE_SECONDS)
+      cache_remove(&cache[i]);
+  }
+}
+
+static struct cache_entry *cache_find(const char *token,
+                                      const struct lang_info *lang,
+                                      const char *source) {
+  if (!cache_ready || strlen(token) != 32) return NULL;
+  cache_expire(time(NULL));
+  for (size_t i = 0; i < CACHE_ENTRIES; i++) {
+    struct cache_entry *entry = &cache[i];
+    if (entry->source && entry->lang == lang &&
+        strcmp(entry->token, token) == 0 &&
+        strcmp(entry->source, source) == 0) return entry;
+  }
+  return NULL;
+}
+
+static const char *cache_store(const char *binary,
+                               const struct lang_info *lang,
+                               const char *source) {
+  if (!cache_ready) return NULL;
+  struct stat st;
+  if (stat(binary, &st) != 0 || !S_ISREG(st.st_mode) || st.st_size <= 0 ||
+      st.st_size > CACHE_ENTRY_BYTES) return NULL;
+  size_t size = (size_t)st.st_size;
+  time_t now = time(NULL);
+  cache_expire(now);
+
+  while (cache_bytes + size > CACHE_BYTES) {
+    struct cache_entry *oldest = NULL;
+    for (size_t i = 0; i < CACHE_ENTRIES; i++) {
+      if (cache[i].source &&
+          (!oldest || cache[i].last_used < oldest->last_used)) oldest = &cache[i];
+    }
+    if (!oldest) return NULL;
+    cache_remove(oldest);
+  }
+
+  struct cache_entry *entry = NULL;
+  for (size_t i = 0; i < CACHE_ENTRIES; i++) {
+    if (!cache[i].source) { entry = &cache[i]; break; }
+  }
+  if (!entry) {
+    entry = &cache[0];
+    for (size_t i = 1; i < CACHE_ENTRIES; i++) {
+      if (cache[i].last_used < entry->last_used) entry = &cache[i];
+    }
+    cache_remove(entry);
+  }
+
+  char *source_copy = strdup(source);
+  if (!source_copy) return NULL;
+  unsigned char random_bytes[16];
+  if (getrandom(random_bytes, sizeof(random_bytes), 0) != sizeof(random_bytes)) {
+    free(source_copy);
+    return NULL;
+  }
+  for (size_t i = 0; i < sizeof(random_bytes); i++)
+    snprintf(entry->token + i * 2, 3, "%02x", random_bytes[i]);
+  char path[256];
+  cache_path(path, sizeof(path), entry->token);
+  if (link(binary, path) != 0) {
+    free(source_copy);
+    return NULL;
+  }
+  entry->source = source_copy;
+  entry->lang = lang;
+  entry->bytes = size;
+  entry->last_used = now;
+  cache_bytes += size;
+  return entry->token;
 }
 
 static const char *signal_name(int sig) {
@@ -605,6 +715,9 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
   // 後續測資帶著這個欄位來就跳過重新編譯，直接拿這份執行檔去跑。
   cJSON *j_precompiled =
       cJSON_GetObjectItemCaseSensitive(req, "precompiled_binary");
+  cJSON *j_handle = cJSON_GetObjectItemCaseSensitive(req, "compiled_handle");
+  int want_handle = cJSON_IsTrue(
+      cJSON_GetObjectItemCaseSensitive(req, "want_compiled_handle"));
 
   if (!cJSON_IsString(j_language) || !cJSON_IsArray(j_files) ||
       cJSON_GetArraySize(j_files) < 1) {
@@ -707,10 +820,32 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
   cJSON_AddStringToObject(resp, "language", j_language->valuestring);
   cJSON_AddStringToObject(resp, "version", "sandbox-runner-m7");
 
+  int cache_hit = 0;
+  if (!is_interpreted && want_handle && cJSON_IsString(j_handle)) {
+    struct cache_entry *entry = cache_find(j_handle->valuestring, lang,
+                                            j_content->valuestring);
+    if (entry) {
+      char path[256];
+      cache_path(path, sizeof(path), entry->token);
+      if (link(path, bin_path) == 0) {
+        entry->last_used = time(NULL);
+        cache_hit = 1;
+        cJSON_AddStringToObject(resp, "compiled_handle", entry->token);
+      } else {
+        cache_remove(entry); // missing cache file: recompile the source below
+      }
+    }
+  }
+  if (want_handle) cJSON_AddBoolToObject(resp, "compiled_cache_hit", cache_hit);
+
   int compile_failed = 0;
   if (is_interpreted) {
     // No compile phase for interpreted languages -- report a trivial
     // success so the response shape stays identical to Piston's.
+    struct captured_output empty = {0};
+    cJSON_AddItemToObject(resp, "compile",
+                           build_phase_json(&empty, 0, -1, 0, 0));
+  } else if (cache_hit) {
     struct captured_output empty = {0};
     cJSON_AddItemToObject(resp, "compile",
                            build_phase_json(&empty, 0, -1, 0, 0));
@@ -798,16 +933,17 @@ static enum MHD_Result process_execute(struct MHD_Connection *conn,
     compile_failed = compile_sig >= 0 || compile_exit != 0;
     free_captured(&compile_out);
 
-    // 編譯成功就把執行檔位元組回傳給呼叫端快取，下一筆測資才能省掉
-    // 重新編譯——只有「這次真的重新編譯」才回傳，呼叫端已經有的話
-    // （帶 precompiled_binary 進來那些請求）沒必要再送一次。
-    if (!compile_failed) {
+    // 新版回傳短代碼，舊版仍回傳編譯檔；快取不可用時，下次從原始碼重編。
+    if (!compile_failed && want_handle) {
+      const char *token = cache_store(bin_path, lang, j_content->valuestring);
+      if (token) cJSON_AddStringToObject(resp, "compiled_handle", token);
+    } else if (!compile_failed) {
       FILE *bf = fopen(bin_path, "rb");
       if (bf) {
         fseek(bf, 0, SEEK_END);
         long bin_size = ftell(bf);
         fseek(bf, 0, SEEK_SET);
-        if (bin_size > 0) {
+        if (bin_size > 0 && bin_size <= MAX_LEGACY_BINARY_BYTES) {
           unsigned char *bin_data = malloc((size_t)bin_size);
           if (bin_data && fread(bin_data, 1, (size_t)bin_size, bf) ==
                               (size_t)bin_size) {
@@ -954,6 +1090,14 @@ static void request_completed(void *cls, struct MHD_Connection *conn,
 
 int main(void) {
   srand((unsigned)time(NULL) ^ (unsigned)getpid());
+
+  // Handles are process-local: remove orphaned files from a previous crash.
+  // Failure to initialize the cache only costs recompilation, never judging.
+  mkdir(WORK_ROOT, 0755);
+  cleanup_workdir(CACHE_ROOT);
+  cache_ready = mkdir(CACHE_ROOT, 0700) == 0;
+  if (!cache_ready)
+    fprintf(stderr, "[sandbox-server] compiled cache unavailable\n");
 
   // Bind loopback-only, matching Piston's own trust boundary today (nothing
   // routes here through nginx) -- MHD_start_daemon defaults to 0.0.0.0

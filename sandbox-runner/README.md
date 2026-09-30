@@ -101,6 +101,17 @@ jail <rootfs-dir> <mem-limit-mb> <pids-max> <timeout-ms> <seccomp-profile> <prog
 - Python / JavaScript 沒有編譯階段，bind mount `/opt/piston-data` 裡的直譯器進沙箱 rootfs，執行完就 `umount`。
 - 每個請求獨立暫存目錄 + `poll()` 多工處理 stdin/stdout/stderr，避免管線緩衝區塞滿死結。
 - 單執行緒，同一時間只判一筆——簡單但有效的併發保護。
+- C/C++ 的第一筆測資完成編譯後，回傳 `compiled_handle`；同一份原始碼的後續測資用代碼重用沙箱端執行檔，不需反覆傳送 base64。每筆測資仍建立新的 jail。快取限 16 筆／64 MiB、單檔 16 MiB，閒置 15 分鐘過期；淘汰或服務重啟後會從原始碼重新編譯。舊版 `precompiled_binary` 暫保留，以支援分階段部署。
+
+在可執行 `jail` 的 Linux 主機上，以不同的本機埠執行傳輸量／延遲比較及快取失效回歸測試，避免占用正式站的 8090：
+
+```sh
+cc -O2 -DPORT=18090 -o /tmp/oj-sandbox-test src/server.c -lmicrohttpd -lcjson
+python3 test/test_compile_cache.py --server /tmp/oj-sandbox-test --jail ./jail --port 18090 --mode cache
+python3 test/test_compile_cache.py --server /tmp/oj-sandbox-test --jail ./jail --port 18090 --mode legacy
+```
+
+正式站更新後可執行 `python3 test/smoke_live_cache.py`，只向本機沙箱送兩筆範例執行請求，不會新增或修改提交紀錄。
 
 ## 語言支援現況
 

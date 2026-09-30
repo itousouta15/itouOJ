@@ -21,6 +21,8 @@ export interface ExecutionResult {
   compile?: ExecutionPhase;
   run: ExecutionPhase;
   compiled_binary?: string;
+  compiled_handle?: string;
+  compiled_cache_hit?: boolean;
 }
 
 // sandbox-server 沿用 /api/v2/execute 的 JSON 格式。
@@ -32,9 +34,9 @@ export async function sandboxExecute(params: {
   stdin: string;
   runTimeoutMs: number;
   runMemoryLimitBytes: number;
-  // 有給的話（同一筆 submission 前一筆測資編譯出來的執行檔）sandbox-runner
-  // 會跳過重新編譯，直接拿這份去跑——見 judge.ts 的 compile-once 快取。
+  // 舊版沙箱使用 base64 執行檔；新版以短代碼在沙箱端重用編譯成果。
   precompiledBinary?: string;
+  compiledHandle?: string;
 }): Promise<ExecutionResult> {
   const timeoutMs = COMPILE_TIMEOUT_MS + params.runTimeoutMs + TRANSPORT_GRACE_MS;
   const res = await fetch(`${SANDBOX_URL}/api/v2/execute`, {
@@ -49,6 +51,8 @@ export async function sandboxExecute(params: {
       run_timeout: params.runTimeoutMs,
       run_memory_limit: params.runMemoryLimitBytes,
       precompiled_binary: params.precompiledBinary,
+      want_compiled_handle: true,
+      compiled_handle: params.compiledHandle,
     }),
     signal: AbortSignal.timeout(timeoutMs),
   });

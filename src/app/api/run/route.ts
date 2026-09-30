@@ -91,8 +91,10 @@ export async function POST(request: Request) {
     const memoryLimitBytes =
       problem.memoryLimitMb * lang.memoryMultiplier * 1024 * 1024;
 
-    const exec = (stdin: string) =>
-      execute({
+    let compiledHandle: string | undefined;
+    let compiledBinary: string | undefined;
+    const exec = async (stdin: string) => {
+      const result = await execute({
         language: lang.runtime,
         version: lang.version,
         filename: lang.filename,
@@ -100,7 +102,13 @@ export async function POST(request: Request) {
         stdin,
         runTimeoutMs: timeLimitMs,
         runMemoryLimitBytes: memoryLimitBytes,
+        compiledHandle,
+        precompiledBinary: compiledBinary,
       });
+      compiledHandle = result.compiled_handle;
+      compiledBinary = compiledHandle ? undefined : result.compiled_binary;
+      return result;
+    };
 
     try {
       // ---- 自訂輸入：跑一次，回傳原始輸出 ----
