@@ -86,6 +86,13 @@ Invoke-Native "stage release" {
     ssh $Server "test -d /tmp && test -d $AppDir && test ! -e $release && tar tzf /tmp/oj.tar.gz >/dev/null && mkdir $release && tar xzf /tmp/oj.tar.gz -C $release && ln -s $AppDir/.env $release/.env"
 }
 
+# Git for Windows may export text entries with CRLF even when the committed
+# blob is LF. Bash then reads the trailing CR as part of `pipefail` and exits
+# before any preflight or rollback handler is installed.
+Invoke-Native "normalize staged shell script" {
+    ssh $Server "sed -i 's/\r$//' $release/deploy/remote-release.sh && bash -n $release/deploy/remote-release.sh"
+}
+
 Write-Host "== Build / test / promote / verify / rollback on failure =="
 Invoke-Native "remote deploy" {
     ssh $Server "bash $release/deploy/remote-release.sh $release"
