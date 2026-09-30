@@ -81,12 +81,17 @@ export async function POST(request: Request) {
         }
 
         // 實作題配發「一碼英文＋三碼數字」代碼。
-        const last = await tx.problem.findFirst({
+        const lastCodeProblem = await tx.problem.findFirst({
           where: { type },
           orderBy: { problemCode: "desc" },
           select: { problemCode: true },
         });
-        const problemCode = nextProblemCode(last?.problemCode);
+        const lastOrderProblem = await tx.problem.findFirst({
+          where: { type },
+          orderBy: { order: "desc" },
+          select: { order: true },
+        });
+        const problemCode = nextProblemCode(lastCodeProblem?.problemCode);
 
         const created = await tx.problem.create({
           data: {
@@ -95,6 +100,9 @@ export async function POST(request: Request) {
             ...pdf,
             authorId: author.authorId,
             problemCode,
+            // Programming problems no longer use order for routing, but the
+            // database still enforces the legacy unique (type, order) key.
+            order: (lastOrderProblem?.order ?? -1) + 1,
             subtasks: {
               create: subtasks.map((s, i) => ({
                 order: i + 1,

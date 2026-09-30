@@ -37,10 +37,15 @@ export async function POST(
       return { error: "此申請已處理", status: 409 as const };
     }
 
-    const last = await tx.problem.findFirst({
+    const lastCodeProblem = await tx.problem.findFirst({
       where: { type: "PROGRAMMING" },
       orderBy: { problemCode: "desc" },
       select: { problemCode: true },
+    });
+    const lastOrderProblem = await tx.problem.findFirst({
+      where: { type: "PROGRAMMING" },
+      orderBy: { order: "desc" },
+      select: { order: true },
     });
     const created = await tx.problem.create({
       data: {
@@ -51,7 +56,9 @@ export async function POST(
         timeLimitMs: proposal.timeLimitMs,
         memoryLimitMb: proposal.memoryLimitMb,
         isPublic,
-        problemCode: nextProblemCode(last?.problemCode),
+        problemCode: nextProblemCode(lastCodeProblem?.problemCode),
+        // Preserve the legacy unique (type, order) key for programming problems.
+        order: (lastOrderProblem?.order ?? -1) + 1,
         authorId: proposal.authorId,
         testCases: {
           create: proposal.testCases.map((tc, i) => ({
