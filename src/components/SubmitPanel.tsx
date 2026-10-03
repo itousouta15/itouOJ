@@ -15,10 +15,12 @@ import {
   prevSnippetField,
   snippetKeymap,
 } from "@codemirror/autocomplete";
-import { Prec, type Extension } from "@codemirror/state";
+import { EditorSelection, Prec, Text, Transaction, type Extension } from "@codemirror/state";
+import { isolateHistory } from "@codemirror/commands";
 import { EditorView, keymap, tooltips } from "@codemirror/view";
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
 import { DOCUMENT_WORD_COMPLETIONS, EDITOR_COMPLETIONS } from "@/lib/editorCompletions";
+import { formatEditorCode } from "@/lib/editorFormatting";
 import {
   isNativeApp,
   onKeyboardWillHide,
@@ -155,12 +157,15 @@ export default function SubmitPanel({
   } = useSyncedDraft({ userId, problemId, contestId, defaultLanguage, languageOptions, templates: TEMPLATES });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [formatting, setFormatting] = useState(false);
+  const formattingRef = useRef(false);
   const [running, setRunning] = useState(false);
   const [runResult, setRunResult] = useState<RunResponse | null>(null);
   const [showCustom, setShowCustom] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const [terminalRun, setTerminalRun] = useState(0);
   const [showTerminal, setShowTerminal] = useState(false);
+  const [mobileTerminal, setMobileTerminal] = useState(false);
   const [terminalBusy, setTerminalBusy] = useState(false);
   const [editorFontSize, setEditorFontSize] = useState(DEFAULT_EDITOR_FONT_SIZE);
   const [fullscreen, setFullscreen] = useState(false);
@@ -170,18 +175,6 @@ export default function SubmitPanel({
   const [isApp] = useState(() => isNativeApp());
   const viewRef = useRef<EditorView | null>(null);
   const wheelDeltaRef = useRef(0);
-  // 讓 CodeMirror 自己處理字級變更與重新測量，行號才會跟程式碼維持同一行高。
-  const editorExtensions = useMemo(
-    () => [
-      ...CM_EXTENSIONS[language],
-      ACCEPT_COMPLETION_WITH_TAB,
-      SNIPPET_KEYS,
-      // 編輯器與側欄有 overflow，選單放在 body 才不會被裁掉，也能用滑鼠點選。
-      ...(typeof document !== "undefined" ? [tooltips({ parent: document.body })] : []),
-      EditorView.theme({ "&": { fontSize: `${editorFontSize}px` } }),
-    ],
-    [language, editorFontSize],
-  );
   const restoreFocusRef = useRef(false);
   const closingRef = useRef(false);
   // 這次全螢幕是不是「點編輯器自動開」的：自動開的才在收鍵盤時自動關
@@ -261,11 +254,11 @@ export default function SubmitPanel({
 
   // 全螢幕編輯時鎖住頁面捲動
   useEffect(() => {
-    document.body.style.overflow = fullscreen ? "hidden" : "";
+    document.body.style.overflow = fullscreen || (showTerminal && mobileTerminal) ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [fullscreen]);
+  }, [fullscreen, showTerminal, mobileTerminal]);
 
   useEffect(() => {
     if (!fullscreen) return;
@@ -309,9 +302,65 @@ export default function SubmitPanel({
     view.focus();
   }
 
+  const formatCode = useCallback(async () => {
+    const view = viewRef.current;
+    if (!view || formattingRef.current || running || submitting || terminalBusy) return;
+    const original = view.state.doc;
+    const source = original.toString();
+    if (!source.trim()) return;
+
+    formattingRef.current = true;
+    setFormatting(true);
+    try {
+      const formatted = await formatEditorCode(source, language);
+      // 載入工具期間仍可編輯；若草稿或編輯器已變更，就不套用舊結果。
+      if (viewRef.current !== view || !view.dom.isConnected || view.state.doc !== original) {
+        return;
+      }
+      if (formatted === source) {
+        return;
+      }
+
+      const document = Text.of(formatted.split("\n"));
+      const mapPosition = (position: number) => {
+        const oldLine = original.lineAt(position);
+        const newLine = document.line(Math.min(oldLine.number, document.lines));
+        return newLine.from + Math.min(position - oldLine.from, newLine.length);
+      };
+      view.dispatch({
+        changes: { from: 0, to: original.length, insert: formatted },
+        selection: EditorSelection.create(view.state.selection.ranges.map((range) =>
+          EditorSelection.range(mapPosition(range.anchor), mapPosition(range.head))
+        ), view.state.selection.mainIndex),
+        annotations: [Transaction.userEvent.of("input.format"), isolateHistory.of("full")],
+      });
+      view.focus();
+    } catch {
+    } finally {
+      formattingRef.current = false;
+      setFormatting(false);
+    }
+  }, [language, running, submitting, terminalBusy]);
+
+  // 讓 CodeMirror 自己處理字級變更與重新測量，行號才會跟程式碼維持同一行高。
+  const editorExtensions = useMemo(
+    () => [
+      ...CM_EXTENSIONS[language],
+      ACCEPT_COMPLETION_WITH_TAB,
+      SNIPPET_KEYS,
+      // keymap.of 只註冊事件，formatCode 會在按鍵觸發時才讀取 ref。
+      // eslint-disable-next-line react-hooks/refs
+      keymap.of([{ key: "Shift-Alt-f", run: () => { void formatCode(); return true; } }]),
+      // 編輯器與側欄有 overflow，選單放在 body 才不會被裁掉，也能用滑鼠點選。
+      ...(typeof document !== "undefined" ? [tooltips({ parent: document.body })] : []),
+      EditorView.theme({ "&": { fontSize: `${editorFontSize}px` } }),
+    ],
+    [language, editorFontSize, formatCode],
+  );
+
   // 測試執行：跑範例測資（或自訂輸入），不留紀錄
   async function runTest() {
-    if (locked) return;
+    if (locked || formattingRef.current) return;
     setRunning(true);
     setError("");
     setRunResult(null);
@@ -323,7 +372,7 @@ export default function SubmitPanel({
           problemId,
           language,
           code,
-          customInput: showCustom && (window.innerWidth < 1024 || fullscreen)
+          customInput: showCustom && fullscreen && window.innerWidth >= 1024
             ? customInput
             : null,
           contestId,
@@ -343,7 +392,7 @@ export default function SubmitPanel({
   }
 
   async function submit() {
-    if (locked) return;
+    if (locked || formattingRef.current) return;
     setSubmitting(true);
     setError("");
     try {
@@ -369,7 +418,7 @@ export default function SubmitPanel({
     <select
       className="input w-auto"
       aria-label="程式語言"
-      disabled={terminalBusy}
+      disabled={terminalBusy || formatting}
       value={language}
       onChange={(e) => switchLanguage(e.target.value as LanguageKey)}
     >
@@ -410,7 +459,7 @@ export default function SubmitPanel({
       <button
         className="btn-secondary submit-panel-action"
         onClick={runTest}
-        disabled={running || submitting || terminalBusy || locked}
+        disabled={running || submitting || terminalBusy || formatting || locked}
       >
         {running && <span className="submit-panel-action-spinner" aria-hidden="true" />}
         {running ? "執行中…" : "測試執行"}
@@ -418,7 +467,7 @@ export default function SubmitPanel({
       <button
         className="btn-primary submit-panel-action"
         onClick={submit}
-        disabled={running || submitting || terminalBusy || locked}
+        disabled={running || submitting || terminalBusy || formatting || locked}
       >
         {submitting && <span className="submit-panel-action-spinner" aria-hidden="true" />}
         {submitting ? "送出中…" : "送出解答"}
@@ -426,18 +475,48 @@ export default function SubmitPanel({
     </>
   );
 
-  const customInputField = (
-    <textarea
-      className="input mono min-h-24 resize-y text-[13px]"
-      value={customInput}
-      onChange={(e) => setCustomInput(e.target.value)}
-      placeholder="測試執行時會用這裡的內容當輸入"
-    />
-  );
-
   const draftStatusLabel = (
     <span className="min-w-0 truncate text-xs text-dim" role="status" title={draftStatus}>{draftStatus}</span>
   );
+
+  const terminalButton = (
+    <button
+      type="button"
+      className="btn-secondary submit-panel-action"
+      disabled={running || submitting || terminalBusy || formatting || locked}
+      title="開啟終端機互動執行"
+      onClick={() => {
+        if (locked || running || submitting || terminalBusy || formattingRef.current) return;
+        // 終端機的鍵盤開關不應讓背後的 App 編輯器自動退出全螢幕。
+        autoOpenedRef.current = false;
+        setMobileTerminal(window.innerWidth < 1024 || fullscreen);
+        setShowCustom(false);
+        setRunResult(null);
+        setTerminalBusy(true);
+        setTerminalRun((value) => value + 1);
+        setShowTerminal(true);
+      }}
+    >
+      Terminal
+    </button>
+  );
+
+  const formatButton = (
+    <button
+      type="button"
+      className="btn-secondary submit-panel-action shrink-0"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => { void formatCode(); }}
+      disabled={formatting || running || submitting || terminalBusy || !code.trim()}
+      title="美化整份程式碼（Shift + Alt + F）"
+      aria-keyshortcuts="Shift+Alt+F"
+    >
+      {formatting && <span className="submit-panel-action-spinner" aria-hidden="true" />}
+      {formatting ? "美化中…" : "程式美化"}
+    </button>
+  );
+
+
 
   const draftConflictNotice = draftConflict && (
     <div className="submit-panel-notice mt-2 flex flex-wrap items-center gap-2 text-sm" role="alert">
@@ -448,7 +527,7 @@ export default function SubmitPanel({
   );
 
   return (
-    <div className="card submit-panel p-4">
+    <div className="card submit-panel p-4" inert={showTerminal && mobileTerminal}>
       <div className="mb-3 flex items-center justify-between lg:hidden">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="section-title shrink-0">提交</h2>
@@ -474,50 +553,33 @@ export default function SubmitPanel({
               <h2 className="section-title shrink-0">提交</h2>
               {draftStatusLabel}
             </div>
-            {langSelect}
+            <div className="flex items-center gap-2">
+              {formatButton}
+              {langSelect}
+            </div>
           </div>
           <div className="submit-panel-editor-body">
             <div className="submit-panel-editor-viewport">{editor}</div>
             <div className="submit-panel-editor-toolbar hidden lg:flex">
               <div className="submit-panel-editor-actions">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={running || submitting || terminalBusy || locked}
-                  title="開啟終端機互動執行"
-                  onClick={() => {
-                    setShowCustom(false);
-                    setRunResult(null);
-                    setTerminalRun((value) => value + 1);
-                    setShowTerminal(true);
-                  }}
-                >
-                  Terminal
-                </button>
+                {terminalButton}
                 {actionButtons}
               </div>
             </div>
           </div>
-          {showTerminal && (
-            <InteractiveTerminal
-              key={terminalRun}
-              problemId={problemId}
-              contestId={contestId}
-              language={language}
-              code={code}
-              onBusyChange={setTerminalBusy}
-              onClose={() => setShowTerminal(false)}
-            />
-          )}
         </div>
       )}
-      {showCustom && (
-        <div className="mt-3 lg:hidden">
-          <label className="mb-1 block text-sm font-medium">
-            自訂輸入（stdin）
-          </label>
-          {customInputField}
-        </div>
+      {showTerminal && (
+        <InteractiveTerminal
+          key={terminalRun}
+          problemId={problemId}
+          contestId={contestId}
+          language={language}
+          code={code}
+          mobile={mobileTerminal}
+          onBusyChange={setTerminalBusy}
+          onClose={() => setShowTerminal(false)}
+        />
       )}
 
       {locked && (
@@ -526,14 +588,8 @@ export default function SubmitPanel({
       {draftConflictNotice}
       {error && <p className="submit-panel-notice mt-2 text-sm text-[#ff6b6b]">{error}</p>}
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 lg:hidden">
-        <button
-          className={`pill ${showCustom ? "pill-active" : ""}`}
-          onClick={() => setShowCustom((v) => !v)}
-        >
-          自訂輸入
-        </button>
-        <div className="flex gap-3">{actionButtons}</div>
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-3 lg:hidden">
+        <div className="flex flex-wrap gap-3">{terminalButton}{actionButtons}</div>
       </div>
 
       {runResult && (
@@ -637,6 +693,7 @@ export default function SubmitPanel({
         createPortal(
           <div
             className={`editor-fullscreen${closing ? " editor-fullscreen--closing" : ""}`}
+            inert={showTerminal && mobileTerminal}
             data-view={fullscreenView}
             onTouchStart={(event) => {
               event.stopPropagation();
@@ -730,7 +787,7 @@ export default function SubmitPanel({
             </div>
             {draftConflict && <div className="flex-none px-4 pb-2">{draftConflictNotice}</div>}
             {showCustom && (
-              <div className="editor-fullscreen-custom flex-none px-4 pb-2">
+              <div className="editor-fullscreen-custom hidden flex-none px-4 pb-2 lg:block">
                 <textarea
                   className="input mono min-h-20 resize-y text-[13px]"
                   value={customInput}
@@ -740,13 +797,17 @@ export default function SubmitPanel({
               </div>
             )}
             <div className="editor-fullscreen-toolbar">
-              <button
-                className={`pill flex-none ${showCustom ? "pill-active" : ""}`}
-                onClick={() => setShowCustom((v) => !v)}
-              >
-                自訂輸入
-              </button>
-              <div className="flex flex-1 items-center justify-end gap-3">
+              <div className="hidden items-center gap-3 lg:flex">
+                {formatButton}
+                <button
+                  className={`pill flex-none ${showCustom ? "pill-active" : ""}`}
+                  onClick={() => setShowCustom((v) => !v)}
+                >
+                  自訂輸入
+                </button>
+              </div>
+              <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
+                {terminalButton}
                 {actionButtons}
               </div>
             </div>

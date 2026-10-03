@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { LanguageKey } from "@/lib/languages";
 
 type TerminalEvent =
@@ -18,12 +19,13 @@ async function stopSession(id: string) {
 }
 
 export default function InteractiveTerminal({
-  problemId, contestId, language, code, onBusyChange, onClose,
+  problemId, contestId, language, code, mobile = false, onBusyChange, onClose,
 }: {
   problemId: number;
   contestId?: number;
   language: LanguageKey;
   code: string;
+  mobile?: boolean;
   onBusyChange: (busy: boolean) => void;
   onClose: () => void;
 }) {
@@ -38,6 +40,7 @@ export default function InteractiveTerminal({
   const sessionRef = useRef<string | null>(null);
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
   const sendingRef = useRef(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const busy = status !== "done";
@@ -131,6 +134,33 @@ export default function InteractiveTerminal({
     if (closeTimerRef.current !== null) clearTimeout(closeTimerRef.current);
   }, []);
 
+  useEffect(() => {
+    if (!mobile) return;
+    const previousFocus = document.activeElement;
+    const viewport = window.visualViewport;
+    const resize = () => {
+      if (!modalRef.current || !viewport) return;
+      modalRef.current.style.height = `${viewport.height}px`;
+      modalRef.current.style.top = `${viewport.offsetTop}px`;
+    };
+    resize();
+    const frame = requestAnimationFrame(() => {
+      if (!modalRef.current?.contains(document.activeElement)) modalRef.current?.focus();
+    });
+    viewport?.addEventListener("resize", resize);
+    viewport?.addEventListener("scroll", resize);
+    return () => {
+      cancelAnimationFrame(frame);
+      viewport?.removeEventListener("resize", resize);
+      viewport?.removeEventListener("scroll", resize);
+      requestAnimationFrame(() => {
+        if (previousFocus instanceof HTMLElement && previousFocus.isConnected && !previousFocus.closest("[inert]")) {
+          previousFocus.focus();
+        }
+      });
+    };
+  }, [mobile]);
+
   function closeTerminal() {
     if (closing) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -178,7 +208,7 @@ export default function InteractiveTerminal({
     }
   }
 
-  return (
+  const terminal = (
     <section
       className={`interactive-terminal${closing ? " interactive-terminal--closing" : ""}`}
       data-status={status}
@@ -214,6 +244,10 @@ export default function InteractiveTerminal({
                 ref={inputRef}
                 rows={1}
                 aria-label="終端機輸入"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="send"
                 value={input}
                 disabled={sending}
                 onChange={(event) => setInput(event.target.value)}
@@ -228,10 +262,53 @@ export default function InteractiveTerminal({
                   }
                 }}
               />
+              {mobile && (
+                <button type="submit" disabled={sending} onMouseDown={(event) => event.preventDefault()}>
+                  {sending ? "傳送中…" : "送出"}
+                </button>
+              )}
             </form>
           )}
         </div>
       </div>
     </section>
+  );
+
+  if (!mobile) return terminal;
+
+  return createPortal(
+    <div
+      ref={modalRef}
+      className="mobile-terminal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Terminal 互動執行"
+      tabIndex={-1}
+      onTouchStart={(event) => event.stopPropagation()}
+      onTouchEnd={(event) => event.stopPropagation()}
+      onTouchCancel={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.stopPropagation();
+          closeTerminal();
+        } else if (event.key === "Tab") {
+          const controls = event.currentTarget.querySelectorAll<HTMLElement>(
+            'button:not(:disabled), textarea:not(:disabled), [tabindex="0"]'
+          );
+          const first = controls[0];
+          const last = controls[controls.length - 1];
+          if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) {
+            event.preventDefault();
+            last?.focus();
+          } else if (!event.shiftKey && (document.activeElement === last || document.activeElement === event.currentTarget)) {
+            event.preventDefault();
+            first?.focus();
+          }
+        }
+      }}
+    >
+      {terminal}
+    </div>,
+    document.body
   );
 }

@@ -940,6 +940,7 @@ html.kbd-open .problem-workspace-nav {
 .editor-fullscreen-toolbar {
   flex: none;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -1210,14 +1211,6 @@ html.kbd-open .problem-workspace-nav {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action {
-    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.18s ease, filter 0.18s ease, background-color 0.18s ease;
-  }
-  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action:not(:disabled):active {
-    transform: translateY(0) scale(0.95);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
-  }
   .problem-workspace-code .submit-panel-editor-body {
     position: relative;
     display: flex;
@@ -1264,11 +1257,12 @@ html.kbd-open .problem-workspace-nav {
   }
 }
 
-@media (min-width: 1024px) and (hover: hover) {
-  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action:not(:disabled):hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  }
+.submit-panel-action {
+  transition: none;
+}
+.submit-panel-action:is(:hover, :active) {
+  transform: none;
+  box-shadow: none;
 }
 
 .submit-panel-action-spinner {
@@ -1286,13 +1280,6 @@ html.kbd-open .problem-workspace-nav {
 @media (prefers-reduced-motion: reduce) {
   .submit-panel-action-spinner {
     animation: none;
-  }
-  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action {
-    transition: none;
-  }
-  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action:not(:disabled):hover,
-  .problem-workspace-code .submit-panel-editor-toolbar .submit-panel-action:not(:disabled):active {
-    transform: none;
   }
 }
 
@@ -1433,6 +1420,44 @@ html.kbd-open .problem-workspace-nav {
 }
 .interactive-terminal-entry:focus-within > span {
   color: var(--blue);
+}
+.mobile-terminal-overlay {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 110;
+  display: flex;
+  height: 100dvh;
+  min-height: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  background: #141619;
+}
+.mobile-terminal-overlay .interactive-terminal {
+  flex: 1;
+  height: auto;
+  border-top: 0;
+  font-size: 16px;
+}
+.mobile-terminal-overlay .interactive-terminal-head {
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+}
+.mobile-terminal-overlay .interactive-terminal button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.mobile-terminal-overlay .interactive-terminal-entry {
+  align-items: center;
+}
+.mobile-terminal-overlay .interactive-terminal-entry textarea {
+  min-height: 44px;
+  padding-block: 8px;
+  font-size: 16px;
+}
+.mobile-terminal-overlay .interactive-terminal-entry button {
+  flex: none;
+  font-size: 14px;
 }
 @media (prefers-reduced-motion: reduce) {
   .interactive-terminal,
