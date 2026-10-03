@@ -52,8 +52,12 @@ export function useSyncedDraft({
   const [conflict, setConflict] = useState<Conflict | null>(null);
   const languageRef = useRef(language);
   const conflictRef = useRef<Conflict | null>(null);
+  const drafts = useRef(new Map<string, LocalDraft | null>());
+  const active = useRef(false);
+  const lifecycle = useRef(0);
+  const loadRequest = useRef<{ key: string; controller: AbortController } | null>(null);
   const timers = useRef<Partial<Record<LanguageKey, ReturnType<typeof setTimeout>>>>({});
-  const saving = useRef<Partial<Record<LanguageKey, boolean>>>({});
+  const saving = useRef(new Set<string>());
   const saveRef = useRef<(lang: LanguageKey) => void>(() => {});
   const loadSequence = useRef(0);
   const keyFor = useCallback((lang: LanguageKey) => localKey(userId, problemId, lang), [userId, problemId]);
@@ -62,6 +66,41 @@ export function useSyncedDraft({
     if (contestId !== undefined) params.set("contestId", String(contestId));
     return `/api/drafts?${params}`;
   }, [problemId, contestId]);
+
+  const getDraft = useCallback((key: string): LocalDraft | null => {
+    if (!drafts.current.has(key)) drafts.current.set(key, readLocal(key));
+    return drafts.current.get(key) ?? null;
+  }, []);
+
+  const storeDraft = useCallback((key: string, draft: LocalDraft) => {
+    if (!writeLocal(key, draft)) return false;
+    drafts.current.set(key, draft);
+    return true;
+  }, []);
+
+  useEffect(() => {
+    active.current = true;
+    lifecycle.current++;
+    const activeTimers = timers.current;
+    const cache = drafts.current;
+    const epoch = lifecycle;
+    const sequence = loadSequence;
+    const onStorage = (event: StorageEvent) => {
+      if (event.storageArea !== localStorage) return;
+      if (event.key === null) cache.clear();
+      else cache.delete(event.key);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      active.current = false;
+      epoch.current++;
+      sequence.current++;
+      loadRequest.current?.controller.abort();
+      loadRequest.current = null;
+      for (const timer of Object.values(activeTimers)) clearTimeout(timer);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [keyFor, url]);
 
   const showConflict = useCallback((lang: LanguageKey, remote: RemoteDraft) => {
     if (languageRef.current !== lang) return;
@@ -72,15 +111,21 @@ export function useSyncedDraft({
   }, []);
 
   const scheduleSave = useCallback((lang: LanguageKey) => {
+    if (!active.current) return;
     clearTimeout(timers.current[lang]);
-    timers.current[lang] = setTimeout(() => saveRef.current(lang), 800);
+    timers.current[lang] = setTimeout(() => {
+      delete timers.current[lang];
+      saveRef.current(lang);
+    }, 800);
   }, []);
 
   const saveNow = useCallback(async (lang: LanguageKey) => {
+    if (!active.current) return;
+    const epoch = lifecycle.current;
     const key = keyFor(lang);
-    const draft = readLocal(key);
-    if (!draft?.dirty || saving.current[lang] || conflictRef.current?.language === lang) return;
-    saving.current[lang] = true;
+    const draft = getDraft(key);
+    if (!draft?.dirty || saving.current.has(key) || conflictRef.current?.language === lang) return;
+    saving.current.add(key);
     if (languageRef.current === lang) setStatus("同步中…");
     try {
       const response = await fetch("/api/drafts", {
@@ -93,11 +138,12 @@ export function useSyncedDraft({
       });
       if (!response.ok && response.status !== 409) throw new Error("sync failed");
       const data = (await response.json()) as { draft: RemoteDraft };
-      const current = readLocal(key);
+      if (!active.current || epoch !== lifecycle.current) return;
+      const current = getDraft(key);
       if (!current) return;
       if (response.status === 409) {
         if (data.draft?.code === current.code) {
-          writeLocal(key, { ...current, revision: data.draft.revision, dirty: false });
+          storeDraft(key, { ...current, revision: data.draft.revision, dirty: false });
           if (languageRef.current === lang) setStatus("已同步至帳號");
         } else {
           showConflict(lang, data.draft);
@@ -105,35 +151,42 @@ export function useSyncedDraft({
         return;
       }
       const unchanged = current.code === draft.code && current.revision === draft.revision;
-      writeLocal(key, {
+      storeDraft(key, {
         ...current, revision: data.draft?.revision ?? null, dirty: !unchanged,
       });
       if (languageRef.current === lang) setStatus(unchanged ? "已同步至帳號" : "尚有變更待同步");
       if (!unchanged) scheduleSave(lang);
     } catch {
       // 網路中斷時草稿仍保留在此裝置；下次連線或開啟頁面再同步。
-      if (languageRef.current === lang) setStatus("僅存於此裝置，連線後重試");
+      if (active.current && epoch === lifecycle.current && languageRef.current === lang) {
+        setStatus("僅存於此裝置，連線後重試");
+      }
     } finally {
-      saving.current[lang] = false;
+      saving.current.delete(key);
     }
-  }, [problemId, contestId, keyFor, showConflict, scheduleSave]);
+  }, [problemId, contestId, keyFor, getDraft, storeDraft, showConflict, scheduleSave]);
 
   useEffect(() => { saveRef.current = (lang) => { void saveNow(lang); }; }, [saveNow]);
 
   const load = useCallback(async (lang: LanguageKey) => {
     const key = keyFor(lang);
-    if (languageRef.current !== lang) return;
+    if (!active.current || languageRef.current !== lang) return;
+    if (loadRequest.current?.key === key) return;
+    loadRequest.current?.controller.abort();
+    const controller = new AbortController();
+    loadRequest.current = { key, controller };
     const sequence = ++loadSequence.current;
-    const initial = readLocal(key);
+    drafts.current.delete(key);
+    const initial = getDraft(key);
     const oldDraft = initial ? null : localStorage.getItem(`oj-draft-${problemId}-${lang}`);
     setCode(initial?.code ?? oldDraft ?? templates[lang]);
     setStatus(initial?.dirty ? "尚有變更待同步" : "載入雲端草稿中…");
     try {
-      const response = await fetch(url(lang), { cache: "no-store" });
+      const response = await fetch(url(lang), { cache: "no-store", signal: controller.signal });
       if (!response.ok) throw new Error("load failed");
       const { draft: remote } = (await response.json()) as { draft: RemoteDraft };
-      if (languageRef.current !== lang || sequence !== loadSequence.current) return;
-      const local = readLocal(key); // 請求期間可能已輸入新內容，不能使用請求前的快照。
+      if (!active.current || controller.signal.aborted || languageRef.current !== lang || sequence !== loadSequence.current) return;
+      const local = getDraft(key); // 請求期間可能已輸入新內容，不能使用請求前的快照。
       // 先前的讀取請求可能在剛完成的寫入之後才返回，不能倒退到舊版本。
       if (local?.revision != null && remote && local.revision > remote.revision) {
         setCode(local.code);
@@ -147,11 +200,11 @@ export function useSyncedDraft({
         showConflict(lang, remote);
       } else if (local && remote && local.code === templates[lang]) {
         // 本機只有預設範本時不與帳號草稿衝突，也不要把範本同步上去覆蓋程式。
-        writeLocal(key, { code: remote.code, revision: remote.revision, dirty: false });
+        storeDraft(key, { code: remote.code, revision: remote.revision, dirty: false });
         setCode(remote.code);
         setStatus("已同步至帳號");
       } else if (!local && remote) {
-        writeLocal(key, { code: remote.code, revision: remote.revision, dirty: false });
+        storeDraft(key, { code: remote.code, revision: remote.revision, dirty: false });
         setCode(remote.code);
         setStatus("已同步至帳號");
       } else if (!local) {
@@ -160,7 +213,7 @@ export function useSyncedDraft({
         setCode(local.code);
         if (local.revision !== remote?.revision && !(local.revision === null && !remote)) {
           if (local.code === remote?.code && remote) {
-            writeLocal(key, { ...local, revision: remote.revision, dirty: false });
+            storeDraft(key, { ...local, revision: remote.revision, dirty: false });
             setStatus("已同步至帳號");
           } else {
             showConflict(lang, remote);
@@ -170,21 +223,23 @@ export function useSyncedDraft({
           scheduleSave(lang);
         }
       } else if (remote && (local.revision !== remote.revision || local.code !== remote.code)) {
-        writeLocal(key, { code: remote.code, revision: remote.revision, dirty: false });
+        storeDraft(key, { code: remote.code, revision: remote.revision, dirty: false });
         setCode(remote.code);
         setStatus("已同步至帳號");
       } else if (!remote && local.revision !== null) {
-        writeLocal(key, { ...local, revision: null, dirty: true });
+        storeDraft(key, { ...local, revision: null, dirty: true });
         scheduleSave(lang);
       } else {
         setStatus("已同步至帳號");
       }
     } catch {
-      if (languageRef.current === lang && sequence === loadSequence.current) {
+      if (active.current && !controller.signal.aborted && languageRef.current === lang && sequence === loadSequence.current) {
         setStatus("僅存於此裝置，連線後重試");
       }
+    } finally {
+      if (loadRequest.current?.controller === controller) loadRequest.current = null;
     }
-  }, [keyFor, problemId, templates, scheduleSave, showConflict, url]);
+  }, [keyFor, problemId, templates, getDraft, storeDraft, scheduleSave, showConflict, url]);
 
   useEffect(() => {
     const saved = localStorage.getItem("oj-language") as LanguageKey | null;
@@ -203,50 +258,58 @@ export function useSyncedDraft({
   }, [language, load]);
 
   useEffect(() => {
-    const retry = () => {
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => {
+      if (document.hidden || !navigator.onLine) return;
       const current = languageRef.current;
       void load(current);
       // 離線時切換過語言的草稿，也要在復網時補傳。
       for (const lang of languageOptions) {
-        if (lang !== current && readLocal(keyFor(lang))?.dirty) void saveNow(lang);
+        if (lang !== current) {
+          const key = keyFor(lang);
+          drafts.current.delete(key);
+          if (getDraft(key)?.dirty) void saveNow(lang);
+        }
       }
+    };
+    // 回到 App 時 focus / visibilitychange 經常一起發生，只重讀一次草稿。
+    const retry = () => {
+      clearTimeout(retryTimer);
+      retryTimer = setTimeout(refresh, 50);
     };
     window.addEventListener("online", retry);
     window.addEventListener("focus", retry);
     const onVisible = () => { if (!document.hidden) retry(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
+      clearTimeout(retryTimer);
       window.removeEventListener("online", retry);
       window.removeEventListener("focus", retry);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [load, keyFor, languageOptions, saveNow]);
-
-  useEffect(() => {
-    const activeTimers = timers.current;
-    const sequence = loadSequence;
-    return () => {
-      sequence.current++;
-      for (const timer of Object.values(activeTimers)) clearTimeout(timer);
-    };
-  }, []);
+  }, [load, keyFor, languageOptions, getDraft, saveNow]);
 
   function switchLanguage(lang: LanguageKey) {
     loadSequence.current++;
+    loadRequest.current?.controller.abort();
+    loadRequest.current = null;
     languageRef.current = lang;
     conflictRef.current = null;
     setConflict(null);
     localStorage.setItem("oj-language", lang);
     setLanguage(lang);
-    setCode(readLocal(keyFor(lang))?.code ?? templates[lang]);
+    const key = keyFor(lang);
+    drafts.current.delete(key);
+    setCode(getDraft(key)?.code ?? templates[lang]);
   }
 
-  function updateCode(value: string) {
+  const updateCode = useCallback((value: string) => {
     const lang = languageRef.current;
     setCode(value);
     const key = keyFor(lang);
-    const previous = readLocal(key);
-    if (!writeLocal(key, { code: value, revision: previous?.revision ?? null, dirty: true })) {
+    const previous = getDraft(key);
+    if (previous?.code === value) return;
+    if (!storeDraft(key, { code: value, revision: previous?.revision ?? null, dirty: true })) {
       setStatus("裝置儲存空間不足，請備份程式碼");
       return;
     }
@@ -254,14 +317,14 @@ export function useSyncedDraft({
       setStatus("尚有變更待同步");
       scheduleSave(lang);
     }
-  }
+  }, [keyFor, getDraft, storeDraft, scheduleSave]);
 
   function keepLocal() {
     if (!conflict) return;
     const key = keyFor(conflict.language);
-    const current = readLocal(key);
+    const current = getDraft(key);
     const chosen = current?.code ?? code; // 舊版草稿尚未寫入帳號專屬的本機鍵。
-    writeLocal(key, { code: chosen, revision: conflict.remote?.revision ?? null, dirty: true });
+    storeDraft(key, { code: chosen, revision: conflict.remote?.revision ?? null, dirty: true });
     setCode(chosen);
     conflictRef.current = null;
     setConflict(null);
@@ -272,7 +335,7 @@ export function useSyncedDraft({
     if (!conflict) return;
     const remote = conflict.remote;
     const chosen = remote?.code ?? templates[conflict.language];
-    writeLocal(keyFor(conflict.language), { code: chosen, revision: remote?.revision ?? null, dirty: false });
+    storeDraft(keyFor(conflict.language), { code: chosen, revision: remote?.revision ?? null, dirty: false });
     setCode(chosen);
     conflictRef.current = null;
     setConflict(null);

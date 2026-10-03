@@ -8,10 +8,10 @@ import { useEffect, useState } from "react";
 // 兩者不在同一棵 React 樹，所以用自訂 DOM 事件當輕量的事件匯流排。
 export type ProblemWorkspaceTab = "problem" | "code";
 
-type WorkspaceState = { active: boolean; tab: ProblemWorkspaceTab };
+type WorkspaceState = { active: boolean; tab: ProblemWorkspaceTab; codeVisited: boolean };
 
 const EVENT = "problem-workspace-tab";
-let current: WorkspaceState = { active: false, tab: "problem" };
+let current: WorkspaceState = { active: false, tab: "problem", codeVisited: false };
 
 function publish(next: WorkspaceState) {
   current = next;
@@ -20,12 +20,16 @@ function publish(next: WorkspaceState) {
 }
 
 export function setProblemWorkspaceTab(tab: ProblemWorkspaceTab) {
-  publish({ active: current.active, tab });
+  publish({ ...current, tab, codeVisited: current.codeVisited || tab === "code" });
+}
+
+export function setProblemWorkspaceEditorVisited() {
+  if (!current.codeVisited) publish({ ...current, codeVisited: true });
 }
 
 // ProblemWorkspace 掛載 / 卸載時宣告自己存在與否，導覽列才知道要不要顯示分頁按鈕。
 export function setProblemWorkspaceActive(active: boolean) {
-  publish({ active, tab: "problem" });
+  publish({ active, tab: "problem", codeVisited: false });
 }
 
 export function useProblemWorkspaceState(): WorkspaceState {

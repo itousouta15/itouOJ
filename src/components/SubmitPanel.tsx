@@ -1,26 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
-import CodeMirror from "@uiw/react-codemirror";
-import { cpp } from "@codemirror/lang-cpp";
-import { python } from "@codemirror/lang-python";
-import { javascript } from "@codemirror/lang-javascript";
-import {
-  acceptCompletion,
-  clearSnippet,
-  nextSnippetField,
-  prevSnippetField,
-  snippetKeymap,
-} from "@codemirror/autocomplete";
-import { EditorSelection, Prec, Text, Transaction, type Extension } from "@codemirror/state";
-import { isolateHistory } from "@codemirror/commands";
-import { EditorView, keymap, tooltips } from "@codemirror/view";
+import type { EditorView } from "@codemirror/view";
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
-import { DOCUMENT_WORD_COMPLETIONS, EDITOR_COMPLETIONS } from "@/lib/editorCompletions";
-import { formatEditorCode } from "@/lib/editorFormatting";
 import {
   isNativeApp,
   onKeyboardWillHide,
@@ -28,10 +14,32 @@ import {
 } from "@/lib/capacitor";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import VerdictBadge from "@/components/VerdictBadge";
-import InteractiveTerminal from "@/components/InteractiveTerminal";
 import { setProblemWorkspaceTab } from "@/lib/problemWorkspaceTab";
 import { useHorizontalSwipe } from "@/lib/useHorizontalSwipe";
 import { useSyncedDraft } from "@/lib/useSyncedDraft";
+
+const CodeEditor = dynamic(() => import("@/components/CodeEditor"), {
+  ssr: false,
+  loading: () => <p className="p-3 text-sm text-dim" role="status">載入編輯器中…</p>,
+});
+const InteractiveTerminal = lazy(() => import("@/components/InteractiveTerminal"));
+
+function TerminalLoading({ mobile, onClose }: { mobile: boolean; onClose: () => void }) {
+  const loading = (
+    <div
+      className={mobile ? "mobile-terminal-overlay" : "interactive-terminal"}
+      role={mobile ? "dialog" : undefined}
+      aria-modal={mobile ? true : undefined}
+      aria-label={mobile ? "Terminal 互動執行" : undefined}
+    >
+      <div className="flex w-full items-start justify-between gap-3 p-4">
+        <p role="status">載入終端機中…</p>
+        <button type="button" className="btn-secondary" onClick={onClose} autoFocus={mobile}>取消</button>
+      </div>
+    </div>
+  );
+  return mobile ? createPortal(loading, document.body) : loading;
+}
 
 // App 鍵盤符號列：手機鍵盤要翻符號頁才打得出來的按鍵，點擊插入游標處。
 // 兩排各 9 鍵（共 18），等寬塞滿螢幕不捲動；只在手機鍵盤出現時顯示。
@@ -40,14 +48,6 @@ const KBD_ROW2 = ["'", '"', "#", "|", "&", "_", "*", "%", "^"];
 const DEFAULT_EDITOR_FONT_SIZE = 15;
 const MIN_EDITOR_FONT_SIZE = 10;
 const MAX_EDITOR_FONT_SIZE = 24;
-// 補全開啟時 Tab 選取建議；沒有建議時退回原本的縮排或片段欄位切換。
-const ACCEPT_COMPLETION_WITH_TAB = Prec.highest(keymap.of([
-  { key: "Tab", run: acceptCompletion },
-]));
-const SNIPPET_KEYS = snippetKeymap.of([
-  { key: "Tab", run: (view) => acceptCompletion(view) || nextSnippetField(view), shift: prevSnippetField },
-  { key: "Escape", run: clearSnippet },
-]);
 
 interface SampleRunResult {
   order: number;
@@ -68,23 +68,6 @@ interface RunResponse {
   killed?: boolean;
   timeMs?: number;
 }
-
-function withCompletions(key: LanguageKey, support: ReturnType<typeof cpp>): Extension[] {
-  return [
-    support,
-    support.language.data.of({ autocomplete: EDITOR_COMPLETIONS[key] }),
-    ...(["cpp", "c"].includes(key)
-      ? [support.language.data.of({ autocomplete: DOCUMENT_WORD_COMPLETIONS })]
-      : []),
-  ];
-}
-
-const CM_EXTENSIONS: Record<LanguageKey, Extension[]> = {
-  cpp: withCompletions("cpp", cpp()),
-  c: withCompletions("c", cpp()),
-  python: withCompletions("python", python()),
-  javascript: withCompletions("javascript", javascript()),
-};
 
 const TEMPLATES: Record<LanguageKey, string> = {
   cpp: `#include <bits/stdc++.h>
@@ -164,6 +147,7 @@ export default function SubmitPanel({
   const [showCustom, setShowCustom] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const [terminalRun, setTerminalRun] = useState(0);
+  const [terminalSource, setTerminalSource] = useState<{ code: string; language: LanguageKey } | null>(null);
   const [showTerminal, setShowTerminal] = useState(false);
   const [mobileTerminal, setMobileTerminal] = useState(false);
   const [terminalBusy, setTerminalBusy] = useState(false);
@@ -177,6 +161,7 @@ export default function SubmitPanel({
   const wheelDeltaRef = useRef(0);
   const restoreFocusRef = useRef(false);
   const closingRef = useRef(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 這次全螢幕是不是「點編輯器自動開」的：自動開的才在收鍵盤時自動關
   const autoOpenedRef = useRef(false);
   const fullscreenViewRef = useRef<"code" | "problem">("code");
@@ -215,34 +200,48 @@ export default function SubmitPanel({
     restoreFocusRef.current = !isApp;
     if (isApp) viewRef.current?.contentDOM.blur();
     setClosing(true);
-    setTimeout(() => {
+    closeTimerRef.current = setTimeout(() => {
+      closeTimerRef.current = null;
       closingRef.current = false;
       setClosing(false);
       setFullscreen(false);
     }, 180);
   }, [isApp]);
 
+  useEffect(() => {
+    const timer = closeTimerRef;
+    return () => { if (timer.current !== null) clearTimeout(timer.current); };
+  }, []);
+
   // App 內：手機鍵盤開/關事件 —— 關閉時自動開的全螢幕編輯器回到內嵌模式；
   // 符號列只在鍵盤出現時顯示。
   useEffect(() => {
     if (!isApp) return;
-    let cleanup: () => void = () => {};
-    Promise.all([
-      onKeyboardWillHide(() => {
-        setKbdVisible(false);
-        if (autoOpenedRef.current && fullscreenViewRef.current === "code") closeFullscreen();
-      }),
-      onKeyboardWillShow(() => setKbdVisible(true)),
-    ]).then(([unsubHide, unsubShow]) => {
-      cleanup = () => {
-        unsubHide();
-        unsubShow();
-      };
-    });
-    return () => cleanup();
+    let disposed = false;
+    const subscriptions: Array<() => void> = [];
+    const register = (subscription: Promise<() => void>) => {
+      void subscription.then((unsubscribe) => {
+        if (disposed) unsubscribe();
+        else subscriptions.push(unsubscribe);
+      }).catch(() => {});
+    };
+    register(onKeyboardWillHide(() => {
+      if (disposed) return;
+      setKbdVisible(false);
+      if (autoOpenedRef.current && fullscreenViewRef.current === "code") closeFullscreen();
+    }));
+    register(onKeyboardWillShow(() => { if (!disposed) setKbdVisible(true); }));
+    return () => {
+      disposed = true;
+      for (const unsubscribe of subscriptions) unsubscribe();
+    };
   }, [closeFullscreen, isApp]);
 
-  function openFullscreen(manual: boolean) {
+  const openFullscreen = useCallback((manual: boolean) => {
+    if (closeTimerRef.current !== null) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
     closingRef.current = false;
     setClosing(false);
     autoOpenedRef.current = !manual;
@@ -250,13 +249,15 @@ export default function SubmitPanel({
     setFullscreenView("code");
     setProblemWorkspaceTab("code");
     setFullscreen(true);
-  }
+  }, []);
 
   // 全螢幕編輯時鎖住頁面捲動
   useEffect(() => {
-    document.body.style.overflow = fullscreen || (showTerminal && mobileTerminal) ? "hidden" : "";
+    if (!fullscreen && !(showTerminal && mobileTerminal)) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previous;
     };
   }, [fullscreen, showTerminal, mobileTerminal]);
 
@@ -269,7 +270,7 @@ export default function SubmitPanel({
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [fullscreen, closeFullscreen]);
 
-  function handleEditorWheel(event: WheelEvent) {
+  const handleEditorWheel = useCallback((event: WheelEvent) => {
     if (!event.ctrlKey) {
       wheelDeltaRef.current = 0;
       return;
@@ -287,7 +288,7 @@ export default function SubmitPanel({
     setEditorFontSize((size) =>
       Math.max(MIN_EDITOR_FONT_SIZE, Math.min(MAX_EDITOR_FONT_SIZE, size - steps))
     );
-  }
+  }, []);
 
   // 鍵盤符號列：在游標處插入文字（Tab 用兩格空白）
   function insertText(text: string) {
@@ -312,6 +313,10 @@ export default function SubmitPanel({
     formattingRef.current = true;
     setFormatting(true);
     try {
+      const [{ formatEditorCode }, { applyEditorFormatting }] = await Promise.all([
+        import("@/lib/editorFormatting"),
+        import("@/lib/applyEditorFormatting"),
+      ]);
       const formatted = await formatEditorCode(source, language);
       // 載入工具期間仍可編輯；若草稿或編輯器已變更，就不套用舊結果。
       if (viewRef.current !== view || !view.dom.isConnected || view.state.doc !== original) {
@@ -321,19 +326,7 @@ export default function SubmitPanel({
         return;
       }
 
-      const document = Text.of(formatted.split("\n"));
-      const mapPosition = (position: number) => {
-        const oldLine = original.lineAt(position);
-        const newLine = document.line(Math.min(oldLine.number, document.lines));
-        return newLine.from + Math.min(position - oldLine.from, newLine.length);
-      };
-      view.dispatch({
-        changes: { from: 0, to: original.length, insert: formatted },
-        selection: EditorSelection.create(view.state.selection.ranges.map((range) =>
-          EditorSelection.range(mapPosition(range.anchor), mapPosition(range.head))
-        ), view.state.selection.mainIndex),
-        annotations: [Transaction.userEvent.of("input.format"), isolateHistory.of("full")],
-      });
+      applyEditorFormatting(view, formatted, original);
       view.focus();
     } catch {
     } finally {
@@ -341,22 +334,6 @@ export default function SubmitPanel({
       setFormatting(false);
     }
   }, [language, running, submitting, terminalBusy]);
-
-  // 讓 CodeMirror 自己處理字級變更與重新測量，行號才會跟程式碼維持同一行高。
-  const editorExtensions = useMemo(
-    () => [
-      ...CM_EXTENSIONS[language],
-      ACCEPT_COMPLETION_WITH_TAB,
-      SNIPPET_KEYS,
-      // keymap.of 只註冊事件，formatCode 會在按鍵觸發時才讀取 ref。
-      // eslint-disable-next-line react-hooks/refs
-      keymap.of([{ key: "Shift-Alt-f", run: () => { void formatCode(); return true; } }]),
-      // 編輯器與側欄有 overflow，選單放在 body 才不會被裁掉，也能用滑鼠點選。
-      ...(typeof document !== "undefined" ? [tooltips({ parent: document.body })] : []),
-      EditorView.theme({ "&": { fontSize: `${editorFontSize}px` } }),
-    ],
-    [language, editorFontSize, formatCode],
-  );
 
   // 測試執行：跑範例測資（或自訂輸入），不留紀錄
   async function runTest() {
@@ -430,27 +407,33 @@ export default function SubmitPanel({
     </select>
   );
 
+  const handleCreateEditor = useCallback((view: EditorView) => {
+    viewRef.current = view;
+    if (fullscreen || restoreFocusRef.current) {
+      restoreFocusRef.current = false;
+      requestAnimationFrame(() => { if (view.dom.isConnected) view.focus(); });
+    }
+  }, [fullscreen]);
+
+  const handleEditorFocus = useCallback(() => {
+    if (isApp && !fullscreen && window.innerWidth < 768) openFullscreen(false);
+  }, [isApp, fullscreen, openFullscreen]);
+
+  const handleTerminalClose = useCallback(() => {
+    setShowTerminal(false);
+    setTerminalBusy(false);
+  }, []);
+
   const editor = (
-    <CodeMirror
-      value={code}
-      theme="dark"
-      extensions={editorExtensions}
+    <CodeEditor
+      code={code}
+      language={language}
+      fontSize={editorFontSize}
       onChange={updateCode}
-      onCreateEditor={(view) => {
-        viewRef.current = view;
-        view.dom.addEventListener("wheel", handleEditorWheel, { passive: false });
-        if (fullscreen || restoreFocusRef.current) {
-          restoreFocusRef.current = false;
-          requestAnimationFrame(() => view.focus());
-        }
-      }}
-      onFocus={() => {
-        // App 手機上點程式區塊 → 自動進全螢幕編輯（鍵盤符號列才會出現）
-        if (isApp && !fullscreen && window.innerWidth < 768) {
-          openFullscreen(false);
-        }
-      }}
-      basicSetup={{ tabSize: 4 }}
+      onCreateEditor={handleCreateEditor}
+      onFocus={handleEditorFocus}
+      onWheel={handleEditorWheel}
+      onFormat={formatCode}
     />
   );
 
@@ -493,6 +476,7 @@ export default function SubmitPanel({
         setShowCustom(false);
         setRunResult(null);
         setTerminalBusy(true);
+        setTerminalSource({ code, language });
         setTerminalRun((value) => value + 1);
         setShowTerminal(true);
       }}
@@ -570,16 +554,18 @@ export default function SubmitPanel({
         </div>
       )}
       {showTerminal && (
-        <InteractiveTerminal
-          key={terminalRun}
-          problemId={problemId}
-          contestId={contestId}
-          language={language}
-          code={code}
-          mobile={mobileTerminal}
-          onBusyChange={setTerminalBusy}
-          onClose={() => setShowTerminal(false)}
-        />
+        <Suspense fallback={<TerminalLoading mobile={mobileTerminal} onClose={handleTerminalClose} />}>
+          <InteractiveTerminal
+            key={terminalRun}
+            problemId={problemId}
+            contestId={contestId}
+            language={terminalSource?.language ?? language}
+            code={terminalSource?.code ?? code}
+            mobile={mobileTerminal}
+            onBusyChange={setTerminalBusy}
+            onClose={handleTerminalClose}
+          />
+        </Suspense>
       )}
 
       {locked && (

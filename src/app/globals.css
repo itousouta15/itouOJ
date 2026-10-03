@@ -757,6 +757,9 @@ opacity: 0;
   animation: wander-b 17s linear infinite;
   animation-delay: -10s;
 }
+.nav-overlay:not(.is-open) .nav-overlay-face {
+  animation-play-state: paused;
+}
 
 .nav-overlay-links {
   display: flex;

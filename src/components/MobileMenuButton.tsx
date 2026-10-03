@@ -22,13 +22,17 @@ export default function MobileMenuButton({
 
   // 導覽後由每個 Link 的 onClick 關閉選單，不需要再用 pathname 的 effect 關一次
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
     if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   return (

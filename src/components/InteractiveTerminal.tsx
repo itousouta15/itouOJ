@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { LanguageKey } from "@/lib/languages";
 
@@ -18,7 +18,7 @@ async function stopSession(id: string) {
   await fetch(`/api/terminal/${id}`, { method: "DELETE", keepalive: true });
 }
 
-export default function InteractiveTerminal({
+function InteractiveTerminal({
   problemId, contestId, language, code, mobile = false, onBusyChange, onClose,
 }: {
   problemId: number;
@@ -37,16 +37,20 @@ export default function InteractiveTerminal({
   const [sending, setSending] = useState(false);
   const [eof, setEof] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
   const sessionRef = useRef<string | null>(null);
   const outputRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const sendingRef = useRef(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const followOutputRef = useRef(true);
+  const scrollFrameRef = useRef<number | null>(null);
   const busy = status !== "done";
-  const lastBreak = output.lastIndexOf("\n") + 1;
-  const history = output.slice(0, lastBreak);
-  const currentLine = output.slice(lastBreak);
+  const { history, currentLine } = useMemo(() => {
+    const lastBreak = output.lastIndexOf("\n") + 1;
+    return { history: output.slice(0, lastBreak), currentLine: output.slice(lastBreak) };
+  }, [output]);
 
   function append(text: string) {
     setOutput((previous) => (previous + text).slice(-300_000));
@@ -55,6 +59,8 @@ export default function InteractiveTerminal({
   useEffect(() => {
     let disposed = false;
     let id: string | null = null;
+    let waitTimer: ReturnType<typeof setTimeout> | undefined;
+    let resumeWait: (() => void) | undefined;
     const polling = new AbortController();
     onBusyChange(true);
     async function start() {
@@ -71,30 +77,43 @@ export default function InteractiveTerminal({
           return;
         }
         sessionRef.current = id;
+        setSessionReady(true);
         let cursor = 0;
-        for (;;) {
+        while (!disposed) {
           const result = await fetch(`/api/terminal/${id}?cursor=${cursor}`, {
             cache: "no-store", signal: polling.signal,
           });
           const data = await result.json();
           if (!result.ok) throw new Error(data.error ?? "終端機連線中斷");
           if (disposed) return;
+          const text: string[] = [];
+          let nextStatus: Status | undefined;
           for (const event of data.events as TerminalEvent[]) {
-            if (event.type === "output") append(event.text);
-            if (event.type === "state") setStatus(event.state);
-            if (event.type === "error") append(`\n${event.message}\n`);
+            if (event.type === "output") text.push(event.text);
+            if (event.type === "state") nextStatus = event.state;
+            if (event.type === "error") text.push(`\n${event.message}\n`);
             if (event.type === "exit") {
               const reason = event.reason === "stopped" ? "已停止"
                 : event.reason === "compile-error" ? "編譯失敗"
                 : event.reason === "timeout" ? "超過執行時間限制"
                 : `程式已結束（exit code: ${event.code ?? "—"}）`;
-              append(`\n${reason}\n`);
+              text.push(`\n${reason}\n`);
             }
           }
+          // 一批事件只合併、裁切整份輸出一次，避免高頻小輸出反覆複製字串。
+          if (text.length) append(text.join(""));
+          if (nextStatus) setStatus(nextStatus);
           cursor = data.cursor;
           if (data.done) break;
           // Avoid a hot request loop for programs continuously producing output.
-          await new Promise((resolve) => setTimeout(resolve, 200));
+          await new Promise<void>((resolve) => {
+            resumeWait = resolve;
+            waitTimer = setTimeout(() => {
+              waitTimer = undefined;
+              resumeWait = undefined;
+              resolve();
+            }, 200);
+          });
         }
       } catch (error) {
         if (!disposed) {
@@ -116,6 +135,8 @@ export default function InteractiveTerminal({
     return () => {
       disposed = true;
       clearTimeout(startTimer);
+      clearTimeout(waitTimer);
+      resumeWait?.();
       polling.abort();
       stopOnLeave();
       window.removeEventListener("pagehide", stopOnLeave);
@@ -123,9 +144,26 @@ export default function InteractiveTerminal({
     };
   }, [source, onBusyChange]);
 
+  const followOutput = useCallback(() => {
+    if (document.hidden || !followOutputRef.current) return;
+    if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      const screen = outputRef.current;
+      if (screen && followOutputRef.current) screen.scrollTop = screen.scrollHeight;
+    });
+  }, []);
+
+  useEffect(() => { followOutput(); }, [output, input, status, followOutput]);
+
   useEffect(() => {
-    if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
-  }, [output, input]);
+    const frame = scrollFrameRef;
+    document.addEventListener("visibilitychange", followOutput);
+    return () => {
+      document.removeEventListener("visibilitychange", followOutput);
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+    };
+  }, [followOutput]);
   useEffect(() => {
     if (status === "running") inputRef.current?.focus();
   }, [status]);
@@ -138,21 +176,27 @@ export default function InteractiveTerminal({
     if (!mobile) return;
     const previousFocus = document.activeElement;
     const viewport = window.visualViewport;
+    let resizeFrame: number | undefined;
     const resize = () => {
       if (!modalRef.current || !viewport) return;
       modalRef.current.style.height = `${viewport.height}px`;
       modalRef.current.style.top = `${viewport.offsetTop}px`;
     };
     resize();
+    const queueResize = () => {
+      if (resizeFrame !== undefined) cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => { resizeFrame = undefined; resize(); });
+    };
     const frame = requestAnimationFrame(() => {
       if (!modalRef.current?.contains(document.activeElement)) modalRef.current?.focus();
     });
-    viewport?.addEventListener("resize", resize);
-    viewport?.addEventListener("scroll", resize);
+    viewport?.addEventListener("resize", queueResize);
+    viewport?.addEventListener("scroll", queueResize);
     return () => {
       cancelAnimationFrame(frame);
-      viewport?.removeEventListener("resize", resize);
-      viewport?.removeEventListener("scroll", resize);
+      if (resizeFrame !== undefined) cancelAnimationFrame(resizeFrame);
+      viewport?.removeEventListener("resize", queueResize);
+      viewport?.removeEventListener("scroll", queueResize);
       requestAnimationFrame(() => {
         if (previousFocus instanceof HTMLElement && previousFocus.isConnected && !previousFocus.closest("[inert]")) {
           previousFocus.focus();
@@ -219,7 +263,7 @@ export default function InteractiveTerminal({
         <span role="status">{STATUS_LABELS[status]}</span>
         <div className="interactive-terminal-controls">
           <button type="button" title="結束標準輸入（Ctrl+D）" disabled={status !== "running" || eof || sending} onClick={() => void sendInput(true)}>EOF</button>
-          <button type="button" onClick={() => void stop()} disabled={!busy || !sessionRef.current}>停止</button>
+          <button type="button" onClick={() => void stop()} disabled={!busy || !sessionReady}>停止</button>
           <button type="button" onClick={closeTerminal} aria-label="關閉終端機">✕</button>
         </div>
       </div>
@@ -230,8 +274,12 @@ export default function InteractiveTerminal({
         aria-label="程式輸出"
         aria-live="off"
         tabIndex={0}
+        onScroll={(event) => {
+          const screen = event.currentTarget;
+          followOutputRef.current = screen.scrollHeight - screen.scrollTop - screen.clientHeight <= 32;
+        }}
         onClick={() => {
-          if (status === "running" && !eof && !window.getSelection()?.toString()) inputRef.current?.focus();
+          if (followOutputRef.current && status === "running" && !eof && !window.getSelection()?.toString()) inputRef.current?.focus();
         }}
       >
         <pre className="interactive-terminal-history">{output ? history : status === "starting" || status === "compiling" ? "正在啟動程式…\n" : ""}</pre>
@@ -312,3 +360,5 @@ export default function InteractiveTerminal({
     document.body
   );
 }
+
+export default memo(InteractiveTerminal);

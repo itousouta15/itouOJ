@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { scheduleContestReminder } from "@/lib/capacitor";
 
 function formatRemaining(ms: number) {
@@ -18,27 +18,51 @@ function formatRemaining(ms: number) {
 // 不呼叫 Date.now()（React Compiler 會擋 impure function）。
 let clockNow = 0;
 let clockTimer: ReturnType<typeof setInterval> | null = null;
-const clockListeners = new Set<() => void>();
+const clockListeners = new Map<() => void, number>();
+let watchingVisibility = false;
 
-function subscribeClock(cb: () => void) {
-  clockListeners.add(cb);
-  if (!clockTimer) {
-    clockNow = Date.now();
-    clockTimer = setInterval(() => {
-      clockNow = Date.now();
-      for (const listener of clockListeners) listener();
-    }, 1000);
+function syncClockTimer() {
+  if ((document.hidden || clockListeners.size === 0) && clockTimer !== null) {
+    clearInterval(clockTimer);
+    clockTimer = null;
+  } else if (!document.hidden && clockListeners.size > 0 && clockTimer === null) {
+    clockTimer = setInterval(tickClock, 1000);
   }
+  if (clockListeners.size === 0 && watchingVisibility) {
+    document.removeEventListener("visibilitychange", clockVisibilityChanged);
+    watchingVisibility = false;
+  }
+}
+
+function tickClock() {
+  clockNow = Date.now();
+  for (const [listener, end] of clockListeners) {
+    if (clockNow >= end) clockListeners.delete(listener);
+    listener();
+  }
+  syncClockTimer();
+}
+
+function clockVisibilityChanged() {
+  if (!document.hidden) tickClock();
+  else syncClockTimer();
+}
+
+function subscribeClock(cb: () => void, end: number) {
+  tickClock();
+  if (clockNow >= end) return () => {};
+  clockListeners.set(cb, end);
+  if (!watchingVisibility) {
+    document.addEventListener("visibilitychange", clockVisibilityChanged);
+    watchingVisibility = true;
+  }
+  syncClockTimer();
   return () => {
     clockListeners.delete(cb);
-    if (clockListeners.size === 0 && clockTimer) {
-      clearInterval(clockTimer);
-      clockTimer = null;
-    }
+    syncClockTimer();
   };
 }
 
-const getClockSnapshot = () => clockNow;
 const getClockServerSnapshot = () => 0;
 
 // startTime/endTime 用 ISO 字串傳入（server component 算好，這裡只負責每秒 tick）
@@ -53,9 +77,13 @@ export default function ContestCountdown({
   contestId?: number;
   contestTitle?: string;
 }) {
+  const start = new Date(startTime).getTime();
+  const end = new Date(endTime).getTime();
+  const subscribe = useCallback((callback: () => void) => subscribeClock(callback, end), [end]);
+  const getSnapshot = useCallback(() => clockNow === 0 ? 0 : Math.min(clockNow, end), [end]);
   const now = useSyncExternalStore(
-    subscribeClock,
-    getClockSnapshot,
+    subscribe,
+    getSnapshot,
     getClockServerSnapshot
   );
 
@@ -73,9 +101,6 @@ export default function ContestCountdown({
 
   // 避免 SSR/CSR 首次渲染時間不一致，掛載完成前不顯示
   if (now === 0) return null;
-
-  const start = new Date(startTime).getTime();
-  const end = new Date(endTime).getTime();
 
   if (now < start) {
     return (

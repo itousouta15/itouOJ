@@ -19,12 +19,35 @@ export default function AutoRefresh({
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    let active = !document.hidden && navigator.onLine;
+    const refresh = () => {
+      if (document.hidden || !navigator.onLine) return;
       router.refresh();
-      setLastRefreshed(new Date());
-    }, intervalMs);
-    return () => clearInterval(timer);
-  }, [router, intervalMs]);
+      if (showLabel) setLastRefreshed(new Date());
+    };
+    const updateActivity = () => {
+      const next = !document.hidden && navigator.onLine;
+      if (next === active) return;
+      active = next;
+      clearInterval(timer);
+      timer = undefined;
+      if (active) {
+        refresh();
+        timer = setInterval(refresh, intervalMs);
+      }
+    };
+    if (active) timer = setInterval(refresh, intervalMs);
+    document.addEventListener("visibilitychange", updateActivity);
+    window.addEventListener("online", updateActivity);
+    window.addEventListener("offline", updateActivity);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", updateActivity);
+      window.removeEventListener("online", updateActivity);
+      window.removeEventListener("offline", updateActivity);
+    };
+  }, [router, intervalMs, showLabel]);
 
   // 避免 SSR/CSR 首次渲染時間不一致
   if (!mounted || !showLabel) return null;

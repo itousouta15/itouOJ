@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type KeyboardEvent,
   type PointerEvent,
@@ -14,6 +15,7 @@ import { useHorizontalSwipe } from "@/lib/useHorizontalSwipe";
 import {
   setProblemWorkspaceTab,
   setProblemWorkspaceActive,
+  setProblemWorkspaceEditorVisited,
   useProblemWorkspaceState,
   type ProblemWorkspaceTab,
 } from "@/lib/problemWorkspaceTab";
@@ -23,6 +25,15 @@ const MIN_DESCRIPTION_SHARE = 35;
 const MAX_DESCRIPTION_SHARE = 65;
 
 type MobileTab = ProblemWorkspaceTab;
+
+const DESKTOP_QUERY = "(min-width: 1024px)";
+function subscribeDesktop(callback: () => void) {
+  const media = window.matchMedia(DESKTOP_QUERY);
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+const getDesktopSnapshot = () => window.matchMedia(DESKTOP_QUERY).matches;
+const getDesktopServerSnapshot = () => false;
 
 export default function ProblemWorkspace({
   children,
@@ -41,7 +52,8 @@ export default function ProblemWorkspace({
   // 只有兩個 pane（題目 + 編輯器）才做分頁；未登入只有題目，維持堆疊。
   const hasTwoPanes = enabled && items.length === 2;
   // 分頁狀態與全站底部導覽列共用（見 lib/problemWorkspaceTab.ts）。
-  const { tab: mobileTab } = useProblemWorkspaceState();
+  const { tab: mobileTab, codeVisited } = useProblemWorkspaceState();
+  const desktop = useSyncExternalStore(subscribeDesktop, getDesktopSnapshot, getDesktopServerSnapshot);
   const [slideDirection, setSlideDirection] = useState<MobileTab | null>(null);
   const prevTabRef = useRef<MobileTab>(mobileTab);
   const swipe = useHorizontalSwipe((direction) => {
@@ -63,6 +75,10 @@ export default function ProblemWorkspace({
     setProblemWorkspaceActive(true);
     return () => setProblemWorkspaceActive(false);
   }, [hasTwoPanes]);
+
+  useEffect(() => {
+    if (hasTwoPanes && desktop) setProblemWorkspaceEditorVisited();
+  }, [hasTwoPanes, desktop]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -186,7 +202,7 @@ export default function ProblemWorkspace({
           </div>
           {divider}
           <div className={`problem-page${mobileTab === "code" ? " is-active" : ""}`}>
-            {editor}
+            {(desktop || codeVisited || mobileTab === "code") && editor}
           </div>
         </div>
       </div>
