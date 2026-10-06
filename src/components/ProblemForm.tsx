@@ -281,9 +281,16 @@ export default function ProblemForm({
           body: JSON.stringify({ ...form, id: undefined, pdfUpload }),
         }
       );
-      const data = await res.json();
+      if (res.status === 413) {
+        setError(
+          "題目資料超過伺服器的上傳大小限制（HTTP 413）。限制計算的是整份 JSON，包含題敘、測資與 PDF；請縮小資料，或請管理員調整 Nginx 的 client_max_body_size。"
+        );
+        setSaving(false);
+        return;
+      }
+      const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data.error ?? "儲存失敗");
+        setError(data?.error ?? `儲存失敗（HTTP ${res.status}）`);
         setSaving(false);
         return;
       }

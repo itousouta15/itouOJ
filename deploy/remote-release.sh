@@ -168,4 +168,7 @@ judge_status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_
   -X POST -H "x-judge-worker-secret: $JUDGE_WORKER_SECRET" \
   'http://127.0.0.1:3000/api/internal/judge?action=probe')
 [[ "$judge_status" == 400 ]]
+echo '== Sync and validate OJ nginx upload limit =='
+# Normalize the staged script too: git archive on Windows can produce CRLF.
+tr -d '\r' < "$SOURCE/deploy/sync-nginx-upload-limit.sh" | bash -s -- "$SOURCE/deploy/nginx-oj.conf"
 echo "Deployment verified. Backup: $BACKUP"
