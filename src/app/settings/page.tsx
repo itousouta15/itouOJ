@@ -11,6 +11,7 @@ import ProfileForm from "@/components/ProfileForm";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import LinkedAccounts from "@/components/LinkedAccounts";
 import DeleteAccountForm from "@/components/DeleteAccountForm";
+import CtfStats from "@/components/CtfStats";
 
 export const metadata: Metadata = { title: "帳號設定" };
 export const dynamic = "force-dynamic";
@@ -41,6 +42,7 @@ export default async function SettingsPage({
     acRate,
     solvedByDifficulty,
     totalByDifficulty,
+    ctf,
   } = await getUserStats(user.id);
 
   const stats = [
@@ -146,6 +148,7 @@ export default async function SettingsPage({
         </div>
       </section>
 
+      <CtfStats stats={ctf} />
       <section className="card p-6">
         <h2 className="section-title mb-4">
           {user.passwordHash ? "修改密碼" : "設定密碼"}

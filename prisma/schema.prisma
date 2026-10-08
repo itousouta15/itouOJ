@@ -47,6 +47,68 @@ model User {
   following        Follow[]           @relation("Following")
   followers        Follow[]           @relation("Followers")
   passwordResetTokens PasswordResetToken[]
+  ctfSolves        CtfSolve[]
+  ctfAttempts      CtfAttempt[]
+}
+
+model CtfChallenge {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  category    String
+  difficulty  String   @default("medium")
+  points      Int
+  isPublic    Boolean  @default(false)
+  order       Int      @default(0)
+  flagHash    String
+  flagSalt    String
+  labType     String? // SOURCE | COOKIE | IDOR; confined teaching websites
+  labFlagCiphertext String? // AES-256-GCM; never include in public/client projections
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  attachments CtfAttachment[]
+  solves      CtfSolve[]
+  attempts    CtfAttempt[]
+
+  @@index([isPublic, order, id])
+}
+
+model CtfAttachment {
+  id          Int      @id @default(autoincrement())
+  challengeId Int
+  challenge   CtfChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  filename    String
+  sizeBytes   Int
+  data        Bytes
+  createdAt   DateTime @default(now())
+
+  @@index([challengeId, id])
+}
+
+model CtfSolve {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challengeId Int
+  challenge   CtfChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  solvedAt    DateTime @default(now())
+
+  @@unique([userId, challengeId])
+  @@index([userId, solvedAt, id])
+  @@index([challengeId])
+}
+
+model CtfAttempt {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challengeId Int
+  challenge   CtfChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  result      String // CORRECT | INCORRECT; never store the submitted flag
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt, id])
+  @@index([challengeId])
 }
 
 model PasswordResetToken {
@@ -167,7 +229,7 @@ model RecognitionClusterTag {
 
 // 識別題練習的作答狀態：只保留每位使用者每題「最新一次」的作答，
 // 用來在練習頁還原上次的答對/答錯（題號格子與題目上顯示）。
-// 刻意不寫進 Submission：識別題是練習，不進提交紀錄、不計排行。
+// 不寫進 Submission：識讀另計全站加權分數，不列入程式提交統計。
 model RecognitionAnswer {
   id            Int      @id @default(autoincrement())
   userId        String

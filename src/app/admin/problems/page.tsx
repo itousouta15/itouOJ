@@ -87,6 +87,7 @@ export default async function AdminProblemsPage({
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-4">
+        <Link href="/admin/ctf" className="text-sm text-blue hover:underline">CTF 管理 →</Link>
         <Link
           href="/admin/problems/proposals"
           className="text-sm text-blue hover:underline"

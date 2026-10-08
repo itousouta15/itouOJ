@@ -11,6 +11,8 @@ import SubmissionRow from "@/components/SubmissionRow";
 import Avatar from "@/components/Avatar";
 import LogoutButton from "@/components/LogoutButton";
 import FollowButton from "@/components/FollowButton";
+import CtfStats from "@/components/CtfStats";
+import { ctfDate } from "@/lib/ctf";
 
 export const dynamic = "force-dynamic";
 
@@ -281,6 +283,16 @@ export default async function UserProfilePage({
             );
           })}
         </div>
+      </section>
+
+      <CtfStats stats={statsData.ctf} />
+      <section className="card p-6">
+        <h2 className="section-title mb-4">最近解出的 CTF 題目</h2>
+        {!statsData.ctf.recent.length && <p className="text-sm text-mute">尚未解出公開 CTF 題目。</p>}
+        <ul className="space-y-3">{statsData.ctf.recent.map((solve) => <li key={solve.challenge.id} className="flex flex-wrap justify-between gap-2 text-sm">
+          <Link className="text-blue hover:underline" href={`/ctf/${solve.challenge.id}`}>{solve.challenge.title}（{solve.challenge.points} 分）</Link>
+          <span className="text-dim">{ctfDate(solve.solvedAt)}</span>
+        </li>)}</ul>
       </section>
 
       <section className="card overflow-x-auto p-0">

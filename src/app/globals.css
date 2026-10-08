@@ -2705,3 +2705,53 @@ html[data-app] [data-app-section="promo"] {
     font-size: 10.5px;
   }
 }
+
+/* CTFd-inspired challenge content, shared by direct links and routed modals. */
+.ctf-standalone { border: 1px solid var(--bd2); border-radius: 18px; background: var(--panel); overflow: hidden; }
+.ctf-modal { width: min(760px, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); margin: auto; padding: 0; border: 1px solid var(--bd2); border-radius: 18px; color: var(--tx); background: var(--panel); overflow: auto; box-shadow: 0 24px 80px rgba(0,0,0,.45); }
+.ctf-modal[open] { animation: menuPop .18s ease-out both; }
+.ctf-modal::backdrop { background: rgba(0,0,0,.68); backdrop-filter: blur(4px); }
+.ctf-modal-surface { position: relative; min-width: 0; }
+.ctf-modal-close { position: sticky; top: 8px; float: right; z-index: 2; width: 42px; height: 42px; margin: 8px 8px -50px 0; border-radius: 50%; color: var(--dim); background: var(--panel); font-size: 28px; line-height: 1; cursor: pointer; }
+.ctf-modal-close:hover { color: var(--tx); background: var(--inset); }
+.ctf-modal-close:focus-visible, .ctf-tab:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; }
+.ctf-tab-list { display: flex; gap: 4px; border-bottom: 1px solid var(--bd2); padding: 12px 24px 0; }
+.ctf-modal .ctf-tab-list { padding-right: 58px; }
+.ctf-tab { min-height: 44px; padding: 10px 14px; border-bottom: 2px solid transparent; color: var(--dim); font-size: 14px; white-space: nowrap; cursor: pointer; }
+.ctf-tab.active { color: var(--tx); border-bottom-color: var(--purple); font-weight: 600; }
+.ctf-challenge-heading { padding: 28px 30px 22px; text-align: center; }
+.ctf-challenge-title { font-family: "Shippori Mincho", "Noto Serif TC", serif; font-size: clamp(23px, 4vw, 30px); font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
+.ctf-challenge-points { margin: 8px 0 14px; color: var(--tx); font-family: "JetBrains Mono", monospace; font-size: 30px; font-weight: 700; }
+.ctf-challenge-points > span { color: var(--dim); font-family: "Noto Sans TC", sans-serif; font-size: 13px; font-weight: 400; }
+.ctf-challenge-badges { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
+.ctf-solved-badge { color: var(--green); }
+.ctf-challenge-description, .ctf-challenge-connection { padding: 0 30px 24px; }
+.ctf-challenge-files { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; padding: 0 30px 24px; }
+.ctf-file-button { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--bd2); border-radius: 10px; background: var(--inset); color: var(--blue); font-size: 14px; }
+.ctf-file-button:hover { border-color: var(--blue); }
+.ctf-challenge-submit { padding: 22px 30px 28px; border-top: 1px solid var(--bd); }
+.ctf-flag-row { display: flex; align-items: flex-end; gap: 12px; }
+.ctf-flag-row .input { font-size: 16px; }
+.ctf-flag-row > button { min-height: 44px; flex: none; }
+.ctf-activity-panel { min-height: 280px; padding: 24px 24px 28px; }
+.ctf-challenge-card { transition: border-color .18s, background-color .18s; }
+.ctf-challenge-card.is-solved { border-color: color-mix(in srgb, var(--green) 45%, var(--bd)); background: color-mix(in srgb, var(--green) 5%, var(--panel)); }
+@media (max-width: 640px) {
+  .account-trigger { padding-inline: 10px; }
+  .ctf-modal { width: calc(100vw - 16px); max-width: calc(100vw - 16px); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); border-radius: 14px; }
+  .ctf-tab-list { gap: 0; padding-left: 14px; padding-right: 14px; }
+  .ctf-tab { padding-left: 10px; padding-right: 10px; font-size: 13px; }
+  .ctf-challenge-heading { padding: 24px 20px 20px; }
+  .ctf-challenge-description, .ctf-challenge-connection { padding-left: 20px; padding-right: 20px; }
+  .ctf-challenge-files { padding-left: 20px; padding-right: 20px; }
+  .ctf-challenge-submit { padding: 20px; }
+  .ctf-activity-panel { padding: 20px 14px; }
+}
+@media (max-width: 380px) {
+  .nav-overlay-links--grouped { grid-template-columns: 1fr; }
+  .ctf-flag-row { flex-direction: column; align-items: stretch; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ctf-modal[open], .header-practice-menu { animation: none; }
+  .ctf-challenge-card, .header-practice-chevron { transition: none; }
+}

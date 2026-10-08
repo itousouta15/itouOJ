@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getCtfStats } from "@/lib/ctf";
 
 export const DIFFICULTY_META = [
   { key: "easy", label: "簡單", color: "var(--green)" },
@@ -19,6 +20,7 @@ export interface UserStats {
   recognitionRate: number;
   recognitionTotal: number;
   recognitionProgressRate: number;
+  ctf: Awaited<ReturnType<typeof getCtfStats>>;
 }
 
 function percentage(correct: number, total: number): number {
@@ -36,14 +38,15 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     recognitionAnswered,
     recognitionCorrect,
     recognitionTotal,
+    ctf,
   ] = await Promise.all([
     prisma.submission.findMany({
       where: { userId, status: "AC", problem: { type: "PROGRAMMING" } },
       distinct: ["problemId"],
       select: { problem: { select: { difficulty: true } } },
     }),
-    prisma.submission.count({ where: { userId } }),
-    prisma.submission.count({ where: { userId, status: "AC" } }),
+    prisma.submission.count({ where: { userId, problem: { type: "PROGRAMMING" } } }),
+    prisma.submission.count({ where: { userId, status: "AC", problem: { type: "PROGRAMMING" } } }),
     prisma.problem.groupBy({
       by: ["difficulty"],
       where: { isPublic: true, type: "PROGRAMMING" },
@@ -60,6 +63,7 @@ export async function getUserStats(userId: string): Promise<UserStats> {
       },
     }),
     prisma.problem.count({ where: { type: "RECOGNITION", isPublic: true } }),
+    getCtfStats(userId),
   ]);
 
   const solvedByDifficulty = new Map<string, number>();
@@ -88,5 +92,6 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     recognitionRate: percentage(recognitionCorrect, recognitionAnswered),
     recognitionTotal,
     recognitionProgressRate: percentage(recognitionCorrect, recognitionTotal),
+    ctf,
   };
 }

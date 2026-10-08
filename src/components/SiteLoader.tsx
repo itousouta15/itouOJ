@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { lockBodyScroll } from "@/lib/bodyScrollLock";
 
 // 同 itousouta.me 的 SiteLoader：window load 前用全頁模糊遮罩蓋住，
 // 載入完成後往上滑出，再讓 header 播放進場動畫（body.site-revealed）。
@@ -25,7 +26,7 @@ export default function SiteLoader() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = "hidden";
+    const unlock = lockBodyScroll();
 
     let hideTimer: ReturnType<typeof setTimeout>;
     let removeTimer: ReturnType<typeof setTimeout>;
@@ -40,6 +41,7 @@ export default function SiteLoader() {
       removeTimer = setTimeout(() => {
         document.body.classList.add("site-revealed");
         setGone(true);
+        unlock();
       }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : SLIDE_MS);
     };
 
@@ -61,6 +63,7 @@ export default function SiteLoader() {
       clearTimeout(hideTimer);
       clearTimeout(removeTimer);
       clearTimeout(maxWaitTimer);
+      unlock();
     };
   }, []);
 
@@ -68,10 +71,6 @@ export default function SiteLoader() {
   useEffect(() => {
     document.documentElement.classList.add("fonts-ready");
   }, []);
-
-  useEffect(() => {
-    if (gone) document.body.style.overflow = "";
-  }, [gone]);
 
   if (gone) return null;
 
