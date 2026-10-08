@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import QuestionHeader from "@/components/QuestionHeader";
+import ProblemTutorialButton from "@/components/ProblemTutorialButton";
+import { getProblemTutorial } from "@/lib/problemTutorial";
 import StatementCard from "@/components/StatementCard";
 import SampleCases from "@/components/SampleCases";
 import SubmitPanel from "@/components/SubmitPanel";
@@ -83,6 +85,7 @@ export default async function ProblemPage({
     notFound();
   }
   const accepted = acceptedSub !== null;
+  const tutorial = getProblemTutorial(problemCode, problem.title);
   const learningResourceStructuredData = problem.isPublic
     ? JSON.stringify({
         "@context": "https://schema.org",
@@ -116,6 +119,7 @@ export default async function ProblemPage({
             title={`${problem.problemCode}. ${problem.title}`}
             sharePath={`/problems/${problem.problemCode}`}
             badges={<DifficultyBadge difficulty={problem.difficulty} />}
+            tutorial={tutorial ? <ProblemTutorialButton lesson={tutorial} /> : undefined}
             tags={problem.tags.map((pt) => ({ id: pt.tagId, name: pt.tag.name }))}
             adminHref={
               session?.role === "ADMIN"
