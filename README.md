@@ -2,7 +2,7 @@
 
 # itouOJ
 
-一套可自行架設的 Online Judge，提供程式題、識讀練習、比賽、課程與離線收件。網站採用 Next.js；正式提交由自建的 Linux 沙箱判題。
+一套可自行架設的 Online Judge，提供程式題、識讀練習、CTF、比賽、課程與離線收件。網站採用 Next.js；正式程式提交由自建的 Linux 沙箱判題。
 
 ![itouOJ 首頁](public/brand/Hero.png)
 
@@ -16,11 +16,80 @@
 | 寫程式 | CodeMirror 編輯器、每題每語言的帳號草稿（網站與 Android App 同步，離線時保留本機草稿）與範例測試；手機可先備妥 stdin 再測試。桌機可左右拖曳調整題目與程式欄寬。 |
 | Terminal | 桌機版可直接在終端機中逐行輸入、即時看輸出；支援 C++、C、Python、JavaScript|
 | 識讀練習 | 選擇題即時對答案、詳解、題組進度與複習紀錄；不列入一般程式提交紀錄。 |
+| CTF 練習 | 共用帳號的個人題庫、固定 Flag、Markdown 題敘、附件下載、提交紀錄與計分板；管理員可新增、編輯、隱藏及刪除題目。 |
 | 比賽與課程 | ICPC／IOI 計分、封榜與揭榜、參賽代碼、語言限制、PDF 題本；課程可整理題目與追蹤解題進度。 |
 | 社群與管理 | 討論、題解、公告、站內訊息、個人檔案；管理後台可審核題目提案並管理題目、比賽、課程與使用者。 |
 | 離線與行動裝置 | Windows 收件程式可在斷網比賽中保存提交、復網後補傳；Android App 使用 Capacitor，提供手機編輯器及原生通知。 |
 
 可使用帳密註冊／登入；Google、Discord 登入及密碼重設信件可另外設定。識讀題庫中的 C／Python 125 題經 Bangye Wu 教授同意，供非營利教育用途使用，題目頁會標示來源。
+
+### CTF 使用方式
+
+- 練習入口為 `/ctf`；訪客可以瀏覽公開題目及下載附件，登入後提交 Flag。
+- 管理入口為 `/admin/ctf`。新題預設隱藏，儲存題目後進入編輯頁逐檔上傳附件，每檔最多 **4 MiB**，API 請求最多 **5 MiB**。全站 Nginx 的 50 MiB 限制不會放寬此限制。
+- Flag 忽略前後空白、保留內部空白並區分大小寫。編輯時留空保留原值；原 Flag 不回填，也不保存提交的 Flag 原文。
+- 每人每題只計分一次。修改配分會更新所有已解出者的分數；隱藏題目保留紀錄，暫時排除於 CTF 排行、進度、近期解題及歷史；再公開恢復採計。永久刪除會移除附件與關聯紀錄。
+- CTF 計分板以分數由高至低、最後解出時間由早至晚、使用者名稱排序。提交限流為帳號每分鐘 10 次、IP 每分鐘 30 次。
+
+全站排行採 `實作解題數 × 0.42 ＋ 識讀答對數 × 0.28 ＋ CTF 原始分數 × 0.003`，完整精度排序、顯示至小數第三位。實作解題與程式提交數明確限定 `PROGRAMMING`，排除舊的識讀 `Submission`；首頁實作排行與個人統計採相同題型口徑。CTF 不進入程式判題佇列，使用 SQLite 和 Node crypto 即可運作。
+
+CTF 題庫點擊卡片會開啟 CTFd 風格的 modal，保留分類、難度、解題狀態、分頁與捲動位置。視窗提供題目、本人提交及解題者分頁，支援 Esc、遮罩與關閉鈕；答對後同步更新卡片與進度。Modal 專用網址為 `/ctf/challenges/<id>`，直接開啟或重新整理時使用共用內容的獨立題目頁；原 `/ctf/<id>` 深連結仍有效。攔截僅限專用題目路徑，不影響計分板及提交歷史。紀錄每頁 20 筆，本人提交只由目前 session 查詢，且不保存／回傳提交的 Flag 原文。
+
+桌面主導覽為 **練習 ▾／課程／比賽／排行**；練習選單集中實作、識讀、CTF 與全站提交紀錄。頭像選單提供個人頁面、訊息、設定、本人程式／識讀與 CTF 紀錄、動態及管理員入口。手機選單及 App「更多」共用分組；窄螢幕的註冊入口放在手機選單。互動與實作說明見 [CTF modal 與導覽](docs/guides/ctf-modal-navigation.md)。
+
+首頁改回原站的簡潔版型：置中 Logo、短標語、實作／識讀／CTF 三個練習按鈕與方形內容區。列出公開題庫統計、每日一題、公告、最新實作與 CTF、全站排行及社群；登入後保留本人 CTF 進度與繼續學習。沒有挑戰預覽、軌道裝飾或大型介紹卡片，下載工具與評測環境收在精簡頁尾，App 不重複顯示下載宣傳。詳見 [首頁指南](docs/guides/homepage-ctf.md)。
+
+新增 CTF 模組的 migration 為 `20261006140000_add_ctf_module`。部署前備份資料庫，依現有流程執行 migration、generate、build；程式回退時可保留新增 CTF 表，排行會恢復舊版本的公式。部署檢查步驟見 [CTF 實作計畫](docs/superpowers/plans/2026-10-05-native-ctf-module-plan.md)。
+
+#### 入門題目
+
+提供六題可離線解題的入門教材，每題 100 分，附題敘、提示及一個附件：
+
+| 分類 | 題目 | 練習重點 |
+| --- | --- | --- |
+| Web | 看不見的留言 | HTML 原始碼與註解 |
+| Crypto | 只是換個外衣 | Base64 編碼 |
+| Reverse | 把驗證器倒過來 | XOR、索引偏移與反轉 |
+| Pwn | 堆疊上的小端序 | 緩衝區覆寫與 little-endian；可閱讀 C 原始碼手算，或在自己的 Linux 環境驗證 |
+| Forensics | 圖片結束之後 | PNG 檔尾附加資料 |
+| Misc | 把票據排回原位 | ZIP 解包與片段重組 |
+
+```sh
+node scripts/add-ctf-beginner-challenges.mjs --check
+node scripts/add-ctf-beginner-challenges.mjs
+```
+
+第二個命令使用 `DATABASE_URL` 指定的 SQLite，先建立一致性備份到系統暫存目錄，再匯入並公開題目。可用 `--db 資料庫路徑` 指定目標，或 `--hidden` 將新題設為隱藏；資料庫需先套用 CTF migration。
+
+每次建立新題時隨機產生 Flag，再將相應線索寫入附件、salt/hash 寫入題目資料表，終端機不輸出 Flag。同名題目會保留原有 metadata、Flag、附件和解題紀錄，因此可重複執行；若管理員改了題目標題，下次匯入會將原標題視為新題。
+
+#### 可操作的 Web 練習網站
+
+Web 題可以從題目頁的「前往練習網站」進入 `/ctf/labs/<題目 ID>`，直接在瀏覽器探索、登入或查看模擬票券，找到 Flag 後回到題目提交。後台可選擇原始碼小站、Cookie 會員站或票券收藏站三種模板。
+
+```sh
+node scripts/add-ctf-web-labs.mjs --check
+node scripts/add-ctf-web-labs.mjs
+```
+
+請先套用 `20261007090000_add_ctf_web_labs` migration。匯入腳本會保留「看不見的留言」的原 Flag、附件及解題紀錄並啟用小網站，再新增各 150 分的「Cookie 裡的管理員」與「票券編號的另一邊」。同名網站重跑會保留既有設定，匯入前會建立一致性備份。
+
+網站使用模擬資料；練習用 Cookie 的名稱與 Path 限定於該題，不能取得 OJ 管理權限。用於網站揭示答案的 Flag 另以 AES-256-GCM 加密儲存，公開題目頁及後台表單不傳出密文或原值。此加密使用 `AUTH_SECRET`；更換密鑰後需在後台重新設定 Web Lab 的 Flag。詳見 [Web Lab 操作與驗證](docs/guides/ctf-web-labs.md)。
+
+### CTF 驗證
+
+```sh
+npm run generate
+npm run test:ctf
+npm run test:ctf-beginner
+npm run test:ctf-web-labs
+```
+
+測試使用 Node 原生測試工具，自行建立拋棄式資料庫、套用 migration、啟動本機測試網站，並在結束後清理；不使用 `.env` 中的資料庫。涵蓋實際 HTTP 權限、附件、flag 判定、跨程序併發、計分、cascade 和敏感欄位輸出。CI 在 production build 後設定 `CTF_TEST_PRODUCTION=1`，以 production server 執行測試；本機未設定時使用 dev server。
+
+入門題測試會從附件獨立解出六題 Flag、實際執行逆向驗證器、檢查 PNG 與 ZIP，並驗證匯入重跑會保留既有修改及解題紀錄。
+
+瀏覽器驗證為選用項目：另外安裝 Playwright 與 Chromium，將 `CTF_BROWSER_MODULE` 設為 Playwright `index.mjs` 的絕對路徑後執行相同命令。可用 `CTF_SCREENSHOT_DIR` 指定已存在的截圖目錄；`CTF_BROWSER_CHANNEL` 可指定已安裝的瀏覽器 channel。驗證包含桌面／手機、深淺色偏好、App 樣式與「更多」入口、分頁、鍵盤提交、loading、斷線重試與管理附件操作。網站沿用既有固定深色樣式；此驗證不需要新增全域主題功能。
 
 ## 系統怎麼運作
 

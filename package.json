@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "generate": "prisma generate"
+    "generate": "prisma generate",
+    "test:ctf": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-ctf.mjs",
+    "test:ctf-beginner": "node --test scripts/test-ctf-beginner.mjs",
+    "test:ctf-web-labs": "node --test scripts/test-ctf-web-labs.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

@@ -1,7 +1,7 @@
 # itouOJ 原生 CTF 模組實作計畫
 
 - 日期：2026-10-05
-- 狀態：待實作
+- 狀態：第一版已部署，六題入門題已於正式站公開
 - 目標：將 itouOJ 擴充為實作、識讀與 CTF 共用帳號的綜合練習平台。
 
 ## 1. 已確認的需求
@@ -200,9 +200,10 @@ Flag、salt 與 hash 不傳入公開頁面或 Client Component；後台也不回
 
 ### 4.4 附件
 
-現有 `deploy/nginx-oj.conf` 設定為 `client_max_body_size 5m`。第一版採：
+現有 `deploy/nginx-oj.conf` 設定為 `client_max_body_size 50m`；CTF API 採獨立較小上限。第一版採：
 
 - 每檔上限 4 MiB。
+- multipart 整個請求上限 5 MiB；metadata JSON 上限 1 MiB，flag 提交 JSON 上限 8 KiB。
 - 每次請求上傳一個檔案。
 - multipart/form-data。
 - 可透過多次上傳為同題加入多個附件。
@@ -338,7 +339,7 @@ CTF 排行順序：
 - CTF 錯誤提交不增加全站排名分數。
 - 全站同分時保留現有程式提交數排序，再加穩定欄位。
 
-實作項目應明確限定 `Problem.type = PROGRAMMING`。目前排行的 AC 聚合未限定題型，與 `getUserStats()` 的定義不同；加入新公式時需同步釐清，並在更新說明中註明此統計口徑變更。
+實作解題、程式提交數與 AC 統計明確限定 `Problem.type = PROGRAMMING`。舊的識讀 Submission 不再列入此統計；首頁實作排行同步採相同題型口徑，README 已記錄變更。
 
 修改排行頁：
 
@@ -364,6 +365,7 @@ CTF 排行順序：
 ```text
 src/lib/ctf.ts
 src/lib/ctfFlag.ts
+src/lib/ctfAttempt.ts
 src/lib/ctfSchema.ts
 src/lib/ctfAttachment.ts
 
@@ -371,12 +373,14 @@ src/components/CtfChallengeForm.tsx
 src/components/CtfFlagForm.tsx
 src/components/CtfAttachmentManager.tsx
 src/components/CtfStats.tsx
+src/components/CtfPagination.tsx
 ```
 
 責任分工：
 
 - `ctf.ts`：公開存取、分類、統計與 CTF 排行查詢。
 - `ctfFlag.ts`：flag 正規化、雜湊、驗證。
+- `ctfAttempt.ts`：狀態重驗、SQLite 寫入交易、併發與重複解題判定。
 - `ctfSchema.ts`：建立、編輯、提交與查詢參數驗證。
 - `ctfAttachment.ts`：大小限制、檔名處理、受限 body 讀取與下載 headers。
 
@@ -384,6 +388,7 @@ src/components/CtfStats.tsx
 
 ```text
 src/app/ctf/page.tsx
+src/app/ctf/layout.tsx
 src/app/ctf/[id]/page.tsx
 src/app/ctf/scoreboard/page.tsx
 src/app/ctf/history/page.tsx
@@ -433,53 +438,54 @@ Sitemap 僅列公開 CTF 題目及入口。`robots.ts` 排除 CTF 個人排行�
 
 ### 階段一：資料模型與共用規則
 
-- [ ] 新增四個模型、User 關聯、唯一鍵與索引。
-- [ ] 產生 migration 並重新 generate Prisma Client。
-- [ ] 新增分類、flag 正規化、驗證及計分 helper。
-- [ ] 新增建立／更新／提交的 zod schema。
-- [ ] 驗證 migration 可從空資料庫與既有資料庫升級。
+- [x] 新增四個模型、User 關聯、唯一鍵與索引。
+- [x] 產生 migration 並重新 generate Prisma Client。
+- [x] 新增分類、flag 正規化、驗證及計分 helper。
+- [x] 新增建立／更新／提交的 zod schema。
+- [x] 驗證 migration 可從空資料庫與既有資料庫升級。
 
 完成條件：既有資料不受破壞，CTF 模型可查詢，核心規則可驗證。
 
 ### 階段二：管理後台與附件
 
-- [ ] 完成題目 CRUD API。
-- [ ] 完成管理列表、新增與編輯頁。
-- [ ] 完成 flag 保留／替換流程。
-- [ ] 完成附件逐檔上傳、刪除及下載。
-- [ ] 驗證所有後台操作的管理員權限。
-- [ ] 驗證 metadata 更新保留附件與既有紀錄。
+- [x] 完成題目 CRUD API。
+- [x] 完成管理列表、新增與編輯頁。
+- [x] 完成 flag 保留／替換流程。
+- [x] 完成附件逐檔上傳、刪除及下載。
+- [x] 驗證所有後台操作的管理員權限。
+- [x] 驗證 metadata 更新保留附件與既有紀錄。
 
 完成條件：管理員可建立、上傳附件、公開並維護一道完整題目。
 
 ### 階段三：練習與提交
 
-- [ ] 完成題庫篩選與分頁。
-- [ ] 完成詳情頁與 flag 提交元件。
-- [ ] 完成提交 API、限流及交易去重。
-- [ ] 完成本人提交歷史。
-- [ ] 完成 CTF 個人計分板。
-- [ ] 完成空狀態、訪客、限流及錯誤顯示。
+- [x] 完成題庫篩選與分頁。
+- [x] 完成詳情頁與 flag 提交元件。
+- [x] 完成提交 API、限流及交易去重。
+- [x] 完成本人提交歷史。
+- [x] 完成 CTF 個人計分板。
+- [x] 完成空狀態、訪客、限流及錯誤顯示。
 
 完成條件：使用者可完成解題流程，重複與併發提交不重複加分。
 
 ### 階段四：全站整合
 
-- [ ] 更新全站排行公式及欄位。
-- [ ] 更新個人頁與設定頁 CTF 統計。
-- [ ] 更新桌面、手機、App 與管理入口。
-- [ ] 更新 metadata、sitemap、robots。
-- [ ] 更新 README 功能與操作說明。
+- [x] 更新全站排行公式及欄位。
+- [x] 更新個人頁與設定頁 CTF 統計。
+- [x] 更新桌面、手機、App 與管理入口。
+- [x] 更新 metadata、sitemap、robots。
+- [x] 更新 README 功能與操作說明。
 
 完成條件：不同頁面的 CTF 統計一致，僅參與 CTF 的使用者可進入全站排行。
 
 ### 階段五：驗證與部署準備
 
-- [ ] 完成核心判題與計分測試。
-- [ ] 完成資料庫併發去重與存取權限驗證。
-- [ ] 完成桌面、手機與 App 介面檢查。
-- [ ] 通過 migration、TypeScript、lint、build。
-- [ ] 完成部署及更新說明。
+- [x] 完成核心判題與計分測試。
+- [x] 完成資料庫併發去重與存取權限驗證。
+- [x] 完成桌面、手機與 App WebView 樣式介面檢查。
+- [x] 通過 migration、TypeScript、lint、build。
+- [x] 完成部署與更新操作說明。
+- [x] 套用正式 migration、部署並完成正式站驗收。
 
 各階段依序進行；核心規則與資料完整性驗證應在相應功能完成時執行，最後階段整合驗收。
 
@@ -534,6 +540,8 @@ npm run build
 
 另執行新增的 CTF 聚焦測試，並在 `.github/workflows/ci.yml` 加入其執行命令。
 
+實際測試入口為 `npm run test:ctf`，使用 `scripts/ctf-test-loader.mjs` 與既有 TypeScript compiler 支援 Node 原生測試及專案 alias。測試自行建立拋棄式 SQLite 與測試 session，以獨立程序及真實 HTTP 驗證交易和權限。CI 在 build 後設定 `CTF_TEST_PRODUCTION=1`，以 production server 執行；一般開發預設啟動 dev server。選用瀏覽器測試以 `CTF_BROWSER_MODULE` 指定已安裝的 Playwright 模組。
+
 介面驗收包含深淺色、手機尺寸、鍵盤操作、提交 loading、網路失敗重試與登入後返回題目流程。
 
 ## 10. 部署與後續擴充
@@ -548,9 +556,79 @@ npm run build
 4. 建立隱藏測試題，確認後台、附件與權限；公開後驗證實際判題流程。
 5. 確認 CTF 與全站排行及個人統計。
 
-第一版 `/ctf` 由現有 Next.js 處理，維持現有 nginx 代理與 5 MB 請求限制。
+第一版 `/ctf` 由現有 Next.js 處理，維持現有 nginx 代理與 50 MiB 全站請求限制；CTF API 自行限制 metadata、flag 與附件大小。Sitemap 採動態查詢，公開狀態變更不必重新 build，且既有部署可先 build、再套用 additive migration。
 
 若應用程式回退，保留新增 CTF 表即可；避免直接刪除已產生的使用者紀錄。舊版本回退後全站排行會恢復舊公式，需在更新說明中記錄此行為。
+
+### 10.1.1 2026-10-06 驗證紀錄
+
+- 空資料庫成功套用完整 45 個 migration；既有 schema 的升級測試保留原使用者資料。
+- `prisma validate` 通過；migrations 與 schema 的 `migrate diff --exit-code` 無差異。
+- Production build 及 TypeScript 通過。
+- 全專案 lint 無錯誤；本機 Android 產生的 `native-bridge.js` 有 32 個既有 warnings，CTF 新增檔案無 lint 問題。
+- 識讀 parser 自測通過。
+- Production server 的 13 項 CTF 測試全部通過，包含獨立程序／HTTP 併發、狀態變更、配分與公開狀態一致性、附件權限及無 Content-Length 的過大上傳。
+- Chromium 驗證桌面、390px 手機、深淺色偏好及 App WebView 樣式；分頁、鍵盤提交、loading、網路失敗重試及後台附件流程通過。沿用網站既有固定深色樣式，不新增全域主題。
+- 本機驗證完成後，於 2026-10-07 部署正式站，紀錄見下節。
+
+### 10.1.2 2026-10-07 正式部署紀錄
+
+- 以已提交 HEAD 加上本次 CTF 工作區來源打包部署，未建立新的 Git commit。隔離來源為 `/tmp/oj-release-ctf-0c09f6e5-20261007`。
+- 正式 Linux／Node 22.23.1 的 production build、12 項 CTF 整合測試、3 項入門題測試與沙箱回歸測試通過；選用瀏覽器測試已於本機驗證。
+- 正式套用 `20261006140000_add_ctf_module`；一致性備份位於 `/opt/oj-deploy-backups/20261007-030410/oj.db`。
+- 匯入並公開六個分類的入門題，各 100 分，正式題目 ID 為 1–6。每題於正式站重新產生隨機 Flag 與相應附件，沒有複製本機帳號或解題紀錄。
+- 公開題庫、六個詳情頁、附件下載及附件還原後的 Flag 雜湊驗證通過；未登入提交回 401，計分板、全站排行及 sitemap 正常。
+- 網站、判題 worker、沙箱與 nginx 均為 active。
+
+### 10.1.3 2026-10-07 Web 練習網站擴充
+
+依後續需求新增 `/ctf/labs/<id>` 的可操作網站，從題目頁直接開啟。資料模型新增可選 `labType` 與私有 `labFlagCiphertext`；加密副本使用 AES-256-GCM 並綁定 salted hash，僅於指定解題終點揭示答案。一般題目頁、API metadata、後台表單及 Client props 不傳出 Flag、密文、salt 或 hash。
+
+- `SOURCE` 雲端研究社：原題 #1 啟用網站，保留原 Flag、100 分與既有解題紀錄。
+- `COOKIE` 北風社員站：新題 #7，150 分，提供實際訪客登入及模擬管理員公告。
+- `IDOR` 星港票券收藏站：新題 #8，150 分，提供可操作的模擬票券頁。
+- Cookie 及資料都限定於練習模板，測試確認不會取得 OJ 的管理權限；隱藏題目的所有子頁沿用相同存取規則。
+- Migration、production／HTTP、5 項 Web Lab 聚焦測試與 Chromium 操作驗證已通過並部署；備份為 `/opt/oj-deploy-backups/20261007-033946/oj.db`。
+- 本機 Prisma 快取新增建構子版本檢查，generate 後的 HMR 能更新模型 metadata。
+
+完整操作與正式入口見 [Web Lab 指南](../../guides/ctf-web-labs.md)。
+
+### 10.1.4 2026-10-07 題目 modal 與 Header 重整
+
+- 題庫卡片以 CTFd 風格 modal 開啟，保留原列表篩選、分頁、捲動及焦點，支援返回／前進、Esc／遮罩／×。直接網址與重新整理保留獨立頁。
+- 共用題目內容及權限查詢；新增按需載入的本人提交／解題者分頁，每頁 20 筆。測試確認本人隔離及敏感欄位不外洩。
+- Header 改為練習／課程／比賽／排行，使用品牌標記、膠囊導覽及圖示說明選單，帳號選單集中個人紀錄、動態與管理入口；手機及 App 共用分組。
+- Modal、手機選單與 SiteLoader 共用參照計數捲動鎖，避免載入完成時解除仍開啟的視窗鎖定。
+- 桌面、手機、長會員名稱、未讀徽章、訪客／會員／管理員、Flag 提交與路由行為均已驗證並上線。
+- 正式機器 15 項 CTF 整合測試、3 項入門題與 5 項 Web Lab 測試通過；無新增 migration。備份為 `/opt/oj-deploy-backups/20261007-105651/oj.db`。
+
+完整操作見 [CTF modal 與導覽指南](../../guides/ctf-modal-navigation.md)。
+
+### 10.1.5 2026-10-07 首頁因應 CTF 重作
+
+- 主視覺改為 CODE／READ／CAPTURE，並列實作、識讀與 CTF 入口，展示實際公開挑戰。
+- 首頁新增公開 CTF 分類、最新題目、Web Lab 直接入口及近期解題；登入後顯示本人 CTF 進度。
+- 統計改為三種公開題庫及使用者數，首頁排行採既有全站加權公式；保留每日題、繼續學習、公告與動態。
+- 查詢集中於 `src/lib/home.ts`，列表有限筆數且只 select 公開必要欄位，測試確認隱藏題目及 Flag 不出現在首頁。
+- 桌面、手機及 App 已完成 Chromium 驗證，正式站亦驗證首頁至 Web Lab／CTF modal 的流程。
+- 正式 production build、16 項 HTTP 整合、3 項入門題及 5 項 Web Lab 測試通過；無新增 migration。備份為 `/opt/oj-deploy-backups/20261007-115620/oj.db`。
+
+詳見 [新版首頁指南](../../guides/homepage-ctf.md)。
+
+### 10.1.6 2026-10-07 方形風格與歷史／計分板導覽修正
+
+- 首頁恢復方形面板、按鈕、原站 serif 標題與純色邊框，保留三種練習及 CTF 資訊。
+- 重現並修正廣泛 `(.)[id]` 誤攔 CTF 歷史／計分板，改為專用 `(.)challenges/[id]`，保留 `/ctf/<id>` 舊連結。
+- Chromium 驗證從題庫及帳號選單開歷史、從題庫開計分板，以及程式 profile／只看我的列表同筆紀錄可見。
+- 正式桌面與手機驗證方形樣式、計分板、modal 與舊深連結正常；沒有新增 migration 或修改提交資料。備份為 `/opt/oj-deploy-backups/20261007-163412/oj.db`。
+
+### 10.1.7 2026-10-07 首頁恢復簡潔原站版型
+
+- 置中 Logo、短標語、實作／識讀／CTF 練習按鈕與方形列表，移除 challenge workspace、軌道裝飾及大型介紹區。
+- 保留統計、每日題、繼續學習、本人 CTF 進度、公告、最新題庫、全站排行及社群；工具下載收為簡單連結。
+- 移除不再呈現的 Web Lab 展示與近期 solve 查詢；敏感資料仍不選取，隱藏題目與本人進度測試通過。
+- 正式 build、16 項 HTTP、3 項入門題及 5 項 Web Lab 測試通過；正式 1280／390／320px 與 CTF 導覽正常，既有提交／計分板修正保留。
+- 無新增 migration，備份為 `/opt/oj-deploy-backups/20261007-165800/oj.db`。
 
 ### 10.2 後續階段
 

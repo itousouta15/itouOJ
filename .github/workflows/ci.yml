@@ -43,5 +43,16 @@ jobs:
       - name: Recognition parser self-test
         run: node scripts/parse-reading-bank.mjs --self-test
 
+      - name: CTF beginner challenge tests
+        run: npm run test:ctf-beginner
+
+      - name: CTF Web Lab tests
+        run: npm run test:ctf-web-labs
+
       - name: Build
         run: npm run build
+
+      - name: CTF integration tests
+        env:
+          CTF_TEST_PRODUCTION: "1"
+        run: npm run test:ctf

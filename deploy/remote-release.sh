@@ -83,6 +83,8 @@ echo '== Build staged Next.js app =='
 npm --prefix "$SOURCE" ci --include=dev --silent
 npm --prefix "$SOURCE" run generate --silent
 npm --prefix "$SOURCE" run build
+echo '== Verify CTF against disposable databases and the staged production build =='
+( cd "$SOURCE" && CTF_TEST_PRODUCTION=1 npm run test:ctf && npm run test:ctf-beginner && npm run test:ctf-web-labs )
 chown -R oj:oj "$SOURCE/.next" "$SOURCE/node_modules" "$SOURCE/src"
 if [[ "${2:-}" == '--preflight-only' ]]; then
   echo 'Release preflight passed; live services unchanged'
