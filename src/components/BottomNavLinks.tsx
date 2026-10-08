@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { isNavActive } from "@/lib/navLinks";
+import { isNavActive, mobileNavGroups } from "@/lib/navLinks";
 import {
   setProblemWorkspaceTab,
   useProblemWorkspaceState,
@@ -72,11 +72,9 @@ export default function BottomNavLinks({
     wasMoreOpen.current = moreOpen;
   }, [moreOpen]);
 
-  const accountHref = username ? `/users/${username}` : "/login";
-  const moreActive =
-    pathname.startsWith("/messages") ||
-    pathname.startsWith("/admin") ||
-    isNavActive(pathname, accountHref);
+  const groups = mobileNavGroups(username, isAdmin);
+  const moreActive = !MAIN_ITEMS.some((item) => isNavActive(pathname, item.href)) &&
+    groups.some((group) => group.links.some((link) => isNavActive(pathname, link.href)));
   const closeMore = () => {
     if (!moreOpen || closeTimerRef.current !== null) return;
     setMoreClosing(true);
@@ -188,34 +186,14 @@ export default function BottomNavLinks({
             </button>
           </div>
           <nav aria-label="更多功能" className="app-more-links">
-            {username ? (
-              <>
-                <Link href="/messages" onClick={closeMore} className="app-more-link">
-                  <span aria-hidden="true">✉</span>
-                  訊息
-                  {unread > 0 && (
-                    <span className="app-more-unread">
-                      {unread > 99 ? "99+" : unread}
-                    </span>
-                  )}
-                </Link>
-                <Link href={accountHref} onClick={closeMore} className="app-more-link">
-                  <span aria-hidden="true">◎</span>
-                  我的帳號
-                </Link>
-                {isAdmin && (
-                  <Link href="/admin/problems" onClick={closeMore} className="app-more-link">
-                    <span aria-hidden="true">⚙</span>
-                    管理
-                  </Link>
-                )}
-              </>
-            ) : (
-              <Link href="/login" onClick={closeMore} className="app-more-link">
-                <span aria-hidden="true">→</span>
-                登入
-              </Link>
-            )}
+            {groups.map((group) => <section key={group.label} aria-label={group.label}>
+              <h3 className="nav-menu-heading">{group.label}</h3>
+              <div className="app-more-group-links">{group.links.map((link) => <Link key={link.href} href={link.href} onClick={closeMore}
+                className={`app-more-link${isNavActive(pathname, link.href) ? " active" : ""}`}>
+                <span aria-hidden="true">{link.glyph}</span>{link.label}
+                {link.href === "/messages" && unread > 0 && <span className="app-more-unread">{unread > 99 ? "99+" : unread}</span>}
+              </Link>)}</div>
+            </section>)}
           </nav>
         </div>
       </dialog>

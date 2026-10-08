@@ -10,12 +10,12 @@ export default async function Navbar() {
 
   return (
     <header className="site-header">
-      <nav className="mx-auto flex h-14 w-full max-w-5xl items-center gap-3 px-4">
-        <Link href="/" className="logo">
-          itouOJ
+      <nav className="mx-auto flex h-16 w-full max-w-5xl items-center gap-3 px-4">
+        <Link href="/" className="header-brand" aria-label="itouOJ 首頁">
+          <span className="logo header-wordmark">itouOJ</span>
         </Link>
-        <div className="hidden min-w-0 flex-1 md:flex">
-          <NavLinks isAdmin={isAdmin} />
+        <div className="hidden min-w-0 flex-1 justify-center md:flex">
+          <NavLinks />
         </div>
         <div className="ml-auto flex items-center gap-2 sm:gap-3 md:ml-0">
           <HeaderSearch />
@@ -24,18 +24,19 @@ export default async function Navbar() {
               name={displayName || username || ""}
               username={username ?? ""}
               unread={unread}
+              isAdmin={isAdmin}
             />
           ) : (
             <>
               <Link href="/login" className="nav-link">
                 登入
               </Link>
-              <Link href="/register" className="btn-primary">
+              <Link href="/register" className="btn-primary hidden sm:inline-flex">
                 註冊
               </Link>
             </>
           )}
-          <MobileMenuButton isAdmin={isAdmin} />
+          <MobileMenuButton isAdmin={isAdmin} username={loggedIn ? username : null} />
         </div>
       </nav>
     </header>
