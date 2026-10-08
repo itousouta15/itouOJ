@@ -1,423 +1,129 @@
 import Link from "next/link";
-import type { Metadata } from "next";
 import Image from "next/image";
-import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
-import { getActivityFeed } from "@/lib/activityFeed";
-import { getDailyProblem } from "@/lib/dailyProblem";
-import { getNextLearningAction } from "@/lib/nextLearningAction";
-import { getTopSolvedUsers } from "@/lib/ranking";
+import type { Metadata } from "next";
+import { getNavInfo } from "@/lib/nav";
+import { getHomeData } from "@/lib/home";
 import { LANGUAGES, isLanguageKey } from "@/lib/languages";
 import DifficultyBadge from "@/components/DifficultyBadge";
-import VerdictBadge from "@/components/VerdictBadge";
 import FeedList from "@/components/FeedList";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
+  title: { absolute: "itouOJ | 實作、識讀與 CTF 練習平台" },
+  description: "程式實作、APCS 識讀與 CTF 練習，共用一個帳號。挑一題，從第一個 AC 或 Flag 開始。",
   alternates: { canonical: "/" },
 };
 
 export default async function HomePage() {
-  const session = await getSession();
-
-  const [problemCount, userCount, submissionCount, acCount] =
-    await Promise.all([
-      prisma.problem.count({ where: { isPublic: true, type: "PROGRAMMING" } }),
-      prisma.user.count(),
-      prisma.submission.count(),
-      prisma.submission.count({ where: { status: "AC" } }),
-    ]);
-
-  const announcements = await prisma.announcement.findMany({
-    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
-    take: 3,
-  });
-
-  const latestProblems = await prisma.problem.findMany({
-    where: { isPublic: true, type: "PROGRAMMING" },
-    orderBy: { id: "desc" },
-    take: 5,
-    select: { id: true, problemCode: true, title: true, difficulty: true },
-  });
-
-  const topUsers = await getTopSolvedUsers(5);
-
+  const nav = await getNavInfo();
+  const data = await getHomeData(nav);
   const stats = [
-    { label: "題目", value: problemCount },
-    { label: "使用者", value: userCount },
-    { label: "提交", value: submissionCount },
-    { label: "Accepted", value: acCount },
+    { label: "實作題", value: data.programmingCount },
+    { label: "識讀題", value: data.recognitionCount },
+    { label: "CTF 挑戰", value: data.ctfCount },
+    { label: "使用者", value: data.userCount },
   ];
 
-  // 追蹤動態：只有登入且真的有關注人時才查
-  let homeFeed = [] as Awaited<ReturnType<typeof getActivityFeed>>;
-  let homeFeedTitle = "社群動態";
-  if (session) {
-    const following = await prisma.follow.findMany({
-      where: { followerId: session.userId },
-      select: { followingId: true },
-    });
-    if (following.length > 0) {
-      homeFeed = await getActivityFeed(
-        following.map((f) => f.followingId),
-        5
-      );
-      if (homeFeed.length > 0) homeFeedTitle = "追蹤動態";
-    }
-  }
-  // 未登入或還沒有追蹤動態時，展示公開的 AC、題解與留言。
-  if (homeFeed.length === 0) {
-    homeFeed = await getActivityFeed(null, 6);
-  }
-
-  // 每日一題；登入者順便看今天這題解過沒
-  const daily = await getDailyProblem();
-  let dailySolved = false;
-  if (daily && session) {
-    const solved = await prisma.submission.count({
-      where: { userId: session.userId, problemId: daily.id, status: "AC" },
-    });
-    dailySolved = solved > 0;
-  }
-  const nextAction = session ? await getNextLearningAction(session.userId) : null;
-
   return (
-    <div className="space-y-10" data-app-section="root">
-      {/* Hero（GitHub 風格：置中 LOGO + 標語 + CTA） */}
-      <section className="pt-4" data-app-section="hero">
-        <div className="flex flex-col items-center text-center">
-          <Image
-            src="/brand/itouOJ.png"
-            alt="itouOJ"
-            className="logo-hero"
-            width={88}
-            height={88}
-            priority
-          />
-          <h1 className="serif mt-6 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
-            寫程式、送出、拿下 AC
-          </h1>
-          <p className="mt-4 max-w-xl leading-relaxed text-dim">
-            挑一題、寫程式、送出，逐筆測資即時回饋
-            <br />
-            —— 從第一個 AC 開始累積實力
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href="/problems" className="btn-primary">
-              開始解題
-            </Link>
-            {session ? (
-              <Link href="/submissions?mine=1" className="btn-secondary">
-                我的提交
-              </Link>
-            ) : (
-              <Link href="/register" className="btn-secondary">
-                註冊帳號
-              </Link>
-            )}
-          </div>
-        </div>
+    <div className="homepage-simple" data-app-section="root">
+      <section className="homepage-simple-hero" data-app-section="hero">
+        <Image src="/brand/itouOJ.png" alt="itouOJ" width={72} height={72} loading="eager" />
+        <h1>寫程式、讀邏輯、找出 Flag</h1>
+        <p>實作、識讀與 CTF，共用一個帳號。<br />挑一題，從你的第一個 AC 或 Flag 開始。</p>
+        <nav aria-label="開始練習" className="homepage-simple-actions">
+          <Link href="/problems" className="btn-primary" data-home-practice>實作題庫</Link>
+          <Link href="/recognition" className="btn-secondary" data-home-practice>識讀練習</Link>
+          <Link href="/ctf" className="btn-secondary" data-home-practice>開始 CTF 挑戰</Link>
+        </nav>
+        <Link className="homepage-simple-account" href={nav.loggedIn ? "/submissions?mine=1" : "/register"}>
+          {nav.loggedIn ? "我的練習紀錄 →" : "註冊帳號 →"}
+        </Link>
       </section>
 
-      {/* 程式碼視窗（GitHub 風格的招牌元素） */}
-      <section data-app-section="code-window">
-        <div className="code-window mx-auto max-w-2xl">
-          <div className="code-window-bar">
-            <span className="code-window-dots" aria-hidden="true">
-              <i className="dot dot-red" />
-              <i className="dot dot-amber" />
-              <i className="dot dot-green" />
-            </span>
-            <span className="code-window-title mono">a+b.cpp</span>
-            <span className="code-window-verdict">
-              <VerdictBadge status="AC" short />
-            </span>
-          </div>
-          <pre className="code-window-body mono">
-            <code>
-              <span className="cw-kw">#include</span>{" "}
-              <span className="cw-inc">&lt;iostream&gt;</span>
-              {"\n"}
-              <span className="cw-kw">using namespace</span> std;
-              {"\n\n"}
-              <span className="cw-kw">int</span> <span className="cw-fn">main</span>()
-              {"{"}
-              {"\n"}
-              {"  "}
-              <span className="cw-kw">int</span> a, b;
-              {"\n"}
-              {"  "}cin &gt;&gt; a &gt;&gt; b;
-              {"\n"}
-              {"  "}cout &lt;&lt; a + b &lt;&lt; endl;
-              {"\n"}
-              {"  "}
-              <span className="cw-kw">return</span> <span className="cw-num">0</span>;
-              {"\n"}
-              {"}"}
-            </code>
-          </pre>
-        </div>
+      <section className="homepage-simple-stats" aria-label="公開題庫統計">
+        {stats.map((stat) => <div key={stat.label} className="card p-4">
+          <p className="page-kicker">{stat.label}</p><p className="mono mt-2 text-2xl font-bold">{stat.value.toLocaleString("zh-TW")}</p>
+        </div>)}
       </section>
 
-      {/* 統計數據 */}
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4" data-app-section="stats">
-        {stats.map((s) => (
-          <div key={s.label} className="card p-5">
-            <p className="page-kicker">{s.label}</p>
-            <p className="mono mt-2 text-3xl font-bold text-tx">{s.value}</p>
-          </div>
-        ))}
-      </section>
+      {data.daily && <section className="card homepage-simple-notice" data-app-section="daily">
+        <div className="min-w-0"><p className="page-kicker">每日一題</p><Link className="mt-1 block truncate font-semibold text-blue hover:underline" href={`/problems/${data.daily.problemCode}`}>{data.daily.problemCode} {data.daily.title}</Link></div>
+        <div className="flex shrink-0 items-center gap-3"><DifficultyBadge difficulty={data.daily.difficulty} />{data.dailySolved && <span className="text-xs text-[var(--green)]">已解出 ✓</span>}</div>
+      </section>}
+      {data.nextAction && <section className="card homepage-simple-notice">
+        <div className="min-w-0"><p className="page-kicker">繼續學習</p><Link className="mt-1 block truncate font-semibold text-blue hover:underline" href={data.nextAction.href}>{data.nextAction.title}</Link><p className="mt-1 text-xs text-dim">{data.nextAction.detail}</p></div>
+        <Link className="text-sm text-blue hover:underline" href={data.nextAction.href}>繼續 →</Link>
+      </section>}
+      {data.ctfStats && <section className="card homepage-simple-notice" data-home-personal-ctf>
+        <div><p className="page-kicker">我的 CTF</p><p className="mt-1 text-sm text-dim">已解出 {data.ctfStats.solved} / {data.ctfStats.total} 題，已累積 <strong>{data.ctfStats.points}</strong> 分。</p></div>
+        <Link className="text-sm text-blue hover:underline" href="/ctf?status=unsolved">繼續挑戰 →</Link>
+      </section>}
 
-      {/* 每日一題 */}
-      {daily && (
-        <section data-app-section="daily">
-          <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
-            <div className="min-w-0">
-              <p className="page-kicker">每日一題</p>
-              <Link
-                href={`/problems/${daily.problemCode}`}
-                className="mt-1 block truncate font-semibold text-blue hover:underline"
-              >
-                {daily.problemCode} {daily.title}
-              </Link>
-            </div>
-            <div className="flex shrink-0 items-center gap-3">
-              {dailySolved && (
-                <span className="text-sm font-semibold text-[var(--green)]">
-                  已解過 ✓
-                </span>
-              )}
-              <DifficultyBadge difficulty={daily.difficulty} />
-            </div>
-          </div>
-        </section>
-      )}
+      {data.announcements.length > 0 && <section data-app-section="announcements">
+        <div className="homepage-simple-heading"><h2 className="section-title">公告</h2><Link href="/announcements">全部公告 →</Link></div>
+        <div className="card">{data.announcements.map((announcement) => <Link key={announcement.id} href={`/announcements/${announcement.id}`} className="homepage-simple-row">
+          {announcement.isPinned && <span className="vbadge vbadge-green">置頂</span>}
+          <span className="min-w-0 flex-1 truncate text-blue">{announcement.title}</span>
+          <time className="mono shrink-0 text-xs text-mute">{announcement.createdAt.toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" })}</time>
+        </Link>)}</div>
+      </section>}
 
-      {/* 下一步學習建議 */}
-      {nextAction && (
-        <section>
-          <div className="card flex flex-wrap items-center justify-between gap-4 p-5">
-            <div className="min-w-0">
-              <p className="page-kicker">下一步</p>
-              <p className="mt-1 text-sm text-dim">{nextAction.detail}</p>
-            <Link
-              href={nextAction.href}
-              className="mt-2 block truncate font-semibold text-blue hover:underline"
-            >
-                {nextAction.title}
-              </Link>
-            </div>
-            <Link href={nextAction.href} className="btn-primary shrink-0">
-              繼續
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/* 公告 */}
-      {announcements.length > 0 && (
-        <section data-app-section="announcements">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="section-title">公告</h2>
-            <Link
-              href="/announcements"
-              className="mono text-xs text-blue hover:underline"
-            >
-              全部公告 →
-            </Link>
-          </div>
-          <div className="card">
-            {announcements.map((a) => (
-              <Link
-                key={a.id}
-                href={`/announcements/${a.id}`}
-                className="motion-row flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
-              >
-                {a.isPinned && <span className="vbadge vbadge-green">置頂</span>}
-                <span className="flex-1 truncate font-medium text-blue">
-                  {a.title}
-                </span>
-                <span className="mono text-xs text-mute">
-                  {a.createdAt.toLocaleDateString("zh-TW", {
-                    timeZone: "Asia/Taipei",
-                  })}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 最新題目 + 排行 */}
-      <section className="grid gap-6 md:grid-cols-2" data-app-section="problems-ranking">
+      <section className="homepage-simple-grid" aria-label="最新題目">
         <div>
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="section-title">最新題目</h2>
-            <Link
-              href="/problems"
-              className="mono text-xs text-blue hover:underline"
-            >
-              全部題目 →
-            </Link>
-          </div>
+          <div className="homepage-simple-heading"><h2 className="section-title">最新實作題</h2><Link href="/problems">全部題目 →</Link></div>
           <div className="card">
-            {latestProblems.length === 0 && (
-              <p className="py-10 text-center text-sm text-mute">還沒有題目</p>
-            )}
-            {latestProblems.map((p) => (
-              <div
-                key={p.id}
-                className="motion-row flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0 hover:bg-panel2"
-              >
-                <span className="mono w-12 text-sm text-mute">{p.problemCode}</span>
-                <Link
-                  href={`/problems/${p.problemCode}`}
-                  className="flex-1 truncate font-medium text-blue hover:underline"
-                >
-                  {p.title}
-                </Link>
-                <DifficultyBadge difficulty={p.difficulty} />
-              </div>
-            ))}
+            {data.latestProblems.length === 0 && <p className="homepage-simple-empty">還沒有公開題目。</p>}
+            {data.latestProblems.map((problem) => <div key={problem.id} className="homepage-simple-row">
+              <span className="mono text-xs text-mute">{problem.problemCode}</span>
+              <Link className="min-w-0 flex-1 truncate text-blue hover:underline" href={`/problems/${problem.problemCode}`}>{problem.title}</Link>
+              <DifficultyBadge difficulty={problem.difficulty} />
+            </div>)}
           </div>
         </div>
-
         <div>
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="section-title">排行</h2>
-            <Link
-              href="/ranking"
-              className="mono text-xs text-blue hover:underline"
-            >
-              完整排行 →
-            </Link>
-          </div>
+          <div className="homepage-simple-heading"><h2 className="section-title">最新 CTF</h2><Link href="/ctf">全部挑戰 →</Link></div>
           <div className="card">
-            {topUsers.length === 0 && (
-              <p className="py-10 text-center text-sm text-mute">
-                還沒有人解出題目
-              </p>
-            )}
-            {topUsers.map((u, i) => (
-              <div
-                key={u.username}
-                className="flex items-center gap-3 border-b border-bd px-4 py-3 last:border-b-0"
-              >
-                <span className="mono w-8 text-sm font-bold text-mute">
-                  {i + 1}
-                </span>
-                <span className="flex-1 truncate font-medium">
-                  {u.displayName || u.username}
-                </span>
-                <span className="mono text-sm font-semibold text-[var(--green)]">
-                  {u.solved} 題
-                </span>
+            {data.latestCtf.length === 0 && <p className="homepage-simple-empty">尚無公開挑戰。</p>}
+            {data.latestCtf.map((challenge) => <div key={challenge.id} className="homepage-simple-row" data-home-ctf-id={challenge.id}>
+              <div className="min-w-0 flex-1"><Link className="block truncate text-blue hover:underline" href={`/ctf/${challenge.id}`}>{challenge.title}</Link>
+                <p className="mt-1 text-xs text-mute">{challenge.category}{challenge.solves.length > 0 ? " · 已解出 ✓" : ""}</p>
               </div>
-            ))}
+              <span className="mono shrink-0 text-xs text-dim">{challenge.points} 分</span>
+              {challenge.labType && <a className="text-xs text-blue hover:underline" href={`/ctf/labs/${challenge.id}`} target="_blank" rel="noopener noreferrer" aria-label={`開啟${challenge.title}練習網站`}>Web Lab ↗</a>}
+            </div>)}
           </div>
+          <Link href="/ctf/scoreboard" className="homepage-simple-more">CTF 計分板 →</Link>
         </div>
       </section>
 
-      {/* 社群動態：登入者優先看追蹤對象，其他訪客看公開活動 */}
-      {homeFeed.length > 0 && (
-        <section data-app-section="feed">
-          <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="section-title">{homeFeedTitle}</h2>
-            <Link
-              href={session ? "/activity" : "/register"}
-              className="mono text-xs text-blue hover:underline"
-            >
-              {session ? "更多動態 →" : "註冊後追蹤 →"}
-            </Link>
+      <section className="homepage-simple-grid">
+        <div>
+          <div className="homepage-simple-heading"><h2 className="section-title">全站排行</h2><Link href="/ranking">完整排行 →</Link></div>
+          <div className="card">
+            {data.ranking.length === 0 && <p className="homepage-simple-empty">還沒有解題成績。</p>}
+            {data.ranking.map((user, index) => <div key={user.username} className="homepage-simple-row">
+              <span className="mono w-5 shrink-0 text-xs text-mute">{index + 1}</span>
+              <Link className="min-w-0 flex-1 truncate hover:underline" href={`/users/${encodeURIComponent(user.username)}`}>{user.displayName || user.username}</Link>
+              <span className="mono text-sm text-[var(--green)]">{Number(user.score).toFixed(3)}</span>
+            </div>)}
           </div>
-          <FeedList items={homeFeed} />
-        </section>
-      )}
-
-      {/* 下載工具：放在核心內容之後，避免打斷第一次解題流程 */}
-      <section data-app-section="promo">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="card flex flex-col gap-4 p-6">
-            <div className="flex items-center gap-3">
-              <Image
-                src="/brand/itouOJ.png"
-                alt=""
-                className="h-14 w-14 rounded-xl"
-                width={56}
-                height={56}
-              />
-              <div>
-                <h2 className="section-title">itouOJ Android App</h2>
-                <p className="text-sm text-dim">手機隨時寫題・判題通知・比賽提醒</p>
-              </div>
-            </div>
-            <p className="text-sm leading-relaxed text-dim">
-              把整座線上評測裝進手機：深色介面、全螢幕程式編輯器、
-              鍵盤符號列，判題結果直接用通知推給你。
-            </p>
-            <a
-              href="https://github.com/itousouta15/itouOJ/releases/tag/app-v1.2.0"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary mt-auto self-start"
-            >
-              下載 APK ↓
-            </a>
-          </div>
-          <div className="card flex flex-col gap-4 p-6">
-            <div className="flex items-center gap-3">
-              <Image
-                src="/brand/port.png"
-                alt=""
-                className="h-14 w-14 rounded-xl"
-                width={56}
-                height={56}
-              />
-              <div>
-                <h2 className="section-title">收件程式（Windows）</h2>
-                <p className="text-sm text-dim">桌面端離線收題・測資上傳</p>
-              </div>
-            </div>
-            <p className="text-sm leading-relaxed text-dim">
-              離線競賽用的 Windows 收件程式，可在本機測試與暫存提交，連線後再批次上傳；
-              適合機房斷網或網路受限的比賽。
-            </p>
-            <a
-              href="https://github.com/itousouta15/itouOJ/releases/tag/v1.3.2"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary mt-auto self-start"
-            >
-              下載收件程式 ↓
-            </a>
-          </div>
+          <p className="mt-2 text-xs text-mute">實作／識讀／CTF，依 42／28／30 加權。</p>
         </div>
+        {data.feed.items.length > 0 && <div data-app-section="feed">
+          <div className="homepage-simple-heading"><h2 className="section-title">{data.feed.title}</h2><Link href={nav.loggedIn ? "/activity" : "/register"}>{nav.loggedIn ? "更多動態 →" : "註冊後追蹤 →"}</Link></div>
+          <FeedList items={data.feed.items} />
+        </div>}
       </section>
 
-      {/* 系統資訊 */}
-      <section className="card p-5" data-app-section="env-info">
-        <h2 className="section-title mb-3">評測環境</h2>
-        <div className="flex flex-wrap gap-2">
-          {Object.keys(LANGUAGES).map(
-            (key) =>
-              isLanguageKey(key) && (
-                <span
-                  key={key}
-                  className="mono rounded-md border border-bd bg-inset px-3 py-1.5 text-xs text-dim"
-                >
-                  {LANGUAGES[key].label}
-                </span>
-              )
-          )}
-        </div>
-        <p className="mt-4 text-sm leading-relaxed text-dim">
-          C++ / C / Python / JavaScript 在自架沙箱中編譯執行（Linux namespace
-          隔離 + cgroup 資源限制 + seccomp 系統呼叫白名單）。逐筆測資回報時間與
-          記憶體用量，判題結果：AC / WA / TLE / MLE / RE / CE。直譯式語言的時間、
-          記憶體限制依慣例放寬。
-        </p>
+      <section className="homepage-simple-tools" data-app-section="promo" aria-label="下載工具">
+        <span className="text-dim">下載工具</span>
+        <a href="https://github.com/itousouta15/itouOJ/releases/tag/app-v1.2.0" target="_blank" rel="noopener noreferrer">Android App ↓</a>
+        <a href="https://github.com/itousouta15/itouOJ/releases/tag/v1.3.2" target="_blank" rel="noopener noreferrer">Windows 收件程式 ↓</a>
       </section>
+      <details className="homepage-simple-environment" data-app-section="env-info"><summary>評測環境</summary><div>
+        <div className="mt-3 flex flex-wrap gap-2">{Object.keys(LANGUAGES).map((key) => isLanguageKey(key) && <span key={key} className="mono border border-bd bg-inset px-3 py-1.5 text-xs text-dim">{LANGUAGES[key].label}</span>)}</div>
+        <p className="mt-3 text-xs leading-relaxed text-dim">程式提交由隔離沙箱評測，逐筆回報時間與記憶體用量；CTF Flag 由網站即時判定。</p>
+      </div></details>
     </div>
   );
 }

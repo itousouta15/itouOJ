@@ -18,7 +18,7 @@ export const viewport: Viewport = {
 
 const siteUrl = process.env.APP_URL ?? "https://oj.itousouta.me";
 const siteDescription =
-  "itouOJ 是線上程式解題與競賽平台，提供程式題庫、即時程式評測、程式碼識讀練習與競賽功能。";
+  "itouOJ 提供程式解題、APCS 識讀與 CTF 資安練習，包含即時評測、Web Lab、課程及競賽。三種挑戰，共用一個帳號。";
 
 // metadataBase 給相對網址（OG 圖片、canonical）補齊網域用；沒設的話 Next.js
 // 只會警告，不影響功能，但社群分享預覽、搜尋結果的網址可能會是錯的相對路徑。
@@ -26,22 +26,22 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: "itouOJ",
   title: {
-    default: "itouOJ | 線上程式解題與競賽平台",
+    default: "itouOJ | 實作、識讀與 CTF 練習平台",
     template: "%s | itouOJ",
   },
   description: siteDescription,
-  keywords: ["itouOJ", "online judge", "程式解題", "APCS", "程式競賽"],
+  keywords: ["itouOJ", "online judge", "程式解題", "APCS", "程式競賽", "CTF", "資安練習", "Web Lab"],
   openGraph: {
     siteName: "itouOJ",
     type: "website",
     locale: "zh_TW",
     url: "/",
-    title: "itouOJ | 線上程式解題與競賽平台",
+    title: "itouOJ | 實作、識讀與 CTF 練習平台",
     description: siteDescription,
   },
   twitter: {
     card: "summary_large_image",
-    title: "itouOJ | 線上程式解題與競賽平台",
+    title: "itouOJ | 實作、識讀與 CTF 練習平台",
     description: siteDescription,
   },
 };
