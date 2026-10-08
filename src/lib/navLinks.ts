@@ -14,7 +14,6 @@ export const PRACTICE_NAV_LINKS: NavLinkItem[] = [
 ];
 
 export const MAIN_NAV_LINKS: NavLinkItem[] = [
-  { href: "/learning-path", label: "學習路徑", glyph: "↗" },
   { href: "/courses", label: "課程", glyph: "▧" },
   { href: "/contests", label: "比賽", glyph: "◇" },
   { href: "/ranking", label: "排行", glyph: "▥" },
