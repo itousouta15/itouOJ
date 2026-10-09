@@ -5,10 +5,12 @@ import type { CtfChallengeDetail } from "@/lib/ctfChallenge";
 import Markdown from "@/components/Markdown";
 import CtfFlagForm from "@/components/CtfFlagForm";
 import CtfChallengeTabs from "@/components/CtfChallengeTabs";
+import { splitCtfHint } from "@/lib/ctfHint";
 
 export default function CtfChallengeContent({ detail, modal = false }: { detail: CtfChallengeDetail; modal?: boolean }) {
   const { challenge, session } = detail;
   const solve = challenge.solves[0];
+  const { description, hint } = splitCtfHint(challenge.description);
   const Title = modal ? "h2" : "h1";
   return (
     <div className="ctf-challenge-content">
@@ -24,7 +26,11 @@ export default function CtfChallengeContent({ detail, modal = false }: { detail:
           {!challenge.isPublic && <p className="mt-3 text-sm text-dim">隱藏題目預覽，公開後才能提交。</p>}
           {session?.role === "ADMIN" && <Link className="mt-3 inline-block text-xs text-blue hover:underline" href={`/admin/ctf/${challenge.id}/edit`}>編輯題目 →</Link>}
         </header>
-        <div className="ctf-challenge-description"><Markdown>{challenge.description}</Markdown></div>
+        <div className="ctf-challenge-description"><Markdown>{description}</Markdown></div>
+        {hint && <details className="ctf-hint-panel rounded-lg border border-bd p-4">
+          <summary className="cursor-pointer font-semibold text-blue">顯示提示</summary>
+          <div className="mt-3 border-t border-bd pt-3"><Markdown>{hint}</Markdown></div>
+        </details>}
         {challenge.labType && <div className="ctf-challenge-connection">
           <p className="mb-3 text-sm text-dim">開啟練習網站探索線索，找到 Flag 後回到這裡提交。</p>
           <a className="btn-primary inline-flex" href={`/ctf/labs/${challenge.id}`} target="_blank" rel="noopener noreferrer">前往練習網站 ↗</a>
