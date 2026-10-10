@@ -90,6 +90,10 @@ int main(void) {
   python: ``,
   javascript: `const lines = require("fs").readFileSync(0, "utf8").split("\\n");
 `,
+  itoulang: `// 喵～ 讀入測資並輸出答案。
+令 第一行 = 讀行();
+喵(第一行);
+`,
 };
 
 interface SubmitPanelProps {
@@ -138,6 +142,8 @@ export default function SubmitPanel({
     language, code, status: draftStatus, conflict: draftConflict,
     switchLanguage, updateCode, keepLocal, keepCloud,
   } = useSyncedDraft({ userId, problemId, contestId, defaultLanguage, languageOptions, templates: TEMPLATES });
+  // 有些語言（如 itouLang）的執行模型不支援逐行互動終端。
+  const canTerminal = LANGUAGES[language].interactive;
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [formatting, setFormatting] = useState(false);
@@ -546,7 +552,7 @@ export default function SubmitPanel({
             <div className="submit-panel-editor-viewport">{editor}</div>
             <div className="submit-panel-editor-toolbar hidden lg:flex">
               <div className="submit-panel-editor-actions">
-                {terminalButton}
+                {canTerminal && terminalButton}
                 {actionButtons}
               </div>
             </div>
@@ -575,7 +581,7 @@ export default function SubmitPanel({
       {error && <p className="submit-panel-notice mt-2 text-sm text-[#ff6b6b]">{error}</p>}
 
       <div className="mt-3 flex flex-wrap items-center justify-end gap-3 lg:hidden">
-        <div className="flex flex-wrap gap-3">{terminalButton}{actionButtons}</div>
+        <div className="flex flex-wrap gap-3">{canTerminal && terminalButton}{actionButtons}</div>
       </div>
 
       {runResult && (
@@ -793,7 +799,7 @@ export default function SubmitPanel({
                 </button>
               </div>
               <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
-                {terminalButton}
+                {canTerminal && terminalButton}
                 {actionButtons}
               </div>
             </div>

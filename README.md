@@ -12,7 +12,7 @@
 
 | 功能 | 說明 |
 | --- | --- |
-| 程式題 | Markdown／數學式題敘、範例測資、標籤、子題配分、提交紀錄與排行榜；支援 C++、C、Python、JavaScript。 |
+| 程式題 | Markdown／數學式題敘、範例測資、標籤、子題配分、提交紀錄與排行榜；支援 C++、C、Python、JavaScript、itouLang。 |
 | 寫程式 | CodeMirror 編輯器、每題每語言的帳號草稿（網站與 Android App 同步，離線時保留本機草稿）與範例測試；手機可先備妥 stdin 再測試。桌機可左右拖曳調整題目與程式欄寬。 |
 | Terminal | 桌機版可直接在終端機中逐行輸入、即時看輸出；支援 C++、C、Python、JavaScript|
 | 識讀練習 | 選擇題即時對答案、詳解、題組進度與複習紀錄；不列入一般程式提交紀錄。 |
@@ -116,6 +116,9 @@ npm run test:ctf-web-labs
 | C | GCC 10.2 | sandbox-runner | ✓ |
 | Python | 3.12 | sandbox-runner | ✓ |
 | JavaScript | Node 20 | sandbox-runner | ✓ |
+| itouLang | 0.2（喵） | sandbox-runner（Node runtime） | — |
+
+itouLang 是內建「喵」家族與中文關鍵字的小型語言。判題時由 [`src/lib/itoulang.ts`](src/lib/itoulang.ts) 把原始碼包成一段 Node 程式，動態載入判題主機上的 itouLang runtime（`run()`）並執行；沿用既有的 `javascript` 沙箱 runtime，不需改動 `sandbox-runner`。主機需把 itouLang 專案放到 Node runtime 套件目錄，例如 `/opt/piston-data/packages/node/20.11.1/itoulang/`（沙箱內對應 `file:///opt/runtime/itoulang/src/index.js`，可用 `ITOULANG_RUNTIME_URL` 覆寫）。輸入為一次讀完的 stdin，因此不提供互動式 Terminal。
 
 Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一行、**Shift＋Enter** 換行、**Ctrl＋D／EOF** 結束標準輸入，**Ctrl＋C／停止** 可終止執行。讀取到檔尾的程式要送出 EOF 才會結束。Terminal 最多執行兩分鐘，CPU 時間另依題目限制。詳見 [沙箱與互動服務說明](sandbox-runner/README.md)。
 

@@ -7,6 +7,7 @@ export const LANGUAGES = {
     filename: "main.cpp",
     timeMultiplier: 1,
     memoryMultiplier: 1,
+    interactive: true,
   },
   c: {
     label: "C (GCC 10.2)",
@@ -15,6 +16,7 @@ export const LANGUAGES = {
     filename: "main.c",
     timeMultiplier: 1,
     memoryMultiplier: 1,
+    interactive: true,
   },
   python: {
     label: "Python 3.12",
@@ -23,6 +25,7 @@ export const LANGUAGES = {
     filename: "main.py",
     timeMultiplier: 3, // 直譯語言慣例給較寬的時限
     memoryMultiplier: 1,
+    interactive: true,
   },
   javascript: {
     label: "JavaScript (Node 20)",
@@ -31,6 +34,18 @@ export const LANGUAGES = {
     filename: "main.js",
     timeMultiplier: 3,
     memoryMultiplier: 2,
+    interactive: true,
+  },
+  // itouLang 借用 Node 沙箱 runtime（見 src/lib/itoulang.ts）；判題時會把原始碼
+  // 包成 main.js。輸入改成一次讀完 stdin，無法逐行互動，因此不支援 Terminal。
+  itoulang: {
+    label: "itouLang 0.2（喵）",
+    runtime: "javascript",
+    version: "20.11.1",
+    filename: "main.js",
+    timeMultiplier: 3,
+    memoryMultiplier: 2,
+    interactive: false,
   },
 } as const;
 

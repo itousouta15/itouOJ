@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { LANGUAGES, LANGUAGE_KEYS, isLanguageKey } from "@/lib/languages";
 import { execute } from "@/lib/execute";
+import { executionCode } from "@/lib/itoulang";
 import { SandboxBusyError } from "@/lib/sandboxQueue";
 import { runVerdict } from "@/lib/judge";
 import { assertContestProblemAccess } from "@/lib/contest";
@@ -99,7 +100,7 @@ export async function POST(request: Request) {
         language: lang.runtime,
         version: lang.version,
         filename: lang.filename,
-        code,
+        code: executionCode(language, code),
         stdin,
         runTimeoutMs: timeLimitMs,
         runMemoryLimitBytes: memoryLimitBytes,

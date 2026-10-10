@@ -524,7 +524,7 @@ model Submission {
   problem      Problem      @relation(fields: [problemId], references: [id], onDelete: Cascade)
   contestId    Int? // 有值 = 這是比賽期間的提交，計入該比賽罰時排名
   contest      Contest?     @relation(fields: [contestId], references: [id], onDelete: SetNull)
-  language     String // cpp | c | python | java | javascript | choice（choice = 識別題選擇題作答）
+  language     String // cpp | c | python | java | javascript | itoulang | choice（choice = 識別題選擇題作答）
   code         String
   // 識別題作答：選擇的選項索引（0-based）。實作題提交為 null。
   selectedIndex Int? 

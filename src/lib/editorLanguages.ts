@@ -20,6 +20,8 @@ export function loadEditorLanguage(language: LanguageKey): Promise<Extension[]> 
         support = (await import("@codemirror/lang-python")).python();
         break;
       case "javascript":
+      case "itoulang":
+        // itouLang 沒有專屬模式，沿用 JS 的括號／字串／註解高亮。
         support = (await import("@codemirror/lang-javascript")).javascript();
         break;
     }

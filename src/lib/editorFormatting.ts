@@ -63,5 +63,8 @@ export async function formatEditorCode(code: string, language: LanguageKey): Pro
         printWidth: 100,
       });
     }
+    case "itoulang":
+      // 尚無 itouLang 格式化器，原樣回傳。
+      return code;
   }
 }

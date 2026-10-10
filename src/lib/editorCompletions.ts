@@ -78,6 +78,29 @@ export const EDITOR_COMPLETIONS: Record<LanguageKey, CompletionSource> = {
       label: "stdin", type: "function", detail: "讀取標準輸入",
     }),
   ])),
+  itoulang: ifNotIn(NON_CODE_NODES, completeFromList([
+    ...keywords("令 設 函式 如果 否則 當 回傳 返回 中斷 跳出 繼續 真 假 空 且 並且 或 或者 let fn if else while return break continue true false null and or"),
+    ...types("數字 數 字串 布林 任意 空 number string boolean any null"),
+    ...functions("喵 喵喵 喵長 喵字 喵數 喵型 喵根 喵驗 喵黏 喵重複 喵選 喵叫 讀行 讀 喵吃 讀數"),
+    snippetCompletion("令 ${name} = ${value};", {
+      label: "令", type: "keyword", detail: "宣告變數",
+    }),
+    snippetCompletion("函式 ${name}(${params}) {\n  ${}\n}", {
+      label: "函式", type: "keyword", detail: "定義函式",
+    }),
+    snippetCompletion("如果 (${condition}) {\n  ${}\n}", {
+      label: "如果", type: "keyword", detail: "條件分支",
+    }),
+    snippetCompletion("當 (${condition}) {\n  ${}\n}", {
+      label: "當", type: "keyword", detail: "迴圈",
+    }),
+    snippetCompletion("喵(${value});", {
+      label: "喵", type: "function", detail: "輸出（print 別名）",
+    }),
+    snippetCompletion("讀行()", {
+      label: "讀行", type: "function", detail: "讀取一行標準輸入",
+    }),
+  ])),
 };
 
 export const DOCUMENT_WORD_COMPLETIONS = ifNotIn(NON_CODE_NODES, completeAnyWord);
