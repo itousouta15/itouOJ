@@ -1,39 +1,11 @@
 import { withSandboxTurn, type SandboxPriority } from "@/lib/sandboxQueue";
+import { readJudgeJson } from "@/lib/judgeWire";
+import { parseSandboxExecution, type ExecutionResult } from "@/lib/sandboxProtocol";
+export type { ExecutionPhase, ExecutionResult } from "@/lib/sandboxProtocol";
 
 const SANDBOX_URL = process.env.SANDBOX_URL ?? "http://127.0.0.1:8090";
 const COMPILE_TIMEOUT_MS = 15_000;
 const TRANSPORT_GRACE_MS = 15_000;
-
-export interface ExecutionPhase {
-  stdout: string;
-  stderr: string;
-  output: string;
-  code: number | null;
-  signal: string | null;
-  memory: number | null;
-  cpu_time: number;
-  wall_time: number;
-  message?: string | null;
-  status?: string | null;
-}
-
-export interface ExecutionResult {
-  language: string;
-  version: string;
-  compile?: ExecutionPhase;
-  run: ExecutionPhase;
-  compiled_binary?: string;
-  compiled_handle?: string;
-  compiled_cache_hit?: boolean;
-  metrics?: {
-    setup_ms: number;
-    compile_ms: number;
-    run_ms: number;
-    cleanup_ms: number;
-    total_ms: number;
-    request_bytes: number;
-  };
-}
 
 // sandbox-server 沿用 /api/v2/execute 的 JSON 格式。
 export async function sandboxExecute(params: {
@@ -60,6 +32,7 @@ export async function sandboxExecute(params: {
     try {
       const res = await fetch(`${SANDBOX_URL}/api/v2/execute`, {
         method: "POST",
+        redirect: "error",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           language: params.language,
@@ -76,9 +49,10 @@ export async function sandboxExecute(params: {
         signal,
       });
       if (!res.ok) {
-        throw new Error(`sandbox-server HTTP ${res.status}: ${await res.text()}`);
+        await res.body?.cancel();
+        throw new Error(`sandbox-server HTTP ${res.status}`);
       }
-      const result = (await res.json()) as ExecutionResult;
+      const result = parseSandboxExecution(await readJudgeJson(res, 32 * 1024 * 1024));
       console.info("[sandbox-metrics]", JSON.stringify({
         priority: params.priority,
         language: params.language,

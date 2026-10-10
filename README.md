@@ -108,6 +108,8 @@ npm run test:ctf-web-labs
 
 技術組成：**Next.js 16（App Router）／React 19／TypeScript／Tailwind CSS 4**、**SQLite／Prisma 7**、**CodeMirror 6**、**Capacitor 8**。提交由判題 worker 領取；`npm run dev` 會在開發模式啟動本機 worker，正式環境則使用 `deploy/online-judge-worker.service`。`sandbox-runner` 透過 Linux namespace、cgroup v2 與 seccomp 隔離程式碼。舊的 Java 提交紀錄仍可查看，但已停止接受新的 Java 提交。
 
+另可使用 `npm run judge:remote`，讓不同主機的 worker 透過租約領取工作，交給各自的沙箱執行。支援心跳、逾期回收與冪等結果寫入；部署、故障驗證及新版沙箱報告相容性見 [分散式判題說明](docs/judge-reliability.md)。
+
 編輯器顯示的語言版本定義在 [`src/lib/languages.ts`](src/lib/languages.ts)。自建沙箱的 C／C++ 實際編譯器取決於部署主機，請讓主機版本與網站顯示相符。
 
 | 語言 | 編輯器標籤 | 判題 | 互動式 Terminal |

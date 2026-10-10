@@ -52,7 +52,7 @@ const MAX_EDITOR_FONT_SIZE = 24;
 interface SampleRunResult {
   order: number;
   verdict: string;
-  timeMs: number;
+  timeMs: number | null;
   stdout: string;
   expected: string;
   stderr: string;
@@ -66,7 +66,7 @@ interface RunResponse {
   stderr?: string;
   exitCode?: number | null;
   killed?: boolean;
-  timeMs?: number;
+  timeMs?: number | null;
 }
 
 const TEMPLATES: Record<LanguageKey, string> = {
@@ -613,7 +613,7 @@ export default function SubmitPanel({
                 <div className="flex items-center gap-3">
                   <span className="mono text-xs text-dim">範例 {r.order}</span>
                   <VerdictBadge status={r.verdict} short />
-                  <span className="mono text-xs text-mute">{r.timeMs} ms</span>
+                  <span className="mono text-xs text-mute">{r.timeMs == null ? "—" : `${r.timeMs} ms`}</span>
                 </div>
                 {r.verdict === "WA" && (
                   <div className="mt-2 grid gap-3 sm:grid-cols-2">
@@ -647,7 +647,7 @@ export default function SubmitPanel({
               <div className="flex items-center gap-3">
                 <span className="mono text-xs text-dim">自訂輸入執行結果</span>
                 <span className="mono text-xs text-mute">
-                  {runResult.timeMs} ms
+                  {runResult.timeMs == null ? "—" : `${runResult.timeMs} ms`}
                 </span>
                 {runResult.killed && (
                   <span className="vbadge vbadge-amber">超過時間/記憶體限制</span>

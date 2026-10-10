@@ -5,6 +5,7 @@ import { LANGUAGES, LANGUAGE_KEYS, isLanguageKey } from "@/lib/languages";
 import { execute } from "@/lib/execute";
 import { executionCode } from "@/lib/itoulang";
 import { SandboxBusyError } from "@/lib/sandboxQueue";
+import { compileFailed, executionTimeMs } from "@/lib/sandboxProtocol";
 import { runVerdict } from "@/lib/judge";
 import { assertContestProblemAccess } from "@/lib/contest";
 import { enforceRateLimit } from "@/lib/rateLimit";
@@ -118,11 +119,11 @@ export async function POST(request: Request) {
       // ---- 自訂輸入：跑一次，回傳原始輸出 ----
       if (customInput != null) {
         const result = await exec(customInput);
-        if (result.compile && result.compile.code !== 0) {
+        if (compileFailed(result)) {
           return Response.json({
             mode: "custom",
             compileError: clip(
-              result.compile.stderr || result.compile.output || "編譯失敗"
+              result.compile?.stderr || result.compile?.output || "編譯失敗"
             ),
           });
         }
@@ -133,7 +134,7 @@ export async function POST(request: Request) {
           stderr: clip(run.stderr),
           exitCode: run.code,
           killed: run.signal === "SIGKILL",
-          timeMs: Math.round(run.cpu_time ?? run.wall_time ?? 0),
+          timeMs: executionTimeMs(run),
         });
       }
 
@@ -148,11 +149,11 @@ export async function POST(request: Request) {
       for (let i = 0; i < problem.testCases.length; i++) {
         const tc = problem.testCases[i];
         const result = await exec(tc.input);
-        if (result.compile && result.compile.code !== 0) {
+        if (compileFailed(result)) {
           return Response.json({
             mode: "samples",
             compileError: clip(
-              result.compile.stderr || result.compile.output || "編譯失敗"
+              result.compile?.stderr || result.compile?.output || "編譯失敗"
             ),
           });
         }
@@ -161,7 +162,7 @@ export async function POST(request: Request) {
         results.push({
           order: i + 1,
           verdict,
-          timeMs: Math.round(run.cpu_time ?? run.wall_time ?? 0),
+          timeMs: executionTimeMs(run),
           stdout: clip(run.stdout),
           expected: clip(tc.output),
           stderr: verdict === "RE" ? clip(run.stderr) : "",

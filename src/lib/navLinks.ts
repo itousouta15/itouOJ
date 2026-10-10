@@ -35,7 +35,10 @@ export function accountNavGroups(username: string, isAdmin: boolean): NavGroup[]
       { href: "/ctf/history", label: "CTF 提交紀錄", glyph: "⚑" },
       { href: "/activity", label: "解題動態", glyph: "↗" },
     ] },
-    ...(isAdmin ? [{ label: "管理", links: [{ href: "/admin/problems", label: "管理後台", glyph: "⚙" }] }] : []),
+    ...(isAdmin ? [{ label: "管理", links: [
+      { href: "/admin/problems", label: "管理後台", glyph: "⚙" },
+      { href: "/admin/judge", label: "評測監控", glyph: "◷" },
+    ] }] : []),
   ];
 }
 
@@ -55,6 +58,6 @@ export function mobileNavGroups(username: string | null, isAdmin: boolean): NavG
 export function isNavActive(pathname: string, href: string): boolean {
   const base = href.split("?")[0];
   if (base === "/") return pathname === "/";
-  if (base.startsWith("/admin")) return pathname === "/admin" || pathname.startsWith("/admin/");
+  if (base === "/admin/problems") return pathname === "/admin" || (pathname.startsWith("/admin/") && !pathname.startsWith("/admin/judge"));
   return pathname === base || pathname.startsWith(`${base}/`);
 }
