@@ -1,0 +1,3 @@
+[submodule "vendor/itoulang"]
+	path = vendor/itoulang
+	url = https://github.com/itousouta15/itouLang.git
