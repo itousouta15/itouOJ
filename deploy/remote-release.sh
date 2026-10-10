@@ -5,6 +5,8 @@ set -Eeuo pipefail
 SOURCE=$1
 APP=/opt/online-judge
 SANDBOX=/opt/sandbox-runner
+# Must match NODE_HOME in sandbox-runner/src/server.c (bind-mounted at /opt/runtime).
+ITOULANG_DIR=/opt/piston-data/packages/node/20.11.1/itoulang
 BACKUP=/opt/oj-deploy-backups/$(date -u +%Y%m%d-%H%M%S)
 SITE_STOPPED=0
 WORKER_STOPPED=0
@@ -40,6 +42,13 @@ rollback() {
     install -m 644 "$BACKUP/sandbox-interactive.service" /etc/systemd/system/sandbox-interactive.service
     systemctl daemon-reload
     systemctl restart sandbox-server || true
+    if [[ -d "$BACKUP/itoulang" ]]; then
+      rm -rf -- "$ITOULANG_DIR"
+      mkdir -p "$(dirname "$ITOULANG_DIR")"
+      cp -a "$BACKUP/itoulang" "$ITOULANG_DIR"
+    else
+      rm -rf -- "$ITOULANG_DIR"
+    fi
   fi
   if (( APP_SWITCHED )); then
     install -m 644 "$BACKUP/online-judge-worker.service" /etc/systemd/system/online-judge-worker.service
@@ -113,6 +122,7 @@ rsync -a --exclude='.env' --exclude='oj.db*' --exclude='.next*' \
 cp "$SANDBOX/sandbox-server" "$BACKUP/sandbox-server"
 cp "$SANDBOX/jail" "$BACKUP/jail"
 rsync -a "$SANDBOX/src/" "$BACKUP/sandbox-src/"
+[[ ! -d "$ITOULANG_DIR" ]] || cp -a "$ITOULANG_DIR" "$BACKUP/itoulang"
 cp /etc/systemd/system/sandbox-server.service "$BACKUP/sandbox-server.service"
 cp /etc/systemd/system/sandbox-interactive.service "$BACKUP/sandbox-interactive.service"
 cp /etc/systemd/system/online-judge-worker.service "$BACKUP/online-judge-worker.service"
@@ -135,6 +145,13 @@ mv -f "$SANDBOX/jail.next" "$SANDBOX/jail"
 install -m 755 "$SOURCE/sandbox-runner/sandbox-server" "$SANDBOX/sandbox-server.next"
 mv -f "$SANDBOX/sandbox-server.next" "$SANDBOX/sandbox-server"
 rsync -a "$SOURCE/sandbox-runner/src/" "$SANDBOX/src/"
+echo '== Install itouLang runtime =='
+if [[ -f "$SOURCE/vendor/itoulang/package.json" ]]; then
+  mkdir -p "$ITOULANG_DIR"
+  rsync -a --delete "$SOURCE/vendor/itoulang/" "$ITOULANG_DIR/"
+else
+  echo 'vendor/itoulang missing from release; keeping existing runtime' >&2
+fi
 systemctl restart sandbox-server
 python3 "$SOURCE/sandbox-runner/test/smoke_live_cache.py"
 if (( INTERACTIVE_CHANGED )); then systemctl start sandbox-interactive; fi

@@ -120,7 +120,7 @@ npm run test:ctf-web-labs
 | JavaScript | Node 20 | sandbox-runner | ✓ |
 | itouLang | 0.2（喵） | sandbox-runner（Node runtime） | — |
 
-itouLang 是內建「喵」家族與中文關鍵字的小型語言。判題時由 [`src/lib/itoulang.ts`](src/lib/itoulang.ts) 把原始碼包成一段 Node 程式，動態載入判題主機上的 itouLang runtime（`run()`）並執行；沿用既有的 `javascript` 沙箱 runtime，不需改動 `sandbox-runner`。主機需把 itouLang 專案放到 Node runtime 套件目錄，例如 `/opt/piston-data/packages/node/20.11.1/itoulang/`（沙箱內對應 `file:///opt/runtime/itoulang/src/index.js`，可用 `ITOULANG_RUNTIME_URL` 覆寫）。輸入為一次讀完的 stdin，因此不提供互動式 Terminal。
+itouLang 是內建「喵」家族與中文關鍵字的小型語言。判題時由 [`src/lib/itoulang.ts`](src/lib/itoulang.ts) 把原始碼包成一段 Node 程式，動態載入判題主機上的 itouLang runtime（`run()`）並執行；沿用既有的 `javascript` 沙箱 runtime，不需改動 `sandbox-runner`。itouLang 專案以 git submodule 放在 [`vendor/itoulang`](https://github.com/itousouta15/itouLang)，部署時由 `deploy/remote-release.sh` 安裝到 Node runtime 套件目錄 `/opt/piston-data/packages/node/20.11.1/itoulang/`（對應 `NODE_HOME`，沙箱內即 `file:///opt/runtime/itoulang/src/index.js`，可用 `ITOULANG_RUNTIME_URL` 覆寫）。首次 clone 後需執行 `git submodule update --init --recursive`。輸入為一次讀完的 stdin，因此不提供互動式 Terminal。
 
 Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一行、**Shift＋Enter** 換行、**Ctrl＋D／EOF** 結束標準輸入，**Ctrl＋C／停止** 可終止執行。讀取到檔尾的程式要送出 EOF 才會結束。Terminal 最多執行兩分鐘，CPU 時間另依題目限制。詳見 [沙箱與互動服務說明](sandbox-runner/README.md)。
 

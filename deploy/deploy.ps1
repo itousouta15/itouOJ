@@ -77,13 +77,22 @@ $head = (git rev-parse --short HEAD).Trim()
 Write-Host "== Packaging HEAD ($head) =="
 Invoke-Native "git archive" { git archive --format=tar.gz -o "$env:TEMP\oj.tar.gz" HEAD }
 
+# git archive 不會遞迴子模組，itouLang runtime 另外打包再一起送上遠端；
+# remote-release.sh 會把它安裝到 sandbox 的 Node runtime 套件目錄。
+if (-not (Test-Path "vendor/itoulang/package.json")) {
+    throw "vendor/itoulang 子模組尚未初始化：請先執行 git submodule update --init --recursive"
+}
+Invoke-Native "git archive itoulang" {
+    git -C "vendor/itoulang" archive --format=tar.gz --prefix=vendor/itoulang/ -o "$env:TEMP\itoulang.tar.gz" HEAD
+}
+
 Write-Host "== Uploading =="
-Invoke-Native "scp" { scp "$env:TEMP\oj.tar.gz" "${Server}:/tmp/oj.tar.gz" }
+Invoke-Native "scp" { scp "$env:TEMP\oj.tar.gz" "$env:TEMP\itoulang.tar.gz" "${Server}:/tmp/" }
 
 Write-Host "== Staging sandbox and website release =="
 $release = "/tmp/oj-release-$head-$(Get-Date -Format 'yyyyMMddHHmmss')-$PID"
 Invoke-Native "stage release" {
-    ssh $Server "test -d /tmp && test -d $AppDir && test ! -e $release && tar tzf /tmp/oj.tar.gz >/dev/null && mkdir $release && tar xzf /tmp/oj.tar.gz -C $release && ln -s $AppDir/.env $release/.env"
+    ssh $Server "test -d /tmp && test -d $AppDir && test ! -e $release && tar tzf /tmp/oj.tar.gz >/dev/null && tar tzf /tmp/itoulang.tar.gz >/dev/null && mkdir $release && tar xzf /tmp/oj.tar.gz -C $release && tar xzf /tmp/itoulang.tar.gz -C $release && ln -s $AppDir/.env $release/.env"
 }
 
 # Git for Windows may export text entries with CRLF even when the committed
