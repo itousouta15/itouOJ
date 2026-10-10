@@ -10,6 +10,7 @@ export default function QuestionHeader({
   badges,
   tags,
   adminHref,
+  tutorial,
   sub,
   sharePath,
   compact = false,
@@ -18,6 +19,7 @@ export default function QuestionHeader({
   badges?: ReactNode;
   tags?: { id: number; name: string }[];
   adminHref?: string;
+  tutorial?: ReactNode;
   // 標題下方的資訊列（例如時間/記憶體限制、卷別/原題號）
   sub?: ReactNode;
   // App 沒有網址列；提供路徑時顯示原生分享按鈕。
@@ -35,6 +37,7 @@ export default function QuestionHeader({
         )}
         {badges}
         {tags?.map((t) => <TagBadge key={t.id} name={t.name} />)}
+        {tutorial}
         {sharePath && <AppShareButton title={title} path={sharePath} />}
         {adminHref && (
           <Link
