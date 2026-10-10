@@ -4,8 +4,12 @@ export const CTF_CATEGORIES = ["Web", "Crypto", "Reverse", "Pwn", "Forensics", "
 export const CTF_PAGE_SIZE = 20;
 export const CTF_FLAG_MAX_LENGTH = 1024;
 export const CTF_DIFFICULTIES = { easy: "簡單", medium: "中等", hard: "困難" } as const;
-export const CTF_LAB_TYPES = ["SOURCE", "COOKIE", "IDOR"] as const;
-export const CTF_LAB_LABELS = { SOURCE: "原始碼小站", COOKIE: "Cookie 會員站", IDOR: "票券收藏站" } as const;
+export const CTF_LAB_TYPES = ["SOURCE", "COOKIE", "IDOR", "ROBOTS", "BACKUP", "PRICE", "JWT", "TRAVERSAL", "SQLI"] as const;
+export const CTF_LAB_LABELS = {
+  SOURCE: "原始碼小站", COOKIE: "Cookie 會員站", IDOR: "票券收藏站",
+  ROBOTS: "爬蟲公告站", BACKUP: "維護備份站", PRICE: "星砂商店",
+  JWT: "JWT 會員站", TRAVERSAL: "文件下載站", SQLI: "舊版登入站",
+} as const;
 
 const flag = z.string().trim().max(CTF_FLAG_MAX_LENGTH, "Flag 最多 1024 個字元");
 const fields = {

@@ -8,11 +8,14 @@ import Database from "better-sqlite3";
 import { importCtfWebLabs } from "./add-ctf-web-labs.mjs";
 import { importBeginnerCtfChallenges } from "./add-ctf-beginner-challenges.mjs";
 import { SOURCE_CHALLENGE_TITLE } from "./lib/ctf-web-lab-challenges.mjs";
+import { importCtfWebExpansion } from "./add-ctf-web-expansion.mjs";
+import { createWebExpansionChallenges } from "./lib/ctf-web-expansion-challenges.mjs";
 
 process.env.AUTH_SECRET = "ctf-web-lab-unit-tests-only";
 const { encryptCtfLabFlag, decryptCtfLabFlag } = await import("../src/lib/ctfLabFlag.ts");
 const { hashCtfFlag, verifyCtfFlag } = await import("../src/lib/ctfFlag.ts");
 const { renderCtfLab, ctfLabCookie } = await import("../src/lib/ctfLab.ts");
+const { postExtendedCtfLab } = await import("../src/lib/ctfWebLabs.ts");
 
 async function lab(type, flag = "flag{lab_answer}") {
   const hashed = await hashCtfFlag(flag);
@@ -102,5 +105,104 @@ test("web lab importer preserves the original source flag, attachments, scores a
     const rerun = await importCtfWebLabs(db);
     assert.equal(rerun.converted.length, 0); assert.equal(rerun.created.length, 0); assert.equal(rerun.skipped.length, 3);
     assert.deepEqual(db.prepare('SELECT * FROM "CtfChallenge" ORDER BY id').all(), rows);
+  } finally { db.close(); await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }); }
+});
+
+test("six new puzzles have distinct working solutions and keep answers out of their homepages", async () => {
+  function get(challenge, path = [], search = "", cookie = "") {
+    return renderCtfLab(new Request(`https://site/ctf/labs/14/${path.join("/")}${search}`, { headers: { Cookie: cookie } }), challenge, path);
+  }
+  function post(challenge, fields) {
+    return postExtendedCtfLab(new Request("https://site/ctf/labs/14/login", {
+      method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(fields),
+    }), challenge);
+  }
+  for (const definition of createWebExpansionChallenges()) {
+    const challenge = await lab(definition.labType);
+    const home = get(challenge);
+    assert.equal(home.status, 200);
+    const html = await home.text();
+    for (const secret of ["flag{lab_answer}", challenge.flagHash, challenge.labFlagCiphertext]) assert.ok(!html.includes(secret));
+    assert.equal(get(challenge, ["unexpected"]).status, 404);
+    let solved;
+    switch (definition.labType) {
+      case "ROBOTS": {
+        const rules = await get(challenge, ["robots.txt"]).text();
+        const path = rules.match(/Disallow: \/ctf\/labs\/14\/(.+)/)[1].split("/");
+        solved = get(challenge, path); break;
+      }
+      case "BACKUP":
+        assert.equal(get(challenge, ["config.php"]).status, 403);
+        solved = get(challenge, ["config.php.bak"]);
+        assert.match(solved.headers.get("content-disposition"), /attachment;/); break;
+      case "PRICE":
+        assert.equal((await post(challenge, { item: "flag-box", price: "10000" })).status, 403);
+        await assert.rejects(post(challenge, { item: "flag-box", price: "-1" }), (error) => error.status === 400);
+        solved = await post(challenge, { item: "flag-box", price: "1" }); break;
+      case "JWT": {
+        assert.equal(get(challenge, ["admin"], "", "oj_session=admin; ctf_lab_15_token=admin").status, 403);
+        const login = await post(challenge, { username: "guest", password: "guest" });
+        assert.equal(login.status, 303);
+        const cookie = login.headers.get("set-cookie").split(";")[0];
+        assert.match(login.headers.get("set-cookie"), /Path=\/ctf\/labs\/14;.*SameSite=Lax; Secure/);
+        assert.equal(get(challenge, ["admin"], "", cookie).status, 403);
+        const [header, payload, signature] = cookie.split("=")[1].split(".");
+        const claims = JSON.parse(Buffer.from(payload, "base64url"));
+        claims.role = "admin";
+        const forged = `${header}.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.${signature}`;
+        solved = get(challenge, ["admin"], "", `ctf_lab_14_token=${forged}`);
+        claims.lab = 15;
+        assert.equal(get(challenge, ["admin"], "", `ctf_lab_14_token=${header}.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.${signature}`).status, 403);
+        assert.equal(get(challenge, ["admin"], "", "ctf_lab_14_token=broken").status, 403); break;
+      }
+      case "TRAVERSAL":
+        assert.ok(!(await get(challenge, ["download"], "?file=guide.txt").text()).includes("flag{lab_answer}"));
+        for (const path of ["../../.env", "../../etc/passwd", "../prisma/data/dev.db"]) {
+          assert.equal(get(challenge, ["download"], `?file=${encodeURIComponent(path)}`).status, 404);
+        }
+        solved = get(challenge, ["download"], "?file=../internal/maintenance.txt"); break;
+      case "SQLI":
+        assert.ok(!(await (await post(challenge, { username: "guest", password: "guest" })).text()).includes("flag{lab_answer}"));
+        assert.equal((await post(challenge, { username: "admin", password: "wrong" })).status, 403);
+        assert.equal((await post(challenge, { username: "'", password: "x" })).status, 400);
+        for (const username of ["' UNION SELECT randomblob(1000000000)--", "'; ATTACH DATABASE '/tmp/x' AS x;--", "' OR EXISTS(WITH RECURSIVE x AS (SELECT 1) SELECT * FROM x)--"]) {
+          await assert.rejects(post(challenge, { username, password: "x" }), (error) => error.status === 400);
+        }
+        solved = await post(challenge, { username: "admin' --", password: "anything" }); break;
+    }
+    assert.equal(solved.status, 200);
+    assert.ok((await solved.text()).includes("flag{lab_answer}"), definition.labType);
+    assert.equal(solved.headers.get("cache-control"), "private, no-store");
+  }
+});
+
+test("expansion importer validates all flags, preserves existing solves and is idempotent", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "oj-web-expansion-"));
+  const db = new Database(join(directory, "test.db"));
+  try {
+    db.exec('CREATE TABLE "User" (id TEXT PRIMARY KEY); INSERT INTO "User" VALUES (\'learner\');');
+    for (const migration of ["20261006140000_add_ctf_module", "20261007090000_add_ctf_web_labs"]) {
+      db.exec(readFileSync(`prisma/migrations/${migration}/migration.sql`, "utf8"));
+    }
+    await importBeginnerCtfChallenges(db);
+    db.prepare('INSERT INTO "CtfSolve" (userId, challengeId) VALUES (?, ?)').run("learner", 1);
+    const previous = db.prepare('SELECT * FROM "CtfChallenge" ORDER BY id').all();
+    const result = await importCtfWebExpansion(db, { isPublic: false });
+    assert.equal(result.created.length, 6);
+    for (const { id } of result.created) {
+      const challenge = db.prepare('SELECT * FROM "CtfChallenge" WHERE id = ?').get(id);
+      assert.equal(challenge.isPublic, 0);
+      assert.equal(await verifyCtfFlag(decryptCtfLabFlag(challenge.labFlagCiphertext, challenge.flagHash), challenge.flagSalt, challenge.flagHash), true);
+    }
+    const rows = db.prepare('SELECT * FROM "CtfChallenge" ORDER BY id').all();
+    assert.deepEqual(rows.slice(0, previous.length), previous);
+    const repeat = await importCtfWebExpansion(db);
+    assert.equal(repeat.created.length, 0); assert.equal(repeat.skipped.length, 6);
+    assert.deepEqual(db.prepare('SELECT * FROM "CtfChallenge" ORDER BY id').all(), rows);
+    assert.equal(db.prepare('SELECT COUNT(*) AS count FROM "CtfSolve"').get().count, 1);
+    db.prepare('DELETE FROM "CtfChallenge" WHERE id = ?').run(result.created[5].id);
+    db.prepare('UPDATE "CtfChallenge" SET "order" = 2147483647 WHERE id = 1').run();
+    await assert.rejects(importCtfWebExpansion(db), /排序值已達上限/);
+    assert.equal(db.prepare('SELECT COUNT(*) AS count FROM "CtfChallenge"').get().count, rows.length - 1);
   } finally { db.close(); await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }); }
 });

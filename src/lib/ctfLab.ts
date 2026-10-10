@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { decryptCtfLabFlag } from "@/lib/ctfLabFlag";
+import { renderExtendedCtfLab } from "@/lib/ctfWebLabs";
 
 export interface CtfLabChallenge {
   id: number;
@@ -46,7 +47,8 @@ export function ctfLabHtml(challenge: CtfLabChallenge, brand: string, content: s
   const base = `/ctf/labs/${challenge.id}`;
   const header = challenge.labType === "COOKIE"
     ? `<a href="${base}">會員首頁</a><a href="${base}/admin">管理員公告</a>`
-    : challenge.labType === "IDOR" ? `<a href="${base}">我的票券</a>` : `<a href="${base}#about">關於我們</a><a href="${base}#join">加入社團</a>`;
+    : challenge.labType === "IDOR" ? `<a href="${base}">我的票券</a>`
+    : challenge.labType === "SOURCE" ? `<a href="${base}#about">關於我們</a><a href="${base}#join">加入社團</a>` : `<a href="${base}">網站首頁</a>`;
   const html = `<!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${escapeLabHtml(brand)} · ${escapeLabHtml(challenge.title)}</title><style nonce="${nonce}">${styles}</style></head>
 <body><header><div class="wrap"><a class="brand" href="${base}">${escapeLabHtml(brand)}</a><nav aria-label="網站導覽">${header}<a href="/ctf/${challenge.id}">返回題目 ↗</a></nav></div></header>
@@ -64,7 +66,7 @@ ${options.script ? `<script nonce="${nonce}">${options.script}</script>` : ""}</
   });
 }
 
-function flag(challenge: CtfLabChallenge): string {
+export function ctfLabAnswer(challenge: CtfLabChallenge): string {
   if (!challenge.labFlagCiphertext) throw new Error("Missing lab configuration");
   return decryptCtfLabFlag(challenge.labFlagCiphertext, challenge.flagHash);
 }
@@ -77,7 +79,7 @@ export function renderCtfLab(request: Request, challenge: CtfLabChallenge, path:
       <section class="hero"><span class="eyebrow">Open Day / 2026</span><h1>好奇，從多看一眼開始。</h1><p class="dim">寫程式、拆解小工具、一起把問題問清楚。歡迎加入雲端研究社。</p><a class="button" href="#join">我想參加迎新</a></section>
       <section class="grid" id="about"><article class="card"><h2>動手做</h2><p class="dim">把想法做成小作品，每個人都能找到自己的第一步。</p></article><article class="card"><h2>一起想</h2><p class="dim">分享你發現的線索，換個角度也許就有答案。</p></article><article class="card"><h2>多看一眼</h2><p class="dim">看得到的畫面，只是網站的一部分。</p></article></section>
       <section class="card" id="join"><h2>迎新登記</h2><p class="dim">留下解題用暱稱，先試試網站的小功能。</p><form id="signup"><label>暱稱<input required maxlength="40" name="nickname" autocomplete="off"></label><button>登記迎新</button></form><p id="signup-result" role="status" class="dim"></p></section>`, {
-      comment: `maintainer-note: ${flag(challenge)}`,
+      comment: `maintainer-note: ${ctfLabAnswer(challenge)}`,
       script: `document.getElementById('signup').addEventListener('submit',function(event){event.preventDefault();document.getElementById('signup-result').textContent='登記完成，迎新時見！';});`,
     });
   }
@@ -85,7 +87,7 @@ export function renderCtfLab(request: Request, challenge: CtfLabChallenge, path:
     const current = role(request, challenge.id);
     if (path.length === 1 && path[0] === "admin") {
       if (current !== "admin") return ctfLabHtml(challenge, "北風社員站", `<section class="card"><span class="badge">僅限管理員</span><h1>這裡還不能進。</h1><p class="dim">目前的登入角色：${current}。管理員公告只開放給管理員。</p><a class="button" href="${base}">回到會員首頁</a></section>`, { status: 403 });
-      return ctfLabHtml(challenge, "北風社員站", `<section class="card"><span class="eyebrow">Admin bulletin</span><h1>管理員公告</h1><p class="dim">站務維修用通關碼已更新，請返回題目提交：</p><code class="flag">${escapeLabHtml(flag(challenge))}</code></section>`);
+      return ctfLabHtml(challenge, "北風社員站", `<section class="card"><span class="eyebrow">Admin bulletin</span><h1>管理員公告</h1><p class="dim">站務維修用通關碼已更新，請返回題目提交：</p><code class="flag">${escapeLabHtml(ctfLabAnswer(challenge))}</code></section>`);
     }
     if (path.length === 0) return ctfLabHtml(challenge, "北風社員站", `
       <div class="split"><section class="hero"><span class="eyebrow">Members / Northwind</span><h1>歡迎回來，${current === "visitor" ? "新朋友" : "社員"}。</h1><p class="dim">網站會把登入狀態留在瀏覽器裡，重新整理後也不用再輸入一次。</p><p>目前角色：<span class="badge">${current}</span></p><a href="${base}/admin">查看管理員公告 →</a></section>
@@ -98,8 +100,8 @@ export function renderCtfLab(request: Request, challenge: CtfLabChallenge, path:
       <section class="hero"><span class="eyebrow">My collection</span><h1>每張票，都有自己的故事。</h1><p class="dim">新手，你的迎新票券已準備好。點進票券查看詳細資料。</p></section><section class="card ticket"><span class="badge">票券 #1001</span><h2>新手的迎新入場券</h2><p class="dim">星港交流會 · 2026 年秋季</p><a class="button" href="${base}/notes/1001">查看我的票券</a></section>`);
     if (path.length === 2 && path[0] === "notes" && ["1001", "1002"].includes(path[1])) {
       const admin = path[1] === "1002";
-      return ctfLabHtml(challenge, "星港票券收藏站", `<section class="card ticket"><span class="badge">票券 #${path[1]}</span><h1>${admin ? "管理員的特別票券" : "新手的迎新入場券"}</h1><p>持有人：${admin ? "管理員" : "新手"}</p><p class="dim">${admin ? "內部備註：這張票的通關碼只應該讓持有人看到。" : "你的票券編號在網址裡；網站靠這個編號找到對應資料。"}</p>${admin ? `<code class="flag">${escapeLabHtml(flag(challenge))}</code>` : "<p>入場時間：18:30，請到一樓服務台報到。</p>"}<a href="${base}">← 回到我的票券</a></section>`);
+      return ctfLabHtml(challenge, "星港票券收藏站", `<section class="card ticket"><span class="badge">票券 #${path[1]}</span><h1>${admin ? "管理員的特別票券" : "新手的迎新入場券"}</h1><p>持有人：${admin ? "管理員" : "新手"}</p><p class="dim">${admin ? "內部備註：這張票的通關碼只應該讓持有人看到。" : "你的票券編號在網址裡；網站靠這個編號找到對應資料。"}</p>${admin ? `<code class="flag">${escapeLabHtml(ctfLabAnswer(challenge))}</code>` : "<p>入場時間：18:30，請到一樓服務台報到。</p>"}<a href="${base}">← 回到我的票券</a></section>`);
     }
   }
-  return ctfLabHtml(challenge, "Web Lab", "<h1>找不到這個頁面</h1><p class=\"dim\">請返回網站首頁，或回到題目確認網址。</p>", { status: 404 });
+  return renderExtendedCtfLab(request, challenge, path) ?? ctfLabHtml(challenge, "Web Lab", "<h1>找不到這個頁面</h1><p class=\"dim\">請返回網站首頁，或回到題目確認網址。</p>", { status: 404 });
 }

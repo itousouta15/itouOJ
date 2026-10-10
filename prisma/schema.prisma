@@ -62,7 +62,7 @@ model CtfChallenge {
   order       Int      @default(0)
   flagHash    String
   flagSalt    String
-  labType     String? // SOURCE | COOKIE | IDOR; confined teaching websites
+  labType     String? // Template names in CTF_LAB_TYPES; confined teaching websites
   labFlagCiphertext String? // AES-256-GCM; never include in public/client projections
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

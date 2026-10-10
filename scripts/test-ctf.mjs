@@ -11,6 +11,7 @@ import { createServer } from "node:net";
 import { request as httpRequest } from "node:http";
 import Database from "better-sqlite3";
 import { SignJWT } from "jose";
+import { createWebExpansionChallenges } from "./lib/ctf-web-expansion-challenges.mjs";
 
 const secret = "ctf-disposable-test-secret-only";
 const directory = mkdtempSync(join(tmpdir(), "oj-ctf-"));
@@ -365,6 +366,66 @@ test("HTTP Web Labs: real pages, scoped guest login, intended IDOR and OJ permis
   const other = await (await request(`/ctf/labs/${idor.id}/notes/1002`)).text(); assert.ok(other.includes("flag{Test With Space}"));
   assert.equal((await request(`/ctf/labs/${idor.id}/notes/1`)).status, 404);
   assert.equal(await prisma.user.count(), originalUserCount);
+});
+
+test("HTTP six new Web Labs: admin creation, real requests, correct flags and hidden GET/POST access", { timeout: 120000 }, async () => {
+  const usersBefore = await prisma.user.count();
+  const form = (fields) => ({ method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(fields).toString() });
+  for (const definition of createWebExpansionChallenges()) {
+    const response = await request("/api/admin/ctf/challenges", { method: "POST", user: "admin", json: { ...definition, isPublic: true } });
+    assert.equal(response.status, 201);
+    const { id } = await response.json();
+    const basePath = `/ctf/labs/${id}`;
+    const stored = await prisma.ctfChallenge.findUnique({ where: { id } });
+    const home = await request(basePath); assert.equal(home.status, 200);
+    const html = await home.text();
+    for (const value of [definition.flag, stored.flagHash, stored.labFlagCiphertext]) assert.ok(!html.includes(value));
+    let solved, endpoint;
+    switch (definition.labType) {
+      case "ROBOTS": {
+        const rules = await (await request(`${basePath}/robots.txt`)).text();
+        endpoint = rules.match(/Disallow: (.+)/)[1]; solved = await request(endpoint); break;
+      }
+      case "BACKUP":
+        assert.equal((await request(`${basePath}/config.php`)).status, 403);
+        endpoint = `${basePath}/config.php.bak`; solved = await request(endpoint); break;
+      case "PRICE":
+        assert.equal((await request(`${basePath}/buy`, form({ item: "flag-box", price: "10000" }))).status, 403);
+        endpoint = `${basePath}/buy`; solved = await request(endpoint, form({ item: "flag-box", price: "1" })); break;
+      case "JWT": {
+        const login = await request(`${basePath}/login`, form({ username: "guest", password: "guest" }));
+        assert.equal(login.status, 303);
+        const cookie = login.headers.get("set-cookie").split(";")[0];
+        assert.equal((await request(`${basePath}/admin`, { headers: { Cookie: cookie } })).status, 403);
+        const [header, payload, signature] = cookie.split("=")[1].split(".");
+        const claims = JSON.parse(Buffer.from(payload, "base64url")); claims.role = "admin";
+        endpoint = `${basePath}/admin`;
+        solved = await request(endpoint, { headers: { Cookie: `ctf_lab_${id}_token=${header}.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.${signature}` } }); break;
+      }
+      case "TRAVERSAL":
+        assert.equal((await request(`${basePath}/download?file=../../.env`)).status, 404);
+        endpoint = `${basePath}/download?file=../internal/maintenance.txt`; solved = await request(endpoint); break;
+      case "SQLI":
+        assert.equal((await request(`${basePath}/login`, form({ username: "admin", password: "wrong" }))).status, 403);
+        endpoint = `${basePath}/login`; solved = await request(endpoint, form({ username: "admin' --", password: "x" })); break;
+    }
+    assert.equal(solved.status, 200, definition.labType);
+    assert.ok((await solved.text()).includes(definition.flag), definition.labType);
+    assert.equal(solved.headers.get("cache-control"), "private, no-store");
+    const submission = await request(`/api/ctf/challenges/${id}/attempts`, { method: "POST", user: "alice", json: { flag: definition.flag } });
+    assert.equal((await submission.json()).result, "correct");
+    assert.equal((await request(`${basePath}/unexpected`)).status, 404);
+    if (["PRICE", "JWT", "SQLI"].includes(definition.labType)) {
+      const action = definition.labType === "PRICE" ? "buy" : "login";
+      assert.equal((await request(`${basePath}/${action}`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "x=" + "a".repeat(8192) })).status, 413);
+      assert.equal((await request(`${basePath}/${action}`, { method: "POST", json: { username: "guest" } })).status, 400);
+    }
+    await prisma.ctfChallenge.update({ where: { id }, data: { isPublic: false } });
+    assert.equal((await request(endpoint)).status, 404);
+    assert.equal((await request(endpoint, { method: "POST" })).status, 404);
+    assert.equal((await request(basePath, { user: "admin" })).status, 200);
+  }
+  assert.equal(await prisma.user.count(), usersBefore);
 });
 
 test("HTTP lab flag replacement stays consistent and public/editor props never contain the encrypted envelope", { timeout: 60000 }, async () => {

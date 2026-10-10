@@ -4,6 +4,7 @@ import { ctfIdSchema, CTF_LAB_TYPES } from "@/lib/ctfSchema";
 import { CtfRequestError, ctfErrorResponse, readCtfBody } from "@/lib/ctfAttachment";
 import { CtfLabFlagError } from "@/lib/ctfLabFlag";
 import { ctfLabCookie, ctfLabHtml, renderCtfLab } from "@/lib/ctfLab";
+import { acceptsExtendedCtfPost, postExtendedCtfLab } from "@/lib/ctfWebLabs";
 
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string; path?: string[] }> };
@@ -33,6 +34,13 @@ export async function POST(request: Request, { params }: Context) {
   const { id, path = [] } = await params;
   const challenge = await getLab(id);
   if (!challenge?.labFlagCiphertext) return Response.json({ error: "練習網站不存在" }, { status: 404 });
+  if (acceptsExtendedCtfPost(challenge, path)) {
+    try { return await postExtendedCtfLab(request, challenge); }
+    catch (error) {
+      if (error instanceof CtfLabFlagError) return ctfLabHtml(challenge, "Web Lab", "<h1>練習網站暫時無法開啟</h1><p>請管理員重新設定這題的 Flag。</p>", { status: 503 });
+      return ctfErrorResponse(error);
+    }
+  }
   if (challenge.labType !== "COOKIE" || path.length !== 1 || !["login", "logout"].includes(path[0])) {
     return Response.json({ error: "此頁面不接受提交" }, { status: 405, headers: { Allow: "GET" } });
   }
