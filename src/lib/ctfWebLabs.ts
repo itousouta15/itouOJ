@@ -1,17 +1,29 @@
 import { createHmac, randomBytes } from "node:crypto";
-import { createRequire } from "node:module";
 import { posix } from "node:path";
 import { CtfRequestError, ctfDownloadHeaders, readCtfBody } from "@/lib/ctfAttachment";
 import { ctfLabAnswer, ctfLabHtml, escapeLabHtml, type CtfLabChallenge } from "@/lib/ctfLab";
 
-// Node 22.13+ supplies SQLite. This connection never opens the application's DB.
-const require = createRequire(import.meta.url);
 interface LabDatabase {
   exec(sql: string): void;
   prepare(sql: string): { run(...values: string[]): unknown; get(): { username?: unknown } | undefined };
   close(): void;
 }
-const { DatabaseSync } = require("node:sqlite") as { DatabaseSync: new (path: string) => LabDatabase };
+type LabDatabaseConstructor = new (path: string) => LabDatabase;
+
+// Node 22.13+ supplies SQLite. Read it through process.getBuiltinModule so
+// Turbopack leaves the builtin alone, and load it lazily so builds and other
+// labs never touch it. This connection never opens the application's DB.
+let labDatabaseConstructor: LabDatabaseConstructor | undefined;
+function createLabDatabase(): LabDatabase {
+  if (!labDatabaseConstructor) {
+    const sqlite = (
+      process as { getBuiltinModule?: (id: string) => unknown }
+    ).getBuiltinModule?.("node:sqlite") as { DatabaseSync?: LabDatabaseConstructor } | undefined;
+    if (!sqlite?.DatabaseSync) throw new CtfRequestError("這個練習網站需要較新版本的 Node 執行環境");
+    labDatabaseConstructor = sqlite.DatabaseSync;
+  }
+  return new labDatabaseConstructor(":memory:");
+}
 
 function text(content: string, filename?: string): Response {
   return new Response(content, { headers: {
@@ -115,7 +127,7 @@ export async function postExtendedCtfLab(request: Request, challenge: CtfLabChal
   }
   const query = `SELECT username FROM members WHERE username = '${username}' AND password = '${password}'`;
   if (!teachingSql(query)) throw new CtfRequestError("本題僅支援 WHERE 條件中的字串、比較、邏輯運算及註解");
-  const db = new DatabaseSync(":memory:");
+  const db = createLabDatabase();
   try {
     db.exec("CREATE TABLE members (username TEXT, password TEXT)");
     db.prepare("INSERT INTO members VALUES (?, ?)").run("guest", "guest");

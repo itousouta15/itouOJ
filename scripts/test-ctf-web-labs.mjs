@@ -164,7 +164,7 @@ test("six new puzzles have distinct working solutions and keep answers out of th
       case "SQLI":
         assert.ok(!(await (await post(challenge, { username: "guest", password: "guest" })).text()).includes("flag{lab_answer}"));
         assert.equal((await post(challenge, { username: "admin", password: "wrong" })).status, 403);
-        assert.equal((await post(challenge, { username: "'", password: "x" })).status, 400);
+        await assert.rejects(post(challenge, { username: "'", password: "x" }), (error) => error.status === 400);
         for (const username of ["' UNION SELECT randomblob(1000000000)--", "'; ATTACH DATABASE '/tmp/x' AS x;--", "' OR EXISTS(WITH RECURSIVE x AS (SELECT 1) SELECT * FROM x)--"]) {
           await assert.rejects(post(challenge, { username, password: "x" }), (error) => error.status === 400);
         }
