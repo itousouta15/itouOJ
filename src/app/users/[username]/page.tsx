@@ -17,7 +17,7 @@ import { ctfDate } from "@/lib/ctf";
 export const dynamic = "force-dynamic";
 
 async function getUser(username: string) {
-  // 不 select avatarData：這個頁面只需要知道有沒有本地頭像
+  // 公開頁只查詢公開資料，不包含 Email；頭像也不查詢 avatarData。
   return prisma.user.findUnique({
     where: { username },
     select: {

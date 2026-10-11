@@ -48,14 +48,18 @@ export default function ProfileForm({
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
-        <label className="mb-1 block text-sm font-medium">Email</label>
+        <label htmlFor="profile-email" className="mb-1 block text-sm font-medium">Email（僅自己可見）</label>
         <input
+          id="profile-email"
           className="input"
           type="email"
+          autoComplete="email"
+          aria-describedby="profile-email-description"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="用於重設密碼，不會公開顯示"
         />
+        <p id="profile-email-description" className="mt-1 text-xs text-mute">用於重設密碼，不會顯示在公開個人頁。</p>
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium">顯示名稱</label>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 export default function ForgotPasswordForm() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ export default function ForgotPasswordForm() {
       const response = await fetch("/api/auth/password-reset/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ email: email.trim() }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -34,22 +34,27 @@ export default function ForgotPasswordForm() {
   return (
     <form onSubmit={submit} className="space-y-4">
       <p className="text-sm leading-relaxed text-dim">
-        輸入使用者名稱後，若帳號已設定 Email，會收到 30 分鐘有效的重設連結。
+        輸入帳號設定的 Email，若有對應的帳號，會收到 30 分鐘有效的重設連結。
       </p>
       <div>
-        <label className="mb-1 block text-sm font-medium">使用者名稱</label>
+        <label htmlFor="reset-email" className="mb-1 block text-sm font-medium">Email</label>
         <input
+          id="reset-email"
           className="input"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          autoComplete="username"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          maxLength={254}
           required
         />
       </div>
       {error && <p className="text-sm text-[#ff6b6b]">{error}</p>}
       {done && (
         <p className="text-sm text-[var(--green)]">
-          若帳號已設定 Email，重設連結將寄到該信箱。
+          若此 Email 有對應的帳號，重設連結將寄到該信箱。
         </p>
       )}
       <button className="btn-primary" disabled={loading}>

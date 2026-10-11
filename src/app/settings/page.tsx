@@ -79,7 +79,7 @@ export default async function SettingsPage({
           </div>
           {user.email && (
             <div className="flex items-center justify-between">
-              <dt className="text-dim">Email</dt>
+              <dt className="text-dim">Email（僅自己可見）</dt>
               <dd className="mono text-dim">{user.email}</dd>
             </div>
           )}
