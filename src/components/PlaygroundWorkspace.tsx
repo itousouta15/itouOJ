@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { EditorView } from "@codemirror/view";
 import { LANGUAGES, LANGUAGE_KEYS, type LanguageKey } from "@/lib/languages";
-import { playgroundLimits, PLAYGROUND_TEMPLATES, type PlaygroundRunResult } from "@/lib/playground";
+import { playgroundLimits, PLAYGROUND_TEMPLATES } from "@/lib/playground";
 
 const CodeEditor = dynamic(() => import("@/components/CodeEditor"), {
   ssr: false,
@@ -19,11 +19,10 @@ const InteractiveTerminal = dynamic(() => import("@/components/InteractiveTermin
 interface Draft {
   language: LanguageKey;
   codes: Record<LanguageKey, string>;
-  input: string;
 }
 
 function initialDraft(): Draft {
-  return { language: "cpp", codes: { ...PLAYGROUND_TEMPLATES }, input: "" };
+  return { language: "cpp", codes: { ...PLAYGROUND_TEMPLATES } };
 }
 
 function readDraft(key: string): Draft {
@@ -33,7 +32,6 @@ function readDraft(key: string): Draft {
   const saved = JSON.parse(raw);
   if (!saved || typeof saved !== "object") return draft;
   if (LANGUAGE_KEYS.includes(saved.language)) draft.language = saved.language;
-  if (typeof saved.input === "string") draft.input = saved.input;
   for (const language of LANGUAGE_KEYS) {
     if (typeof saved.codes?.[language] === "string") draft.codes[language] = saved.codes[language];
   }
@@ -48,11 +46,8 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
   const draftRef = useRef(draft);
   const [ready, setReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState("載入草稿中…");
-  const [running, setRunning] = useState(false);
   const [formatting, setFormatting] = useState(false);
   const [fontSize, setFontSize] = useState(15);
-  const [result, setResult] = useState<PlaygroundRunResult | null>(null);
-  const [resultLanguage, setResultLanguage] = useState<LanguageKey>("cpp");
   const [error, setError] = useState("");
   const [terminalSource, setTerminalSource] = useState<{ language: LanguageKey; code: string; id: number } | null>(null);
   const [terminalBusy, setTerminalBusy] = useState(false);
@@ -60,13 +55,12 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
   const viewRef = useRef<EditorView | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const operationRef = useRef<"run" | "format" | "terminal" | null>(null);
+  const operationRef = useRef<"format" | "terminal" | null>(null);
   const terminalIdRef = useRef(0);
-  const requestRef = useRef<AbortController | null>(null);
-  const { language, codes, input } = draft;
+  const { language, codes } = draft;
   const code = codes[language];
   const limits = playgroundLimits(language);
-  const busy = running || formatting || terminalBusy;
+  const busy = formatting || terminalBusy;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -83,8 +77,6 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
     }, 0);
     return () => clearTimeout(timer);
   }, [storageKey, userId]);
-
-  useEffect(() => () => requestRef.current?.abort(), []);
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -144,38 +136,6 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
     }
   }, []);
 
-  async function runCode() {
-    if (!userId || !ready || operationRef.current) return;
-    const current = draftRef.current;
-    if (!current.codes[current.language].trim()) return;
-    operationRef.current = "run";
-    terminalIdRef.current++;
-    setRunning(true);
-    setError("");
-    setResult(null);
-    setTerminalSource(null);
-    setResultLanguage(current.language);
-    const controller = new AbortController();
-    requestRef.current = controller;
-    try {
-      const response = await fetch("/api/playground/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language: current.language, code: current.codes[current.language], input: current.input }),
-        signal: controller.signal,
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "執行失敗");
-      setResult(data);
-    } catch (error) {
-      if (!controller.signal.aborted) setError(error instanceof Error ? error.message : "執行失敗，請稍後再試");
-    } finally {
-      requestRef.current = null;
-      operationRef.current = null;
-      setRunning(false);
-    }
-  }
-
   const onTerminalBusyChange = useCallback((value: boolean) => {
     if (terminalSource?.id !== terminalIdRef.current) return;
     if (value) operationRef.current = "terminal";
@@ -193,7 +153,6 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
     if (!userId || !ready || operationRef.current || !code.trim()) return;
     operationRef.current = "terminal";
     setTerminalBusy(true);
-    setResult(null);
     setError("");
     setTerminalSource({ language, code, id: ++terminalIdRef.current });
   }
@@ -234,13 +193,11 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
     } catch { setError("無法切換全螢幕模式"); }
   }
 
-  const resultFailed = result && (result.compileError || result.killed || result.signal || result.exitCode !== 0);
-
   return (
     <div ref={workspaceRef} className="playground-workspace card overflow-hidden" onKeyDown={(event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
         event.preventDefault();
-        void runCode();
+        startTerminal();
       }
     }}>
       {!userId && <div className="border-b border-bd bg-inset px-4 py-3 text-sm text-dim">
@@ -258,12 +215,10 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
             title="Shift + Alt + F" aria-keyshortcuts="Shift+Alt+F">{formatting ? "美化中…" : "程式美化"}</button>
         </div>
         <div className="flex flex-wrap gap-2">
-          {LANGUAGES[language].interactive && <button type="button" className="btn-secondary" disabled={!userId || !ready || busy || !code.trim()}
-            onClick={startTerminal}>互動終端機</button>}
           <button type="button" className="btn-primary submit-panel-action" disabled={!userId || !ready || busy || !code.trim()}
-            onClick={() => void runCode()} title="Ctrl / ⌘ + Enter" aria-keyshortcuts="Control+Enter Meta+Enter">
-            {running && <span className="submit-panel-action-spinner" aria-hidden="true" />}
-            {running ? "執行中…" : "▶ 執行程式"}
+            onClick={startTerminal} title="Ctrl / ⌘ + Enter" aria-keyshortcuts="Control+Enter Meta+Enter">
+            {terminalBusy && <span className="submit-panel-action-spinner" aria-hidden="true" />}
+            {terminalBusy ? "執行中…" : "▶ 執行程式"}
           </button>
         </div>
       </div>
@@ -296,37 +251,10 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
         <span role="status">{saveStatus}</span>
         <span>執行上限 {limits.timeMs / 1000} 秒 · {limits.memoryMb} MB</span>
       </div>
-      <div className="grid gap-4 p-4 md:grid-cols-2">
-        <div className="min-w-0">
-          <label htmlFor="playground-input" className="mb-2 block text-sm font-semibold">標準輸入 <span className="mono text-xs text-mute">stdin</span></label>
-          <textarea id="playground-input" className="input mono min-h-40 resize-y text-sm" value={input} disabled={!ready}
-            onChange={(event) => updateDraft({ ...draftRef.current, input: event.target.value })}
-            placeholder="將程式需要讀取的資料放在這裡，可留空。" spellCheck={false} />
-          <p className="mt-2 text-xs leading-relaxed text-mute">執行程式會一次讀取這裡的輸入；需要逐行輸入時，請使用互動終端機。</p>
-        </div>
-        <section className="min-w-0" aria-label="執行結果" aria-busy={running}>
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold">執行結果</h2>
-            {result && <button type="button" className="text-xs text-dim hover:text-tx" onClick={() => setResult(null)}>清除結果</button>}
-          </div>
-          <p className={`mb-2 text-xs ${resultFailed ? "text-[#ff6b6b]" : "text-dim"}`} role="status">
-            {running ? "編譯與執行中…" : result?.compileError ? "編譯失敗" : result?.killed ? "超過時間或記憶體限制" : result
-              ? `${LANGUAGES[resultLanguage].label} · ${result.signal ? `訊號 ${result.signal}` : `Exit code: ${result.exitCode ?? "—"}`} · ${result.timeMs == null ? "—" : `${result.timeMs} ms`}${result.memoryBytes == null ? "" : ` · ${(result.memoryBytes / 1024 / 1024).toFixed(1)} MB`}`
-              : "按下「執行程式」查看輸出"}
-          </p>
-          <pre className={`playground-output rounded border border-bd bg-inset p-3 font-mono text-xs whitespace-pre-wrap ${result?.compileError ? "text-[#ff6b6b]" : ""}`}>
-            {result ? result.compileError ?? (result.stdout || "（沒有標準輸出）")
-              : running ? "等待執行結果…" : "輸出會顯示在這裡"}
-          </pre>
-          {result?.stderr && <><h3 className="mt-3 mb-1 text-xs font-semibold text-dim">錯誤輸出 stderr</h3>
-            <pre className="playground-output rounded border border-bd bg-inset p-3 font-mono text-xs whitespace-pre-wrap text-[#ff6b6b]">{result.stderr}</pre></>}
-        </section>
-      </div>
       {error && <p className="px-4 pb-4 text-sm text-[#ff6b6b]" role="alert">{error}</p>}
-      {terminalSource && <div className="border-t border-bd p-3">
-        <InteractiveTerminal key={terminalSource.id} startEndpoint="/api/playground/terminal" language={terminalSource.language}
-          code={terminalSource.code} onBusyChange={onTerminalBusyChange} onClose={closeTerminal} />
-      </div>}
+      <InteractiveTerminal key={terminalSource?.id ?? "idle"} active={terminalSource !== null}
+        startEndpoint="/api/playground/terminal" language={terminalSource?.language ?? language}
+        code={terminalSource?.code ?? ""} onBusyChange={onTerminalBusyChange} onClose={closeTerminal} />
     </div>
   );
 }

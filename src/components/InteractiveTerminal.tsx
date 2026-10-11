@@ -2,16 +2,17 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { LanguageKey } from "@/lib/languages";
+import { LANGUAGES, type LanguageKey } from "@/lib/languages";
+import type { PlaygroundRunResult } from "@/lib/playground";
 
 type TerminalEvent =
   | { type: "state"; state: "compiling" | "running" }
   | { type: "output"; text: string }
   | { type: "error"; message: string }
   | { type: "exit"; code: number | null; reason: string };
-type Status = "starting" | "compiling" | "running" | "stopping" | "done";
+type Status = "idle" | "starting" | "compiling" | "running" | "stopping" | "done";
 const STATUS_LABELS: Record<Status, string> = {
-  starting: "連線中…", compiling: "編譯中…", running: "執行中", stopping: "停止中…", done: "已結束",
+  idle: "尚未執行", starting: "連線中…", compiling: "編譯中…", running: "執行中", stopping: "停止中…", done: "已結束",
 };
 
 async function stopSession(id: string) {
@@ -19,11 +20,12 @@ async function stopSession(id: string) {
 }
 
 function InteractiveTerminal({
-  problemId, contestId, language, code, startEndpoint = "/api/terminal", mobile = false, onBusyChange, onClose,
+  problemId, contestId, language, code, startEndpoint = "/api/terminal", active = true, mobile = false, onBusyChange, onClose,
 }: {
   problemId?: number;
   contestId?: number;
   startEndpoint?: "/api/terminal" | "/api/playground/terminal";
+  active?: boolean;
   language: LanguageKey;
   code: string;
   mobile?: boolean;
@@ -32,7 +34,7 @@ function InteractiveTerminal({
 }) {
   // A RUN uses a snapshot; editing the source during execution doesn't restart it.
   const [source] = useState({ problemId, contestId, language, code });
-  const [status, setStatus] = useState<Status>("starting");
+  const [status, setStatus] = useState<Status>(active ? "starting" : "idle");
   const [output, setOutput] = useState("");
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -47,7 +49,7 @@ function InteractiveTerminal({
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const followOutputRef = useRef(true);
   const scrollFrameRef = useRef<number | null>(null);
-  const busy = status !== "done";
+  const busy = status !== "idle" && status !== "done";
   const { history, currentLine } = useMemo(() => {
     const lastBreak = output.lastIndexOf("\n") + 1;
     return { history: output.slice(0, lastBreak), currentLine: output.slice(lastBreak) };
@@ -58,6 +60,7 @@ function InteractiveTerminal({
   }
 
   useEffect(() => {
+    if (!active) return;
     let disposed = false;
     let id: string | null = null;
     let waitTimer: ReturnType<typeof setTimeout> | undefined;
@@ -66,6 +69,25 @@ function InteractiveTerminal({
     onBusyChange(true);
     async function start() {
       try {
+        // itouLang reads all stdin at once; show its one-shot result in Terminal.
+        if (startEndpoint === "/api/playground/terminal" && !LANGUAGES[source.language].interactive) {
+          const response = await fetch("/api/playground/run", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ language: source.language, code: source.code, input: "" }),
+            signal: polling.signal,
+          });
+          const data: PlaygroundRunResult & { error?: string } = await response.json();
+          if (!response.ok) throw new Error(data.error ?? "無法啟動程式");
+          if (disposed) return;
+          if (data.compileError) append(`${data.compileError}\n編譯失敗\n`);
+          else {
+            const reason = data.killed ? "超過時間或記憶體限制"
+              : data.signal ? `程式已結束（${data.signal}）`
+              : `程式已結束（exit code: ${data.exitCode ?? "—"}）`;
+            append(`${data.stdout ?? ""}${data.stderr ?? ""}\n${reason}\n`);
+          }
+          return;
+        }
         const response = await fetch(startEndpoint, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify(source),
@@ -143,7 +165,7 @@ function InteractiveTerminal({
       window.removeEventListener("pagehide", stopOnLeave);
       onBusyChange(false);
     };
-  }, [source, startEndpoint, onBusyChange]);
+  }, [source, startEndpoint, active, onBusyChange]);
 
   const followOutput = useCallback(() => {
     if (document.hidden || !followOutputRef.current) return;
@@ -265,7 +287,7 @@ function InteractiveTerminal({
         <div className="interactive-terminal-controls">
           <button type="button" title="結束標準輸入（Ctrl+D）" disabled={status !== "running" || eof || sending} onClick={() => void sendInput(true)}>EOF</button>
           <button type="button" onClick={() => void stop()} disabled={!busy || !sessionReady}>停止</button>
-          <button type="button" onClick={closeTerminal} aria-label="關閉終端機">✕</button>
+          <button type="button" onClick={closeTerminal} disabled={!active} aria-label="關閉終端機">✕</button>
         </div>
       </div>
       <div
@@ -283,7 +305,9 @@ function InteractiveTerminal({
           if (followOutputRef.current && status === "running" && !eof && !window.getSelection()?.toString()) inputRef.current?.focus();
         }}
       >
-        <pre className="interactive-terminal-history">{output ? history : status === "starting" || status === "compiling" ? "正在啟動程式…\n" : ""}</pre>
+        <pre className="interactive-terminal-history">{output ? history : status === "idle"
+          ? "按下「執行程式」啟動，輸入與輸出會顯示在這裡。\n"
+          : status === "starting" || status === "compiling" ? "正在啟動程式…\n" : ""}</pre>
         <div className="interactive-terminal-line">
           {currentLine && <span className="interactive-terminal-current">{currentLine}</span>}
           {status === "running" && !eof && (
