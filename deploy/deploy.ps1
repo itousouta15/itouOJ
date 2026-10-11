@@ -3,11 +3,13 @@
 #
 #   .\deploy\deploy.ps1          互動式（有未 commit 改動時會詢問）
 #   .\deploy\deploy.ps1 -Yes     不詢問，適合非互動環境
+#   .\deploy\deploy.ps1 -EmsdkPath C:\emsdk  指定本機 Emscripten SDK
 
-param([switch]$Yes, [string]$Revision = "HEAD", [string]$ItouLangRevision = "")
+param([switch]$Yes, [string]$Revision = "HEAD", [string]$ItouLangRevision = "", [string]$EmsdkPath = "")
 
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
+. (Join-Path $PSScriptRoot "emscripten.ps1")
 
 # 伺服器位址：環境變數優先，再來是 .env 的 DEPLOY_SERVER，都沒有就報錯。
 # 舊伺服器 23.146.248.51 的 online-judge 已停用，別再改回去。
@@ -75,6 +77,7 @@ if ($dirty -and $Revision -eq "HEAD") {
 
 $head = (git rev-parse --short $Revision).Trim()
 if ($LASTEXITCODE -ne 0) { throw "找不到部署版本 $Revision" }
+Enable-EmscriptenEnvironment -SdkPath $EmsdkPath
 Write-Host "== Packaging $Revision ($head) =="
 Invoke-Native "git archive" { git archive --format=tar.gz -o "$env:TEMP\oj.tar.gz" $Revision }
 

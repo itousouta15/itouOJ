@@ -75,7 +75,24 @@ npx tsc --noEmit
 
 ## 部署
 
-先提交 OJ 修改與 `vendor/itoulang` gitlink，再於啟用 Emscripten 的 shell 執行部署。
+先提交 OJ 修改與 `vendor/itoulang` gitlink，再執行部署。
+Windows 部署腳本會自動載入已安裝的 Emscripten SDK，依序檢查 `$env:EMSDK`、
+`$HOME\emsdk`、`$env:LOCALAPPDATA\emsdk`、系統磁碟的 `\emsdk`，以及
+`$env:TEMP\opencode\itou-emsdk`。也可以直接指定安裝目錄：
+
+```powershell
+.\deploy\deploy.ps1 -EmsdkPath "C:\emsdk"
+```
+
+若尚未安裝，先在 PowerShell 執行一次：
+
+```powershell
+git clone https://github.com/emscripten-core/emsdk.git "$HOME\emsdk"
+& "$HOME\emsdk\emsdk.ps1" install 4.0.23
+& "$HOME\emsdk\emsdk.ps1" activate 4.0.23
+```
+
+之後每次執行 `.\deploy\deploy.ps1` 都會重新載入 SDK 環境，不必手動執行 `emsdk_env`。
 部署腳本預設使用 `HEAD`；也可用 `-Revision <Git tree 或 commit>` 指定已驗證的
 固定快照，網站與語言 gitlink 會取自同一份快照。
 `deploy/deploy.ps1` 會呼叫 `scripts/package-itoulang.mjs`：
