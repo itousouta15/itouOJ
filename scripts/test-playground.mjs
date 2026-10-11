@@ -14,13 +14,13 @@ const success = {
 };
 
 mock.module(new URL("../src/lib/auth.ts", import.meta.url).href, {
-  exports: { getSession: async () => session },
+  namedExports: { getSession: async () => session },
 });
 mock.module(new URL("../src/lib/execute.ts", import.meta.url).href, {
-  exports: { execute: async (params) => { calls.push(params); return execute(params); } },
+  namedExports: { execute: async (params) => { calls.push(params); return execute(params); } },
 });
 mock.module(new URL("../src/lib/terminal.ts", import.meta.url).href, {
-  exports: { terminalRequest: async (...args) => { calls.push(args); return Response.json({ id: "test-session" }); } },
+  namedExports: { terminalRequest: async (...args) => { calls.push(args); return Response.json({ id: "test-session" }); } },
 });
 
 const { POST: run } = await import("../src/app/api/playground/run/route.ts");
@@ -70,10 +70,12 @@ test("free execution accepts empty stdin without a problem and enforces fixed ru
   });
 });
 
-test("itouLang runs through the wrapped Node sandbox and preserves custom input", async () => {
-  assert.equal((await run(request({ language: "itoulang", code: "喵(讀行());", input: "hello\n" }))).status, 200);
+test("喵++ runs through the wrapped Node sandbox and preserves custom input", async () => {
+  assert.equal((await run(request({ language: "itoulang", code: "字串 文字; 喵getline(喵in, 文字); 喵out << 文字;", input: "hello\n" }))).status, 200);
   assert.equal(calls[0].language, "javascript");
-  assert.match(calls[0].code, /runtime\.run/);
+  assert.match(calls[0].code, /runtime\.request/);
+  assert.match(calls[0].code, /wasm-transport\.js/);
+  assert.match(calls[0].code, /result\.stdout/);
   assert.match(calls[0].code, /喵/);
   assert.equal(calls[0].stdin, "hello\n");
 });

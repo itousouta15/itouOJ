@@ -1,4 +1,5 @@
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
+import { ITOULANG_PLAYGROUND_TEMPLATE } from "@/lib/itoulangTemplates";
 
 export const PLAYGROUND_TIME_LIMIT_MS = 5000;
 export const PLAYGROUND_MEMORY_LIMIT_MB = 256;
@@ -35,8 +36,7 @@ int main(void) {
   javascript: `// 如需讀取輸入：require("fs").readFileSync(0, "utf8")
 console.log("Hello, world!");
 `,
-  itoulang: `喵("Hello, world!");
-`,
+  itoulang: ITOULANG_PLAYGROUND_TEMPLATE,
 };
 
 export interface PlaygroundRunResult {

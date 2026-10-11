@@ -623,9 +623,10 @@ opacity: 0;
   /* 高於底部導覽列（z-70），選單展開時蓋住整支螢幕 */
   z-index: 75;
   display: flex;
-  align-items: center;
+  align-items: safe center;
   justify-content: center;
-  padding: 96px 24px 40px;
+  overflow-y: auto;
+  padding: calc(96px + env(safe-area-inset-top)) 24px calc(40px + env(safe-area-inset-bottom));
   background:
     radial-gradient(1100px 560px at 72% -12%, rgba(141, 181, 200, 0.11), transparent 60%),
     var(--bg);
@@ -762,17 +763,23 @@ opacity: 0;
 }
 
 .nav-overlay-links {
+  position: relative;
+  flex-shrink: 0;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: clamp(14px, 4vh, 28px);
+  gap: clamp(4px, 1.2dvh, 10px);
 }
 .nav-overlay-link {
   display: inline-flex;
   align-items: baseline;
-  gap: 14px;
+  max-width: 100%;
+  gap: 10px;
   font-family: "Shippori Mincho", "Noto Serif TC", serif;
-  font-size: clamp(28px, 9vw, 44px);
+  font-size: clamp(16px, min(6vw, 3.5dvh), 26px);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
   color: var(--tx);
   opacity: 0;
   transform: translateY(18px);
@@ -784,8 +791,9 @@ opacity: 0;
   transition-delay: calc(0.12s + var(--i) * 0.06s);
 }
 .nav-overlay-index {
+  flex: none;
   font-family: "JetBrains Mono", monospace;
-  font-size: 14px;
+  font-size: 12px;
   letter-spacing: 0.1em;
   color: var(--purple);
 }
@@ -799,6 +807,17 @@ opacity: 0;
 .nav-overlay-link:focus-visible {
   outline: 2px solid var(--purple);
   outline-offset: 4px;
+}
+@media (max-height: 480px) {
+  .nav-overlay {
+    padding-block: calc(80px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-bottom));
+  }
+  .nav-overlay-links {
+    gap: 4px;
+  }
+  .nav-overlay-link {
+    font-size: 16px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-overlay-face {
@@ -2742,11 +2761,6 @@ html[data-app] [data-app-section="promo"] {
 .header-practice-menu .practice-record-link { margin-top: 6px; border-top: 1px solid var(--bd); border-top-left-radius: 0; border-top-right-radius: 0; }
 .account-navigation { z-index: 30; min-width: 220px; max-height: calc(100dvh - 90px - env(safe-area-inset-top)); overflow-y: auto; }
 .nav-menu-heading { margin: 0; padding: 10px 12px 5px; color: var(--mute); font-size: 11px; font-weight: 600; letter-spacing: .12em; }
-.nav-overlay--grouped { z-index: 90; align-items: flex-start; overflow-y: auto; padding-top: calc(76px + env(safe-area-inset-top)); padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
-.nav-overlay-close { position: fixed; top: calc(16px + env(safe-area-inset-top)); right: 18px; z-index: 1; font-size: 24px; }
-.nav-overlay-links--grouped { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; width: min(100%, 680px); }
-.nav-overlay-links--grouped .nav-menu-heading { padding: 0 0 12px; font-size: 12px; }
-.nav-overlay-links--grouped .nav-overlay-link { font-family: "Noto Sans TC", system-ui, sans-serif; font-size: clamp(16px, 3.8vw, 22px); gap: 8px; transition-delay: 0s; }
 html[data-app] .app-more-sheet { max-height: calc(88dvh - env(safe-area-inset-top)); overflow-y: auto; }
 html[data-app] .app-more-links { gap: 12px; }
 html[data-app] .app-more-group-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
@@ -2799,7 +2813,6 @@ html[data-app] .app-more-link.active { outline: 1px solid var(--purple); color: 
   .site-header .logo { font-size: 30px; }
   .site-header .account-name { max-width: 40px; }
   .site-header > nav > div:last-child { gap: 4px; }
-  .nav-overlay-links--grouped { grid-template-columns: 1fr; }
   .ctf-flag-row { flex-direction: column; align-items: stretch; }
 }
 @media (prefers-reduced-motion: reduce) {

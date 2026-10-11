@@ -12,7 +12,7 @@
 
 | 功能 | 說明 |
 | --- | --- |
-| 程式題 | Markdown／數學式題敘、範例測資、標籤、子題配分、提交紀錄與排行榜；支援 C++、C、Python、JavaScript、itouLang。 |
+| 程式題 | Markdown／數學式題敘、範例測資、標籤、子題配分、提交紀錄與排行榜；支援 C++、C、Python、JavaScript、喵++。 |
 | 寫程式 | CodeMirror 編輯器、每題每語言的帳號草稿（網站與 Android App 同步，離線時保留本機草稿）與範例測試；手機可先備妥 stdin 再測試。桌機可左右拖曳調整題目與程式欄寬。 |
 | Terminal | 桌機版可直接在終端機中逐行輸入、即時看輸出；支援 C++、C、Python、JavaScript|
 | 識讀練習 | 選擇題即時對答案、詳解、題組進度與複習紀錄；不列入一般程式提交紀錄。 |
@@ -118,15 +118,19 @@ npm run test:ctf-web-labs
 | C | GCC 10.2 | sandbox-runner | ✓ |
 | Python | 3.12 | sandbox-runner | ✓ |
 | JavaScript | Node 20 | sandbox-runner | ✓ |
-| itouLang | 0.2（喵） | sandbox-runner（Node runtime） | — |
+| 喵++ | 0.3 | sandbox-runner（Node 20 + C++/Wasm） | — |
 
-itouLang 是內建「喵」家族與中文關鍵字的小型語言。判題時由 [`src/lib/itoulang.ts`](src/lib/itoulang.ts) 把原始碼包成一段 Node 程式，動態載入判題主機上的 itouLang runtime（`run()`）並執行；沿用既有的 `javascript` 沙箱 runtime，不需改動 `sandbox-runner`。itouLang 專案以 git submodule 放在 [`vendor/itoulang`](https://github.com/itousouta15/itouLang)，部署時由 `deploy/remote-release.sh` 安裝到 Node runtime 套件目錄 `/opt/piston-data/packages/node/20.11.1/itoulang/`（對應 `NODE_HOME`，沙箱內即 `file:///opt/runtime/itoulang/src/index.js`，可用 `ITOULANG_RUNTIME_URL` 覆寫）。首次 clone 後需執行 `git submodule update --init --recursive`。輸入為一次讀完的 stdin，因此不提供互動式 Terminal。
+喵++（語言代號 `itoulang`，原名 itouLang）0.3 使用中文、型別前置的 C++ 風格語法，以及 `喵in >>`／`喵out <<` 等串流。判題時由 [`src/lib/itoulang.ts`](src/lib/itoulang.ts) 把原始碼包成 Node 程式，動態載入 **C++ 核心的 WebAssembly 版**，直接呼叫 `request()`。它沿用 `javascript` 沙箱 runtime，保留精確的標準輸出／標準錯誤，不另開原生子程序。提交編輯器與遊樂場已使用中文範例、專屬高亮和喵串流補全；遊樂場可填整份標準輸入。
+
+喵++ 專案以 git submodule 放在 [`vendor/itoulang`](https://github.com/itousouta15/itouLang)。首次 clone 後執行 `git submodule update --init --recursive`；啟用 Emscripten 4.0.23、CMake 與 Ninja 後，可用 `npm run build:itoulang` 建置、`npm run test:itoulang` 驗證。部署腳本會依 **OJ 已提交的 gitlink（或 `-ItouLangRevision` 指定的語言快照）** 建置及打包來源和 `itou.js`／`itou.wasm`，安裝到 `/opt/piston-data/packages/node/20.11.1/itoulang/`，並在切換服務前用判題主機的 Node 20 驗證核心。
+
+沙箱內的入口是 `file:///opt/runtime/itoulang/src/wasm-transport.js`，可用 `ITOULANG_RUNTIME_URL` 覆寫；既有設定若指向 `src/index.js`，需改到 Wasm transport。輸入仍是一次讀完的 stdin。完整語法、測試與部署步驟見 [喵++ 整合說明](docs/guides/itoulang.md)。
 
 Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一行、**Shift＋Enter** 換行、**Ctrl＋D／EOF** 結束標準輸入，**Ctrl＋C／停止** 可終止執行。讀取到檔尾的程式要送出 EOF 才會結束。Terminal 最多執行兩分鐘，CPU 時間另依題目限制。詳見 [沙箱與互動服務說明](sandbox-runner/README.md)。
 
 ## 在本機啟動
 
-需要 **Node.js 20.9 以上** 與 npm。網站和資料庫可在 Windows、macOS 或 Linux 開發；要真正執行使用者程式，還需要可連線的沙箱服務。
+網站建置需要 **Node.js 22.12 以上** 與 npm；判題沙箱仍使用 Node 20.11.1。網站和資料庫可在 Windows、macOS 或 Linux 開發；要真正執行使用者程式，還需要可連線的沙箱服務。
 
 1. 安裝套件：
 

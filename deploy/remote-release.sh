@@ -7,6 +7,7 @@ APP=/opt/online-judge
 SANDBOX=/opt/sandbox-runner
 # Must match NODE_HOME in sandbox-runner/src/server.c (bind-mounted at /opt/runtime).
 ITOULANG_DIR=/opt/piston-data/packages/node/20.11.1/itoulang
+NODE_RUNTIME=/opt/piston-data/packages/node/20.11.1/bin/node
 BACKUP=/opt/oj-deploy-backups/$(date -u +%Y%m%d-%H%M%S)
 SITE_STOPPED=0
 WORKER_STOPPED=0
@@ -74,6 +75,15 @@ mkdir -p /opt/oj-deploy-backups
 mkdir "$BACKUP"
 export DATABASE_URL="file:$APP/oj.db"
 
+echo '== Verify staged itouLang Wasm with the judge Node runtime =='
+[[ -f "$SOURCE/vendor/itoulang/src/wasm-transport.js" &&
+   -f "$SOURCE/vendor/itoulang/web/native/itou.js" &&
+   -f "$SOURCE/vendor/itoulang/web/native/itou.wasm" ]] || {
+  echo 'Missing itouLang 0.3 Wasm release artifacts' >&2; exit 1;
+}
+"$NODE_RUNTIME" "$SOURCE/scripts/verify-itoulang-runtime.mjs" \
+  "$SOURCE/vendor/itoulang/src/wasm-transport.js"
+
 echo '== Build and test sandbox on port 18090 =='
 make -C "$SOURCE/sandbox-runner" all
 cc -O2 -DPORT=18090 -o "$SOURCE/sandbox-runner/sandbox-server-test" \
@@ -92,6 +102,8 @@ echo '== Build staged Next.js app =='
 npm --prefix "$SOURCE" ci --include=dev --silent
 npm --prefix "$SOURCE" run generate --silent
 npm --prefix "$SOURCE" run build
+echo '== Verify playground execution and saved-template migration =='
+npm --prefix "$SOURCE" run test:playground
 echo '== Verify CTF against disposable databases and the staged production build =='
 ( cd "$SOURCE" && CTF_TEST_PRODUCTION=1 npm run test:ctf && npm run test:ctf-beginner && npm run test:ctf-web-labs )
 chown -R oj:oj "$SOURCE/.next" "$SOURCE/node_modules" "$SOURCE/src"
@@ -146,12 +158,8 @@ install -m 755 "$SOURCE/sandbox-runner/sandbox-server" "$SANDBOX/sandbox-server.
 mv -f "$SANDBOX/sandbox-server.next" "$SANDBOX/sandbox-server"
 rsync -a "$SOURCE/sandbox-runner/src/" "$SANDBOX/src/"
 echo '== Install itouLang runtime =='
-if [[ -f "$SOURCE/vendor/itoulang/package.json" ]]; then
-  mkdir -p "$ITOULANG_DIR"
-  rsync -a --delete "$SOURCE/vendor/itoulang/" "$ITOULANG_DIR/"
-else
-  echo 'vendor/itoulang missing from release; keeping existing runtime' >&2
-fi
+mkdir -p "$ITOULANG_DIR"
+rsync -a --delete "$SOURCE/vendor/itoulang/" "$ITOULANG_DIR/"
 systemctl restart sandbox-server
 python3 "$SOURCE/sandbox-runner/test/smoke_live_cache.py"
 if (( INTERACTIVE_CHANGED )); then systemctl start sandbox-interactive; fi

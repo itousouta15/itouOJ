@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { EditorView } from "@codemirror/view";
 import { LANGUAGES, LANGUAGE_KEYS, type LanguageKey } from "@/lib/languages";
 import { playgroundLimits, PLAYGROUND_TEMPLATES } from "@/lib/playground";
+import { createPlaygroundDraft, restorePlaygroundDraft, type PlaygroundDraft } from "@/lib/playgroundDraft";
 
 const CodeEditor = dynamic(() => import("@/components/CodeEditor"), {
   ssr: false,
@@ -16,24 +17,13 @@ const InteractiveTerminal = dynamic(() => import("@/components/InteractiveTermin
   loading: () => <p className="p-4 text-sm text-dim" role="status">載入終端機中…</p>,
 });
 
-interface Draft {
-  language: LanguageKey;
-  codes: Record<LanguageKey, string>;
-}
-
-function initialDraft(): Draft {
-  return { language: "cpp", codes: { ...PLAYGROUND_TEMPLATES } };
-}
-
-function readDraft(key: string): Draft {
-  const draft = initialDraft();
+function readDraft(key: string): PlaygroundDraft {
   const raw = localStorage.getItem(key);
-  if (!raw) return draft;
-  const saved = JSON.parse(raw);
-  if (!saved || typeof saved !== "object") return draft;
-  if (LANGUAGE_KEYS.includes(saved.language)) draft.language = saved.language;
-  for (const language of LANGUAGE_KEYS) {
-    if (typeof saved.codes?.[language] === "string") draft.codes[language] = saved.codes[language];
+  if (!raw) return createPlaygroundDraft();
+  const { draft, templateUpgraded } = restorePlaygroundDraft(JSON.parse(raw));
+  if (templateUpgraded) {
+    try { localStorage.setItem(key, JSON.stringify(draft)); }
+    catch { /* The upgraded template still works for this session if storage is full. */ }
   }
   return draft;
 }
@@ -42,14 +32,14 @@ const noop = () => {};
 
 export default function PlaygroundWorkspace({ userId }: { userId: string | null }) {
   const storageKey = `oj-playground-v1-${userId ?? "guest"}`;
-  const [draft, setDraft] = useState<Draft>(initialDraft);
+  const [draft, setDraft] = useState<PlaygroundDraft>(createPlaygroundDraft);
   const draftRef = useRef(draft);
   const [ready, setReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState("載入草稿中…");
   const [formatting, setFormatting] = useState(false);
   const [fontSize, setFontSize] = useState(15);
   const [error, setError] = useState("");
-  const [terminalSource, setTerminalSource] = useState<{ language: LanguageKey; code: string; id: number } | null>(null);
+  const [terminalSource, setTerminalSource] = useState<{ language: LanguageKey; code: string; input: string; id: number } | null>(null);
   const [terminalBusy, setTerminalBusy] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const viewRef = useRef<EditorView | null>(null);
@@ -87,7 +77,7 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
     return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
-  const updateDraft = useCallback((next: Draft) => {
+  const updateDraft = useCallback((next: PlaygroundDraft) => {
     draftRef.current = next;
     setDraft(next);
     try {
@@ -154,7 +144,7 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
     operationRef.current = "terminal";
     setTerminalBusy(true);
     setError("");
-    setTerminalSource({ language, code, id: ++terminalIdRef.current });
+    setTerminalSource({ language, code, input: draft.input, id: ++terminalIdRef.current });
   }
 
   function downloadCode() {
@@ -247,6 +237,12 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
         {ready && <CodeEditor code={code} language={language} fontSize={fontSize} onChange={updateCode}
           onCreateEditor={handleCreateEditor} onFocus={noop} onWheel={handleWheel} onFormat={formatCode} />}
       </div>
+      {!LANGUAGES[language].interactive && <div className="border-t border-bd bg-inset p-3">
+        <label className="mb-2 block text-sm text-dim" htmlFor="playground-stdin">標準輸入（供 喵in／喵getline 讀取）</label>
+        <textarea id="playground-stdin" className="input mono min-h-24 w-full" rows={3}
+          value={draft.input} disabled={!ready || busy} placeholder="輸入整份測資，例如：20 22"
+          onChange={(event) => updateDraft({ ...draftRef.current, input: event.target.value })} />
+      </div>}
       <div className="flex flex-wrap justify-between gap-2 border-y border-bd px-3 py-2 text-xs text-mute">
         <span role="status">{saveStatus}</span>
         <span>執行上限 {limits.timeMs / 1000} 秒 · {limits.memoryMb} MB</span>
@@ -254,7 +250,8 @@ export default function PlaygroundWorkspace({ userId }: { userId: string | null 
       {error && <p className="px-4 pb-4 text-sm text-[#ff6b6b]" role="alert">{error}</p>}
       <InteractiveTerminal key={terminalSource?.id ?? "idle"} active={terminalSource !== null}
         startEndpoint="/api/playground/terminal" language={terminalSource?.language ?? language}
-        code={terminalSource?.code ?? ""} onBusyChange={onTerminalBusyChange} onClose={closeTerminal} />
+        code={terminalSource?.code ?? ""} initialInput={terminalSource?.input ?? ""}
+        onBusyChange={onTerminalBusyChange} onClose={closeTerminal} />
     </div>
   );
 }

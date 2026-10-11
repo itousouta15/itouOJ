@@ -36,7 +36,7 @@ export default async function Navbar() {
               </Link>
             </>
           )}
-          <MobileMenuButton isAdmin={isAdmin} username={loggedIn ? username : null} />
+          <MobileMenuButton isAdmin={isAdmin} />
         </div>
       </nav>
     </header>

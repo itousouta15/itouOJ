@@ -43,7 +43,25 @@ export function accountNavGroups(username: string, isAdmin: boolean): NavGroup[]
   ];
 }
 
-// The desktop, mobile overlay and App catalog share one information hierarchy.
+export function navLinksFor(isAdmin: boolean): NavLinkItem[] {
+  return [
+    { href: "/problems", label: "實作" },
+    { href: "/playground", label: "自由寫程式" },
+    { href: "/recognition", label: "識讀" },
+    { href: "/ctf", label: "CTF" },
+    { href: "/courses", label: "課程" },
+    { href: "/contests", label: "比賽" },
+    { href: "/submissions", label: "紀錄" },
+    { href: "/ranking", label: "排行" },
+    { href: "/activity", label: "動態" },
+    ...(isAdmin ? [
+      { href: "/admin/problems", label: "管理" },
+      { href: "/admin/judge", label: "評測監控" },
+    ] : []),
+  ];
+}
+
+// The App catalog uses the same groups as the desktop navigation and account menu.
 export function mobileNavGroups(username: string | null, isAdmin: boolean): NavGroup[] {
   return [
     { label: "練習", links: PRACTICE_NAV_LINKS },

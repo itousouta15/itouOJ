@@ -49,6 +49,9 @@ jobs:
       - name: CTF Web Lab tests
         run: npm run test:ctf-web-labs
 
+      - name: Playground execution tests
+        run: npm run test:playground
+
       - name: Build
         run: npm run build
 
@@ -56,3 +59,24 @@ jobs:
         env:
           CTF_TEST_PRODUCTION: "1"
         run: npm run test:ctf
+
+  itoulang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '4.0.23'
+      - run: npm ci
+      - run: npm run build:itoulang
+      # Match sandbox-runner's interpreter after installing the app's dependencies.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.11.1'
+      - run: npm run test:itoulang
+      - run: npm run package:itoulang

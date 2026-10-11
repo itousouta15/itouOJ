@@ -4,7 +4,7 @@ import PlaygroundWorkspace from "@/components/PlaygroundWorkspace";
 
 export const metadata: Metadata = {
   title: "自由寫程式",
-  description: "自由編寫與執行 C、C++、Python、JavaScript 及 itouLang 程式，直接在終端機查看輸出與互動輸入。",
+  description: "自由編寫與執行 C、C++、Python、JavaScript 及喵++ 程式，直接在終端機查看輸出與互動輸入。",
 };
 
 export default async function PlaygroundPage() {

@@ -64,7 +64,7 @@ export async function formatEditorCode(code: string, language: LanguageKey): Pro
       });
     }
     case "itoulang":
-      // 尚無 itouLang 格式化器，原樣回傳。
+      // 尚無喵++ 格式化器，原樣回傳。
       return code;
   }
 }

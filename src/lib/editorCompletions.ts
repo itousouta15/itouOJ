@@ -7,10 +7,12 @@ import {
   type CompletionSource,
 } from "@codemirror/autocomplete";
 import type { LanguageKey } from "@/lib/languages";
+import { ITOULANG_KEYWORDS, ITOULANG_TYPES, ITOULANG_BUILTINS } from "@/lib/itoulangEditor";
 
 const NON_CODE_NODES = [
   "String", "StringLiteral", "Character", "FormatString", "TemplateString",
   "LineComment", "BlockComment", "Comment", "RegExp",
+  "string", "comment",
 ];
 
 function keywords(words: string): Completion[] {
@@ -79,9 +81,42 @@ export const EDITOR_COMPLETIONS: Record<LanguageKey, CompletionSource> = {
     }),
   ])),
   itoulang: ifNotIn(NON_CODE_NODES, completeFromList([
-    ...keywords("令 設 函式 如果 否則 當 回傳 返回 中斷 跳出 繼續 真 假 空 且 並且 或 或者 let fn if else while return break continue true false null and or"),
-    ...types("數字 數 字串 布林 任意 空 number string boolean any null"),
-    ...functions("喵 喵喵 喵長 喵字 喵數 喵型 喵根 喵驗 喵黏 喵重複 喵選 喵叫 讀行 讀 喵吃 讀數"),
+    ...keywords(ITOULANG_KEYWORDS),
+    ...types(ITOULANG_TYPES),
+    ...functions(ITOULANG_BUILTINS),
+    snippetCompletion("整數 主程式() {\n  ${}\n  回傳 0;\n}", {
+      label: "主程式", type: "function", detail: "中文入口函式",
+    }),
+    snippetCompletion("整數 ${數值} = ${0};", {
+      label: "整數", type: "type", detail: "型別前置宣告",
+    }),
+    snippetCompletion("迴圈 (整數 ${索引} = 0; ${索引} < ${次數}; ++${索引}) {\n  ${}\n}", {
+      label: "迴圈", type: "keyword", detail: "計數迴圈",
+    }),
+    snippetCompletion("整數 ${名稱}(整數 ${數值}) {\n  回傳 ${數值};\n}", {
+      label: "整數函式", type: "function", detail: "型別前置函式",
+    }),
+    snippetCompletion("函式<整數(整數)> ${操作} = ${函式值};", {
+      label: "函式型別", type: "type", detail: "結構式函式型別",
+    }),
+    snippetCompletion("[&](整數 ${數值}) -> 整數 { 回傳 ${數值}; }", {
+      label: "匿名函式", type: "function", detail: "捕獲外層變數的閉包",
+    }),
+    snippetCompletion("喵in >> ${數值};", {
+      label: "喵in", type: "function", detail: "讀取標準輸入",
+    }),
+    snippetCompletion("喵out << ${數值} << 喵endl;", {
+      label: "喵out", type: "function", detail: "輸出並換行",
+    }),
+    snippetCompletion("喵err << ${訊息} << 喵endl;", {
+      label: "喵err", type: "function", detail: "標準錯誤輸出",
+    }),
+    snippetCompletion("喵log << ${訊息} << 喵endl;", {
+      label: "喵log", type: "function", detail: "紀錄訊息",
+    }),
+    snippetCompletion("喵getline(喵in, ${文字});", {
+      label: "喵getline", type: "function", detail: "讀取整行",
+    }),
     snippetCompletion("令 ${name} = ${value};", {
       label: "令", type: "keyword", detail: "宣告變數",
     }),

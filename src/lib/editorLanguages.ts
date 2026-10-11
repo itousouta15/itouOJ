@@ -1,4 +1,4 @@
-import type { LanguageSupport } from "@codemirror/language";
+import { LanguageSupport } from "@codemirror/language";
 import type { Extension } from "@codemirror/state";
 import type { LanguageKey } from "@/lib/languages";
 import { DOCUMENT_WORD_COMPLETIONS, EDITOR_COMPLETIONS } from "@/lib/editorCompletions";
@@ -20,9 +20,10 @@ export function loadEditorLanguage(language: LanguageKey): Promise<Extension[]> 
         support = (await import("@codemirror/lang-python")).python();
         break;
       case "javascript":
-      case "itoulang":
-        // itouLang 沒有專屬模式，沿用 JS 的括號／字串／註解高亮。
         support = (await import("@codemirror/lang-javascript")).javascript();
+        break;
+      case "itoulang":
+        support = new LanguageSupport((await import("@/lib/itoulangEditor")).itouLangLanguage);
         break;
     }
     return [

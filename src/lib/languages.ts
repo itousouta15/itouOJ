@@ -36,10 +36,10 @@ export const LANGUAGES = {
     memoryMultiplier: 2,
     interactive: true,
   },
-  // itouLang 借用 Node 沙箱 runtime（見 src/lib/itoulang.ts）；判題時會把原始碼
-  // 包成 main.js。輸入改成一次讀完 stdin，無法逐行互動，因此不支援 Terminal。
+  // 喵++ 借用 Node 沙箱 runtime（見 src/lib/itoulang.ts）；判題時會把原始碼
+  // 包成 main.js 並載入 C++/Wasm 核心。一次讀完 stdin，不支援逐行互動。
   itoulang: {
-    label: "itouLang 0.2（喵）",
+    label: "喵++ 0.3",
     runtime: "javascript",
     version: "20.11.1",
     filename: "main.js",

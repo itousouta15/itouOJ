@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { createPortal } from "react-dom";
 import type { EditorView } from "@codemirror/view";
 import { LANGUAGES, type LanguageKey } from "@/lib/languages";
+import { ITOULANG_SUBMISSION_TEMPLATE } from "@/lib/itoulangTemplates";
 import {
   isNativeApp,
   onKeyboardWillHide,
@@ -90,10 +91,7 @@ int main(void) {
   python: ``,
   javascript: `const lines = require("fs").readFileSync(0, "utf8").split("\\n");
 `,
-  itoulang: `// 喵～ 讀入測資並輸出答案。
-令 第一行 = 讀行();
-喵(第一行);
-`,
+  itoulang: ITOULANG_SUBMISSION_TEMPLATE,
 };
 
 interface SubmitPanelProps {
@@ -142,7 +140,7 @@ export default function SubmitPanel({
     language, code, status: draftStatus, conflict: draftConflict,
     switchLanguage, updateCode, keepLocal, keepCloud,
   } = useSyncedDraft({ userId, problemId, contestId, defaultLanguage, languageOptions, templates: TEMPLATES });
-  // 有些語言（如 itouLang）的執行模型不支援逐行互動終端。
+  // 有些語言（如喵++）的執行模型不支援逐行互動終端。
   const canTerminal = LANGUAGES[language].interactive;
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");

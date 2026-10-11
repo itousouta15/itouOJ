@@ -1,10 +1,10 @@
 ﻿# One-click deploy（伺服器位址從 .env 的 DEPLOY_SERVER 讀，不寫死在腳本裡）
-# Note: deploys "committed" content (git archive HEAD) - commit first.
+# Defaults to committed HEAD; -Revision can select a verified immutable tree.
 #
 #   .\deploy\deploy.ps1          互動式（有未 commit 改動時會詢問）
 #   .\deploy\deploy.ps1 -Yes     不詢問，適合非互動環境
 
-param([switch]$Yes)
+param([switch]$Yes, [string]$Revision = "HEAD", [string]$ItouLangRevision = "")
 
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
@@ -58,7 +58,7 @@ function Invoke-Native {
 # 部署的是 git archive HEAD，工作區沒 commit 的改動不會上去。
 # 這裡先提醒，免得改了半天卻部署到舊版本還以為新功能沒生效。
 $dirty = git status --porcelain
-if ($dirty) {
+if ($dirty -and $Revision -eq "HEAD") {
     Write-Host "== 警告：有未 commit 的改動，這些不會被部署 ==" -ForegroundColor Yellow
     $dirty -split "`n" | Select-Object -First 10 | ForEach-Object { Write-Host "   $_" -ForegroundColor Yellow }
 
@@ -73,17 +73,21 @@ if ($dirty) {
     }
 }
 
-$head = (git rev-parse --short HEAD).Trim()
-Write-Host "== Packaging HEAD ($head) =="
-Invoke-Native "git archive" { git archive --format=tar.gz -o "$env:TEMP\oj.tar.gz" HEAD }
+$head = (git rev-parse --short $Revision).Trim()
+if ($LASTEXITCODE -ne 0) { throw "找不到部署版本 $Revision" }
+Write-Host "== Packaging $Revision ($head) =="
+Invoke-Native "git archive" { git archive --format=tar.gz -o "$env:TEMP\oj.tar.gz" $Revision }
 
 # git archive 不會遞迴子模組，itouLang runtime 另外打包再一起送上遠端；
 # remote-release.sh 會把它安裝到 sandbox 的 Node runtime 套件目錄。
 if (-not (Test-Path "vendor/itoulang/package.json")) {
     throw "vendor/itoulang 子模組尚未初始化：請先執行 git submodule update --init --recursive"
 }
-Invoke-Native "git archive itoulang" {
-    git -C "vendor/itoulang" archive --format=tar.gz --prefix=vendor/itoulang/ -o "$env:TEMP\itoulang.tar.gz" HEAD
+$runtimeHead = (git rev-parse "${Revision}:vendor/itoulang").Trim()
+if ($LASTEXITCODE -ne 0) { throw "部署版本缺少 itouLang gitlink" }
+if ($ItouLangRevision) { $runtimeHead = $ItouLangRevision }
+Invoke-Native "build and package itouLang Wasm" {
+    node scripts/package-itoulang.mjs --revision $runtimeHead --output "$env:TEMP\itoulang.tar.gz"
 }
 
 Write-Host "== Uploading =="

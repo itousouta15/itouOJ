@@ -20,7 +20,7 @@ async function stopSession(id: string) {
 }
 
 function InteractiveTerminal({
-  problemId, contestId, language, code, startEndpoint = "/api/terminal", active = true, mobile = false, onBusyChange, onClose,
+  problemId, contestId, language, code, initialInput = "", startEndpoint = "/api/terminal", active = true, mobile = false, onBusyChange, onClose,
 }: {
   problemId?: number;
   contestId?: number;
@@ -28,12 +28,14 @@ function InteractiveTerminal({
   active?: boolean;
   language: LanguageKey;
   code: string;
+  initialInput?: string;
   mobile?: boolean;
   onBusyChange: (busy: boolean) => void;
   onClose: () => void;
 }) {
   // A RUN uses a snapshot; editing the source during execution doesn't restart it.
   const [source] = useState({ problemId, contestId, language, code });
+  const [initialStdin] = useState(initialInput);
   const [status, setStatus] = useState<Status>(active ? "starting" : "idle");
   const [output, setOutput] = useState("");
   const [input, setInput] = useState("");
@@ -69,11 +71,11 @@ function InteractiveTerminal({
     onBusyChange(true);
     async function start() {
       try {
-        // itouLang reads all stdin at once; show its one-shot result in Terminal.
+        // 喵++ reads all stdin at once; show its one-shot result in Terminal.
         if (startEndpoint === "/api/playground/terminal" && !LANGUAGES[source.language].interactive) {
           const response = await fetch("/api/playground/run", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ language: source.language, code: source.code, input: "" }),
+            body: JSON.stringify({ language: source.language, code: source.code, input: initialStdin }),
             signal: polling.signal,
           });
           const data: PlaygroundRunResult & { error?: string } = await response.json();
@@ -165,7 +167,7 @@ function InteractiveTerminal({
       window.removeEventListener("pagehide", stopOnLeave);
       onBusyChange(false);
     };
-  }, [source, startEndpoint, active, onBusyChange]);
+  }, [source, initialStdin, startEndpoint, active, onBusyChange]);
 
   const followOutput = useCallback(() => {
     if (document.hidden || !followOutputRef.current) return;
