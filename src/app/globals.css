@@ -1049,6 +1049,37 @@ html.kbd-open .problem-workspace-nav {
   background-color: var(--panel);
 }
 
+/* 自由寫程式：編輯器與輸入輸出都有獨立捲動區域。 */
+.playground-editor {
+  min-width: 0;
+  min-height: 400px;
+  background: var(--panel);
+}
+.playground-editor .cm-editor {
+  height: clamp(400px, 50dvh, 640px);
+}
+.playground-editor .cm-scroller {
+  overflow: auto;
+}
+.playground-output {
+  min-height: 160px;
+  max-height: 320px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.playground-workspace:fullscreen {
+  border-radius: 0;
+  overflow: auto;
+  background: var(--panel);
+}
+.playground-workspace:fullscreen .playground-editor .cm-editor {
+  height: 55dvh;
+}
+@media (max-width: 767px) {
+  .playground-editor { min-height: 340px; }
+  .playground-editor .cm-editor { height: 340px; }
+}
+
 /* 程式題：桌面版置中分欄並保留留白；窄螢幕保持上下排列。 */
 .problem-workspace {
   display: grid;

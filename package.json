@@ -9,6 +9,7 @@
     "lint": "eslint",
     "generate": "prisma generate",
     "test:judge": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-judge-queue.mjs scripts/test-judge-remote.mjs scripts/test-judge-monitor.mjs",
+    "test:playground": "node --experimental-test-module-mocks --import ./scripts/ctf-test-loader.mjs --test scripts/test-playground.mjs",
     "test:judge:staging": "node --import ./scripts/ctf-test-loader.mjs scripts/stage-judge-native.mjs",
     "judge:worker": "node scripts/judge-worker.mjs",
     "judge:remote": "node --import ./scripts/ctf-test-loader.mjs scripts/judge-remote-worker.mjs",

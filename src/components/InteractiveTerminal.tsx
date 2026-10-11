@@ -19,10 +19,11 @@ async function stopSession(id: string) {
 }
 
 function InteractiveTerminal({
-  problemId, contestId, language, code, mobile = false, onBusyChange, onClose,
+  problemId, contestId, language, code, startEndpoint = "/api/terminal", mobile = false, onBusyChange, onClose,
 }: {
-  problemId: number;
+  problemId?: number;
   contestId?: number;
+  startEndpoint?: "/api/terminal" | "/api/playground/terminal";
   language: LanguageKey;
   code: string;
   mobile?: boolean;
@@ -65,7 +66,7 @@ function InteractiveTerminal({
     onBusyChange(true);
     async function start() {
       try {
-        const response = await fetch("/api/terminal", {
+        const response = await fetch(startEndpoint, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify(source),
         });
@@ -142,7 +143,7 @@ function InteractiveTerminal({
       window.removeEventListener("pagehide", stopOnLeave);
       onBusyChange(false);
     };
-  }, [source, onBusyChange]);
+  }, [source, startEndpoint, onBusyChange]);
 
   const followOutput = useCallback(() => {
     if (document.hidden || !followOutputRef.current) return;

@@ -9,6 +9,7 @@ export interface NavGroup { label: string; links: NavLinkItem[] }
 
 export const PRACTICE_NAV_LINKS: NavLinkItem[] = [
   { href: "/problems", label: "實作練習", glyph: "▤", description: "寫程式，挑戰每一道題目" },
+  { href: "/playground", label: "自由寫程式", glyph: "⌘", description: "自由編寫程式，立即執行看結果" },
   { href: "/recognition", label: "識讀練習", glyph: "◈", description: "閱讀程式，練習 APCS 觀念" },
   { href: "/ctf", label: "CTF 練習", glyph: "⚑", description: "探索線索，解開資安挑戰" },
 ];
