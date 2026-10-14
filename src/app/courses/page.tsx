@@ -20,6 +20,11 @@ export default async function CoursesPage() {
       _count: { select: { problems: true, members: true } },
     },
   });
+  const listedCourses = [...courses].sort(
+    (a, b) =>
+      Number(b.title === "APCS 實作題：由簡到難") -
+      Number(a.title === "APCS 實作題：由簡到難")
+  );
 
   // 已加入的課程與各課程進度
   const joinedSet = new Set<number>();
@@ -83,7 +88,7 @@ export default async function CoursesPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {courses.map((c) => {
+          {listedCourses.map((c) => {
             const joined = joinedSet.has(c.id);
             const solved = progressMap.get(c.id) ?? 0;
             const total = c._count.problems;
