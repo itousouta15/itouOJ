@@ -75,6 +75,24 @@ export default async function CoursePage({
   const total = entries.length;
   const solvedCount = entries.filter((e) => solvedSet.has(e.problemId)).length;
   const pct = total > 0 ? Math.round((solvedCount / total) * 100) : 0;
+  const difficultyGroups = [
+    { key: "easy", label: "簡單" },
+    { key: "medium", label: "中等" },
+    { key: "hard", label: "困難" },
+  ]
+    .map((group) => {
+      const groupEntries = entries.filter(
+        (entry) => entry.problem.difficulty === group.key
+      );
+      return {
+        ...group,
+        entries: groupEntries,
+        solved: groupEntries.filter((entry) =>
+          solvedSet.has(entry.problemId)
+        ).length,
+      };
+    })
+    .filter((group) => group.entries.length > 0);
 
   // 課程排行：成員（或管理員）才看得到，只計課程內題目的解題數
   let board: { name: string; solved: number; subs: number }[] | null = null;
@@ -195,8 +213,8 @@ export default async function CoursePage({
               <th className="table-head w-24">難度</th>
             </tr>
           </thead>
-          <tbody>
-            {entries.length === 0 && (
+          {difficultyGroups.length === 0 ? (
+            <tbody>
               <tr>
                 <td
                   colSpan={3}
@@ -205,49 +223,70 @@ export default async function CoursePage({
                   這門課還沒有題目
                 </td>
               </tr>
-            )}
-            {entries.map((e) => {
-              const isRecognition = e.problem.type === "RECOGNITION";
-              return (
-                <tr
-                  key={e.id}
-                  className={
-                    solvedSet.has(e.problemId) ? "row-solved" : "hover:bg-panel2"
-                  }
-                >
-                  <td className="table-cell text-dim">
-                    {isRecognition
-                      ? "選擇"
-                      : (e.problem.problemCode ?? e.problem.order)}
-                  </td>
-                  <td className="table-cell">
-                    <Link
-                      href={
-                        isRecognition
-                          ? `/recognition/q/${e.problem.id}`
-                          : `/problems/${e.problem.problemCode}`
-                      }
-                      className="font-medium text-blue hover:underline"
-                    >
-                      {e.problem.title}
-                    </Link>
-                    {!e.problem.isPublic && (
-                      <span className="ml-2 text-xs text-mute">（未公開）</span>
-                    )}
-                  </td>
-                  <td className="table-cell">
-                    {isRecognition ? (
-                      <span className="vbadge vbadge-blue">
-                        {e.problem.category ?? "選擇題"}
+            </tbody>
+          ) : (
+            difficultyGroups.map((group) => (
+              <tbody key={group.key}>
+                <tr>
+                  <td colSpan={3} className="table-cell bg-panel2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-semibold">{group.label}</span>
+                      <span className="mono text-xs text-mute">
+                        {session
+                          ? `${group.solved} / ${group.entries.length} 題完成`
+                          : `${group.entries.length} 題`}
                       </span>
-                    ) : (
-                      <DifficultyBadge difficulty={e.problem.difficulty} />
-                    )}
+                    </div>
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
+                {group.entries.map((e) => {
+                  const isRecognition = e.problem.type === "RECOGNITION";
+                  return (
+                    <tr
+                      key={e.id}
+                      className={
+                        solvedSet.has(e.problemId)
+                          ? "row-solved"
+                          : "hover:bg-panel2"
+                      }
+                    >
+                      <td className="table-cell text-dim">
+                        {isRecognition
+                          ? "選擇"
+                          : (e.problem.problemCode ?? e.problem.order)}
+                      </td>
+                      <td className="table-cell">
+                        <Link
+                          href={
+                            isRecognition
+                              ? `/recognition/q/${e.problem.id}`
+                              : `/problems/${e.problem.problemCode}`
+                          }
+                          className="font-medium text-blue hover:underline"
+                        >
+                          {e.problem.title}
+                        </Link>
+                        {!e.problem.isPublic && (
+                          <span className="ml-2 text-xs text-mute">
+                            （未公開）
+                          </span>
+                        )}
+                      </td>
+                      <td className="table-cell">
+                        {isRecognition ? (
+                          <span className="vbadge vbadge-blue">
+                            {e.problem.category ?? "選擇題"}
+                          </span>
+                        ) : (
+                          <DifficultyBadge difficulty={e.problem.difficulty} />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            ))
+          )}
         </table>
       </div>
 
