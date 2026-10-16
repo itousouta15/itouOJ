@@ -4,7 +4,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import DifficultyBadge from "@/components/DifficultyBadge";
-import HeaderSearch from "@/components/HeaderSearch";
+import { problemListConditions } from "@/lib/problemList";
 import TagBadge from "@/components/TagBadge";
 
 export const metadata: Metadata = {
@@ -17,37 +17,37 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 30;
 
 function problemsHref({
+  query,
   tag,
   sort,
   page,
 }: {
+  query?: string;
   tag?: string;
   sort: "order" | "difficulty";
   page?: number;
 }) {
   const params = new URLSearchParams();
+  if (query) params.set("q", query);
   if (tag) params.set("tag", tag);
   if (sort === "difficulty") params.set("sort", sort);
   if (page && page > 1) params.set("page", String(page));
-  const query = params.toString();
-  return query ? `/problems?${query}` : "/problems";
+  const queryString = params.toString();
+  return queryString ? `/problems?${queryString}` : "/problems";
 }
 
 export default async function ProblemListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string; page?: string; sort?: string }>;
+  searchParams: Promise<{ tag?: string; page?: string; sort?: string; q?: string }>;
 }) {
-  const { tag, page: pageParam, sort: sortParam } = await searchParams;
+  const { tag, page: pageParam, sort: sortParam, q } = await searchParams;
+  const query = q?.trim() ?? "";
   const requestedPage = Number(pageParam);
   const sort = sortParam === "difficulty" ? "difficulty" : "order";
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
-  const where = {
-    type: "PROGRAMMING",
-    ...(isAdmin ? {} : { isPublic: true }),
-    ...(tag ? { tags: { some: { tag: { name: tag } } } } : {}),
-  } as const;
+  const conditions = problemListConditions({ isAdmin, tag, query });
 
   // 篩選列只列出（公開）實作題實際用到的標籤，不混入識讀群集專用的標籤
   const allTags = await prisma.tag.findMany({
@@ -64,7 +64,10 @@ export default async function ProblemListPage({
     orderBy: { name: "asc" },
   });
 
-  const totalProblems = await prisma.problem.count({ where });
+  const [countRow] = await prisma.$queryRaw<{ count: bigint | number }[]>`
+    SELECT COUNT(*) AS count FROM "Problem" p WHERE ${conditions}
+  `;
+  const totalProblems = Number(countRow.count);
   const totalPages = Math.ceil(totalProblems / PAGE_SIZE);
   const currentPage =
     totalPages === 0
@@ -74,18 +77,6 @@ export default async function ProblemListPage({
           totalPages,
         );
   const offset = (currentPage - 1) * PAGE_SIZE;
-  const conditions = [Prisma.sql`p."type" = 'PROGRAMMING'`];
-  if (!isAdmin) conditions.push(Prisma.sql`p."isPublic" = 1`);
-  if (tag) {
-    conditions.push(Prisma.sql`
-      EXISTS (
-        SELECT 1
-        FROM "ProblemTag" pt
-        INNER JOIN "Tag" t ON t."id" = pt."tagId"
-        WHERE pt."problemId" = p."id" AND t."name" = ${tag}
-      )
-    `);
-  }
   const orderBy =
     sort === "difficulty"
       ? Prisma.sql`
@@ -101,7 +92,7 @@ export default async function ProblemListPage({
   const pageRows = await prisma.$queryRaw<{ id: number }[]>`
     SELECT p."id"
     FROM "Problem" p
-    WHERE ${Prisma.join(conditions, " AND ")}
+    WHERE ${conditions}
     ORDER BY ${orderBy}
     LIMIT ${PAGE_SIZE} OFFSET ${offset}
   `;
@@ -180,13 +171,26 @@ export default async function ProblemListPage({
           </div>
         )}
       </div>
-      <div className="app-problem-search">
-        <HeaderSearch variant="page" />
-      </div>
+      <form action="/problems" className="mb-4 flex flex-wrap items-center gap-2" role="search">
+        {tag && <input type="hidden" name="tag" value={tag} />}
+        {sort === "difficulty" && <input type="hidden" name="sort" value={sort} />}
+        <input
+          key={query}
+          type="search"
+          name="q"
+          defaultValue={query}
+          placeholder="搜尋題號或題目名稱，例如 a001、加法"
+          aria-label="搜尋題號或題目名稱"
+          className="input min-w-0 flex-1"
+        />
+        <button type="submit" className="btn-primary">搜尋</button>
+        {query && <Link href={problemsHref({ tag, sort })} className="btn-secondary">清除搜尋</Link>}
+      </form>
+      {query && <p className="mb-4 text-sm text-dim">「{query}」共找到 {totalProblems} 題</p>}
       {allTags.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           <Link
-            href={problemsHref({ sort })}
+            href={problemsHref({ query, sort })}
             className={`pill ${!tag ? "pill-active" : ""}`}
           >
             全部
@@ -194,7 +198,7 @@ export default async function ProblemListPage({
           {allTags.map((t) => (
             <Link
               key={t.id}
-              href={problemsHref({ tag: t.name, sort })}
+              href={problemsHref({ query, tag: t.name, sort })}
               className={`pill ${tag === t.name ? "pill-active" : ""}`}
             >
               {t.name}
@@ -205,20 +209,20 @@ export default async function ProblemListPage({
       <div className="mb-4 flex flex-wrap gap-2 text-sm">
         <span className="self-center text-dim">排序：</span>
         <Link
-          href={problemsHref({ tag, sort: "order" })}
+          href={problemsHref({ query, tag, sort: "order" })}
           className={`pill ${sort === "order" ? "pill-active" : ""}`}
         >
           代碼
         </Link>
         <Link
-          href={problemsHref({ tag, sort: "difficulty" })}
+          href={problemsHref({ query, tag, sort: "difficulty" })}
           className={`pill ${sort === "difficulty" ? "pill-active" : ""}`}
         >
           難度（易到難）
         </Link>
       </div>
       <div
-        key={`${tag ?? ""}:${sort}:${currentPage}`}
+        key={`${query}:${tag ?? ""}:${sort}:${currentPage}`}
         className="card problem-page-switch overflow-x-auto"
       >
         <table className="motion-table w-full">
@@ -238,8 +242,8 @@ export default async function ProblemListPage({
                   colSpan={5}
                   className="table-cell py-10 text-center text-mute"
                 >
-                  {tag ? "這個標籤下還沒有題目" : "還沒有題目"}
-                  {isAdmin && !tag && (
+                  {query ? "找不到符合搜尋條件的題目" : tag ? "這個標籤下還沒有題目" : "還沒有題目"}
+                  {isAdmin && !tag && !query && (
                     <>
                       ，
                       <Link
@@ -299,7 +303,7 @@ export default async function ProblemListPage({
         >
           {currentPage > 1 ? (
             <Link
-              href={problemsHref({ tag, sort, page: currentPage - 1 })}
+              href={problemsHref({ query, tag, sort, page: currentPage - 1 })}
               className="btn-secondary"
             >
               上一頁
@@ -310,7 +314,7 @@ export default async function ProblemListPage({
           {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
             <Link
               key={page}
-              href={problemsHref({ tag, sort, page })}
+              href={problemsHref({ query, tag, sort, page })}
               aria-current={page === currentPage ? "page" : undefined}
               className={`pill ${page === currentPage ? "pill-active" : ""}`}
             >
@@ -319,7 +323,7 @@ export default async function ProblemListPage({
           ))}
           {currentPage < totalPages ? (
             <Link
-              href={problemsHref({ tag, sort, page: currentPage + 1 })}
+              href={problemsHref({ query, tag, sort, page: currentPage + 1 })}
               className="btn-secondary"
             >
               下一頁

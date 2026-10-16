@@ -37,7 +37,11 @@ export async function PUT(
       { status: 400 }
     );
   }
-  const { testCases, ...fields } = parsed.data;
+  const { testCases, tagIds, ...fields } = parsed.data;
+  const tagCount = await prisma.tag.count({ where: { id: { in: tagIds } } });
+  if (tagCount !== tagIds.length) {
+    return Response.json({ error: "部分標籤不存在，請重新選擇" }, { status: 400 });
+  }
 
   // 測資整批換新（簡單且不易出錯）
   await prisma.$transaction([
@@ -48,6 +52,10 @@ export async function PUT(
         ...fields,
         status: "PENDING",
         reviewNote: null,
+        tags: {
+          deleteMany: {},
+          create: tagIds.map((tagId) => ({ tagId })),
+        },
         testCases: {
           create: testCases.map((tc, i) => ({ ...tc, order: i + 1 })),
         },

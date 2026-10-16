@@ -23,7 +23,7 @@ export async function POST(
   const result = await prisma.$transaction(async (tx) => {
     const proposal = await tx.problemProposal.findUnique({
       where: { id: proposalId },
-      include: { testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] } },
+      include: { tags: true, testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] } },
     });
     if (!proposal) return { error: "申請不存在", status: 404 as const };
 
@@ -60,6 +60,7 @@ export async function POST(
         // Preserve the legacy unique (type, order) key for programming problems.
         order: (lastOrderProblem?.order ?? -1) + 1,
         authorId: proposal.authorId,
+        tags: { create: proposal.tags.map(({ tagId }) => ({ tagId })) },
         testCases: {
           create: proposal.testCases.map((tc, i) => ({
             input: tc.input,

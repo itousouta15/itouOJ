@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { readTestCaseFiles } from "@/lib/testCaseFiles";
+import TagPicker, { type TagPickerTag } from "@/components/TagPicker";
 
 interface TestCaseInput {
   input: string;
@@ -17,6 +18,7 @@ export interface ProblemProposalFormData {
   difficulty: string;
   timeLimitMs: number;
   memoryLimitMb: number;
+  tagIds: number[];
   testCases: TestCaseInput[];
 }
 
@@ -27,13 +29,16 @@ const EMPTY: ProblemProposalFormData = {
   difficulty: "medium",
   timeLimitMs: 1000,
   memoryLimitMb: 256,
+  tagIds: [],
   testCases: [{ input: "", output: "", isSample: true }],
 };
 
 export default function ProblemProposalForm({
   initial,
+  tags,
 }: {
   initial?: ProblemProposalFormData;
+  tags: TagPickerTag[];
 }) {
   const router = useRouter();
   const editing = initial?.id != null;
@@ -154,6 +159,21 @@ export default function ProblemProposalForm({
             value={form.statement}
             onChange={(e) => set("statement", e.target.value)}
           />
+        </div>
+        <div>
+          <label className="mb-2 block text-sm font-medium">標籤（選填）</label>
+          <TagPicker
+            tags={tags}
+            selectedIds={form.tagIds}
+            canCreate={false}
+            disabled={saving}
+            onToggle={(id) => set("tagIds", form.tagIds.includes(id)
+              ? form.tagIds.filter((tagId) => tagId !== id)
+              : [...form.tagIds, id])}
+          />
+          <p className="mt-2 text-xs text-mute">
+            {tags.length ? "可選取多個標籤，核准後會套用至正式題目。" : "目前沒有可選用的標籤。"}
+          </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>

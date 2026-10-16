@@ -18,7 +18,7 @@ export default async function EditProposalPage({
   const { id } = await params;
   const proposal = await prisma.problemProposal.findUnique({
     where: { id: Number(id) },
-    include: { testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] } },
+    include: { tags: true, testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] } },
   });
   if (
     !proposal ||
@@ -28,10 +28,13 @@ export default async function EditProposalPage({
     notFound();
   }
 
+  const tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+
   return (
     <div>
       <h1 className="mb-4 page-title">編輯出題申請</h1>
       <ProblemProposalForm
+        tags={tags}
         initial={{
           id: proposal.id,
           title: proposal.title,
@@ -39,6 +42,7 @@ export default async function EditProposalPage({
           difficulty: proposal.difficulty,
           timeLimitMs: proposal.timeLimitMs,
           memoryLimitMb: proposal.memoryLimitMb,
+          tagIds: proposal.tags.map((tag) => tag.tagId),
           testCases: proposal.testCases.map((tc) => ({
             input: tc.input,
             output: tc.output,

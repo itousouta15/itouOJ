@@ -32,6 +32,7 @@ export default async function AdminProblemsPage({
       _count: { select: { testCases: true, submissions: true } },
       cluster: { select: { title: true } },
       author: { select: { username: true, displayName: true } },
+      tags: { include: { tag: true } },
     },
   });
   const rows = problems.map((p) => ({
@@ -49,13 +50,15 @@ export default async function AdminProblemsPage({
     sourceNumber: p.sourceNumber,
     category: p.category,
     author: p.author,
+    tags: p.tags.map(({ tag }) => tag),
   }));
-  const [pendingProposals, users] = await Promise.all([
+  const [pendingProposals, users, tags] = await Promise.all([
     prisma.problemProposal.count({ where: { status: "PENDING" } }),
     prisma.user.findMany({
       orderBy: { username: "asc" },
       select: { username: true, displayName: true },
     }),
+    prisma.tag.findMany({ orderBy: { name: "asc" } }),
   ]);
 
   return (
@@ -136,7 +139,7 @@ export default async function AdminProblemsPage({
         ← 左右滑動可看到更多欄位 →
       </p>
       <div key={type} className="card problem-page-switch overflow-x-auto">
-          <AdminProblemTable key={type} problems={rows} type={type} users={users} />
+          <AdminProblemTable key={type} problems={rows} type={type} users={users} tags={tags} />
       </div>
     </div>
   );

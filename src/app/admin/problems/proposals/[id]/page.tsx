@@ -7,6 +7,7 @@ import Markdown from "@/components/Markdown";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import ProposalStatusBadge from "@/components/ProposalStatusBadge";
 import ProposalReviewActions from "@/components/ProposalReviewActions";
+import TagBadge from "@/components/TagBadge";
 
 export const metadata: Metadata = { title: "審核出題申請" };
 export const dynamic = "force-dynamic";
@@ -24,6 +25,7 @@ export default async function AdminProposalDetailPage({
     where: { id: Number(id) },
     include: {
       author: { select: { username: true } },
+      tags: { include: { tag: true } },
       testCases: { orderBy: [{ order: "asc" }, { id: "asc" }] },
     },
   });
@@ -48,6 +50,9 @@ export default async function AdminProposalDetailPage({
           投稿人 {proposal.author.username} ・ 時間限制{" "}
           {proposal.timeLimitMs} ms ・ 記憶體限制 {proposal.memoryLimitMb} MB
         </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {proposal.tags.map(({ tag }) => <TagBadge key={tag.id} name={tag.name} />)}
+        </div>
       </div>
 
       <div className="card p-6">

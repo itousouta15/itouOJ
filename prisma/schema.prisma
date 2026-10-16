@@ -341,6 +341,7 @@ model Tag {
   name     String       @unique
   problems ProblemTag[]
   clusters RecognitionClusterTag[]
+  proposals ProposalTag[]
 }
 
 model ProblemTag {
@@ -489,6 +490,16 @@ model ProblemProposal {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   testCases         ProposalTestCase[]
+  tags              ProposalTag[]
+}
+
+model ProposalTag {
+  proposalId Int
+  proposal   ProblemProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  tagId      Int
+  tag        Tag             @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([proposalId, tagId])
 }
 
 model ProposalTestCase {

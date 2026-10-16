@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import CategoryBadge from "@/components/CategoryBadge";
+import TagBadge from "@/components/TagBadge";
+import TagPicker, { type TagPickerTag } from "@/components/TagPicker";
 import { problemHref } from "@/lib/problemTypes";
 
 export interface AdminProblemRow {
@@ -22,6 +24,7 @@ export interface AdminProblemRow {
   sourceNumber: number | null;
   category: string | null;
   author: { username: string; displayName: string | null } | null;
+  tags: TagPickerTag[];
 }
 
 function SelectionCheckbox({
@@ -50,10 +53,10 @@ function SelectionCheckbox({
         onChange={onChange}
         disabled={disabled}
       />
-      <span className="flex h-4 w-4 items-center justify-center rounded border border-bd2 bg-panel transition-colors peer-checked:border-blue peer-checked:bg-blue peer-focus-visible:ring-2 peer-focus-visible:ring-blue/70">
+      <span className="flex h-4 w-4 items-center justify-center rounded border border-bd2 bg-panel transition-colors peer-checked:border-blue peer-checked:bg-blue peer-checked:[&>svg]:block peer-focus-visible:ring-2 peer-focus-visible:ring-blue/70">
         <svg
           viewBox="0 0 12 12"
-          className="hidden h-3 w-3 text-white peer-checked:block"
+          className="hidden h-3 w-3 text-white"
           aria-hidden
         >
           <path
@@ -74,13 +77,20 @@ export default function AdminProblemTable({
   problems,
   type,
   users,
+  tags,
 }: {
   problems: AdminProblemRow[];
   type: "PROGRAMMING" | "RECOGNITION";
   users: { username: string; displayName: string | null }[];
+  tags: TagPickerTag[];
 }) {
   const router = useRouter();
-  const [rows, setRows] = useState(problems);
+  const [reorderedIds, setReorderedIds] = useState<number[] | null>(null);
+  const byId = new Map(problems.map((problem) => [problem.id, problem]));
+  const rows = reorderedIds
+    ? reorderedIds.flatMap((id) => byId.has(id) ? [byId.get(id)!] : [])
+    : problems;
+  const rowIndexes = new Map(rows.map((row, index) => [row.id, index]));
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -88,10 +98,17 @@ export default function AdminProblemTable({
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [bulkAction, setBulkAction] = useState("publish");
   const [bulkAuthorUsername, setBulkAuthorUsername] = useState("");
+  const [bulkTagIds, setBulkTagIds] = useState<number[]>([]);
+  const [query, setQuery] = useState("");
+  const [success, setSuccess] = useState("");
 
   const isRecognition = type === "RECOGNITION";
   const selected = new Set(selectedIds);
-  const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id));
+  const search = query.trim().toLocaleLowerCase();
+  const visibleRows = rows.filter((row) => !search || row.title.toLocaleLowerCase().includes(search)
+    || String(row.problemCode ?? row.order).toLocaleLowerCase().includes(search));
+  const allSelected = visibleRows.length > 0 && visibleRows.slice(0, 500).every((row) => selected.has(row.id));
+  const isTagAction = bulkAction === "addTags" || bulkAction === "removeTags";
 
   // 切換題型分頁時，由外層 <AdminProblemTable key={type}> 重新掛載，
   // rows 會直接拿到新題型的資料，不需要在 effect 裡同步 state。
@@ -108,11 +125,11 @@ export default function AdminProblemTable({
     const [moved] = next.splice(dragIndex, 1);
     next.splice(index, 0, moved);
     setDragIndex(null);
-    setRows(next);
+    setReorderedIds(next.map((row) => row.id));
   }
 
   function cancelReorder() {
-    setRows(problems);
+    setReorderedIds(null);
     setError("");
   }
 
@@ -125,17 +142,24 @@ export default function AdminProblemTable({
   }
 
   function toggleAllSelected() {
-    setSelectedIds(allSelected ? [] : rows.map((row) => row.id));
+    setSelectedIds(allSelected ? [] : visibleRows.slice(0, 500).map((row) => row.id));
   }
 
   async function applyBulkEdit() {
     const [action, difficulty] = bulkAction.split(":");
     const author = users.find((user) => user.username === bulkAuthorUsername);
+    if (isTagAction && !bulkTagIds.length) {
+      setError("請選擇標籤");
+      return;
+    }
     if (action === "setAuthor" && !author) {
       setError("請選擇出題者");
       return;
     }
-    const label =
+    const label = action === "addTags" ? "新增選取的標籤"
+      : action === "removeTags" ? "移除選取的標籤"
+      : action === "clearTags" ? "清空所有標籤"
+      :
       action === "publish"
         ? "設為公開"
         : action === "unpublish"
@@ -147,6 +171,7 @@ export default function AdminProblemTable({
 
     setSaving(true);
     setError("");
+    setSuccess("");
     try {
       const res = await fetch("/api/admin/problems/bulk", {
         method: "PUT",
@@ -157,6 +182,7 @@ export default function AdminProblemTable({
           action,
           ...(difficulty ? { difficulty } : {}),
           ...(action === "setAuthor" ? { authorUsername: bulkAuthorUsername } : {}),
+          ...(isTagAction ? { tagIds: bulkTagIds } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -165,7 +191,11 @@ export default function AdminProblemTable({
         return;
       }
       setSelectedIds([]);
+      setBulkTagIds([]);
+      setSuccess(`已更新 ${data.updated} 題`);
       router.refresh();
+    } catch {
+      setError("批次更新失敗，請稍後再試");
     } finally {
       setSaving(false);
     }
@@ -186,6 +216,9 @@ export default function AdminProblemTable({
         return;
       }
       router.refresh();
+      setReorderedIds(null);
+    } catch {
+      setError("儲存失敗，請稍後再試");
     } finally {
       setSaving(false);
     }
@@ -193,6 +226,23 @@ export default function AdminProblemTable({
 
   return (
     <div>
+      <div className="flex flex-wrap items-center gap-3 p-4">
+        <input
+          type="search"
+          className="input min-w-0 flex-1"
+          placeholder="搜尋題號或題目名稱"
+          aria-label="搜尋管理題目的題號或名稱"
+          value={query}
+          disabled={saving}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setSelectedIds([]);
+            setError("");
+          }}
+        />
+        <span className="text-sm text-dim">{visibleRows.length} / {rows.length} 題</span>
+      </div>
+      {success && <p className="mb-3 px-4 text-sm text-dim" role="status">{success}</p>}
       {dirty && (
         <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-blue/40 bg-panel2 px-4 py-3">
           <span className="text-sm text-dim">排序已異動，尚未儲存</span>
@@ -211,15 +261,23 @@ export default function AdminProblemTable({
       )}
       {selectedIds.length > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-blue/40 bg-panel2 px-4 py-3">
-          <span className="text-sm text-dim">已選取 {selectedIds.length} 題</span>
+          <span className="text-sm text-dim">已選取 {selectedIds.length} 題（每次最多 500 題）</span>
           <select
             className="input w-auto py-1.5 text-sm"
             value={bulkAction}
-            onChange={(event) => setBulkAction(event.target.value)}
+            onChange={(event) => {
+              setBulkAction(event.target.value);
+              setBulkTagIds([]);
+              setError("");
+            }}
             disabled={saving}
+            aria-label="批次操作"
           >
             <option value="publish">設為公開</option>
             <option value="unpublish">設為未公開</option>
+            <option value="addTags">新增標籤</option>
+            <option value="removeTags">移除標籤</option>
+            <option value="clearTags">清空標籤</option>
             {!isRecognition && (
               <>
                 <option value="setDifficulty:easy">難度設為簡單</option>
@@ -229,6 +287,21 @@ export default function AdminProblemTable({
               </>
             )}
           </select>
+          {isTagAction && (
+            <div className="w-full">
+              <p className="mb-2 text-sm text-dim">
+                {bulkAction === "addTags" ? "新增選取的標籤，保留題目原有標籤。" : "只移除選取的標籤，保留其他標籤。"}
+              </p>
+              <TagPicker
+                tags={tags}
+                selectedIds={bulkTagIds}
+                disabled={saving}
+                onToggle={(id) => setBulkTagIds((current) => current.includes(id)
+                  ? current.filter((tagId) => tagId !== id)
+                  : [...current, id])}
+              />
+            </div>
+          )}
           {bulkAction === "setAuthor" && (
             <select
               className="input w-auto py-1.5 text-sm"
@@ -246,7 +319,7 @@ export default function AdminProblemTable({
               ))}
             </select>
           )}
-          <button className="btn-primary" onClick={applyBulkEdit} disabled={saving}>
+          <button className="btn-primary" onClick={applyBulkEdit} disabled={saving || dirty || (isTagAction && !bulkTagIds.length)}>
             {saving ? "更新中…" : "套用"}
           </button>
           <button
@@ -257,6 +330,7 @@ export default function AdminProblemTable({
             取消選取
           </button>
           {error && <p className="text-sm text-[#ff6b6b]">{error}</p>}
+          {dirty && <p className="text-sm text-dim">請先儲存或取消排序，再套用批次操作。</p>}
         </div>
       )}
       <table className="w-full">
@@ -265,13 +339,14 @@ export default function AdminProblemTable({
             <th className="table-head w-10">
               <SelectionCheckbox
                 checked={allSelected}
-                disabled={saving || rows.length === 0}
-                label="選取全部題目"
+                disabled={saving || visibleRows.length === 0}
+                label="選取搜尋結果（最多 500 題）"
                 onChange={toggleAllSelected}
               />
             </th>
             <th className="table-head w-16">代碼</th>
             <th className="table-head">標題</th>
+            <th className="table-head">標籤</th>
             {isRecognition ? (
               <>
                 <th className="table-head w-36">群集</th>
@@ -292,19 +367,21 @@ export default function AdminProblemTable({
           </tr>
         </thead>
         <tbody>
-          {rows.length === 0 && (
+          {visibleRows.length === 0 && (
             <tr>
               <td
-                colSpan={9}
+                colSpan={10}
                 className="table-cell py-10 text-center text-mute"
               >
-                {isRecognition
+                {search ? "找不到符合搜尋條件的題目" : isRecognition
                   ? "還沒有識別題，點右上角「新增題目」再切到識別題即可建立"
                   : "還沒有題目，點右上角「新增題目」開始出題"}
               </td>
             </tr>
           )}
-          {rows.map((p, i) => (
+          {visibleRows.map((p) => {
+            const i = rowIndexes.get(p.id)!;
+            return (
             <tr
               key={p.id}
               className={`${selected.has(p.id) ? "bg-blue/10" : "hover:bg-panel2"} ${dragIndex === i ? "opacity-40" : ""} ${
@@ -312,7 +389,7 @@ export default function AdminProblemTable({
                   ? "border-t-2 border-t-blue"
                   : ""
               }`}
-              draggable={!saving && selectedIds.length === 0}
+              draggable={!saving && selectedIds.length === 0 && !search}
               onDragStart={() => setDragIndex(i)}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -333,7 +410,7 @@ export default function AdminProblemTable({
               <td className="table-cell">
                 <SelectionCheckbox
                   checked={selected.has(p.id)}
-                  disabled={saving}
+                  disabled={saving || (!selected.has(p.id) && selectedIds.length >= 500)}
                   label={`選取 ${p.title}`}
                   onChange={() => toggleSelected(p.id)}
                 />
@@ -356,6 +433,11 @@ export default function AdminProblemTable({
                 >
                   {p.title}
                 </Link>
+              </td>
+              <td className="table-cell">
+                <div className="flex flex-wrap gap-1.5">
+                  {p.tags.map((tag) => <TagBadge key={tag.id} name={tag.name} />)}
+                </div>
               </td>
               {isRecognition ? (
                 <>
@@ -398,7 +480,8 @@ export default function AdminProblemTable({
                 </Link>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

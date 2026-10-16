@@ -16,12 +16,17 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  const { testCases, ...fields } = parsed.data;
+  const { testCases, tagIds, ...fields } = parsed.data;
+  const tagCount = await prisma.tag.count({ where: { id: { in: tagIds } } });
+  if (tagCount !== tagIds.length) {
+    return Response.json({ error: "部分標籤不存在，請重新選擇" }, { status: 400 });
+  }
 
   const proposal = await prisma.problemProposal.create({
     data: {
       ...fields,
       authorId: session.userId,
+      tags: { create: tagIds.map((tagId) => ({ tagId })) },
       testCases: {
         create: testCases.map((tc, i) => ({ ...tc, order: i + 1 })),
       },

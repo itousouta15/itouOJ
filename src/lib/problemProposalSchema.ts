@@ -5,6 +5,8 @@ import { problemBaseFields } from "./problemSchema";
 // problemSchema 本體，只共用共用欄位定義。
 export const problemProposalSchema = z.object({
   ...problemBaseFields,
+  tagIds: z.array(z.number().int().positive()).max(100).default([])
+    .transform((ids) => [...new Set(ids)]),
   testCases: z
     .array(
       z.object({

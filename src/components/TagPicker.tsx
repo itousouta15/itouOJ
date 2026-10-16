@@ -13,10 +13,14 @@ export default function TagPicker({
   tags: initialTags,
   selectedIds,
   onToggle,
+  canCreate = true,
+  disabled = false,
 }: {
   tags: TagPickerTag[];
   selectedIds: number[];
   onToggle: (id: number) => void;
+  canCreate?: boolean;
+  disabled?: boolean;
 }) {
   const [tags, setTags] = useState(initialTags);
   const [adding, setAdding] = useState(false);
@@ -79,28 +83,32 @@ export default function TagPicker({
               type="button"
               className={`pill ${active ? "pill-active" : ""}`}
               onClick={() => onToggle(tag.id)}
+              aria-pressed={active}
+              disabled={disabled}
             >
               {tag.name}
             </button>
           );
         })}
-        {!adding && (
+        {canCreate && !adding && (
           <button
             type="button"
             className="text-sm text-blue hover:underline"
             onClick={() => setAdding(true)}
+            disabled={disabled}
           >
             ＋ 新增標籤
           </button>
         )}
       </div>
-      {adding && (
+      {canCreate && adding && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <input
             className="input w-44"
             value={newName}
             autoFocus
             maxLength={30}
+            disabled={disabled || saving}
             placeholder="新標籤名稱"
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => {
@@ -115,7 +123,7 @@ export default function TagPicker({
             type="button"
             className="btn-primary"
             onClick={addTag}
-            disabled={saving || !newName.trim()}
+            disabled={disabled || saving || !newName.trim()}
           >
             {saving ? "新增中…" : "新增"}
           </button>
