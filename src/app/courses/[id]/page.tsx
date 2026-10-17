@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import CourseJoinButton from "@/components/CourseJoinButton";
+import { apcsCourseLessons } from "@/lib/apcsCourseLessons";
 
 export const dynamic = "force-dynamic";
 
@@ -329,7 +330,9 @@ export default async function CoursePage({
                             href={
                               isRecognition
                                 ? `/recognition/q/${entry.problem.id}`
-                                : `/problems/${entry.problem.problemCode}`
+                                : isApcsPath && entry.problem.problemCode && apcsCourseLessons[entry.problem.problemCode]
+                                  ? `/courses/${course.id}/lessons/${entry.problem.problemCode}`
+                                  : `/problems/${entry.problem.problemCode}`
                             }
                             className={`flex items-center gap-3 rounded-lg border border-bd p-3 transition-colors hover:bg-panel2 ${solved ? "row-solved" : ""}`}
                           >
@@ -342,11 +345,16 @@ export default async function CoursePage({
                                 {entry.problem.problemCode ?? `題目 ${entry.problem.order}`}
                                 {!entry.problem.isPublic && " ・ 未公開"}
                               </span>
+                              {isApcsPath && entry.problem.problemCode && apcsCourseLessons[entry.problem.problemCode] && (
+                                <span className="mt-1 block text-xs text-dim">
+                                  {apcsCourseLessons[entry.problem.problemCode].concept}
+                                </span>
+                              )}
                             </span>
                             {solved ? (
                               <span className="vbadge vbadge-green">已完成</span>
                             ) : (
-                              <span className="text-sm text-blue">開始練習 →</span>
+                              <span className="shrink-0 text-sm text-blue">{isApcsPath ? "開始教學 →" : "開始練習 →"}</span>
                             )}
                           </Link>
                         </li>
