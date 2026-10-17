@@ -31,6 +31,7 @@ const { PUT: bulkEdit } = await import("../src/app/api/admin/problems/bulk/route
 const { POST: propose } = await import("../src/app/api/problems/proposals/route.ts");
 const { PUT: editProposal, DELETE: withdrawProposal } = await import("../src/app/api/problems/proposals/[id]/route.ts");
 const { POST: approve } = await import("../src/app/api/admin/problems/proposals/[id]/approve/route.ts");
+const { POST: bulkReview } = await import("../src/app/api/admin/problems/proposals/bulk/route.ts");
 
 const request = (body) => new Request("http://localhost/test", {
   method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -169,4 +170,47 @@ test("invalid proposal tags are rejected, authorship is enforced, and withdrawal
   session = { userId: "author", role: "USER" };
   assert.equal((await withdrawProposal(request({}), params(id))).status, 200);
   assert.equal(await db.proposalTag.count(), 0);
+});
+
+test("batch approval creates tagged problems atomically and respects visibility", async () => {
+  const createPending = (title, tagId) => db.problemProposal.create({
+    data: {
+      title, statement: "題敘", authorId: "author", difficulty: "medium",
+      testCases: { create: [{ input: "1", output: "1", isSample: true, order: 1 }] },
+      tags: { create: [{ tagId }] },
+    },
+  });
+  const first = await createPending("批次核准一", 1);
+  const second = await createPending("批次核准二", 2);
+  const result = await bulkReview(request({ ids: [first.id, second.id], action: "approve", isPublic: false }));
+  assert.equal(result.status, 200);
+  const reviewed = await db.problemProposal.findMany({
+    where: { id: { in: [first.id, second.id] } },
+    orderBy: { id: "asc" },
+    select: { status: true, approvedProblemId: true },
+  });
+  assert.equal(reviewed.length, 2);
+  assert.ok(reviewed.every((proposal) => proposal.status === "APPROVED" && proposal.approvedProblemId != null));
+  const created = await db.problem.findMany({ where: { title: { startsWith: "批次核准" } } });
+  assert.equal(created.length, 2);
+  assert.ok(created.every((problem) => !problem.isPublic));
+  assert.equal(await db.problemTag.count({ where: { problem: { title: { startsWith: "批次核准" } } } }), 2);
+  assert.equal(await db.testCase.count({ where: { problem: { title: { startsWith: "批次核准" } } } }), 2);
+});
+
+test("batch rejection applies one note and mixed or already-reviewed selections do not partially change", async () => {
+  const createPending = (title) => db.problemProposal.create({
+    data: { title, statement: "題敘", authorId: "author", testCases: { create: [{ input: "", output: "", order: 1 }] } },
+  });
+  const first = await createPending("批次退回一");
+  const second = await createPending("批次退回二");
+  const rejected = await bulkReview(request({ ids: [first.id, second.id], action: "reject", reviewNote: "請補充說明" }));
+  assert.equal(rejected.status, 200);
+  assert.equal(await db.problemProposal.count({ where: { id: { in: [first.id, second.id] }, status: "REJECTED", reviewNote: "請補充說明" } }), 2);
+
+  const third = await createPending("不應部分退回");
+  const mixed = await bulkReview(request({ ids: [third.id, first.id], action: "reject", reviewNote: "再次退回" }));
+  assert.equal(mixed.status, 409);
+  assert.equal(await db.problemProposal.count({ where: { id: third.id, status: "PENDING" } }), 1);
+  assert.equal(await db.problemProposal.count({ where: { id: first.id, reviewNote: "請補充說明" } }), 1);
 });
