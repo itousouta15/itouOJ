@@ -13,7 +13,7 @@ export default async function NewCoursePage() {
 
   const problems = await prisma.problem.findMany({
     orderBy: [{ type: "asc" }, { problemCode: "asc" }],
-    select: { id: true, title: true, isPublic: true, type: true },
+    select: { id: true, problemCode: true, title: true, isPublic: true, type: true },
   });
 
   return (
