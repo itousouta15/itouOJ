@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 interface ProblemOption {
   id: number;
+  problemCode: string | null;
   title: string;
   isPublic: boolean;
   type: string;
@@ -48,6 +49,17 @@ export default function CourseForm({
   const [form, setForm] = useState<CourseFormInitial>(initial ?? EMPTY);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [problemSearch, setProblemSearch] = useState("");
+
+  const normalizedProblemSearch = problemSearch.trim().toLocaleLowerCase();
+  const visibleProblems = problems.filter((problem) => {
+    if (!normalizedProblemSearch) return true;
+    return (
+      problem.problemCode?.toLocaleLowerCase().includes(normalizedProblemSearch) ||
+      problem.title.toLocaleLowerCase().includes(normalizedProblemSearch) ||
+      String(problem.id).includes(normalizedProblemSearch)
+    );
+  });
 
   function toggleProblem(id: number) {
     setForm((f) => ({
@@ -160,11 +172,23 @@ export default function CourseForm({
             已選 {form.problemIds.length} 題
           </span>
         </p>
+        <input
+          type="search"
+          className="input mb-3"
+          value={problemSearch}
+          onChange={(event) => setProblemSearch(event.target.value)}
+          placeholder="搜尋題號或題目名稱"
+          aria-label="搜尋課程題目的題號或名稱"
+        />
         {problems.length === 0 ? (
           <p className="text-sm text-mute">還沒有題目可以加入</p>
+        ) : visibleProblems.length === 0 ? (
+          <p className="rounded-lg border border-bd bg-inset p-4 text-sm text-mute">
+            找不到符合的題目
+          </p>
         ) : (
           <div className="max-h-72 space-y-1 overflow-y-auto rounded-lg border border-bd bg-inset p-2">
-            {problems.map((p) => (
+            {visibleProblems.map((p) => (
               <label
                 key={p.id}
                 className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm hover:bg-panel2"
@@ -174,7 +198,9 @@ export default function CourseForm({
                   checked={form.problemIds.includes(p.id)}
                   onChange={() => toggleProblem(p.id)}
                 />
-                <span className="mono w-10 text-xs text-mute">#{p.id}</span>
+                <span className="mono min-w-14 text-xs text-mute">
+                  {p.problemCode ?? `#${p.id}`}
+                </span>
                 <span className="flex-1 truncate">{p.title}</span>
                 {p.type === "RECOGNITION" && (
                   <span className="vbadge vbadge-blue">選擇題</span>
