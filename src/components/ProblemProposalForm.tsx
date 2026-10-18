@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { readTestCaseFiles } from "@/lib/testCaseFiles";
 import TagPicker, { type TagPickerTag } from "@/components/TagPicker";
+import TestCaseContentEditor from "@/components/TestCaseContentEditor";
 
 interface TestCaseInput {
   input: string;
@@ -24,8 +25,7 @@ export interface ProblemProposalFormData {
 
 const EMPTY: ProblemProposalFormData = {
   title: "",
-  statement:
-    "## 題目描述\n\n\n\n## 輸入格式\n\n\n\n## 輸出格式\n\n",
+  statement: "## 題目描述\n\n\n\n## 輸入格式\n\n\n\n## 輸出格式\n\n",
   difficulty: "medium",
   timeLimitMs: 1000,
   memoryLimitMb: 256,
@@ -47,22 +47,32 @@ export default function ProblemProposalForm({
   const [saving, setSaving] = useState(false);
   const [testCasesLoading, setTestCasesLoading] = useState(false);
   const [testCaseImportError, setTestCaseImportError] = useState("");
+  const [expandedTestCaseIndex, setExpandedTestCaseIndex] = useState<
+    number | null
+  >(null);
 
   function set<K extends keyof ProblemProposalFormData>(
     key: K,
-    value: ProblemProposalFormData[K]
+    value: ProblemProposalFormData[K],
   ) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function setTestCase(i: number, patch: Partial<TestCaseInput>) {
-    setForm((f) => ({
-      ...f,
-      testCases: f.testCases.map((tc, j) =>
-        j === i ? { ...tc, ...patch } : tc
-      ),
-    }));
-  }
+  const setTestCase = useCallback(
+    (i: number, patch: Partial<TestCaseInput>) => {
+      setForm((f) => ({
+        ...f,
+        testCases: f.testCases.map((tc, j) =>
+          j === i ? { ...tc, ...patch } : tc,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const toggleTestCaseEditor = useCallback((i: number) => {
+    setExpandedTestCaseIndex((current) => (current === i ? null : i));
+  }, []);
 
   async function onTestCaseFilesSelected(files: File[]) {
     if (files.length === 0) return;
@@ -81,13 +91,14 @@ export default function ProblemProposalForm({
     setTestCaseImportError("");
     try {
       const imported = await readTestCaseFiles(files);
+      setExpandedTestCaseIndex(null);
       setForm((f) => ({
         ...f,
         testCases: imported.map((tc) => ({ ...tc, isSample: false })),
       }));
     } catch (err) {
       setTestCaseImportError(
-        err instanceof Error ? err.message : "讀取測資檔案失敗"
+        err instanceof Error ? err.message : "讀取測資檔案失敗",
       );
     } finally {
       setTestCasesLoading(false);
@@ -106,11 +117,11 @@ export default function ProblemProposalForm({
           method: editing ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...form, id: undefined }),
-        }
+        },
       );
       if (res.status === 413) {
         setError(
-          "題目資料超過伺服器的上傳大小限制（HTTP 413）。限制計算的是題敘與測資組成的整份 JSON；請縮小資料，或請管理員調整 Nginx 的 client_max_body_size。"
+          "題目資料超過伺服器的上傳大小限制（HTTP 413）。限制計算的是題敘與測資組成的整份 JSON；請縮小資料，或請管理員調整 Nginx 的 client_max_body_size。",
         );
         setSaving(false);
         return;
@@ -167,12 +178,19 @@ export default function ProblemProposalForm({
             selectedIds={form.tagIds}
             canCreate={false}
             disabled={saving}
-            onToggle={(id) => set("tagIds", form.tagIds.includes(id)
-              ? form.tagIds.filter((tagId) => tagId !== id)
-              : [...form.tagIds, id])}
+            onToggle={(id) =>
+              set(
+                "tagIds",
+                form.tagIds.includes(id)
+                  ? form.tagIds.filter((tagId) => tagId !== id)
+                  : [...form.tagIds, id],
+              )
+            }
           />
           <p className="mt-2 text-xs text-mute">
-            {tags.length ? "可選取多個標籤，核准後會套用至正式題目。" : "目前沒有可選用的標籤。"}
+            {tags.length
+              ? "可選取多個標籤，核准後會套用至正式題目。"
+              : "目前沒有可選用的標籤。"}
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -220,9 +238,7 @@ export default function ProblemProposalForm({
 
       <div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="section-title">
-            測資（{form.testCases.length} 筆）
-          </h2>
+          <h2 className="section-title">測資（{form.testCases.length} 筆）</h2>
           <div className="flex flex-wrap items-center gap-2">
             <label className="btn-secondary cursor-pointer">
               {testCasesLoading ? "匯入中…" : "從檔案匯入"}
@@ -253,7 +269,8 @@ export default function ProblemProposalForm({
           </div>
         </div>
         <p className="mb-3 text-xs text-mute">
-          可一次選取 0.in、0.out、1.in、1.out 等檔案；相同主檔名會自動配對並依檔名排序。匯入後會取代目前測資，且預設不公開為範例。
+          可一次選取 0.in、0.out、1.in、1.out
+          等檔案；相同主檔名會自動配對並依檔名排序。匯入後會取代目前測資，且預設不公開為範例。
         </p>
         {testCaseImportError && (
           <p className="mb-3 text-sm text-[#ff6b6b]" role="alert">
@@ -264,9 +281,7 @@ export default function ProblemProposalForm({
           {form.testCases.map((tc, i) => (
             <div key={i} className="card p-4">
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-sm font-semibold text-dim">
-                  測資 #{i + 1}
-                </p>
+                <p className="text-sm font-semibold text-dim">測資 #{i + 1}</p>
                 <div className="flex items-center gap-4">
                   <label className="flex items-center gap-1.5 text-sm">
                     <input
@@ -280,40 +295,27 @@ export default function ProblemProposalForm({
                   </label>
                   <button
                     className="text-sm text-[#ff6b6b] hover:underline"
-                    onClick={() =>
+                    onClick={() => {
+                      setExpandedTestCaseIndex(null);
                       set(
                         "testCases",
-                        form.testCases.filter((_, j) => j !== i)
-                      )
-                    }
+                        form.testCases.filter((_, j) => j !== i),
+                      );
+                    }}
                     disabled={form.testCases.length <= 1}
                   >
                     刪除
                   </button>
                 </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs text-dim">
-                    輸入
-                  </label>
-                  <textarea
-                    className="input h-28 font-mono text-[13px]"
-                    value={tc.input}
-                    onChange={(e) => setTestCase(i, { input: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs text-dim">
-                    期望輸出
-                  </label>
-                  <textarea
-                    className="input h-28 font-mono text-[13px]"
-                    value={tc.output}
-                    onChange={(e) => setTestCase(i, { output: e.target.value })}
-                  />
-                </div>
-              </div>
+              <TestCaseContentEditor
+                index={i}
+                input={tc.input}
+                output={tc.output}
+                expanded={expandedTestCaseIndex === i}
+                onToggle={toggleTestCaseEditor}
+                onChange={setTestCase}
+              />
             </div>
           ))}
         </div>
