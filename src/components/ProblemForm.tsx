@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RECOGNITION_CATEGORIES } from "@/lib/problemTypes";
 import { readTestCaseFiles } from "@/lib/testCaseFiles";
 import TagPicker from "@/components/TagPicker";
+import TestCaseContentEditor from "@/components/TestCaseContentEditor";
 
 interface TestCaseInput {
   input: string;
@@ -59,8 +60,7 @@ export interface AvailableUser {
 const EMPTY: ProblemFormData = {
   type: "PROGRAMMING",
   title: "",
-  statement:
-    "## 題目描述\n\n\n\n## 輸入格式\n\n\n\n## 輸出格式\n\n",
+  statement: "## 題目描述\n\n\n\n## 輸入格式\n\n\n\n## 輸出格式\n\n",
   difficulty: "medium",
   timeLimitMs: 1000,
   memoryLimitMb: 256,
@@ -110,24 +110,30 @@ export default function ProblemForm({
   const router = useRouter();
   const editing = initial?.id != null;
   const [form, setForm] = useState<ProblemFormData>(
-    initial ?? { ...EMPTY, type: defaultType }
+    initial ?? { ...EMPTY, type: defaultType },
   );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   // PDF 是三態的：不動／移除／換新檔，跟其他欄位「直接改 form 裡的值」不一樣，
   // 所以不放進 form，存檔時才轉成 problemSchema 期待的 pdfUpload 形狀。
-  const [newPdf, setNewPdf] = useState<{ filename: string; base64: string } | null>(null);
+  const [newPdf, setNewPdf] = useState<{
+    filename: string;
+    base64: string;
+  } | null>(null);
   const [newPdfPassword, setNewPdfPassword] = useState("");
   const [removePdf, setRemovePdf] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [testCasesLoading, setTestCasesLoading] = useState(false);
   const [testCaseImportError, setTestCaseImportError] = useState("");
+  const [expandedTestCaseIndex, setExpandedTestCaseIndex] = useState<
+    number | null
+  >(null);
 
   const isRecognition = form.type === "RECOGNITION";
 
   function set<K extends keyof ProblemFormData>(
     key: K,
-    value: ProblemFormData[K]
+    value: ProblemFormData[K],
   ) {
     setForm((f) => ({ ...f, [key]: value }));
   }
@@ -137,14 +143,21 @@ export default function ProblemForm({
     setForm((f) => ({ ...f, type }));
   }
 
-  function setTestCase(i: number, patch: Partial<TestCaseInput>) {
-    setForm((f) => ({
-      ...f,
-      testCases: f.testCases.map((tc, j) =>
-        j === i ? { ...tc, ...patch } : tc
-      ),
-    }));
-  }
+  const setTestCase = useCallback(
+    (i: number, patch: Partial<TestCaseInput>) => {
+      setForm((f) => ({
+        ...f,
+        testCases: f.testCases.map((tc, j) =>
+          j === i ? { ...tc, ...patch } : tc,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const toggleTestCaseEditor = useCallback((i: number) => {
+    setExpandedTestCaseIndex((current) => (current === i ? null : i));
+  }, []);
 
   function toggleTag(tagId: number) {
     setForm((f) => ({
@@ -247,6 +260,7 @@ export default function ProblemForm({
     setTestCaseImportError("");
     try {
       const imported = await readTestCaseFiles(files);
+      setExpandedTestCaseIndex(null);
       setForm((f) => ({
         ...f,
         testCases: imported.map((tc) => ({
@@ -257,7 +271,7 @@ export default function ProblemForm({
       }));
     } catch (err) {
       setTestCaseImportError(
-        err instanceof Error ? err.message : "讀取測資檔案失敗"
+        err instanceof Error ? err.message : "讀取測資檔案失敗",
       );
     } finally {
       setTestCasesLoading(false);
@@ -279,11 +293,11 @@ export default function ProblemForm({
           method: editing ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...form, id: undefined, pdfUpload }),
-        }
+        },
       );
       if (res.status === 413) {
         setError(
-          "題目資料超過伺服器的上傳大小限制（HTTP 413）。限制計算的是整份 JSON，包含題敘、測資與 PDF；請縮小資料，或請管理員調整 Nginx 的 client_max_body_size。"
+          "題目資料超過伺服器的上傳大小限制（HTTP 413）。限制計算的是整份 JSON，包含題敘、測資與 PDF；請縮小資料，或請管理員調整 Nginx 的 client_max_body_size。",
         );
         setSaving(false);
         return;
@@ -343,7 +357,11 @@ export default function ProblemForm({
             className="input"
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
-            placeholder={isRecognition ? "例如：APCS 2021/01 A 卷第 3 題" : "例如：A + B Problem"}
+            placeholder={
+              isRecognition
+                ? "例如：APCS 2021/01 A 卷第 3 題"
+                : "例如：A + B Problem"
+            }
           />
         </div>
 
@@ -370,7 +388,7 @@ export default function ProblemForm({
                 onChange={(e) =>
                   set(
                     "sourceNumber",
-                    e.target.value === "" ? null : Number(e.target.value)
+                    e.target.value === "" ? null : Number(e.target.value),
                   )
                 }
                 placeholder="選填"
@@ -396,7 +414,9 @@ export default function ProblemForm({
 
         <div>
           <label className="mb-1 block text-sm font-medium">
-            {isRecognition ? "題目（Markdown，支援 $...$ 數學式與圖片）" : "題敘（Markdown，支援 $...$ 數學式）"}
+            {isRecognition
+              ? "題目（Markdown，支援 $...$ 數學式與圖片）"
+              : "題敘（Markdown，支援 $...$ 數學式）"}
           </label>
           <textarea
             className="input h-64 font-mono text-[13px]"
@@ -472,7 +492,7 @@ export default function ProblemForm({
               <option value="">不設定</option>
               {form.authorUsername &&
                 !availableUsers.some(
-                  (u) => u.username === form.authorUsername
+                  (u) => u.username === form.authorUsername,
                 ) && (
                   <option value={form.authorUsername}>
                     {form.authorUsername}
@@ -679,7 +699,8 @@ export default function ProblemForm({
           <div>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="section-title">
-                子題與配分{form.subtasks.length > 0 ? `（合計 ${totalPoints} 分）` : ""}
+                子題與配分
+                {form.subtasks.length > 0 ? `（合計 ${totalPoints} 分）` : ""}
               </h2>
               <button className="btn-secondary" onClick={addSubtask}>
                 ＋ 新增子題
@@ -687,7 +708,8 @@ export default function ProblemForm({
             </div>
             {form.subtasks.length === 0 ? (
               <p className="text-sm text-mute">
-                沒有子題＝整題只有 AC / WA（沿用預設判法）。加了子題之後，每筆測資都要指定所屬子題，該子題測資全對才拿到配分。
+                沒有子題＝整題只有 AC /
+                WA（沿用預設判法）。加了子題之後，每筆測資都要指定所屬子題，該子題測資全對才拿到配分。
               </p>
             ) : (
               <div className="space-y-3">
@@ -697,8 +719,13 @@ export default function ProblemForm({
                   </p>
                 )}
                 {form.subtasks.map((s, i) => (
-                  <div key={i} className="card flex flex-wrap items-center gap-4 p-4">
-                    <p className="text-sm font-semibold text-dim">子題 {i + 1}</p>
+                  <div
+                    key={i}
+                    className="card flex flex-wrap items-center gap-4 p-4"
+                  >
+                    <p className="text-sm font-semibold text-dim">
+                      子題 {i + 1}
+                    </p>
                     <div className="flex items-center gap-2">
                       <label className="text-xs text-dim">配分</label>
                       <input
@@ -779,7 +806,8 @@ export default function ProblemForm({
               </div>
             </div>
             <p className="mb-3 text-xs text-mute">
-              可一次選取 0.in、0.out、1.in、1.out 等檔案；相同主檔名會自動配對並依檔名排序。匯入後會取代目前測資，且預設不公開為範例。
+              可一次選取 0.in、0.out、1.in、1.out
+              等檔案；相同主檔名會自動配對並依檔名排序。匯入後會取代目前測資，且預設不公開為範例。
             </p>
             {testCaseImportError && (
               <p className="mb-3 text-sm text-[#ff6b6b]" role="alert">
@@ -830,40 +858,27 @@ export default function ProblemForm({
                       </label>
                       <button
                         className="text-sm text-[#ff6b6b] hover:underline"
-                        onClick={() =>
+                        onClick={() => {
+                          setExpandedTestCaseIndex(null);
                           set(
                             "testCases",
-                            form.testCases.filter((_, j) => j !== i)
-                          )
-                        }
+                            form.testCases.filter((_, j) => j !== i),
+                          );
+                        }}
                         disabled={form.testCases.length <= 1}
                       >
                         刪除
                       </button>
                     </div>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-xs text-dim">
-                        輸入
-                      </label>
-                      <textarea
-                        className="input h-28 font-mono text-[13px]"
-                        value={tc.input}
-                        onChange={(e) => setTestCase(i, { input: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-dim">
-                        期望輸出
-                      </label>
-                      <textarea
-                        className="input h-28 font-mono text-[13px]"
-                        value={tc.output}
-                        onChange={(e) => setTestCase(i, { output: e.target.value })}
-                      />
-                    </div>
-                  </div>
+                  <TestCaseContentEditor
+                    index={i}
+                    input={tc.input}
+                    output={tc.output}
+                    expanded={expandedTestCaseIndex === i}
+                    onToggle={toggleTestCaseEditor}
+                    onChange={setTestCase}
+                  />
                 </div>
               ))}
             </div>
