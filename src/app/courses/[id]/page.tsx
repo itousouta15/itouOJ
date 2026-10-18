@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import CourseJoinButton from "@/components/CourseJoinButton";
+import { getToiTopic, toiCourseTopics } from "@/lib/toiCourseCurriculum";
 import { apcsCourseLessons } from "@/lib/apcsCourseLessons";
 
 export const dynamic = "force-dynamic";
@@ -104,6 +105,7 @@ export default async function CoursePage({
   const solvedCount = entries.filter((e) => solvedSet.has(e.problemId)).length;
   const pct = total > 0 ? Math.round((solvedCount / total) * 100) : 0;
   const isApcsPath = course.title === "APCS 實作題：由簡到難";
+  const isToiCourse = course.title === "TOI 新手組 練習";
   const difficultyGroups = [
     { key: "easy", label: "簡單" },
     { key: "medium", label: "中等" },
@@ -122,6 +124,20 @@ export default async function CoursePage({
       };
     })
     .filter((group) => group.entries.length > 0);
+  const toiTopicGroups = isToiCourse
+    ? toiCourseTopics
+        .map((topic) => {
+          const topicEntries = entries.filter(
+            (entry) => getToiTopic(entry.problem.problemCode).id === topic.id
+          );
+          return {
+            ...topic,
+            entries: topicEntries,
+            solved: topicEntries.filter((entry) => solvedSet.has(entry.problemId)).length,
+          };
+        })
+        .filter((topic) => topic.entries.length > 0)
+    : [];
 
   // 課程排行：成員（或管理員）才看得到，只計課程內題目的解題數
   let board: { name: string; solved: number; subs: number }[] | null = null;
@@ -233,7 +249,75 @@ export default async function CoursePage({
         )}
       </div>
 
-      {isApcsPath ? (
+      {isToiCourse ? (
+        <section aria-label="TOI 主題學習路徑" className="space-y-5">
+          <div>
+            <p className="mono text-xs uppercase tracking-[0.2em] text-mute">TOI Learning Path</p>
+            <h2 className="section-title mt-1">從基礎技巧到綜合解題</h2>
+            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-dim">
+              不照年份硬排，改依解題方法循序學習。每個單元都有概念說明、C++ 與 Python 範例及步驟動畫；題目仍依原難度標示。
+            </p>
+          </div>
+
+          <nav className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="主題單元">
+            {toiTopicGroups.map((topic, index) => (
+              <Link key={topic.id} href={`#${topic.id}`} className="card motion-card p-4 hover:bg-panel2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="mono text-xs text-mute">單元 {String(index + 1).padStart(2, "0")}</span>
+                  <span className="mono text-xs text-mute">
+                    {session ? `${topic.solved}/${topic.entries.length} 完成` : `${topic.entries.length} 題`}
+                  </span>
+                </div>
+                <h3 className="mt-2 font-semibold">{topic.title}</h3>
+                <p className="mt-1 text-sm text-dim">{topic.subtitle}</p>
+              </Link>
+            ))}
+          </nav>
+
+          {toiTopicGroups.map((topic, index) => (
+            <section key={topic.id} id={topic.id} className="card scroll-mt-24 space-y-4 p-5 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="mono text-xs text-mute">單元 {String(index + 1).padStart(2, "0")} ・ {topic.lesson.concept}</p>
+                  <h3 className="section-title mt-1">{topic.title}</h3>
+                  <p className="mt-1 max-w-3xl text-sm text-dim">{topic.subtitle}</p>
+                </div>
+                <span className="mono text-sm text-mute">
+                  {session ? `${topic.solved}/${topic.entries.length} 題完成` : `${topic.entries.length} 題`}
+                </span>
+              </div>
+              <ul className="flex flex-wrap gap-2">
+                {topic.focus.map((focus) => <li key={focus} className="vbadge vbadge-blue">{focus}</li>)}
+              </ul>
+              <ol className="grid gap-2">
+                {topic.entries.map((entry, itemIndex) => {
+                  const code = entry.problem.problemCode;
+                  const solved = solvedSet.has(entry.problemId);
+                  return (
+                    <li key={entry.id}>
+                      <Link
+                        href={code ? `/courses/${course.id}/lessons/${code}` : `/problems/${entry.problem.id}`}
+                        className={`flex items-center gap-3 rounded-lg border border-bd p-3 transition-colors hover:bg-panel2 ${solved ? "row-solved" : ""}`}
+                      >
+                        <span className="mono flex size-9 shrink-0 items-center justify-center rounded-full bg-inset text-sm text-mute">{String(itemIndex + 1).padStart(2, "0")}</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium">{entry.problem.title}</span>
+                          <span className="mono mt-0.5 block text-xs text-mute">{code ?? `題目 ${entry.problem.order}`}</span>
+                          <span className="mt-1 block text-xs text-dim">{getToiTopic(code).lesson.goal}</span>
+                        </span>
+                        <span className="shrink-0 flex flex-col items-end gap-2">
+                          <DifficultyBadge difficulty={entry.problem.difficulty} />
+                          <span className="text-xs text-blue">{solved ? "已完成" : "開始教學 →"}</span>
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          ))}
+        </section>
+      ) : isApcsPath ? (
         <section aria-label="學習路徑" className="space-y-5">
           <div>
             <p className="mono text-xs uppercase tracking-[0.2em] text-mute">
@@ -332,6 +416,8 @@ export default async function CoursePage({
                                 ? `/recognition/q/${entry.problem.id}`
                                 : isApcsPath && entry.problem.problemCode && apcsCourseLessons[entry.problem.problemCode]
                                   ? `/courses/${course.id}/lessons/${entry.problem.problemCode}`
+                                  : isToiCourse && entry.problem.problemCode
+                                    ? `/courses/${course.id}/lessons/${entry.problem.problemCode}`
                                   : `/problems/${entry.problem.problemCode}`
                             }
                             className={`flex items-center gap-3 rounded-lg border border-bd p-3 transition-colors hover:bg-panel2 ${solved ? "row-solved" : ""}`}
@@ -350,11 +436,16 @@ export default async function CoursePage({
                                   {apcsCourseLessons[entry.problem.problemCode].concept}
                                 </span>
                               )}
+                              {isToiCourse && entry.problem.problemCode && (
+                                <span className="mt-1 block text-xs text-dim">
+                                  {getToiTopic(entry.problem.problemCode).title} ・ {getToiTopic(entry.problem.problemCode).lesson.concept}
+                                </span>
+                              )}
                             </span>
                             {solved ? (
                               <span className="vbadge vbadge-green">已完成</span>
                             ) : (
-                              <span className="shrink-0 text-sm text-blue">{isApcsPath ? "開始教學 →" : "開始練習 →"}</span>
+                              <span className="shrink-0 text-sm text-blue">{isApcsPath || isToiCourse ? "開始教學 →" : "開始練習 →"}</span>
                             )}
                           </Link>
                         </li>
