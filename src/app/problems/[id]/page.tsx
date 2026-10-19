@@ -12,6 +12,7 @@ import ProblemDiscussion from "@/components/ProblemDiscussion";
 import ProblemWorkspace from "@/components/ProblemWorkspace";
 import { markdownSnippet } from "@/lib/textSnippet";
 import { PROBLEM_CODE_RE } from "@/lib/problemCode";
+import { getLessonCourseTitles } from "@/lib/courseLessons";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,7 @@ export default async function ProblemPage({
   if (!PROBLEM_CODE_RE.test(problemCode)) notFound();
 
   const session = await getSession();
+  const lessonCourseTitles = getLessonCourseTitles(problemCode);
   const [problem, acceptedSub] = await Promise.all([
     prisma.problem.findFirst({
       where: { problemCode, type: "PROGRAMMING" },
@@ -66,6 +68,17 @@ export default async function ProblemPage({
         },
         subtasks: { orderBy: { order: "asc" } },
         tags: { include: { tag: true } },
+        courseProblems: {
+          where: {
+            course: {
+              title: { in: lessonCourseTitles },
+              ...(session?.role === "ADMIN" ? {} : { isPublic: true }),
+            },
+          },
+          orderBy: { courseId: "asc" },
+          take: 1,
+          select: { courseId: true },
+        },
       },
     }),
     session
@@ -83,6 +96,7 @@ export default async function ProblemPage({
     notFound();
   }
   const accepted = acceptedSub !== null;
+  const lessonCourse = problem.courseProblems[0];
   const learningResourceStructuredData = problem.isPublic
     ? JSON.stringify({
         "@context": "https://schema.org",
@@ -117,6 +131,11 @@ export default async function ProblemPage({
             sharePath={`/problems/${problem.problemCode}`}
             badges={<DifficultyBadge difficulty={problem.difficulty} />}
             tags={problem.tags.map((pt) => ({ id: pt.tagId, name: pt.tag.name }))}
+            lessonHref={
+              lessonCourse
+                ? `/courses/${lessonCourse.courseId}/lessons/${problemCode}`
+                : undefined
+            }
             adminHref={
               session?.role === "ADMIN"
                 ? `/admin/problems/${problem.id}/edit`

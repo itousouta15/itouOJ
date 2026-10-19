@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ApcsLessonLab from "@/components/ApcsLessonLab";
 import DifficultyBadge from "@/components/DifficultyBadge";
-import { apcsCourseLessons } from "@/lib/apcsCourseLessons";
-import { apcsPastExamLessons } from "@/lib/apcsPastExamLessons";
+import { getCourseLesson } from "@/lib/courseLessons";
+import { apcsPastExamUnits } from "@/lib/apcsPastExamCourse";
 import { getToiTopicForProblem } from "@/lib/toiCourseCurriculum";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -18,8 +18,7 @@ export default async function ApcsLessonPage({
   const { id, problemCode } = await params;
   const courseId = Number(id);
   const toiTopic = getToiTopicForProblem(problemCode);
-  const lesson = apcsCourseLessons[problemCode] ?? apcsPastExamLessons[problemCode] ?? toiTopic?.lesson;
-  if (!Number.isInteger(courseId) || !lesson) notFound();
+  if (!Number.isInteger(courseId)) notFound();
 
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
@@ -35,21 +34,24 @@ export default async function ApcsLessonPage({
       },
     },
   });
-  const isApcsPath = course?.title === "APCS 實作題：由簡到難";
   const isApcsPastExams = course?.title === "APCS 歷屆";
   const isToiCourse = course?.title === "TOI 新手組 練習";
-  if (!course || (!isApcsPath && !isApcsPastExams && !isToiCourse) || (!course.isPublic && !isAdmin) || (isApcsPath && !apcsCourseLessons[problemCode]) || (isApcsPastExams && !apcsPastExamLessons[problemCode]) || (isToiCourse && !toiTopic)) notFound();
+  if (!course || (!course.isPublic && !isAdmin)) notFound();
+  const lesson = getCourseLesson(course.title, problemCode);
+  if (!lesson) notFound();
 
   const entries = course.problems.filter((entry) => isAdmin || entry.problem.isPublic);
   const lessonEntries = entries.filter((entry) => {
     const code = entry.problem.problemCode;
     if (!code) return false;
-    return isApcsPath
-      ? Boolean(apcsCourseLessons[code])
-      : isApcsPastExams
-        ? Boolean(apcsPastExamLessons[code])
-        : Boolean(getToiTopicForProblem(code));
+    return Boolean(getCourseLesson(course.title, code));
   });
+  if (isApcsPastExams) {
+    const lessonOrder: readonly string[] = apcsPastExamUnits.flatMap((unit) => unit.codes);
+    lessonEntries.sort((a, b) =>
+      lessonOrder.indexOf(a.problem.problemCode!) - lessonOrder.indexOf(b.problem.problemCode!)
+    );
+  }
   const currentIndex = lessonEntries.findIndex((entry) => entry.problem.problemCode === problemCode);
   if (currentIndex < 0) notFound();
   const current = lessonEntries[currentIndex].problem;
