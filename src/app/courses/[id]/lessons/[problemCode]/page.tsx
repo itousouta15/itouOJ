@@ -104,7 +104,7 @@ export default async function ApcsLessonPage({
         </div>
       </header>
 
-      <ApcsLessonLab lesson={lesson} />
+      <ApcsLessonLab key={lesson.code} lesson={lesson} />
 
       <nav aria-label="課程上一題下一題" className="grid gap-3 sm:grid-cols-2">
         {previous ? (
