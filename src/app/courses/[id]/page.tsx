@@ -6,6 +6,8 @@ import DifficultyBadge from "@/components/DifficultyBadge";
 import CourseJoinButton from "@/components/CourseJoinButton";
 import { getToiTopic, toiCourseTopics } from "@/lib/toiCourseCurriculum";
 import { apcsCourseLessons } from "@/lib/apcsCourseLessons";
+import { apcsPastExamLessons } from "@/lib/apcsPastExamLessons";
+import { apcsPastExamUnits } from "@/lib/apcsPastExamCourse";
 
 export const dynamic = "force-dynamic";
 
@@ -105,7 +107,28 @@ export default async function CoursePage({
   const solvedCount = entries.filter((e) => solvedSet.has(e.problemId)).length;
   const pct = total > 0 ? Math.round((solvedCount / total) * 100) : 0;
   const isApcsPath = course.title === "APCS 實作題：由簡到難";
+  const isApcsPastExams = course.title === "APCS 歷屆";
   const isToiCourse = course.title === "TOI 新手組 練習";
+  const apcsPastExamPath = isApcsPastExams
+    ? apcsPastExamUnits.map((unit) => {
+        const unitEntries = unit.codes
+          .map((code) =>
+            entries.find((entry) => entry.problem.problemCode === code)
+          )
+          .filter((entry) => entry !== undefined);
+        return {
+          ...unit,
+          entries: unitEntries,
+          solved: unitEntries.filter((entry) =>
+            solvedSet.has(entry.problemId)
+          ).length,
+        };
+      })
+    : [];
+  const apcsPastExamLessonCount = apcsPastExamPath.reduce(
+    (count, unit) => count + unit.entries.length,
+    0
+  );
   const difficultyGroups = [
     { key: "easy", label: "簡單" },
     { key: "medium", label: "中等" },
@@ -317,6 +340,152 @@ export default async function CoursePage({
             </section>
           ))}
         </section>
+      ) : isApcsPastExams ? (
+        <>
+          <section aria-label="APCS 歷屆學習路徑" className="space-y-5">
+            <div>
+              <p className="mono text-xs uppercase tracking-[0.2em] text-mute">
+                APCS Past Exams · Guided course
+              </p>
+              <h2 className="section-title mt-1">從解題基本功到演算法</h2>
+              <p className="mt-1 max-w-3xl text-sm leading-relaxed text-dim">
+                依主題與解題方法安排 {apcsPastExamLessonCount} 堂引導課，包含觀念拆解、C++ / Python 範例與步驟動畫。下方保留完整 {total} 題歷屆題庫，其他題目可直接練習。
+              </p>
+            </div>
+
+            <nav className="grid gap-3 md:grid-cols-3" aria-label="跳至課程階段">
+              {apcsPastExamPath.map((unit) => (
+                <Link
+                  key={unit.id}
+                  href={`#${unit.id}`}
+                  className="card motion-card p-4 hover:bg-panel2"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="mono text-xs text-mute">{unit.step} / 03</span>
+                    <span className="mono text-xs text-mute">
+                      {session
+                        ? `${unit.solved}/${unit.entries.length} 完成`
+                        : `${unit.entries.length} 堂`}
+                    </span>
+                  </div>
+                  <h3 className="mt-2 font-semibold">{unit.label}</h3>
+                  <p className="mt-1 text-sm text-dim">{unit.intro}</p>
+                </Link>
+              ))}
+            </nav>
+
+            {apcsPastExamPath.map((unit) => (
+              <section
+                key={unit.id}
+                id={unit.id}
+                className="card scroll-mt-24 space-y-4 p-5 sm:p-6"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="mono text-xs text-mute">階段 {unit.step}</p>
+                    <h3 className="section-title mt-1">{unit.label}</h3>
+                    <p className="mt-1 max-w-3xl text-sm text-dim">{unit.intro}</p>
+                  </div>
+                  <span className="mono text-sm text-mute">
+                    {session
+                      ? `${unit.solved}/${unit.entries.length} 堂完成`
+                      : `${unit.entries.length} 堂教學`}
+                  </span>
+                </div>
+                <ul className="flex flex-wrap gap-2">
+                  {unit.focus.map((focus) => (
+                    <li key={focus} className="vbadge vbadge-blue">{focus}</li>
+                  ))}
+                </ul>
+                <ol className="grid gap-2">
+                  {unit.entries.map((entry, index) => {
+                    const code = entry.problem.problemCode!;
+                    const lesson = apcsPastExamLessons[code];
+                    const solved = solvedSet.has(entry.problemId);
+                    return (
+                      <li key={entry.id}>
+                        <Link
+                          href={`/courses/${course.id}/lessons/${code}`}
+                          className={`flex items-center gap-3 rounded-lg border border-bd p-3 transition-colors hover:bg-panel2 ${solved ? "row-solved" : ""}`}
+                        >
+                          <span className="mono flex size-9 shrink-0 items-center justify-center rounded-full bg-inset text-sm text-mute">
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium">{entry.problem.title}</span>
+                            <span className="mono mt-0.5 block text-xs text-mute">{code}</span>
+                            <span className="mt-1 block text-xs text-dim">{lesson.concept}</span>
+                          </span>
+                          <span className="shrink-0 flex flex-col items-end gap-2">
+                            <DifficultyBadge difficulty={entry.problem.difficulty} />
+                            <span className="text-xs text-blue">{solved ? "已完成" : "開始教學 →"}</span>
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </section>
+            ))}
+          </section>
+
+          <section id="question-bank" className="space-y-3 scroll-mt-24">
+            <div>
+              <p className="mono text-xs uppercase tracking-[0.2em] text-mute">Practice archive</p>
+              <h2 className="section-title mt-1">完整歷屆題庫</h2>
+              <p className="mt-1 text-sm text-dim">{total} 題依原難度排列；有教學的代表題可從題名直接進入課程。</p>
+            </div>
+            <div className="card overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="table-head w-16">#</th>
+                    <th className="table-head">標題</th>
+                    <th className="table-head w-24">難度</th>
+                  </tr>
+                </thead>
+                {difficultyGroups.map((group) => (
+                  <tbody key={group.key}>
+                    <tr>
+                      <td colSpan={3} className="table-cell bg-panel2">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-semibold">{group.label}</span>
+                          <span className="mono text-xs text-mute">
+                            {session
+                              ? `${group.solved} / ${group.entries.length} 題完成`
+                              : `${group.entries.length} 題`}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    {group.entries.map((entry) => {
+                      const code = entry.problem.problemCode;
+                      const lesson = code ? apcsPastExamLessons[code] : undefined;
+                      return (
+                        <tr
+                          key={entry.id}
+                          className={solvedSet.has(entry.problemId) ? "row-solved" : "hover:bg-panel2"}
+                        >
+                          <td className="table-cell text-dim">{code ?? entry.problem.order}</td>
+                          <td className="table-cell">
+                            <Link
+                              href={lesson ? `/courses/${course.id}/lessons/${code}` : `/problems/${code ?? entry.problem.id}`}
+                              className="font-medium text-blue hover:underline"
+                            >
+                              {entry.problem.title}
+                            </Link>
+                            {lesson && <span className="ml-2 vbadge vbadge-blue">有教學</span>}
+                          </td>
+                          <td className="table-cell"><DifficultyBadge difficulty={entry.problem.difficulty} /></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                ))}
+              </table>
+            </div>
+          </section>
+        </>
       ) : isApcsPath ? (
         <section aria-label="學習路徑" className="space-y-5">
           <div>
