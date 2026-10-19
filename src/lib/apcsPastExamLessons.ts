@@ -1,6 +1,12 @@
 import type { ApcsLesson } from "@/lib/apcsCourseLessons";
+import { lessonsPart1 } from "@/lib/apcsPastExamBatches/part1";
+import { lessonsPart2 } from "@/lib/apcsPastExamBatches/part2";
+import { lessonsPart3 } from "@/lib/apcsPastExamBatches/part3";
+import { lessonsPart4 } from "@/lib/apcsPastExamBatches/part4";
+import { lessonsPart5 } from "@/lib/apcsPastExamBatches/part5";
+import { lessonsPart6 } from "@/lib/apcsPastExamBatches/part6";
 
-export const apcsPastExamLessons: Record<string, ApcsLesson> = {
+const introductoryLessons: Record<string, ApcsLesson> = {
   a449: {
     code: "a449",
     concept: "週期模擬・邊界判斷",
@@ -143,7 +149,7 @@ export const apcsPastExamLessons: Record<string, ApcsLesson> = {
     traceLabel: "好友指標",
     trace: [
       { title: "從 0 開始", description: "沿好友關係 0→4→6→8→5→0，走回已拜訪的 0，一圈完成。", cells: ["0→4", "4→6", "6→8", "8→5", "5→0"], active: [0, 1, 2, 3, 4], variables: [["群體數", "1"], ["已拜訪", "0,4,5,6,8"]] },
-      { title: "找下一個未拜訪者", description: "從 1 出發得到 1→7→1，是另一個環。", cells: ["0→4", "4→6", "6→0", "1→7", "7→1"], active: [3, 4], variables: [["群體數", "2"], ["已拜訪", "0,1,4,6,7"]] },
+      { title: "找下一個未拜訪者", description: "從 1 出發得到 1→7→1，是另一個環。", cells: ["0→4", "4→6", "6→8", "8→5", "5→0", "1→7", "7→1"], active: [5, 6], variables: [["群體數", "2"], ["已拜訪", "0,1,4,5,6,7,8"]] },
       { title: "完成所有環", description: "其餘人形成 2→2 與 3→9→3，總共有 4 個小群體。", cells: ["2→2", "3→9", "9→3"], active: [0, 1, 2], variables: [["群體數", "4"], ["所有人已拜訪", "是"]] },
     ],
     cpp: `#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> friendOf(n);\n    for (int& x : friendOf) cin >> x;\n\n    vector<bool> visited(n, false);\n    int groups = 0;\n    for (int start = 0; start < n; ++start) {\n        if (visited[start]) continue;\n        ++groups;\n        int current = start;\n        while (!visited[current]) {\n            visited[current] = true;\n            current = friendOf[current];\n        }\n    }\n    cout << groups << '\\n';\n}`,
@@ -192,3 +198,14 @@ export const apcsPastExamLessons: Record<string, ApcsLesson> = {
     python: `n = int(input())\na = list(map(int, input().split()))\nprefix = [0]\nfor x in a:\n    prefix.append(prefix[-1] + x)\n\ndef range_sum(left, right):\n    return prefix[right + 1] - prefix[left]\n\ndp = [[0] * n for _ in range(n)]\nfor length in range(2, n + 1):\n    for left in range(n - length + 1):\n        right = left + length - 1\n        dp[left][right] = min(\n            dp[left][cut] + dp[cut + 1][right]\n            + abs(range_sum(left, cut) - range_sum(cut + 1, right))\n            for cut in range(left, right)\n        )\n\nprint(dp[0][n - 1])`,
   },
 };
+
+export const apcsPastExamLessons: Record<string, ApcsLesson> = { ...introductoryLessons };
+for (const lesson of [
+  ...lessonsPart1, ...lessonsPart2, ...lessonsPart3,
+  ...lessonsPart4, ...lessonsPart5, ...lessonsPart6,
+]) {
+  if (apcsPastExamLessons[lesson.code]) {
+    throw new Error(`Duplicate APCS lesson: ${lesson.code}`);
+  }
+  apcsPastExamLessons[lesson.code] = lesson;
+}

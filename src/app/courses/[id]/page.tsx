@@ -349,7 +349,7 @@ export default async function CoursePage({
               </p>
               <h2 className="section-title mt-1">從解題基本功到演算法</h2>
               <p className="mt-1 max-w-3xl text-sm leading-relaxed text-dim">
-                依主題與解題方法安排 {apcsPastExamLessonCount} 堂引導課，包含觀念拆解、C++ / Python 範例與步驟動畫。下方保留完整 {total} 題歷屆題庫，其他題目可直接練習。
+                依主題與解題方法安排 {apcsPastExamLessonCount} 堂引導課，從基本模擬逐步走到資料結構與動態規劃。每堂包含觀念拆解、C++ / Python 完整程式與步驟動畫，也可從下方完整 {total} 題歷屆題庫選課。
               </p>
             </div>
 
@@ -361,7 +361,7 @@ export default async function CoursePage({
                   className="card motion-card p-4 hover:bg-panel2"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="mono text-xs text-mute">{unit.step} / 03</span>
+                    <span className="mono text-xs text-mute">{unit.step} / {String(apcsPastExamPath.length).padStart(2, "0")}</span>
                     <span className="mono text-xs text-mute">
                       {session
                         ? `${unit.solved}/${unit.entries.length} 完成`
@@ -433,7 +433,7 @@ export default async function CoursePage({
             <div>
               <p className="mono text-xs uppercase tracking-[0.2em] text-mute">Practice archive</p>
               <h2 className="section-title mt-1">完整歷屆題庫</h2>
-              <p className="mt-1 text-sm text-dim">{total} 題依原難度排列；有教學的代表題可從題名直接進入課程。</p>
+              <p className="mt-1 text-sm text-dim">{total} 題依原難度排列；點選題名進入該題教學，再從教學頁前往實作。</p>
             </div>
             <div className="card overflow-x-auto">
               <table className="w-full">
