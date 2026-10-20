@@ -225,8 +225,16 @@ systemctl daemon-reload
 systemctl enable --now online-judge-control
 systemctl restart online-judge-control
 systemctl is-active --quiet online-judge-control
-control_status=$(runuser -u oj -- setpriv --no-new-privs curl --silent --show-error --max-time 10 \
-  --unix-socket /run/oj-service-control/control.sock -o /dev/null -w '%{http_code}' http://localhost/control)
+control_status=''
+for ((attempt=0; attempt<30; attempt++)); do
+  # systemctl reports active before Node has bound the socket. A failed probe
+  # here must not fire the ERR rollback trap inside command substitution.
+  if control_status=$(runuser -u oj -- setpriv --no-new-privs curl --silent --max-time 2 \
+    --unix-socket /run/oj-service-control/control.sock -o /dev/null -w '%{http_code}' http://localhost/control); then
+    if [[ "$control_status" == 405 ]]; then break; fi
+  fi
+  sleep 1
+done
 [[ "$control_status" == 405 ]]
 SITE_STARTED=1
 systemctl start online-judge online-judge-worker
