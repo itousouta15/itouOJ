@@ -65,6 +65,11 @@ jobs:
           CPE_TEST_PRODUCTION: "1"
         run: npm run test:cpe-course
 
+      - name: Course layout integration tests
+        env:
+          COURSE_LAYOUT_TEST_PRODUCTION: "1"
+        run: npm run test:course-layout
+
   itoulang:
     runs-on: ubuntu-latest
     steps:

@@ -19,6 +19,7 @@
     "test:apcs-lessons": "node --import ./scripts/ctf-test-loader.mjs scripts/verify-apcs-lessons.mjs",
     "test:cpe-lessons": "node --import ./scripts/ctf-test-loader.mjs scripts/verify-cpe-lessons.mjs",
     "test:cpe-course": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-cpe-course.mjs",
+    "test:course-layout": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-course-overview.mjs scripts/test-course-layout.mjs",
     "test:judge:staging": "node --import ./scripts/ctf-test-loader.mjs scripts/stage-judge-native.mjs",
     "judge:worker": "node scripts/judge-worker.mjs",
     "judge:remote": "node --import ./scripts/ctf-test-loader.mjs scripts/judge-remote-worker.mjs",
