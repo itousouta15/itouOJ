@@ -11,6 +11,7 @@ const socketPath = "/run/oj-service-control/control.sock";
 const allowed = new Set([
   "website:restart", "proxy:start", "proxy:reload", "worker:start", "worker:restart",
   "sandbox:start", "sandbox:restart", "interactive:start", "interactive:restart",
+  "remote:start", "remote:restart",
 ]);
 
 export function createControlServer(perform) {

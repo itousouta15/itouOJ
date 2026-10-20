@@ -372,6 +372,7 @@ model Subtask {
 // 題單型課程：一組題目 + 說明，使用者加入後追蹤解題進度
 model Course {
   id          Int             @id @default(autoincrement())
+  sortOrder   Int             @default(0)
   title       String
   description String          @default("")
   isPublic    Boolean         @default(true)
@@ -379,6 +380,8 @@ model Course {
   createdAt   DateTime        @default(now())
   problems    CourseProblem[]
   members     CourseMember[]
+
+  @@index([sortOrder])
 }
 
 model CourseProblem {
@@ -561,6 +564,38 @@ model Submission {
   @@index([status, judgeClaimedAt])
   @@index([status, judgeClaimId])
   @@index([status, userId, problemId])
+}
+
+// Outbound-only remote execution hosts. The pairing token is shown once to an
+// administrator; only its SHA-256 digest is stored on the coordinator.
+model ManagedHost {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  address      String
+  role         String   @default("PRIMARY") // PRIMARY | BACKUP (both may claim work)
+  enabled      Boolean  @default(true)
+  tokenHash    String   @unique
+  lastSeenAt   DateTime?
+  workerState  String?
+  sandboxState String?
+  createdAt    DateTime @default(now())
+  commands     HostCommand[]
+
+  @@index([enabled, lastSeenAt])
+}
+
+model HostCommand {
+  id         Int      @id @default(autoincrement())
+  hostId     String
+  host       ManagedHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  service    String
+  action     String
+  state      String   @default("PENDING") // PENDING | DELIVERED | APPLIED | FAILED | UNKNOWN
+  createdAt  DateTime @default(now())
+  deliveredAt DateTime?
+  finishedAt DateTime?
+
+  @@index([hostId, state, id])
 }
 
 // 未提交的編輯器草稿：同一帳號、題目與語言只保留一份。

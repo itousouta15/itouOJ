@@ -93,12 +93,12 @@ export function buildCourseUnits(
       title: unit.label,
       intro: unit.intro,
       focus: unit.focus,
-      entries: unit.codes.flatMap((code) =>
-        entries.filter(
-          (entry) =>
-            entry.problem.type === "PROGRAMMING" &&
-            entry.problem.problemCode === code,
-        ),
+      entries: entries.filter(
+        (entry) =>
+          entry.problem.type === "PROGRAMMING" &&
+          (unit.codes as readonly string[]).includes(
+            entry.problem.problemCode ?? "",
+          ),
       ),
     }));
   } else if (title === "TOI 新手組 練習") {
@@ -113,16 +113,27 @@ export function buildCourseUnits(
           getToiTopicForProblem(entry.problem.problemCode)?.id === unit.id,
       ),
     }));
-  } else {
-    const guided = title === "APCS 實作題：由簡到難";
+  } else if (title === "APCS 實作題：由簡到難") {
     units = courseDifficultyOptions.map((unit) => ({
       ...unit,
-      intro: guided
-        ? unit.intro
-        : "依課程設定順序練習；已完成的題目會以 AC 紀錄標示。",
-      focus: guided ? unit.focus : [],
       entries: entries.filter((entry) => courseEntryLevel(entry) === unit.id),
     }));
+  } else {
+    // Ordinary courses have an explicit teacher-defined sequence. Do not re-sort
+    // by difficulty: split consecutive entries only to keep long courses usable.
+    units = [];
+    for (let offset = 0; offset < entries.length; offset += 20) {
+      units.push({
+        id: `course-${offset / 20 + 1}`,
+        title:
+          entries.length <= 20
+            ? "課程練習"
+            : `單元 ${offset / 20 + 1}｜第 ${offset + 1}–${Math.min(offset + 20, entries.length)} 題`,
+        intro: "依課程設定順序練習；難度篩選不會重新排列題目。",
+        focus: [],
+        entries: entries.slice(offset, offset + 20),
+      });
+    }
   }
   const assigned = new Set<number>();
   units = units.map((unit) => ({

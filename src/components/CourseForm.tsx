@@ -66,8 +66,18 @@ export default function CourseForm({
       ...f,
       problemIds: f.problemIds.includes(id)
         ? f.problemIds.filter((p) => p !== id)
-        : [...f.problemIds, id].sort((a, b) => a - b),
+        : [...f.problemIds, id],
     }));
+  }
+
+  function moveProblem(index: number, offset: number) {
+    setForm((f) => {
+      const problemIds = [...f.problemIds];
+      const destination = index + offset;
+      if (destination < 0 || destination >= problemIds.length) return f;
+      [problemIds[index], problemIds[destination]] = [problemIds[destination], problemIds[index]];
+      return { ...f, problemIds };
+    });
   }
 
   async function save() {
@@ -172,6 +182,28 @@ export default function CourseForm({
             已選 {form.problemIds.length} 題
           </span>
         </p>
+        {form.problemIds.length > 0 && (
+          <div className="mb-4">
+            <p className="mb-2 text-sm text-dim">已選題目順序：使用上下按鈕調整，儲存課程後生效。新勾選的題目會加入最後。</p>
+            <ol className="max-h-80 space-y-2 overflow-y-auto rounded-lg border border-bd bg-inset p-2">
+              {form.problemIds.map((id, index) => {
+                const problem = problems.find((item) => item.id === id);
+                return (
+                  <li key={id} className="flex items-center gap-2 rounded-md border border-bd p-2 text-sm">
+                    <span className="mono w-6 shrink-0 text-mute">{index + 1}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="mono mr-2 text-xs text-mute">{problem?.problemCode ?? `#${id}`}</span>
+                      {problem?.title ?? "題目不存在"}
+                    </span>
+                    <button type="button" className="btn-secondary px-2 py-1" disabled={saving || index === 0} aria-label={`將第 ${index + 1} 題上移`} onClick={() => moveProblem(index, -1)}>↑</button>
+                    <button type="button" className="btn-secondary px-2 py-1" disabled={saving || index === form.problemIds.length - 1} aria-label={`將第 ${index + 1} 題下移`} onClick={() => moveProblem(index, 1)}>↓</button>
+                    <button type="button" className="text-xs text-[#ff6b6b]" disabled={saving} onClick={() => toggleProblem(id)} aria-label={`移除第 ${index + 1} 題`}>移除</button>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
         <input
           type="search"
           className="input mb-3"

@@ -254,6 +254,43 @@ test("all database courses use collapsed units and retain every visible entry ex
   }
 });
 
+test("ordinary overview honors persisted course ordering across difficulty levels", async () => {
+  const saved = await prisma.courseProblem.findMany({
+    where: { courseId: 1 },
+    orderBy: [{ order: "asc" }, { id: "asc" }],
+    include: { problem: { select: { isPublic: true } } },
+  });
+  try {
+    await prisma.$transaction(
+      saved.map((item, index) =>
+        prisma.courseProblem.update({
+          where: { id: item.id },
+          data: { order: saved.length - index },
+        }),
+      ),
+    );
+    const html = rendered(await page("/courses/1"));
+    assert.deepEqual(
+      [...html.matchAll(/data-course-entry="(\d+)"/g)].map((match) =>
+        Number(match[1]),
+      ),
+      saved
+        .filter((item) => item.problem.isPublic)
+        .reverse()
+        .map((item) => item.id),
+    );
+  } finally {
+    await prisma.$transaction(
+      saved.map((item) =>
+        prisma.courseProblem.update({
+          where: { id: item.id },
+          data: { order: item.order },
+        }),
+      ),
+    );
+  }
+});
+
 test("known tutorials route to lessons; unmatched and recognition entries stay practice links", async () => {
   for (const [id, code] of [
     [2, "a006"],
@@ -312,7 +349,7 @@ test("progress and member rankings use the whole course under filtering, not oth
     assert.match(board, /1<!-- --> \/ <!-- -->7/);
   }
   assert.equal(entryCount(filtered), 1);
-  assert.ok(filtered.includes("全單元 0 / 1 題已完成"));
+  assert.ok(filtered.includes("全單元 1 / 7 題已完成"));
   const nonmember = await page("/courses/2", "alice");
   assert.ok(!nonmember.includes('aria-label="課程排行"'));
 });

@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { request as httpRequest } from "node:http";
 import { promisify } from "node:util";
+import { isAdminSameOrigin } from "@/lib/adminOrigin";
 import { MANAGED_SERVICES, type ManagedService, type ServiceAction, type ServiceState } from "@/lib/managedServices";
 
 const run = promisify(execFile);
@@ -55,16 +56,7 @@ export function createServiceAdminHandler(options: {
       if (request.method === "GET") return json({ services: await options.getStatus(), sampledAt: new Date().toISOString() });
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-      // Browser POSTs must originate on this host. The public nginx proxy sets Host
-      // to the requested site; Next may see an HTTP URL behind its HTTPS proxy.
-      const rawOrigin = request.headers.get("origin");
-      const host = request.headers.get("host") ?? new URL(request.url).host;
-      let origin: URL;
-      try { origin = new URL(rawOrigin ?? ""); }
-      catch { return json({ error: "來源不符" }, 403); }
-      const local = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
-      if (origin.host !== host || (origin.protocol !== "https:" && !(local && origin.protocol === "http:")) ||
-        ![null, "same-origin"].includes(request.headers.get("sec-fetch-site"))) {
+      if (!isAdminSameOrigin(request)) {
         return json({ error: "來源不符" }, 403);
       }
       const params = new URL(request.url).searchParams;

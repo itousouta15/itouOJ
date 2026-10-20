@@ -132,7 +132,7 @@ export default async function CoursePage({
   }
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6">
       <header className="card space-y-3 p-5 sm:p-7">
         <Link href="/courses" className="text-sm text-mute hover:text-blue">
           ← 所有課程
@@ -279,7 +279,7 @@ export default async function CoursePage({
 
       <p role="status" className="text-sm text-mute">
         顯示 {filters.count} / {total}{" "}
-        題。依主題或難度分組，單元內保留課程安排順序，展開即可選課。
+        題。依課程安排分組，單元內保留設定順序，展開即可選課。
       </p>
       {filters.units.length === 0 ? (
         <div className="card p-8 text-center text-dim">
@@ -443,6 +443,6 @@ export default async function CoursePage({
           ← 所有課程
         </Link>
       </p>
-    </main>
+    </div>
   );
 }

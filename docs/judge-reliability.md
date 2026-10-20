@@ -54,8 +54,9 @@ successful heartbeat, not the original start time.
 
 This is at-least-once execution with idempotent result application. A lost claim
 response can leave an orphaned lease until expiry. No claim-request deduplication,
-durable attempt history, dead-letter queue, worker registry or global scheduler
-is included. Repeated sandbox failures release jobs and back off; remove unhealthy
+durable attempt history, dead-letter queue or global scheduler
+is included. Enrolled hosts have a heartbeat/status registry (`docs/managed-hosts.md`),
+but historical leases are not retroactively attributed to a host. Repeated sandbox failures release jobs and back off; remove unhealthy
 workers rather than allowing them to repeatedly claim the oldest submission.
 
 ## Launch on additional hosts

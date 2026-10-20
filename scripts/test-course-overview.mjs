@@ -25,16 +25,16 @@ function entry(id, code, difficulty = "easy", type = "PROGRAMMING") {
   };
 }
 
-test("all APCS archived entries have one primary home in pedagogical code order", () => {
+test("all APCS archived entries have one primary home and keep saved order within topics", () => {
   const codes = apcsPastExamUnits.flatMap((unit) => unit.codes);
   const entries = codes.map((code, index) => entry(index + 1, code)).reverse();
   const units = buildCourseUnits("APCS 歷屆", entries);
-  assert.deepEqual(
-    units.flatMap((unit) =>
-      unit.entries.map((item) => item.problem.problemCode),
-    ),
-    codes,
-  );
+  assert.equal(units.flatMap((unit) => unit.entries).length, entries.length);
+  for (const unit of units)
+    assert.deepEqual(
+      unit.entries,
+      entries.filter((item) => unit.entries.includes(item)),
+    );
   assert.equal(
     new Set(units.flatMap((unit) => unit.entries.map((item) => item.id))).size,
     entries.length,
@@ -59,7 +59,7 @@ test("TOI topics keep teacher order without assigning unknown codes to a false t
   );
 });
 
-test("generic difficulty groups preserve order and unknown difficulty; navigation respects problem type", () => {
+test("ordinary courses preserve the complete saved sequence including mixed and unknown difficulty", () => {
   const entries = [
     entry(1, "a029", "hard"),
     entry(2, "a006"),
@@ -70,11 +70,11 @@ test("generic difficulty groups preserve order and unknown difficulty; navigatio
   const units = buildCourseUnits("一般課程", entries);
   assert.deepEqual(
     units.map((unit) => unit.id),
-    ["easy", "medium", "hard", "other"],
+    ["course-1"],
   );
   assert.deepEqual(
     units[0].entries.map((item) => item.id),
-    [2, 4],
+    [1, 2, 3, 4, 5],
   );
   assert.equal(
     courseEntryHref(
@@ -87,6 +87,27 @@ test("generic difficulty groups preserve order and unknown difficulty; navigatio
   assert.equal(courseEntryHref(1, "一般課程", entry(7, null)), null);
 });
 
+test("long ordinary courses split consecutive units without losing or reordering entries", () => {
+  const entries = Array.from({ length: 45 }, (_, index) =>
+    entry(index + 1, `a${index + 100}`, index % 2 ? "hard" : "easy"),
+  ).reverse();
+  const units = buildCourseUnits("自訂課程", entries);
+  assert.deepEqual(
+    units.map((unit) => unit.entries.length),
+    [20, 20, 5],
+  );
+  assert.deepEqual(
+    units.flatMap((unit) => unit.entries),
+    entries,
+  );
+  assert.deepEqual(
+    filterCourseUnits("自訂課程", units, { level: "hard" }).units.flatMap(
+      (unit) => unit.entries,
+    ),
+    entries.filter((item) => item.problem.difficulty === "hard"),
+  );
+});
+
 test("filters accept repeated parameters, ignore invalid selections and never mutate full units", () => {
   const units = buildCourseUnits("一般課程", [
     entry(1, "a006"),
@@ -95,7 +116,7 @@ test("filters accept repeated parameters, ignore invalid selections and never mu
   const filtered = filterCourseUnits("一般課程", units, {
     q: [" A029 ", "a006"],
     level: ["hard", "easy"],
-    topic: ["hard", "easy"],
+    topic: ["course-1", "invalid"],
   });
   assert.equal(filtered.count, 1);
   assert.equal(filtered.units[0].entries[0].problem.problemCode, "a029");
