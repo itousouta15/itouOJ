@@ -5,8 +5,9 @@ import { MANAGED_SERVICES, type ManagedService, type ServiceAction, type Service
 const run = promisify(execFile);
 
 export function isServiceAction(service: string | null, action: string | null): service is ManagedService {
-  return service !== null && Object.hasOwn(MANAGED_SERVICES, service) &&
-    (action === "restart" || (action === "start" && service !== "website"));
+  if (service === null || !Object.hasOwn(MANAGED_SERVICES, service)) return false;
+  if (service === "proxy") return action === "start" || action === "reload";
+  return action === "restart" || (action === "start" && service !== "website");
 }
 
 export async function getManagedServices(): Promise<ServiceState[]> {

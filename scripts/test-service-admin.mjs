@@ -9,8 +9,10 @@ const request = (query = "", { method = "GET", origin = "http://127.0.0.1", head
   });
 const statuses = [
   { service: "website", state: "active", enabled: true },
+  { service: "proxy", state: "active", enabled: true },
   { service: "worker", state: "inactive", enabled: false },
   { service: "sandbox", state: "failed", enabled: true },
+  { service: "interactive", state: "active", enabled: true },
 ];
 
 test("service admin checks the current role before reading or controlling services", async () => {
@@ -49,6 +51,7 @@ test("service actions require same-origin POST and a fixed service/action pair",
   }
   assert.equal((await handle(request(worker, { method: "POST", headers: { "sec-fetch-site": "cross-site" } }))).status, 403);
   for (const query of ["?service=website&action=start", "?service=nginx&action=restart",
+    "?service=proxy&action=restart", "?service=proxy&action=stop", "?service=interactive&action=reload",
     "?service=worker&action=stop", "?service=worker.service&action=restart", "?service=worker&action=restart%20sandbox-server.service"]) {
     assert.equal((await handle(request(query, { method: "POST" }))).status, 400);
   }
@@ -60,9 +63,12 @@ test("service actions require same-origin POST and a fixed service/action pair",
   assert.equal((await handle(request(worker, { method: "POST", origin: "http://oj.itousouta.me",
     headers: { host: "oj.itousouta.me" } }))).status, 403);
   assert.equal((await handle(request(worker, { method: "POST" }))).status, 200);
+  assert.equal((await handle(request("?service=proxy&action=reload", { method: "POST" }))).status, 200);
+  assert.equal((await handle(request("?service=interactive&action=restart", { method: "POST" }))).status, 200);
   assert.equal((await handle(request("?service=sandbox&action=restart", { method: "POST" }))).status, 200);
   assert.equal((await handle(request("?service=website&action=restart", { method: "POST" }))).status, 202);
-  assert.deepEqual(actions, [["worker", "start"], ["worker", "start"], ["sandbox", "restart"], ["website", "restart"]]);
+  assert.deepEqual(actions, [["worker", "start"], ["worker", "start"], ["proxy", "reload"],
+    ["interactive", "restart"], ["sandbox", "restart"], ["website", "restart"]]);
 });
 
 test("service failures hide privileged command details and navigation is admin-only", async () => {

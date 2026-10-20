@@ -70,6 +70,8 @@ export default function AdminServices() {
     <div className="grid gap-3 md:grid-cols-3">
       {snapshot?.services.map(({ service, state, enabled }) => {
         const canStart = service !== "website" && (state === "inactive" || state === "failed" || (service === "worker" && !enabled));
+        const maintenance = service === "proxy" ? "reload" : "restart";
+        const canMaintain = service === "proxy" ? state === "active" : state !== "unknown";
         return <div key={service} className="card p-4">
           <h2 className="font-semibold">{MANAGED_SERVICES[service].label}</h2>
           <p className="my-3 text-sm">狀態：<span className={`vbadge ${state === "active" ? "vbadge-green" : "vbadge-amber"}`}>{labels[state]}</span></p>
@@ -78,11 +80,13 @@ export default function AdminServices() {
             {canStart && <button className="btn-secondary" disabled={busy !== null} onClick={() => void act(service, "start")}>
               {service === "worker" && state === "active" ? "啟用自動啟動" : "啟動"}
             </button>}
-            <button className="btn-secondary" disabled={busy !== null || state === "unknown"} onClick={() => void act(service, "restart")}>重新啟動</button>
+            <button className="btn-secondary" disabled={busy !== null || !canMaintain} onClick={() => void act(service, maintenance)}>
+              {service === "proxy" ? "檢查設定並重新載入" : "重新啟動"}
+            </button>
           </div>
         </div>;
       })}
     </div>
-    <p className="mt-4 text-sm text-mute">此頁管理目前網站主機上的 systemd 服務；網站完全停止時，需從主機端恢復。</p>
+    <p className="mt-4 text-sm text-mute">此頁管理目前網站主機上的 systemd 服務；網站或 nginx 完全停止時，需從主機端恢復。</p>
   </section>;
 }

@@ -8,10 +8,19 @@ case "$1:$2" in
   worker:restart)
     /usr/bin/systemctl enable online-judge-worker.service
     exec /usr/bin/systemctl restart online-judge-worker.service ;;
+  proxy:start)
+    exec /usr/bin/systemctl start nginx.service ;;
+  proxy:reload)
+    /usr/sbin/nginx -t
+    exec /usr/bin/systemctl reload nginx.service ;;
   sandbox:start)
     exec /usr/bin/systemctl start sandbox-server.service ;;
   sandbox:restart)
     exec /usr/bin/systemctl restart sandbox-server.service ;;
+  interactive:start)
+    exec /usr/bin/systemctl start sandbox-interactive.service ;;
+  interactive:restart)
+    exec /usr/bin/systemctl restart sandbox-interactive.service ;;
   website:restart)
     # The Next request must return before its own service is stopped.
     exec /usr/bin/systemd-run --unit=oj-website-restart --on-active=5s --collect \

@@ -1,9 +1,10 @@
 # 網頁管理主機服務
 
-管理員登入後可在「伺服器服務」（`/admin/services`）查看網站、評測 worker、評測 sandbox
-的 systemd 狀態。worker 可啟動／設為開機自動啟動，三個服務均可重啟；sandbox
-停止時也可啟動。頁面每 5 秒更新一次，網站重啟會延遲 5 秒執行，讓原請求先完成。
-網站本身無法連線時，仍須由主機的 SSH／主控台恢復。
+管理員登入後可在「伺服器服務」（`/admin/services`）查看網站、nginx、評測 worker、
+評測 sandbox、互動終端的 systemd 狀態。worker 可啟動／設為開機自動啟動；
+評測 sandbox、互動終端可啟動或重啟。nginx 可啟動，或先檢查設定再重新載入；
+網站可重啟。頁面每 5 秒更新一次，網站重啟會延遲 5 秒執行，讓原請求先完成。
+網站或 nginx 無法對外連線時，仍須由主機的 SSH／主控台恢復。
 
 `GET/POST /api/admin/services` 每次都根據資料庫中的即時角色驗證管理員；POST
 另檢查同站 Origin、Fetch Metadata 和固定的服務／操作清單。回應不快取，
