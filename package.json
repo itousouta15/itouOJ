@@ -16,6 +16,7 @@
     "test:playground": "node --experimental-test-module-mocks --import ./scripts/ctf-test-loader.mjs --test scripts/test-playground.mjs scripts/test-playground-draft.mjs",
     "test:password-reset": "node --experimental-test-module-mocks --import ./scripts/ctf-test-loader.mjs --test scripts/test-password-reset.mjs",
     "test:problems": "node --experimental-test-module-mocks --import ./scripts/ctf-test-loader.mjs --test scripts/test-problem-management.mjs",
+    "test:courses": "node --experimental-test-module-mocks --import ./scripts/ctf-test-loader.mjs --test scripts/test-course-ordering.mjs",
     "test:apcs-lessons": "node --import ./scripts/ctf-test-loader.mjs scripts/verify-apcs-lessons.mjs",
     "test:cpe-lessons": "node --import ./scripts/ctf-test-loader.mjs scripts/verify-cpe-lessons.mjs",
     "test:cpe-course": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-cpe-course.mjs",
