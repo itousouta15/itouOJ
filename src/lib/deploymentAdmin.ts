@@ -4,22 +4,22 @@ import { isAdminSameOrigin } from "@/lib/adminOrigin";
 type Session = { role: string } | null;
 const revision = /^[a-f0-9]{40}$/;
 type DeployJob = { state: string; phase?: string; target?: string | null; startedAt?: string;
-  updatedAt?: string; message?: string | null };
+  updatedAt?: string; message?: string | null; runId?: string };
 
 export async function readDeployment(method: "GET" | "POST") {
-  return new Promise<{ deployed: string | null; latest: string | null; job: DeployJob }>((resolve, reject) => {
+  return new Promise<{ deployed: string | null; latest: string | null; job: DeployJob; logs: string }>((resolve, reject) => {
     const request = httpRequest({ socketPath: "/run/oj-service-control/control.sock", path: "/deployment", method }, (response) => {
       const chunks: Buffer[] = [];
       let size = 0;
       response.on("data", (chunk: Buffer) => {
         size += chunk.length;
-        if (size > 4096) request.destroy(new Error("Unexpected deployment response"));
+        if (size > 256 * 1024) request.destroy(new Error("Unexpected deployment response"));
         else chunks.push(chunk);
       });
       response.on("error", reject);
       response.on("end", () => {
         if (method === "POST") {
-          if (response.statusCode === 202) resolve({ deployed: null, latest: null, job: { state: "queued" } });
+          if (response.statusCode === 202) resolve({ deployed: null, latest: null, job: { state: "queued" }, logs: "" });
           else reject(new Error("Deployment request rejected"));
           return;
         }
@@ -34,7 +34,9 @@ export async function readDeployment(method: "GET" | "POST") {
               target: revision.test(job.target) ? job.target : null,
               startedAt: typeof job.startedAt === "string" ? job.startedAt : undefined,
               updatedAt: typeof job.updatedAt === "string" ? job.updatedAt : undefined,
-              message: typeof job.message === "string" ? job.message.slice(0, 160) : null } });
+              message: typeof job.message === "string" ? job.message.slice(0, 160) : null,
+              runId: typeof job.runId === "string" && /^[0-9]{1,20}$/.test(job.runId) ? job.runId : undefined },
+            logs: typeof data.logs === "string" ? data.logs.slice(-32 * 1024) : "" });
         } catch { reject(new Error("Invalid deployment response")); }
       });
     });

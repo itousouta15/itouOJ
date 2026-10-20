@@ -26,8 +26,9 @@ Git URL、指令或提交。Actions 領取後會驗證提交仍在 GitHub `maste
    workflow 讓已排入的工作立即啟動；工作沒有排入時不會部署。
 
 GitHub Actions 的來源必須包含目前正式站版本；若兩條歷史分叉，部署會停止，不會
-覆蓋較新的正式站。管理頁的狀態來自 root-owned 記錄檔，不會把工作區未 commit 或
-未推送的修改當成可部署版本。
+覆蓋較新的正式站。管理頁的狀態與最近 32 KB 的正式站部署輸出來自 root-owned
+記錄檔；打包階段可從同頁連到對應的 GitHub Actions 執行紀錄。工作區未 commit
+或未推送的修改不會被當成可部署版本。
 
 部署成功後僅保留最近三份成功的 `/opt/oj-deploy-backups/` 回復點。更多部署訊息可看
 GitHub Actions 執行紀錄、`journalctl -u online-judge-control`，以及正式站部署

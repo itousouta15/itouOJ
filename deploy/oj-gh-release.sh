@@ -4,6 +4,8 @@ set -Eeuo pipefail
 SHA=${1:-}
 RUN_ID=${2:-}
 [[ "$SHA" =~ ^[a-f0-9]{40}$ && "$RUN_ID" =~ ^[0-9]+-[0-9]+$ ]] || exit 2
+LOG=/var/lib/oj-git-deploy/build.log
+exec > >(tee -a "$LOG") 2>&1
 STAGE="/tmp/oj-gh-$SHA-$RUN_ID"
 [[ -d "$STAGE" && ! -L "$STAGE" && -f "$STAGE/oj.tar.gz" && -f "$STAGE/itoulang.tar.gz" ]] || exit 2
 /usr/bin/node /usr/local/sbin/oj-deploy-job.mjs verify "$SHA"
