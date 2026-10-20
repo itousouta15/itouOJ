@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { cpeProblemWhere } from "@/lib/cpeCourse";
 
 export const metadata: Metadata = {
   title: "課程",
@@ -13,17 +14,31 @@ export default async function CoursesPage() {
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
 
-  const courses = await prisma.course.findMany({
-    where: isAdmin ? {} : { isPublic: true },
-    orderBy: { id: "asc" },
-    include: {
-      _count: { select: { problems: true, members: true } },
-    },
-  });
+  const [courses, cpeCount, cpeSolved] = await Promise.all([
+    prisma.course.findMany({
+      where: isAdmin ? {} : { isPublic: true },
+      orderBy: { id: "asc" },
+      include: {
+        _count: { select: { problems: true, members: true } },
+      },
+    }),
+    prisma.problem.count({ where: cpeProblemWhere(isAdmin) }),
+    session
+      ? prisma.submission.findMany({
+          where: {
+            userId: session.userId,
+            status: "AC",
+            problem: cpeProblemWhere(isAdmin),
+          },
+          distinct: ["problemId"],
+          select: { problemId: true },
+        })
+      : Promise.resolve([]),
+  ]);
   const listedCourses = [...courses].sort(
     (a, b) =>
       Number(b.title === "APCS 實作題：由簡到難") -
-      Number(a.title === "APCS 實作題：由簡到難")
+      Number(a.title === "APCS 實作題：由簡到難"),
   );
 
   // 已加入的課程與各課程進度
@@ -51,10 +66,7 @@ export default async function CoursesPage() {
       const solvedSet = new Set(solved.map((s) => s.problemId));
       for (const cp of courseProblems) {
         if (solvedSet.has(cp.problemId)) {
-          progressMap.set(
-            cp.courseId,
-            (progressMap.get(cp.courseId) ?? 0) + 1
-          );
+          progressMap.set(cp.courseId, (progressMap.get(cp.courseId) ?? 0) + 1);
         }
       }
     }
@@ -71,7 +83,7 @@ export default async function CoursesPage() {
         )}
       </div>
 
-      {courses.length === 0 ? (
+      {courses.length === 0 && cpeCount === 0 ? (
         <div className="card p-10 text-center text-sm text-mute">
           還沒有課程
           {isAdmin && (
@@ -88,6 +100,27 @@ export default async function CoursesPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
+          {cpeCount > 0 && (
+            <Link
+              href="/courses/cpe"
+              className="card motion-card block p-5 hover:bg-panel2"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="section-title flex-1">CPE 逐題教學</h2>
+                <span className="vbadge vbadge-blue">公開學習路徑</span>
+              </div>
+              <p className="mt-2 text-sm text-dim">
+                依主題、方法與難度學習，每題包含解題推導、步驟動畫、完整 C++ /
+                Python 程式。
+              </p>
+              <p className="mono mt-3 text-xs text-mute">
+                {cpeCount} 題 · 12 個主題
+                {session
+                  ? ` · ${cpeSolved.length} 題已完成`
+                  : " · 不需加入代碼"}
+              </p>
+            </Link>
+          )}
           {listedCourses.map((c) => {
             const joined = joinedSet.has(c.id);
             const solved = progressMap.get(c.id) ?? 0;
@@ -101,7 +134,9 @@ export default async function CoursesPage() {
               >
                 <div className="flex items-center gap-2">
                   <h2 className="section-title flex-1 truncate">{c.title}</h2>
-                  {joined && <span className="vbadge vbadge-green">已加入</span>}
+                  {joined && (
+                    <span className="vbadge vbadge-green">已加入</span>
+                  )}
                   {!joined && c.joinCode && (
                     <span className="vbadge vbadge-blue">需要代碼</span>
                   )}

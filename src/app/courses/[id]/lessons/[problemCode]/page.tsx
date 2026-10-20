@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ApcsLessonLab from "@/components/ApcsLessonLab";
 import DifficultyBadge from "@/components/DifficultyBadge";
-import { apcsCourseLessons } from "@/lib/apcsCourseLessons";
+import { getCourseLesson } from "@/lib/courseLessons";
+import { apcsPastExamUnits } from "@/lib/apcsPastExamCourse";
+import { getToiTopicForProblem } from "@/lib/toiCourseCurriculum";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -15,8 +17,8 @@ export default async function ApcsLessonPage({
 }) {
   const { id, problemCode } = await params;
   const courseId = Number(id);
-  const lesson = apcsCourseLessons[problemCode];
-  if (!Number.isInteger(courseId) || !lesson) notFound();
+  const toiTopic = getToiTopicForProblem(problemCode);
+  if (!Number.isInteger(courseId)) notFound();
 
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
@@ -32,21 +34,36 @@ export default async function ApcsLessonPage({
       },
     },
   });
-  if (!course || course.title !== "APCS 實作題：由簡到難" || (!course.isPublic && !isAdmin)) notFound();
+  const isApcsPastExams = course?.title === "APCS 歷屆";
+  const isToiCourse = course?.title === "TOI 新手組 練習";
+  if (!course || (!course.isPublic && !isAdmin)) notFound();
+  const lesson = getCourseLesson(course.title, problemCode);
+  if (!lesson) notFound();
 
   const entries = course.problems.filter((entry) => isAdmin || entry.problem.isPublic);
-  const currentIndex = entries.findIndex((entry) => entry.problem.problemCode === problemCode);
+  const lessonEntries = entries.filter((entry) => {
+    const code = entry.problem.problemCode;
+    if (!code) return false;
+    return Boolean(getCourseLesson(course.title, code));
+  });
+  if (isApcsPastExams) {
+    const lessonOrder: readonly string[] = apcsPastExamUnits.flatMap((unit) => unit.codes);
+    lessonEntries.sort((a, b) =>
+      lessonOrder.indexOf(a.problem.problemCode!) - lessonOrder.indexOf(b.problem.problemCode!)
+    );
+  }
+  const currentIndex = lessonEntries.findIndex((entry) => entry.problem.problemCode === problemCode);
   if (currentIndex < 0) notFound();
-  const current = entries[currentIndex].problem;
-  const previous = entries[currentIndex - 1]?.problem;
-  const next = entries[currentIndex + 1]?.problem;
+  const current = lessonEntries[currentIndex].problem;
+  const previous = lessonEntries[currentIndex - 1]?.problem;
+  const next = lessonEntries[currentIndex + 1]?.problem;
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6">
       <nav aria-label="麵包屑" className="flex flex-wrap items-center gap-2 text-sm text-mute">
-        <Link href={`/courses/${courseId}`} className="hover:text-blue">APCS 由簡到難</Link>
+        <Link href={`/courses/${courseId}`} className="hover:text-blue">{isToiCourse ? "TOI 新手組" : isApcsPastExams ? "APCS 歷屆" : "APCS 由簡到難"}</Link>
         <span aria-hidden="true">/</span>
-        <span>第 {currentIndex + 1} / {entries.length} 課</span>
+        <span>第 {currentIndex + 1} / {lessonEntries.length} 課</span>
       </nav>
 
       <header className="card overflow-hidden">
@@ -54,7 +71,7 @@ export default async function ApcsLessonPage({
           <div className="flex flex-wrap items-center gap-2">
             <span className="mono rounded-md bg-inset px-2 py-1 text-xs text-mute">{current.problemCode}</span>
             <DifficultyBadge difficulty={current.difficulty} />
-            <span className="vbadge vbadge-blue">{lesson.concept}</span>
+            <span className="vbadge vbadge-blue">{isToiCourse ? toiTopic?.title : lesson.concept}</span>
           </div>
           <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{current.title}</h1>
           <p className="mt-3 max-w-3xl text-base leading-7 text-dim">{lesson.goal}</p>
@@ -87,7 +104,7 @@ export default async function ApcsLessonPage({
         </div>
       </header>
 
-      <ApcsLessonLab lesson={lesson} />
+      <ApcsLessonLab key={lesson.code} lesson={lesson} />
 
       <nav aria-label="課程上一題下一題" className="grid gap-3 sm:grid-cols-2">
         {previous ? (
@@ -109,7 +126,7 @@ export default async function ApcsLessonPage({
         )}
       </nav>
       <div className="text-center">
-        <Link href={`/courses/${courseId}`} className="text-sm text-blue hover:underline">回到完整學習路徑</Link>
+        <Link href={`/courses/${courseId}`} className="text-sm text-blue hover:underline">回到{isApcsPastExams ? "APCS 歷屆題庫" : isToiCourse ? "TOI 主題課程" : "完整學習路徑"}</Link>
       </div>
     </main>
   );
