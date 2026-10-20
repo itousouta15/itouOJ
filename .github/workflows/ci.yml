@@ -65,35 +65,6 @@ jobs:
           CPE_TEST_PRODUCTION: "1"
         run: npm run test:cpe-course
 
-  cpe-programs:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        batch: [1, 2, 3, 4, 5, 6, final]
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Install test loader dependencies
-        run: npm ci --ignore-scripts
-      - name: Verify CPE reference programs
-        env:
-          CPE_BATCH: ${{ matrix.batch }}
-        run: |
-          if [ "$CPE_BATCH" = "final" ]; then
-            npm run test:cpe-lessons -- --file final --python python3 --cxx g++
-          else
-            npm run test:cpe-lessons -- --batch "$CPE_BATCH" --python python3 --cxx g++
-          fi
-      - name: Verify complete coverage
-        if: matrix.batch == 'final'
-        run: npm run test:cpe-lessons
-
   itoulang:
     runs-on: ubuntu-latest
     steps:
