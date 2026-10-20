@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { cpeProblemWhere } from "@/lib/cpeCourse";
+import { toiPotentialProblemWhere } from "@/lib/toiPotentialCourse";
+import { toiPotentialTopics } from "@/lib/toiPotentialLessonTypes";
 
 export const metadata: Metadata = {
   title: "課程",
@@ -14,27 +16,40 @@ export default async function CoursesPage() {
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
 
-  const [courses, cpeCount, cpeSolved] = await Promise.all([
-    prisma.course.findMany({
-      where: isAdmin ? {} : { isPublic: true },
-      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-      include: {
-        _count: { select: { problems: true, members: true } },
-      },
-    }),
-    prisma.problem.count({ where: cpeProblemWhere(isAdmin) }),
-    session
-      ? prisma.submission.findMany({
-          where: {
-            userId: session.userId,
-            status: "AC",
-            problem: cpeProblemWhere(isAdmin),
-          },
-          distinct: ["problemId"],
-          select: { problemId: true },
-        })
-      : Promise.resolve([]),
-  ]);
+  const [courses, cpeCount, cpeSolved, toiPotentialCount, toiPotentialSolved] =
+    await Promise.all([
+      prisma.course.findMany({
+        where: isAdmin ? {} : { isPublic: true },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+        include: {
+          _count: { select: { problems: true, members: true } },
+        },
+      }),
+      prisma.problem.count({ where: cpeProblemWhere(isAdmin) }),
+      session
+        ? prisma.submission.findMany({
+            where: {
+              userId: session.userId,
+              status: "AC",
+              problem: cpeProblemWhere(isAdmin),
+            },
+            distinct: ["problemId"],
+            select: { problemId: true },
+          })
+        : Promise.resolve([]),
+      prisma.problem.count({ where: toiPotentialProblemWhere(isAdmin) }),
+      session
+        ? prisma.submission.findMany({
+            where: {
+              userId: session.userId,
+              status: "AC",
+              problem: toiPotentialProblemWhere(isAdmin),
+            },
+            distinct: ["problemId"],
+            select: { problemId: true },
+          })
+        : Promise.resolve([]),
+    ]);
   const listedCourses = courses;
 
   // 已加入的課程與各課程進度
@@ -79,7 +94,7 @@ export default async function CoursesPage() {
         )}
       </div>
 
-      {courses.length === 0 && cpeCount === 0 ? (
+      {courses.length === 0 && cpeCount === 0 && toiPotentialCount === 0 ? (
         <div className="card p-10 text-center text-sm text-mute">
           還沒有課程
           {isAdmin && (
@@ -96,6 +111,27 @@ export default async function CoursesPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
+          {toiPotentialCount > 0 && (
+            <Link
+              href="/courses/toi-potential"
+              className="card motion-card block p-5 hover:bg-panel2"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="section-title flex-1">TOI 潛力組逐題教學</h2>
+                <span className="vbadge vbadge-blue">公開學習路徑</span>
+              </div>
+              <p className="mt-2 text-sm text-dim">
+                從統計、模擬到貪心、搜尋、圖論與動態規劃，每題提供解題推導、步驟動畫與完整
+                C++ / Python 程式。
+              </p>
+              <p className="mono mt-3 text-xs text-mute">
+                {toiPotentialCount} 題 · {toiPotentialTopics.length} 個主題
+                {session
+                  ? ` · ${toiPotentialSolved.length} 題已完成`
+                  : " · 不需加入代碼"}
+              </p>
+            </Link>
+          )}
           {cpeCount > 0 && (
             <Link
               href="/courses/cpe"
