@@ -18,17 +18,21 @@ export async function POST(request: Request) {
   }
   const { problemIds, joinCode, ...fields } = parsed.data;
 
-  const course = await prisma.course.create({
-    data: {
-      ...fields,
-      joinCode: joinCode || null,
-      problems: {
-        create: problemIds.map((problemId, i) => ({
-          problemId,
-          order: i + 1,
-        })),
+  const course = await prisma.$transaction(async (tx) => {
+    const last = await tx.course.aggregate({ _max: { sortOrder: true } });
+    return tx.course.create({
+      data: {
+        ...fields,
+        sortOrder: (last._max.sortOrder ?? 0) + 1,
+        joinCode: joinCode || null,
+        problems: {
+          create: problemIds.map((problemId, i) => ({
+            problemId,
+            order: i + 1,
+          })),
+        },
       },
-    },
+    });
   });
   return Response.json({ id: course.id });
 }

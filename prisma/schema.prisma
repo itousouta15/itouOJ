@@ -372,6 +372,7 @@ model Subtask {
 // 題單型課程：一組題目 + 說明，使用者加入後追蹤解題進度
 model Course {
   id          Int             @id @default(autoincrement())
+  sortOrder   Int             @default(0)
   title       String
   description String          @default("")
   isPublic    Boolean         @default(true)
@@ -379,6 +380,8 @@ model Course {
   createdAt   DateTime        @default(now())
   problems    CourseProblem[]
   members     CourseMember[]
+
+  @@index([sortOrder])
 }
 
 model CourseProblem {

@@ -433,7 +433,7 @@ export default async function CoursePage({
             <div>
               <p className="mono text-xs uppercase tracking-[0.2em] text-mute">Practice archive</p>
               <h2 className="section-title mt-1">完整歷屆題庫</h2>
-              <p className="mt-1 text-sm text-dim">{total} 題依原難度排列；點選題名進入該題教學，再從教學頁前往實作。</p>
+              <p className="mt-1 text-sm text-dim">{total} 題依課程設定順序排列；點選題名進入該題教學，再從教學頁前往實作。</p>
             </div>
             <div className="card overflow-x-auto">
               <table className="w-full">
@@ -444,21 +444,15 @@ export default async function CoursePage({
                     <th className="table-head w-24">難度</th>
                   </tr>
                 </thead>
-                {difficultyGroups.map((group) => (
-                  <tbody key={group.key}>
+                <tbody>
+                  {entries.length === 0 && (
                     <tr>
-                      <td colSpan={3} className="table-cell bg-panel2">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="font-semibold">{group.label}</span>
-                          <span className="mono text-xs text-mute">
-                            {session
-                              ? `${group.solved} / ${group.entries.length} 題完成`
-                              : `${group.entries.length} 題`}
-                          </span>
-                        </div>
+                      <td colSpan={3} className="table-cell py-10 text-center text-mute">
+                        這門課還沒有題目
                       </td>
                     </tr>
-                    {group.entries.map((entry) => {
+                  )}
+                    {entries.map((entry) => {
                       const code = entry.problem.problemCode;
                       const lesson = code ? apcsPastExamLessons[code] : undefined;
                       return (
@@ -480,8 +474,7 @@ export default async function CoursePage({
                         </tr>
                       );
                     })}
-                  </tbody>
-                ))}
+                </tbody>
               </table>
             </div>
           </section>
@@ -636,30 +629,15 @@ export default async function CoursePage({
                 <th className="table-head w-24">難度</th>
               </tr>
             </thead>
-            {difficultyGroups.length === 0 ? (
-              <tbody>
+            <tbody>
+              {entries.length === 0 && (
                 <tr>
                   <td colSpan={3} className="table-cell py-10 text-center text-mute">
                     這門課還沒有題目
                   </td>
                 </tr>
-              </tbody>
-            ) : (
-              difficultyGroups.map((group) => (
-                <tbody key={group.key}>
-                  <tr>
-                    <td colSpan={3} className="table-cell bg-panel2">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-semibold">{group.label}</span>
-                        <span className="mono text-xs text-mute">
-                          {session
-                            ? `${group.solved} / ${group.entries.length} 題完成`
-                            : `${group.entries.length} 題`}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                  {group.entries.map((entry) => {
+              )}
+                  {entries.map((entry) => {
                     const isRecognition = entry.problem.type === "RECOGNITION";
                     return (
                       <tr
@@ -702,9 +680,7 @@ export default async function CoursePage({
                       </tr>
                     );
                   })}
-                </tbody>
-              ))
-            )}
+            </tbody>
           </table>
         </div>
       )}
