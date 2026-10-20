@@ -5,6 +5,7 @@
 評測 sandbox、互動終端可啟動或重啟。nginx 可啟動，或先檢查設定再重新載入；
 網站可重啟。頁面每 5 秒更新一次，網站重啟會延遲 5 秒執行，讓原請求先完成。
 網站或 nginx 無法對外連線時，仍須由主機的 SSH／主控台恢復。
+遠端 Server 的接入、監控與評測備援請看 `/admin/hosts` 及 `docs/managed-hosts.md`。
 
 `GET/POST /api/admin/services` 每次都根據資料庫中的即時角色驗證管理員；POST
 另檢查同站 Origin、Fetch Metadata 和固定的服務／操作清單。回應不快取，

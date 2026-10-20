@@ -129,10 +129,12 @@ python3 "$SOURCE/sandbox-runner/test/test_compile_cache.py" \
 echo '== Build staged Next.js app =='
 sh -n "$SOURCE/deploy/oj-service-control"
 node --check "$SOURCE/deploy/oj-service-control-server.mjs"
+node --check "$SOURCE/scripts/host-agent.mjs"
 npm --prefix "$SOURCE" ci --include=dev --silent
 npm --prefix "$SOURCE" run generate --silent
 npm --prefix "$SOURCE" run build
 npm --prefix "$SOURCE" run test:services
+( cd "$SOURCE" && TMPDIR="$SOURCE" npm run test:hosts )
 echo '== Verify playground execution and saved-template migration =='
 npm --prefix "$SOURCE" run test:playground
 echo '== Verify CTF against disposable databases and the staged production build =='

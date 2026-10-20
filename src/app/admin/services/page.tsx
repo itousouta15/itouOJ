@@ -13,6 +13,7 @@ export default async function AdminServicesPage() {
     <div className="mb-4 flex flex-wrap items-center gap-4">
       <h1 className="page-title">伺服器服務</h1>
       <Link href="/admin/judge" className="text-sm text-blue hover:underline">← 回評測監控</Link>
+      <Link href="/admin/hosts" className="text-sm text-blue hover:underline">設定遠端 Server →</Link>
     </div>
     <AdminServices />
   </div>;

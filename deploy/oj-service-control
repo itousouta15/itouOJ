@@ -21,6 +21,10 @@ case "$1:$2" in
     exec /usr/bin/systemctl start sandbox-interactive.service ;;
   interactive:restart)
     exec /usr/bin/systemctl restart sandbox-interactive.service ;;
+  remote:start)
+    exec /usr/bin/systemctl enable --now online-judge-remote@managed.service ;;
+  remote:restart)
+    exec /usr/bin/systemctl restart online-judge-remote@managed.service ;;
   website:restart)
     # The Next request must return before its own service is stopped.
     exec /usr/bin/systemd-run --unit=oj-website-restart --on-active=5s --collect \

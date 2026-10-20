@@ -563,6 +563,38 @@ model Submission {
   @@index([status, userId, problemId])
 }
 
+// Outbound-only remote execution hosts. The pairing token is shown once to an
+// administrator; only its SHA-256 digest is stored on the coordinator.
+model ManagedHost {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  address      String
+  role         String   @default("PRIMARY") // PRIMARY | BACKUP (both may claim work)
+  enabled      Boolean  @default(true)
+  tokenHash    String   @unique
+  lastSeenAt   DateTime?
+  workerState  String?
+  sandboxState String?
+  createdAt    DateTime @default(now())
+  commands     HostCommand[]
+
+  @@index([enabled, lastSeenAt])
+}
+
+model HostCommand {
+  id         Int      @id @default(autoincrement())
+  hostId     String
+  host       ManagedHost @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  service    String
+  action     String
+  state      String   @default("PENDING") // PENDING | DELIVERED | APPLIED | FAILED | UNKNOWN
+  createdAt  DateTime @default(now())
+  deliveredAt DateTime?
+  finishedAt DateTime?
+
+  @@index([hostId, state, id])
+}
+
 // 未提交的編輯器草稿：同一帳號、題目與語言只保留一份。
 // revision 用於跨裝置樂觀鎖，避免較舊的頁面覆蓋另一台裝置的修改。
 model CodeDraft {
