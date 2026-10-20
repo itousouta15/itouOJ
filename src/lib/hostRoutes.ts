@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { createHostRegistry } from "@/lib/hostRegistry";
 import { isAdminSameOrigin } from "@/lib/adminOrigin";
 import { JudgeProtocolError, readJudgeJson } from "@/lib/judgeWire";
+import type { ServiceState } from "@/lib/managedServices";
 
 type Registry = ReturnType<typeof createHostRegistry>;
 type Session = { role: string } | null;
@@ -24,11 +25,23 @@ const json = (body: unknown, status = 200) => Response.json(body, { status, head
   "Cache-Control": "no-store, private", Vary: "Cookie", "X-Content-Type-Options": "nosniff",
 } });
 
-export function createHostAdminHandler(options: { getSession: () => Promise<Session>; registry: Registry }) {
+export function createHostAdminHandler(options: {
+  getSession: () => Promise<Session>;
+  registry: Registry;
+  getLocalServices: () => Promise<ServiceState[]>;
+}) {
   return async (request: Request) => {
     try {
       if ((await options.getSession())?.role !== "ADMIN") return json({ error: "需要管理員權限" }, 403);
-      if (request.method === "GET") return json(await options.registry.list());
+      if (request.method === "GET") {
+        const [snapshot, services] = await Promise.all([options.registry.list(), options.getLocalServices()]);
+        const state = (service: ServiceState["service"]) => services.find((row) => row.service === service)?.state ?? "unknown";
+        const local = { id: "local", kind: "LOCAL" as const, name: "網站主機（本機）",
+          address: request.headers.get("host") ?? new URL(request.url).host,
+          role: "PRIMARY", enabled: true, online: true, lastSeenAt: snapshot.sampledAt,
+          workerState: state("worker"), sandboxState: state("sandbox"), commands: [] };
+        return json({ ...snapshot, hosts: [local, ...snapshot.hosts.map((host) => ({ ...host, kind: "REMOTE" as const }))] });
+      }
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
       if (!isAdminSameOrigin(request)) return json({ error: "來源不符" }, 403);
       const parsed = input.parse(await readJudgeJson(request, 1024));

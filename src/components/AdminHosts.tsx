@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Command = { id: number; service: string; action: string; state: string; createdAt: string };
-type Host = { id: string; name: string; address: string; role: string; enabled: boolean; online: boolean;
+type Host = { id: string; kind: "LOCAL" | "REMOTE"; name: string; address: string; role: string; enabled: boolean; online: boolean;
   lastSeenAt: string | null; workerState: string | null; sandboxState: string | null; commands: Command[] };
 type Snapshot = { hosts: Host[]; sampledAt: string };
 
@@ -57,8 +58,9 @@ export default function AdminHosts() {
     finally { setBusy(false); }
   }
 
-  return <section aria-label="遠端主機">
-    <p className="mb-4 text-sm text-dim">每台主機以接入憑證主動連線，無需在後台保存 SSH 密碼。主要與備援 worker 共用評測佇列；主機離線後，其他 worker 會繼續領取工作，逾期租約也會自動回收。重發憑證會立即讓舊 worker 失去存取權，需同步更新主機設定。</p>
+  const remoteHosts = snapshot?.hosts.filter((host) => host.kind === "REMOTE") ?? [];
+  return <section aria-label="Server 管理">
+    <p className="mb-4 text-sm text-dim">網站主機已列在下方。新增的遠端主機以接入憑證主動連線，無需在後台保存 SSH 密碼。主要與備援 worker 共用評測佇列；主機離線後，其他 worker 會繼續領取工作，逾期租約也會自動回收。重發憑證會立即讓舊 worker 失去存取權，需同步更新主機設定。</p>
     <div className="card mb-5 p-4">
       <h2 className="mb-3 font-semibold">新增 Server</h2>
       <form className="flex flex-wrap items-end gap-3" onSubmit={(event) => { event.preventDefault(); void send({ action: "create", name, address, role }); }}>
@@ -80,15 +82,16 @@ export default function AdminHosts() {
     {message && <p className="card mb-4 p-4 text-sm text-dim" role="status">{message}</p>}
     <div className="mb-3 flex items-center gap-3 text-sm text-dim">
       <button className="btn-secondary" onClick={() => setRefresh((value) => value + 1)}>立即更新</button>
-      <span>{snapshot ? `顯示 ${snapshot.hosts.length} 台主機` : "載入主機中…"}</span>
+      <span>{snapshot ? `顯示 ${snapshot.hosts.length} 台 Server（本機 1、遠端 ${remoteHosts.length}）` : "載入主機中…"}</span>
     </div>
-    {snapshot?.hosts.length === 0 && <p className="card p-4 text-sm text-mute">目前沒有已設定的遠端 Server。</p>}
+    {snapshot && remoteHosts.length === 0 && <p className="card mb-3 p-4 text-sm text-mute">目前由下方的網站本機執行評測；尚未接入其他遠端 Server。</p>}
     <div className="grid gap-3 md:grid-cols-2">
       {snapshot?.hosts.map((host) => <div key={host.id} className="card p-4 text-sm">
-        <h2 className="font-semibold">{host.name} <span className="text-dim">({host.role === "BACKUP" ? "備援" : "主要"})</span></h2>
+        <h2 className="font-semibold">{host.name} <span className="text-dim">({host.kind === "LOCAL" ? "本機・主要" : host.role === "BACKUP" ? "遠端・備援" : "遠端・主要"})</span></h2>
         <p className="mt-1 text-dim">{host.address}</p>
-        <p className="mt-2">{!host.enabled ? "已停用" : host.online ? "已連線" : "離線"}；最近回報：{host.lastSeenAt ? new Date(host.lastSeenAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }) : "尚未連線"}</p>
+        <p className="mt-2">{!host.enabled ? "已停用" : host.online ? "已連線" : "離線"}；{host.kind === "LOCAL" ? "本機狀態更新" : "最近回報"}：{host.lastSeenAt ? new Date(host.lastSeenAt).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }) : "尚未連線"}</p>
         <p className="mt-1">評測 worker：{host.workerState ?? "—"}；sandbox：{host.sandboxState ?? "—"}</p>
+        {host.kind === "LOCAL" ? <Link href="/admin/services" className="mt-3 inline-block text-blue hover:underline">管理本機服務 →</Link> : <>
         <div className="mt-3 flex flex-wrap items-end gap-2">
           <label>主機位址<input className="input mt-1 block" maxLength={255} value={edits[host.id]?.address ?? host.address}
             onChange={(event) => setEdits((current) => ({ ...current, [host.id]: { address: event.target.value, role: current[host.id]?.role ?? host.role as "PRIMARY" | "BACKUP" } }))} /></label>
@@ -111,6 +114,7 @@ export default function AdminHosts() {
             </button>))}
         </div>
         {host.commands[0] && <p className="mt-3 text-dim">上次操作：{host.commands[0].service} {host.commands[0].action}（{host.commands[0].state}）</p>}
+        </>}
       </div>)}
     </div>
   </section>;

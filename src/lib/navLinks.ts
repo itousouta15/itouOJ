@@ -40,7 +40,7 @@ export function accountNavGroups(username: string, isAdmin: boolean): NavGroup[]
       { href: "/admin/problems", label: "管理後台", glyph: "⚙" },
       { href: "/admin/judge", label: "評測監控", glyph: "◷" },
       { href: "/admin/services", label: "伺服器服務", glyph: "▣" },
-      { href: "/admin/hosts", label: "遠端 Server", glyph: "▥" },
+      { href: "/admin/hosts", label: "Server 管理", glyph: "▥" },
     ] }] : []),
   ];
 }
@@ -60,7 +60,7 @@ export function navLinksFor(isAdmin: boolean): NavLinkItem[] {
       { href: "/admin/problems", label: "管理" },
       { href: "/admin/judge", label: "評測監控" },
       { href: "/admin/services", label: "伺服器" },
-      { href: "/admin/hosts", label: "遠端 Server" },
+      { href: "/admin/hosts", label: "Server 管理" },
     ] : []),
   ];
 }

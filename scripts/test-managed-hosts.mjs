@@ -30,12 +30,23 @@ const agentRequest = (token, action, body) => new Request(`http://127.0.0.1/api/
 test("admin enrolment exposes a token once, and demotion/CSRF checks run before storage writes", async (t) => {
   const { db, registry } = await setup(t);
   let session = null;
-  const admin = createHostAdminHandler({ getSession: async () => session, registry });
+  let localReads = 0;
+  const admin = createHostAdminHandler({ getSession: async () => session, registry,
+    getLocalServices: async () => { localReads++; return [
+      { service: "website", state: "active", enabled: true },
+      { service: "worker", state: "active", enabled: true },
+      { service: "sandbox", state: "active", enabled: true },
+    ]; } });
   const create = { action: "create", name: "backup-a", address: "192.0.2.2", role: "BACKUP" };
   assert.equal((await admin(adminRequest(create))).status, 403);
+  assert.equal((await admin(new Request("http://127.0.0.1/api/admin/hosts"))).status, 403);
+  assert.equal(localReads, 0);
   session = { role: "ADMIN" };
   assert.equal((await admin(adminRequest(create, "https://evil.example"))).status, 403);
   assert.equal((await db.managedHost.count()), 0);
+  const beforePairing = await (await admin(new Request("http://127.0.0.1/api/admin/hosts"))).json();
+  assert.equal(beforePairing.hosts.length, 1, "the local website host is visible without remote enrolment");
+  assert.equal(beforePairing.hosts[0].kind, "LOCAL");
   const response = await admin(adminRequest(create));
   assert.equal(response.status, 201);
   const { host, token } = await response.json();
@@ -43,7 +54,12 @@ test("admin enrolment exposes a token once, and demotion/CSRF checks run before 
   assert.equal(host.name, "backup-a");
   assert.equal((await registry.authenticate(token))?.id, host.id);
   const listing = await (await admin(new Request("http://127.0.0.1/api/admin/hosts"))).json();
-  assert.equal(listing.hosts.length, 1);
+  assert.equal(listing.hosts.length, 2);
+  assert.deepEqual(listing.hosts.map((item) => item.kind), ["LOCAL", "REMOTE"]);
+  assert.equal(listing.hosts[0].workerState, "active");
+  assert.equal(listing.hosts[0].sandboxState, "active");
+  assert.equal(listing.hosts[0].name, "網站主機（本機）");
+  assert.equal(listing.hosts[1].id, host.id);
   assert.doesNotMatch(JSON.stringify(listing), new RegExp(token));
   assert.notEqual((await db.managedHost.findUnique({ where: { id: host.id } })).tokenHash, token);
   assert.equal((await admin(adminRequest(create))).status, 409);
