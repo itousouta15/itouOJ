@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 type Snapshot = { deployed: string | null; latest: string | null;
   job: { state: string; phase?: string; target?: string | null; startedAt?: string; updatedAt?: string;
     message?: string | null; runId?: string }; logs: string };
+const phaseNames: Record<string, string> = {
+  queued: "等待 GitHub Actions", claimed: "已領取工作", packaging: "打包中",
+  uploading: "上傳中", verifying: "正式站建置與驗證中", done: "完成",
+};
 
 export default function AdminDeployment() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -52,8 +56,9 @@ export default function AdminDeployment() {
       <div className="card p-4"><p className="text-sm text-mute">GitHub master</p><p className="mono mt-2 break-all">{snapshot?.latest ?? "暫時無法查詢"}</p></div>
     </div>
     <div className="card mt-4 p-4">
-      <p className="font-semibold">{updating ? "部署進行中" : !snapshot?.latest ? "GitHub 狀態無法取得" : !snapshot.deployed ? "尚未建立正式站版本紀錄" : newer ? "有新版本可部署" : "已是最新版本"}</p>
-      {snapshot?.job.phase && <p className="mt-2 text-sm text-dim">階段：{snapshot.job.phase}（{snapshot.job.state}）</p>}
+      <p className="font-semibold">{updating ? "部署進行中" : snapshot?.job.state === "failed" || snapshot?.job.state === "interrupted" ? "部署失敗，可查看紀錄後重試" :
+        !snapshot?.latest ? "GitHub 狀態無法取得" : !snapshot.deployed ? "尚未建立正式站版本紀錄" : newer ? "有新版本可部署" : "已是最新版本"}</p>
+      {snapshot?.job.phase && <p className="mt-2 text-sm text-dim">階段：{phaseNames[snapshot.job.phase] ?? snapshot.job.phase}</p>}
       {snapshot?.job.runId && <a className="mt-2 inline-block text-sm text-blue hover:underline"
         href={`https://github.com/itousouta15/itouOJ/actions/runs/${snapshot.job.runId}`} target="_blank" rel="noopener noreferrer">
         查看 GitHub Actions 打包與部署紀錄 →
