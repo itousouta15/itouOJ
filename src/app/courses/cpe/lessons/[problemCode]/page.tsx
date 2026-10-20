@@ -5,6 +5,7 @@ import { getCpeCourseProblems } from "@/lib/cpeCourseData";
 import { cpeTopics } from "@/lib/cpeLessonTypes";
 import ApcsLessonLab from "@/components/ApcsLessonLab";
 import DifficultyBadge from "@/components/DifficultyBadge";
+import ReportLink from "@/components/ReportLink";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,14 @@ export default async function CpeLessonPage({
             >
               前往題目練習 →
             </Link>
+            <ReportLink
+              category="LESSON"
+              section="EXPLANATION"
+              title={`${current.problemCode} ${current.title}：教學問題`}
+              context={`CPE · ${current.problemCode}`}
+              label="回報教學錯誤"
+              className="btn-secondary"
+            />
             <span className="mono text-xs text-mute">{lesson.complexity}</span>
           </div>
         </div>

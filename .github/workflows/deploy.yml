@@ -36,7 +36,10 @@ jobs:
         id: claim
         run: |
           target=$(ssh deploy-target /usr/bin/node /usr/local/sbin/oj-deploy-job.mjs claim)
-          if [ -n "$target" ]; then [[ "$target" =~ ^[a-f0-9]{40}$ ]]; fi
+          if [ -n "$target" ]; then
+            [[ "$target" =~ ^[a-f0-9]{40}$ ]]
+            ssh deploy-target "/usr/bin/node /usr/local/sbin/oj-deploy-job.mjs run $target $GITHUB_RUN_ID"
+          fi
           echo "sha=$target" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v4

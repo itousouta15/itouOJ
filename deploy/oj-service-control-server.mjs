@@ -1,10 +1,11 @@
 // This file is installed root-owned outside the website's writable app tree.
 import { execFile } from "node:child_process";
 import { createServer } from "node:http";
-import { chmodSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, closeSync, fstatSync, openSync, readFileSync, readSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { isStrictlyNewer } from "./oj-compare-commit.mjs";
 
 const run = promisify(execFile);
 const socketPath = "/run/oj-service-control/control.sock";
@@ -15,6 +16,21 @@ const allowed = new Set([
   "sandbox:start", "sandbox:restart", "interactive:start", "interactive:restart",
   "remote:start", "remote:restart",
 ]);
+
+export function readDeployLogTail(path, limit = 32 * 1024) {
+  let fd;
+  try {
+    fd = openSync(path, "r");
+    const size = fstatSync(fd).size;
+    const bytes = Math.min(size, limit);
+    const buffer = Buffer.alloc(bytes);
+    const read = readSync(fd, buffer, 0, bytes, size - bytes);
+    return buffer.subarray(0, read).toString("utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") return "";
+    throw error;
+  } finally { if (fd !== undefined) closeSync(fd); }
+}
 
 export function createControlServer(perform, deployment) {
   return createServer(async (request, response) => {
@@ -86,14 +102,16 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         Date.now() - Date.parse(job.updatedAt ?? job.startedAt) > 2 * 60 * 60_000) {
         job = { ...job, state: "interrupted", message: "部署等候或執行逾時，請查看 GitHub Actions 紀錄。" };
       }
-      return { deployed, latest: await githubRevision(), job };
+      return { deployed, latest: await githubRevision(), job, logs: readDeployLogTail(`${deployState}/build.log`) };
     },
     async start() {
       const { deployed, latest: available, job } = await this.status();
       if (!deployed || !available || deployed === available || ["queued", "running"].includes(job.state)) {
         throw new Error("No newer release available");
       }
+      if (!(await isStrictlyNewer(deployed, available))) throw new Error("GitHub master is not newer than the deployed revision");
       const queued = { state: "queued", phase: "queued", target: available, startedAt: new Date().toISOString() };
+      writeFileSync(`${deployState}/build.log`, `[${queued.startedAt}] 等待 GitHub Actions 領取 ${available}\n`, { mode: 0o600 });
       writeFileSync(`${deployState}/status.next`, JSON.stringify(queued), { mode: 0o600 });
       renameSync(`${deployState}/status.next`, `${deployState}/status.json`);
     },

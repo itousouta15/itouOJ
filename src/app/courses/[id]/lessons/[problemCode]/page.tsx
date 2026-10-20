@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ApcsLessonLab from "@/components/ApcsLessonLab";
 import DifficultyBadge from "@/components/DifficultyBadge";
+import ReportLink from "@/components/ReportLink";
 import { getCourseLesson } from "@/lib/courseLessons";
 import { getToiTopicForProblem } from "@/lib/toiCourseCurriculum";
 import { getSession } from "@/lib/auth";
@@ -109,6 +110,14 @@ export default async function ApcsLessonPage({
             >
               前往題目練習 →
             </Link>
+            <ReportLink
+              category="LESSON"
+              section="EXPLANATION"
+              title={`${current.problemCode} ${current.title}：教學問題`}
+              context={`${course.title} · ${current.problemCode}`}
+              label="回報教學錯誤"
+              className="btn-secondary"
+            />
             <span className="self-center mono text-xs text-mute">
               {lesson.complexity}
             </span>

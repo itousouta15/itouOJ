@@ -63,6 +63,8 @@ jobs:
 
       - name: TOI beginner reference programs
         run: npm run test:toi-beginner-programs -- --python python3 --cxx g++
+      - name: Bug report tests
+        run: npm run test:reports
 
       - name: Build
         run: npm run build
