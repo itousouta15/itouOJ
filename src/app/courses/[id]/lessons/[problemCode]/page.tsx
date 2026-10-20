@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import ApcsLessonLab from "@/components/ApcsLessonLab";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import { getCourseLesson } from "@/lib/courseLessons";
-import { apcsPastExamUnits } from "@/lib/apcsPastExamCourse";
 import { getToiTopicForProblem } from "@/lib/toiCourseCurriculum";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -46,12 +45,6 @@ export default async function ApcsLessonPage({
     if (!code) return false;
     return Boolean(getCourseLesson(course.title, code));
   });
-  if (isApcsPastExams) {
-    const lessonOrder: readonly string[] = apcsPastExamUnits.flatMap((unit) => unit.codes);
-    lessonEntries.sort((a, b) =>
-      lessonOrder.indexOf(a.problem.problemCode!) - lessonOrder.indexOf(b.problem.problemCode!)
-    );
-  }
   const currentIndex = lessonEntries.findIndex((entry) => entry.problem.problemCode === problemCode);
   if (currentIndex < 0) notFound();
   const current = lessonEntries[currentIndex].problem;

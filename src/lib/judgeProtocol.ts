@@ -13,6 +13,7 @@ export function createJudgeProtocol(options: {
   db: PrismaClient;
   queue?: ReturnType<typeof createJudgeQueue>;
   secret: () => string | undefined;
+  authorizeHost?: (token: string) => Promise<boolean>;
   work?: () => Promise<number | null>;
 }) {
   const queue = options.queue ?? createJudgeQueue(options.db);
@@ -20,13 +21,14 @@ export function createJudgeProtocol(options: {
     status, headers: { "Cache-Control": "no-store, private", "X-Content-Type-Options": "nosniff" },
   });
   return async (request: Request): Promise<Response> => {
-    const expected = options.secret();
-    const received = request.headers.get("x-judge-worker-secret");
-    if (!expected || !received || received.length > 4096) return json({ error: "Not found" }, 404);
-    const a = Buffer.from(expected), b = Buffer.from(received);
-    if (a.length !== b.length || !timingSafeEqual(a, b)) return json({ error: "Not found" }, 404);
-    if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
     try {
+      const expected = options.secret();
+      const received = request.headers.get("x-judge-worker-secret");
+      if (!received || received.length > 4096) return json({ error: "Not found" }, 404);
+      const a = Buffer.from(expected ?? ""), b = Buffer.from(received);
+      const legacy = !!expected && a.length === b.length && timingSafeEqual(a, b);
+      if (!legacy && !(await options.authorizeHost?.(received))) return json({ error: "Not found" }, 404);
+      if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
       const action = new URL(request.url).searchParams.get("action");
       if (action === "status") return json({ protocolVersion: 1, ...await queue.status() });
       if (action === "recover") return json({ recovered: (await queue.recover()).count });

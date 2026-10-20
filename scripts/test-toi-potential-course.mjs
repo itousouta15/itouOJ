@@ -343,3 +343,46 @@ test("existing beginner course, lesson links and membership stay independent", a
   assert.equal(await prisma.course.count(), 1);
   assert.equal(await prisma.courseMember.count(), 1);
 });
+
+test("TOI entry coexists with saved database course ordering and private visibility", async () => {
+  const ids = [10, 11, 12, 13];
+  await prisma.course.createMany({
+    data: [
+      { id: 10, title: "APCS 實作題：由簡到難", sortOrder: 40 },
+      { id: 11, title: "Custom first fixture", sortOrder: 10 },
+      {
+        id: 12,
+        title: "Private ordered course fixture",
+        sortOrder: 20,
+        isPublic: false,
+      },
+      { id: 13, title: "Custom tied order fixture", sortOrder: 10 },
+    ],
+  });
+  try {
+    for (const user of [undefined, "admin"]) {
+      const response = await request("/courses", user);
+      assert.equal(response.status, 200);
+      const html = await response.text();
+      const rendered = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, "");
+      const expected = await prisma.course.findMany({
+        where: user ? {} : { isPublic: true },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+        select: { id: true },
+      });
+      assert.deepEqual(
+        [...rendered.matchAll(/href="\/courses\/(\d+)"/g)].map((match) =>
+          Number(match[1]),
+        ),
+        expected.map((item) => item.id),
+      );
+      assert.ok(html.includes('href="/courses/toi-potential"'));
+      assert.equal(
+        html.includes("Private ordered course fixture"),
+        Boolean(user),
+      );
+    }
+  } finally {
+    await prisma.course.deleteMany({ where: { id: { in: ids } } });
+  }
+});

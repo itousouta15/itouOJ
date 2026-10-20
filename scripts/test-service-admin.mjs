@@ -111,6 +111,7 @@ test("the root controller independently rejects arbitrary operations and limits 
   assert.equal((await fetch(url, { method: "POST", body: "x".repeat(257) })).status, 413);
   assert.deepEqual(actions, []);
   assert.equal((await post({ service: "proxy", action: "reload" })).status, 200);
+  assert.equal((await post({ service: "remote", action: "start" })).status, 200);
   assert.equal((await post({ service: "worker", action: "start" })).status, 503);
-  assert.deepEqual(actions, [["proxy", "reload"], ["worker", "start"]]);
+  assert.deepEqual(actions, [["proxy", "reload"], ["remote", "start"], ["worker", "start"]]);
 });

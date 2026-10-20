@@ -20,7 +20,7 @@ export default async function CoursesPage() {
     await Promise.all([
       prisma.course.findMany({
         where: isAdmin ? {} : { isPublic: true },
-        orderBy: { id: "asc" },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
         include: {
           _count: { select: { problems: true, members: true } },
         },
@@ -50,11 +50,7 @@ export default async function CoursesPage() {
           })
         : Promise.resolve([]),
     ]);
-  const listedCourses = [...courses].sort(
-    (a, b) =>
-      Number(b.title === "APCS 實作題：由簡到難") -
-      Number(a.title === "APCS 實作題：由簡到難"),
-  );
+  const listedCourses = courses;
 
   // 已加入的課程與各課程進度
   const joinedSet = new Set<number>();

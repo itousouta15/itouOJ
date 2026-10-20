@@ -4,7 +4,7 @@ import Markdown from "@/components/Markdown";
 export default function StatementCard({ children }: { children: string }) {
   return (
     <div className="card p-4 sm:p-6">
-      <Markdown>{children}</Markdown>
+      <Markdown openLinksInNewTab>{children}</Markdown>
     </div>
   );
 }
