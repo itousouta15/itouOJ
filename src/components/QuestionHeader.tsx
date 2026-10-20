@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import TagBadge from "@/components/TagBadge";
 import AppShareButton from "@/components/AppShareButton";
+import ReportLink from "@/components/ReportLink";
 
 // 題目頁共用的頁首：標題 + badges（難度/結果）+ 標籤 + 管理員編輯連結。
 // 實作題、識別題、比賽題目頁都用同一份，維持版面一致。
@@ -43,6 +44,7 @@ export default function QuestionHeader({
             教學
           </Link>
         )}
+        {!compact && <ReportLink category="PROBLEM" title={`${title}：題目問題`} />}
         {adminHref && (
           <Link
             href={adminHref}

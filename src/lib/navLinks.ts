@@ -30,6 +30,7 @@ export function accountNavGroups(username: string, isAdmin: boolean): NavGroup[]
       { href: `/users/${encodeURIComponent(username)}`, label: "個人頁面", glyph: "◎" },
       { href: "/messages", label: "站內訊息", glyph: "✉" },
       { href: "/settings", label: "帳號設定", glyph: "⚙" },
+      { href: "/reports", label: "我的錯誤回報", glyph: "⚑" },
     ] },
     { label: "紀錄與動態", links: [
       { href: "/submissions?mine=1", label: "程式／識讀紀錄", glyph: "≣" },
@@ -42,6 +43,7 @@ export function accountNavGroups(username: string, isAdmin: boolean): NavGroup[]
       { href: "/admin/services", label: "伺服器服務", glyph: "▣" },
       { href: "/admin/hosts", label: "Server 管理", glyph: "▥" },
       { href: "/admin/deployment", label: "GitHub 部署", glyph: "↻" },
+      { href: "/admin/reports", label: "錯誤回報管理", glyph: "⚑" },
     ] }] : []),
   ];
 }
@@ -63,6 +65,7 @@ export function navLinksFor(isAdmin: boolean): NavLinkItem[] {
       { href: "/admin/services", label: "伺服器" },
       { href: "/admin/hosts", label: "Server 管理" },
       { href: "/admin/deployment", label: "部署" },
+      { href: "/admin/reports", label: "錯誤回報" },
     ] : []),
   ];
 }
@@ -85,6 +88,7 @@ export function isNavActive(pathname: string, href: string): boolean {
   if (base === "/") return pathname === "/";
   if (base === "/admin/problems") return pathname === "/admin" || (pathname.startsWith("/admin/") &&
     !pathname.startsWith("/admin/judge") && !pathname.startsWith("/admin/services") &&
-    !pathname.startsWith("/admin/hosts") && !pathname.startsWith("/admin/deployment"));
+    !pathname.startsWith("/admin/hosts") && !pathname.startsWith("/admin/deployment") &&
+    !pathname.startsWith("/admin/reports"));
   return pathname === base || pathname.startsWith(`${base}/`);
 }
