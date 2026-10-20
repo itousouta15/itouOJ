@@ -5,6 +5,7 @@ import { getToiPotentialCourseProblems } from "@/lib/toiPotentialCourseData";
 import { toiPotentialTopics } from "@/lib/toiPotentialLessonTypes";
 import ApcsLessonLab from "@/components/ApcsLessonLab";
 import DifficultyBadge from "@/components/DifficultyBadge";
+import ReportLink from "@/components/ReportLink";
 import { toiPotentialSourceIssues } from "@/lib/toiPotentialSourceIssues";
 
 export const dynamic = "force-dynamic";
@@ -85,6 +86,14 @@ export default async function ToiPotentialLessonPage({
             >
               {sourceIssue ? "查看原題疑義 →" : "前往題目練習 →"}
             </Link>
+            <ReportLink
+              category="LESSON"
+              section="EXPLANATION"
+              title={`${current.problemCode} ${current.title}：教學問題`}
+              context={`TOI 潛力組 · ${current.problemCode}`}
+              label="回報教學錯誤"
+              className="btn-secondary"
+            />
             <span className="mono text-xs text-mute">{lesson.complexity}</span>
           </div>
         </div>

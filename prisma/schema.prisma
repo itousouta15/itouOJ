@@ -49,6 +49,27 @@ model User {
   passwordResetTokens PasswordResetToken[]
   ctfSolves        CtfSolve[]
   ctfAttempts      CtfAttempt[]
+  bugReports       BugReport[]
+}
+
+model BugReport {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  reporter    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    String
+  section     String   @default("GENERAL")
+  title       String
+  description String
+  expected    String   @default("")
+  sourcePath  String   @default("")
+  context     String   @default("")
+  status      String   @default("OPEN")
+  adminReply  String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, category, createdAt])
 }
 
 model CtfChallenge {
