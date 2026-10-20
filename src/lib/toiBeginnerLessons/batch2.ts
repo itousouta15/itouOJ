@@ -352,14 +352,14 @@ export const lessons: ToiBeginnerLesson[] = [
   "concept": "拼字遊戲・標記已取卡片",
   "goal": "依目標順序，找最左邊尚未用掉的相同字母。",
   "explanation": [
-    "把 S 存成可修改的卡片陣列；對 T 的每個字母重新從位置 0 掃描。",
+    "以整行讀入 S 與 T，保留空字串行，再把 S 存成可修改的卡片陣列；對 T 的每個字母重新從位置 0 掃描。",
     "遇到第一張相同字母就記錄 i+1，將該張標成空白，並停止本次掃描。",
     "整次掃描沒有找到則輸出 X；其他卡片位置不變，大小寫分開比較。"
   ],
-  "complexity": "時間 O(|S||T|)，空間 O(|S|+|T|)。",
-  "pitfall": "移除不能讓卡片向左補位，也不能重用同一張卡。",
-  "cpp": "#include <iostream>\n#include <string>\n#include <vector>\nusing namespace std;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    string s, t;\n    cin >> s >> t;\n    vector<string> ans;\n    for (char c : t) {\n        string v = \"X\";\n        for (int i = 0; i < (int)s.size(); i++)\n            if (s[i] == c) {\n                v = to_string(i + 1);\n                s[i] = ' ';\n                break;\n            }\n        ans.push_back(v);\n    }\n    for (int i = 0; i < (int)ans.size(); i++)\n        cout << (i ? \" \" : \"\") << ans[i];\n    cout << '\\n';\n}\n",
-  "python": "s = list(input().strip())\nt = input().strip()\nanswer = []\nfor c in t:\n    result = \"X\"\n    for i in range(len(s)):\n        if s[i] == c:\n            result = str(i+1)\n            s[i] = \" \"\n            break\n    answer.append(result)\nprint(*answer)\n",
+  "complexity": "時間 O(|S|+|T|+|S||T|)，空間 O(|S|+|T|)。",
+  "pitfall": "移除不能讓卡片向左補位，也不能重用同一張卡。S 為空時每個目標字母都輸出 X；T 為空時只輸出換行，讀取時不可略過空行。",
+  "cpp": "#include <iostream>\n#include <string>\n#include <vector>\nusing namespace std;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    string s, t;\n    getline(cin, s);\n    getline(cin, t);\n    if (!s.empty() && s.back() == '\\r') s.pop_back();\n    if (!t.empty() && t.back() == '\\r') t.pop_back();\n    vector<string> ans;\n    for (char c : t) {\n        string v = \"X\";\n        for (int i = 0; i < (int)s.size(); i++)\n            if (s[i] == c) {\n                v = to_string(i + 1);\n                s[i] = ' ';\n                break;\n            }\n        ans.push_back(v);\n    }\n    for (int i = 0; i < (int)ans.size(); i++)\n        cout << (i ? \" \" : \"\") << ans[i];\n    cout << '\\n';\n}\n",
+  "python": "s = list(input().rstrip(\"\\r\"))\nt = input().rstrip(\"\\r\")\nanswer = []\nfor c in t:\n    result = \"X\"\n    for i in range(len(s)):\n        if s[i] == c:\n            result = str(i+1)\n            s[i] = \" \"\n            break\n    answer.append(result)\nprint(*answer)\n",
   "traceLabel": "拼字遊戲・標記已取卡片",
   "trace": [
     {
@@ -2468,7 +2468,7 @@ export const lessons: ToiBeginnerLesson[] = [
     },
     {
       "title": "第一列翻轉",
-      "description": "各格交集和為 2、1、1，因此翻轉後兩格。",
+      "description": "各格同列同行去重後的總和為 2、1、1，因此翻轉後兩格。",
       "cells": [
         "原 1 0 1",
         "新 1 1 0"
@@ -2486,7 +2486,7 @@ export const lessons: ToiBeginnerLesson[] = [
     },
     {
       "title": "完成其餘列",
-      "description": "第二列交集和 1、1、0；第三列為 1、2、1。",
+      "description": "第二列同列同行去重後的總和為 1、1、0；第三列為 1、2、1。",
       "cells": [
         "1 1 0",
         "1 0 0",
@@ -2944,14 +2944,14 @@ export const lessons: ToiBeginnerLesson[] = [
   "concept": "畢業典禮・穩定排序",
   "goal": "以學院及學制排序，相同鍵保持報名順序。",
   "explanation": [
-    "從九碼學號取最後字元當學院，第一字元 4、6、8 當學制順序。",
+    "讀入人數後逐行讀取報名資料，只在第一個分隔空白拆出學號與完整姓名，保留姓名內部的空白。從九碼學號取最後字元當學院，第一字元 4、6、8 當學制順序。",
     "學院字母升序優先，再依第一字元升序即為學士、碩士、博士。",
     "使用穩定排序，使兩項鍵都相同的學生維持原輸入順序；輸出學院: 姓名。"
   ],
   "complexity": "時間 O(N log N)，空間 O(N)。",
-  "pitfall": "不要用完整學號作第三排序鍵，否則會破壞同學院同學制的報名順序。",
-  "cpp": "#include <algorithm>\n#include <iostream>\n#include <string>\n#include <utility>\n#include <vector>\nusing namespace std;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    cin >> n;\n    vector<pair<string, string>> v(n);\n    for (auto &x : v)\n        cin >> x.first >> x.second;\n    stable_sort(v.begin(), v.end(), [](const auto &a, const auto &b) {\n        return make_pair(a.first.back(), a.first[0]) <\n               make_pair(b.first.back(), b.first[0]);\n    });\n    for (auto &x : v)\n        cout << x.first.back() << \": \" << x.second << '\\n';\n}\n",
-  "python": "import sys\nit = iter(sys.stdin.read().split())\nn = int(next(it))\nstudents = [(next(it), next(it)) for _ in range(n)]\nstudents.sort(key=lambda item: (item[0][-1], item[0][0]))\nfor student_id, name in students:\n    print(f\"{student_id[-1]}: {name}\")\n",
+  "pitfall": "不要用完整學號作第三排序鍵，否則會破壞同學院同學制的報名順序。姓名是一整行中學號及第一個分隔空白後的所有內容，不能按全部空白切成多筆資料。",
+  "cpp": "#include <algorithm>\n#include <iostream>\n#include <limits>\n#include <string>\n#include <utility>\n#include <vector>\nusing namespace std;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    cin >> n;\n    cin.ignore(numeric_limits<streamsize>::max(), '\\n');\n    vector<pair<string, string>> v(n);\n    for (auto &x : v) {\n        string record;\n        getline(cin, record);\n        if (!record.empty() && record.back() == '\\r') record.pop_back();\n        size_t delimiter = record.find(' ');\n        x.first = record.substr(0, delimiter);\n        x.second = record.substr(delimiter + 1);\n    }\n    stable_sort(v.begin(), v.end(), [](const auto &a, const auto &b) {\n        return make_pair(a.first.back(), a.first[0]) <\n               make_pair(b.first.back(), b.first[0]);\n    });\n    for (auto &x : v)\n        cout << x.first.back() << \": \" << x.second << '\\n';\n}\n",
+  "python": "import sys\nread = sys.stdin.readline\nn = int(read())\nstudents = [tuple(read().rstrip(\"\\r\\n\").split(\" \", 1)) for _ in range(n)]\nstudents.sort(key=lambda item: (item[0][-1], item[0][0]))\nfor student_id, name in students:\n    print(f\"{student_id[-1]}: {name}\")\n",
   "traceLabel": "畢業典禮・穩定排序",
   "trace": [
     {

@@ -8,6 +8,7 @@
 - 主題分類依各題實際解法重建；原有課程排序、可見性與上一課／下一課規則保留。教學 URL 不接受同題號的非程式題；不存在題號與物件原型屬性不能被判為已有教材。
 - APCS 修正範例與動畫對齊、a455 的錯誤陷阱說明，以及數個忽略輸入儲存／惰性堆積成本的複雜度敘述。詳見 [APCS 紀錄](apcs-tutorial-audit.md)。
 - CPE 修正 a559 動畫遞迴數列、a824 Python 先轉小寫導致 Unicode 字元被誤當英文的分詞問題。詳見 [CPE 紀錄](cpe-tutorial-audit.md)。
+- 第二輪交叉審查補正 a095 與 a675 的空間／時間註記、a210 聯集用語；a184 改成保留空行，a216 改成每筆只拆第一個分隔空白，完整保留姓名。新增 LF／CRLF、空 S／T、複合姓名與穩定排序回歸，不改公開範例。
 
 ## 驗證層級
 
@@ -17,11 +18,12 @@
 
 - [新手第一批](toi-beginner-batch1-audit.md)、[第二批](toi-beginner-batch2-audit.md)、[第三批](toi-beginner-batch3-audit.md)
 - [潛力組紀錄](toi-potential-tutorial-audit.md)
+- TOI 新教材另經獨立第二輪逐題審查：[第一批](toi-beginner-batch1-cross-review.md)、[第二批](toi-beginner-batch2-cross-review.md)、[第三批與 a086](toi-beginner-cross-review.md)。各文件記錄實際版本與有限案例，不把作者自行通過的測試當成第二輪證據。
 - 上述 APCS、CPE 紀錄
 
 本機已通過 135 題新手組 Python 公開範例、771 題來源範例對應、TypeScript 與 ESLint。Windows 應用程式控制限制新 C++ 二進位執行，未停用或繞過；本機編譯成功不算執行成功。Linux CI 新增六組分批回歸，實際執行 C++ 與 Python；CPE 只跑針對性 oracle，不恢復已移除的全題庫編譯矩陣。頁面整合測試使用拋棄式資料庫，遍歷全部 135 個新手教學 URL、範例、C++ 顯示及儲存排序。
 
-本機 production build 在 KaTeX CSS 的 Turbopack 子程序啟動時失敗；最終 build／HTTP 測試以 PR 的 Linux CI 結果為準。沒有讀寫正式資料庫、提交正式評測、合併 PR 或部署。
+本機 production build 在 KaTeX CSS 的 Turbopack 子程序啟動時失敗。第一輪 [Linux CI](https://github.com/itousouta15/itouOJ/actions/runs/39451109351)（f8f5a1f）九項工作均通過，含 production build、135 題頁面遍歷、權限／課程排序測試及各批 C++／Python 回歸；後續修正仍需相應最新 head 的 CI，不以此舊版本結果代替。沒有讀寫正式資料庫、提交正式評測、合併 PR 或部署。
 
 ## 不能宣告已解決的規格問題
 

@@ -91,6 +91,11 @@ def cases_for(code):
             for i,c in enumerate(s,1): slots[c].append(i)
             out=[str(slots[c].popleft()) if slots[c] else "X" for c in t]
             case("per-letter position queues", s+"\n"+t+"\n", " ".join(out)+"\n")
+        for ending in ("\n", "\r\n"):
+            label = "LF" if ending == "\n" else "CRLF"
+            case(f"empty S preserves target line ({label})", ending+"AaAA"+ending, "X X X X\n")
+            case(f"empty T emits exactly one newline ({label})", "AaBb"+ending+ending, "\n")
+            case(f"both S and T empty ({label})", ending+ending, "\n")
     elif code == "a185":
         for key,score,rows in [([1],10,[[1],[2]]),([1,2,3,4],3,[[4,3,2,1],[1,2,3,4],[2,2,2,2]])]:
             out=[score*sum(x==y for x,y in zip(key,row)) for row in rows]
@@ -316,6 +321,19 @@ def cases_for(code):
         out="".join(f"{faculty}: {name}\n" for faculty in "AEHILMOST" for degree in "468"
                     for sid,name in students if sid[-1]==faculty and sid[0]==degree)
         case("stable registration order",ints(len(students))+"".join(f"{sid} {name}\n" for sid,name in students),out)
+        case("single full name", "1\n40000000A Mary Jane\n", "A: Mary Jane\n")
+        multi=[("60000009S","Mary Jane"),("40000009A","Amy  May"),
+               ("40000001A","Mary Jane"),("80000000A","Li"),
+               ("60000001S","Jo Li"),("40000000S","Ann")]
+        assert all(1 <= len(name) <= 10 for _,name in multi)
+        expected="".join(f"{faculty}: {name}\n" for faculty in "AEHILMOST" for degree in "468"
+                         for sid,name in multi if sid[-1]==faculty and sid[0]==degree)
+        records=ints(len(multi))+"".join(f"{sid} {name}\n" for sid,name in multi)
+        case("multi-record full names and stable equal keys",records,expected)
+        case("CRLF full-name records",records.replace("\n","\r\n"),expected)
+        case("preserve all name spaces after one delimiter",
+             "2\n40000009A  Jo Li \n40000001A Mary Jane\n",
+             "A:  Jo Li \nA: Mary Jane\n")
     elif code == "a217":
         for h,m,segments,queries in [(23,59,[1,720,720],[1,2,3]),(0,0,[1],[1]),(5,6,[720]*20,[1,20])]:
             out=[]
@@ -473,8 +491,10 @@ def main():
                 assert compiled.returncode==0,f"{code}: {compiled.stderr}"
                 note="; C++17 compile PASS"
                 if not args.compile_only_cxx:
-                    # Bound process count even for exhaustive Python domains.
-                    for test in cases[:1]+cases[-min(4,len(cases)-1):]:
+                    # Exercise every new line-parsing regression in both languages;
+                    # bound process count for unrelated exhaustive Python domains.
+                    runtime_cases = cases if code in ("a184", "a216") else cases[:1]+cases[-min(4,len(cases)-1):]
+                    for test in runtime_cases:
                         run=subprocess.run([str(binary)],input=test["input"],text=True,capture_output=True,timeout=3)
                         assert run.returncode==0 and run.stdout.replace("\r\n","\n")==test["output"],(code,test,run.stdout,run.stderr)
                     note+="; C++ representative runtime PASS"

@@ -11,6 +11,10 @@ import { toiPotentialProblemCatalog } from "../src/lib/toiPotentialProblemCatalo
 import { toiBeginnerLessons } from "../src/lib/toiBeginnerLessons.ts";
 import { toiBeginnerProblemCatalog } from "../src/lib/toiBeginnerProblemCatalog.ts";
 import { getCourseLesson } from "../src/lib/courseLessons.ts";
+import {
+  getToiTopicForProblem,
+  toiCourseTopics,
+} from "../src/lib/toiCourseCurriculum.ts";
 
 const args = process.argv.slice(2);
 const index = args.indexOf("--source-snapshot");
@@ -54,6 +58,23 @@ const groups = [
 ];
 const failures = [];
 const allCodes = new Set();
+const beginnerTopicCodes = toiCourseTopics.flatMap((topic) => topic.codes);
+assert.equal(
+  new Set(beginnerTopicCodes).size,
+  beginnerTopicCodes.length,
+  "Beginner topic groups must not duplicate problem ids",
+);
+assert.deepEqual(
+  [...beginnerTopicCodes].sort(),
+  toiBeginnerProblemCatalog.map((p) => p.code).sort(),
+  "Every real beginner problem must have exactly one topic home",
+);
+for (const lesson of Object.values(toiBeginnerLessons))
+  assert.equal(
+    getToiTopicForProblem(lesson.code)?.id,
+    lesson.topic,
+    `${lesson.code}: topic must follow the authored algorithm`,
+  );
 const normalize = (text) =>
   text
     .replaceAll("\r\n", "\n")
@@ -100,7 +121,17 @@ for (const group of groups) {
         failures.push(`${code}: missing ${field}`);
     if (lesson.explanation.length < 2 || lesson.trace.length < 3)
       failures.push(`${code}: incomplete explanation or trace`);
+    if (
+      new Set(lesson.trace.map((step) => step.title)).size !==
+      lesson.trace.length
+    )
+      failures.push(`${code}: duplicate animation step keys`);
     for (const step of lesson.trace) {
+      if (
+        new Set(step.variables.map(([name]) => name)).size !==
+        step.variables.length
+      )
+        failures.push(`${code}: duplicate animation variable keys`);
       if (
         !step.title ||
         !step.description ||
