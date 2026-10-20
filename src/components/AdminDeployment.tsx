@@ -10,6 +10,10 @@ const phaseNames: Record<string, string> = {
   queued: "等待 GitHub Actions", claimed: "已領取工作", packaging: "打包中",
   uploading: "上傳中", verifying: "正式站建置與驗證中", done: "完成",
 };
+const resultNames: Record<string, string> = {
+  queued: "等待中", running: "進行中", succeeded: "成功", failed: "失敗",
+  cancelled: "已取消", interrupted: "已中斷", current: "已是最新",
+};
 
 export default function AdminDeployment() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
@@ -80,7 +84,7 @@ export default function AdminDeployment() {
     </div>
     {snapshot?.previous && <div className="card mt-4 p-4">
       <h2 className="mb-2 font-semibold">前一次部署紀錄</h2>
-      <p className="mb-2 text-sm text-dim">{snapshot.previous.state}：<span className="mono">{snapshot.previous.target ?? "—"}</span></p>
+      <p className="mb-2 text-sm text-dim">{resultNames[snapshot.previous.state] ?? snapshot.previous.state}：<span className="mono">{snapshot.previous.target ?? "—"}</span></p>
       {snapshot.previous.runId && <a className="mb-3 inline-block text-sm text-blue hover:underline"
         href={`https://github.com/itousouta15/itouOJ/actions/runs/${snapshot.previous.runId}`} target="_blank" rel="noopener noreferrer">
         查看前一次 GitHub Actions 紀錄 →
