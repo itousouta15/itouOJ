@@ -68,6 +68,28 @@ jobs:
           CPE_TEST_PRODUCTION: "1"
         run: npm run test:cpe-course
 
+      - name: TOI potential course integration tests
+        env:
+          TOI_POTENTIAL_TEST_PRODUCTION: "1"
+        run: npm run test:toi-potential-course
+
+  toi-potential-programs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install test loader dependencies
+        run: npm ci --ignore-scripts
+      - name: Verify TOI potential coverage, reference programs and explicit source-conflict diagnostic
+        run: npm run test:toi-potential-lessons -- --python python3 --cxx g++ --check-known-source-conflicts
+      - name: TOI potential independent algorithm checks
+        run: npm run test:toi-potential-algorithms -- --python python3
+
   itoulang:
     runs-on: ubuntu-latest
     steps:
