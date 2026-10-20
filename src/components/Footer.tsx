@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import ReportLink from "@/components/ReportLink";
 
 const EXPLORE_LINKS = [
   { label: "實作", href: "/problems" },
@@ -14,10 +15,6 @@ const RESOURCE_LINKS = [
   {
     label: "GitHub 原始碼",
     href: "https://github.com/itousouta15/itouOJ",
-  },
-  {
-    label: "回報問題",
-    href: "https://github.com/itousouta15/itouOJ/issues/new/choose",
   },
   {
     label: "使用文件",
@@ -83,6 +80,7 @@ export default function Footer() {
           <nav className="oj-footer-column" aria-label="OJ 資源">
             <p className="oj-footer-heading">Resources</p>
             <div className="oj-footer-links">
+              <ReportLink label="回報問題" className="" />
               {RESOURCE_LINKS.map((link) => (
                 <a
                   key={link.href}

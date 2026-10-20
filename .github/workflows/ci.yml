@@ -55,6 +55,9 @@ jobs:
       - name: Course ordering tests
         run: npm run test:courses
 
+      - name: Bug report tests
+        run: npm run test:reports
+
       - name: Build
         run: npm run build
 

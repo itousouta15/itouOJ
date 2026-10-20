@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ApcsLesson } from "@/lib/apcsCourseLessons";
+import ReportLink from "@/components/ReportLink";
 
 export default function ApcsLessonLab({
   lesson,
@@ -65,7 +66,14 @@ export default function ApcsLessonLab({
               {lesson.traceLabel}
             </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ReportLink
+              category="LESSON"
+              section="ANIMATION"
+              title={`${lesson.code}：動畫問題`}
+              context={`${lesson.code} · 動畫第 ${stepIndex + 1} 步：${step.title}`}
+              label="回報動畫錯誤"
+            />
             <button
               type="button"
               className="btn-secondary px-3 py-2 text-sm"
@@ -180,6 +188,13 @@ export default function ApcsLessonLab({
             <p className="mono text-xs uppercase tracking-[0.16em] text-mute">
               {referenceNotice ? "Formula demonstration" : "Reference solution"}
             </p>
+            <ReportLink
+              category="LESSON"
+              section={language === "cpp" ? "CPP" : "PYTHON"}
+              title={`${lesson.code}：${language === "cpp" ? "C++" : "Python"} 程式問題`}
+              context={lesson.code}
+              label="回報程式錯誤"
+            />
             <h2 id="code-title" className="mt-1 text-lg font-semibold">
               {referenceNotice ? "公式示範程式（非可提交解答）" : "完整程式"}
             </h2>
