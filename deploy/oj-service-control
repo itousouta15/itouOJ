@@ -1,0 +1,20 @@
+#!/bin/sh
+# Installed root-owned outside /opt/online-judge; never execute writable app paths.
+set -eu
+[ "$#" -eq 2 ] || exit 2
+case "$1:$2" in
+  worker:start)
+    exec /usr/bin/systemctl enable --now online-judge-worker.service ;;
+  worker:restart)
+    /usr/bin/systemctl enable online-judge-worker.service
+    exec /usr/bin/systemctl restart online-judge-worker.service ;;
+  sandbox:start)
+    exec /usr/bin/systemctl start sandbox-server.service ;;
+  sandbox:restart)
+    exec /usr/bin/systemctl restart sandbox-server.service ;;
+  website:restart)
+    # The Next request must return before its own service is stopped.
+    exec /usr/bin/systemd-run --unit=oj-website-restart --on-active=5s --collect \
+      /usr/bin/systemctl restart online-judge.service ;;
+  *) exit 2 ;;
+esac

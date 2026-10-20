@@ -15,6 +15,7 @@ SITE_STARTED=0
 APP_SWITCHED=0
 SANDBOX_SWITCHED=0
 INTERACTIVE_CHANGED=0
+CONTROL_CHANGED=0
 
 rollback() {
   local status=$?
@@ -54,6 +55,18 @@ rollback() {
   if (( APP_SWITCHED )); then
     install -m 644 "$BACKUP/online-judge-worker.service" /etc/systemd/system/online-judge-worker.service
     systemctl daemon-reload
+  fi
+  if (( CONTROL_CHANGED )); then
+    if [[ -f "$BACKUP/oj-service-control" ]]; then
+      install -m 755 "$BACKUP/oj-service-control" /usr/local/sbin/oj-service-control
+    else
+      rm -f /usr/local/sbin/oj-service-control
+    fi
+    if [[ -f "$BACKUP/online-judge-control.sudoers" ]]; then
+      install -m 440 "$BACKUP/online-judge-control.sudoers" /etc/sudoers.d/online-judge-control
+    else
+      rm -f /etc/sudoers.d/online-judge-control
+    fi
   fi
   if (( INTERACTIVE_CHANGED )); then systemctl restart sandbox-interactive || true; fi
   # A migration can be restored only before the new website has accepted
@@ -99,6 +112,8 @@ python3 "$SOURCE/sandbox-runner/test/test_compile_cache.py" \
   --jail "$SOURCE/sandbox-runner/jail" --port 18090 --mode legacy
 
 echo '== Build staged Next.js app =='
+sh -n "$SOURCE/deploy/oj-service-control"
+visudo -cf "$SOURCE/deploy/online-judge-control.sudoers"
 npm --prefix "$SOURCE" ci --include=dev --silent
 npm --prefix "$SOURCE" run generate --silent
 npm --prefix "$SOURCE" run build
@@ -138,6 +153,8 @@ rsync -a "$SANDBOX/src/" "$BACKUP/sandbox-src/"
 cp /etc/systemd/system/sandbox-server.service "$BACKUP/sandbox-server.service"
 cp /etc/systemd/system/sandbox-interactive.service "$BACKUP/sandbox-interactive.service"
 cp /etc/systemd/system/online-judge-worker.service "$BACKUP/online-judge-worker.service"
+[[ ! -f /usr/local/sbin/oj-service-control ]] || cp -a /usr/local/sbin/oj-service-control "$BACKUP/oj-service-control"
+[[ ! -f /etc/sudoers.d/online-judge-control ]] || cp -a /etc/sudoers.d/online-judge-control "$BACKUP/online-judge-control.sudoers"
 sqlite3 "$APP/oj.db" ".backup '$BACKUP/oj.db'"
 
 echo '== Migrate, promote sandbox and smoke-test it =='
@@ -180,6 +197,11 @@ chown oj:oj "$APP"
 runuser -u oj -- sqlite3 "$APP/oj.db" \
   'BEGIN IMMEDIATE; CREATE TABLE __oj_deploy_write_probe (id INTEGER); ROLLBACK;'
 install -m 644 "$SOURCE/deploy/online-judge-worker.service" /etc/systemd/system/online-judge-worker.service
+CONTROL_CHANGED=1
+install -m 755 "$SOURCE/deploy/oj-service-control" /usr/local/sbin/oj-service-control
+install -m 440 "$SOURCE/deploy/online-judge-control.sudoers" /etc/sudoers.d/online-judge-control
+visudo -cf /etc/sudoers.d/online-judge-control
+runuser -u oj -- sudo -n -l /usr/local/sbin/oj-service-control worker start >/dev/null
 systemctl daemon-reload
 SITE_STARTED=1
 systemctl start online-judge online-judge-worker

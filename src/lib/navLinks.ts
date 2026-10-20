@@ -39,6 +39,7 @@ export function accountNavGroups(username: string, isAdmin: boolean): NavGroup[]
     ...(isAdmin ? [{ label: "管理", links: [
       { href: "/admin/problems", label: "管理後台", glyph: "⚙" },
       { href: "/admin/judge", label: "評測監控", glyph: "◷" },
+      { href: "/admin/services", label: "伺服器服務", glyph: "▣" },
     ] }] : []),
   ];
 }
@@ -57,6 +58,7 @@ export function navLinksFor(isAdmin: boolean): NavLinkItem[] {
     ...(isAdmin ? [
       { href: "/admin/problems", label: "管理" },
       { href: "/admin/judge", label: "評測監控" },
+      { href: "/admin/services", label: "伺服器" },
     ] : []),
   ];
 }
@@ -77,6 +79,7 @@ export function mobileNavGroups(username: string | null, isAdmin: boolean): NavG
 export function isNavActive(pathname: string, href: string): boolean {
   const base = href.split("?")[0];
   if (base === "/") return pathname === "/";
-  if (base === "/admin/problems") return pathname === "/admin" || (pathname.startsWith("/admin/") && !pathname.startsWith("/admin/judge"));
+  if (base === "/admin/problems") return pathname === "/admin" || (pathname.startsWith("/admin/") &&
+    !pathname.startsWith("/admin/judge") && !pathname.startsWith("/admin/services"));
   return pathname === base || pathname.startsWith(`${base}/`);
 }

@@ -12,6 +12,7 @@
     "package:itoulang": "node scripts/package-itoulang.mjs",
     "test:itoulang": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-itoulang.mjs",
     "test:judge": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-judge-queue.mjs scripts/test-judge-remote.mjs scripts/test-judge-monitor.mjs",
+    "test:services": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-service-admin.mjs",
     "test:playground": "node --experimental-test-module-mocks --import ./scripts/ctf-test-loader.mjs --test scripts/test-playground.mjs scripts/test-playground-draft.mjs",
     "test:password-reset": "node --experimental-test-module-mocks --import ./scripts/ctf-test-loader.mjs --test scripts/test-password-reset.mjs",
     "test:problems": "node --experimental-test-module-mocks --import ./scripts/ctf-test-loader.mjs --test scripts/test-problem-management.mjs",

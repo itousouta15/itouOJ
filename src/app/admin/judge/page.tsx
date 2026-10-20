@@ -14,6 +14,7 @@ export default async function AdminJudgePage() {
     <div className="mb-4 flex flex-wrap items-center gap-4">
       <h1 className="page-title">評測監控</h1>
       <Link href="/admin/problems" className="text-sm text-blue hover:underline">← 回管理後台</Link>
+      <Link href="/admin/services" className="text-sm text-blue hover:underline">管理伺服器服務 →</Link>
     </div>
     <AdminJudgeMonitor />
   </div>;

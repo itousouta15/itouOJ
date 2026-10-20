@@ -106,7 +106,7 @@ Invoke-Native "stage release" {
 # blob is LF. Bash then reads the trailing CR as part of `pipefail` and exits
 # before any preflight or rollback handler is installed.
 Invoke-Native "normalize staged shell script" {
-    ssh $Server "sed -i 's/\r$//' $release/deploy/remote-release.sh && bash -n $release/deploy/remote-release.sh"
+    ssh $Server "sed -i 's/\r$//' $release/deploy/remote-release.sh $release/deploy/oj-service-control $release/deploy/online-judge-control.sudoers && bash -n $release/deploy/remote-release.sh && sh -n $release/deploy/oj-service-control"
 }
 
 Write-Host "== Build / test / promote / verify / rollback on failure =="
