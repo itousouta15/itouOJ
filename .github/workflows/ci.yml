@@ -121,6 +121,9 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Run independent program checks
         run: ${{ matrix.command }}
+      - name: Changed CPE public reference programs (targeted, not a bulk matrix)
+        if: matrix.name == 'CPE targeted regressions'
+        run: npm run test:cpe-lessons -- --code a522,a559,a566,a595,a618,a675,a676,a685,a709,a740,a747,a755,a770,a779,a789,a790,a794,a796,a797,a798,a824,a828,a831,a836,a841 --python python3 --cxx g++
 
   toi-potential-programs:
     runs-on: ubuntu-latest

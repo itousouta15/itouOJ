@@ -1131,9 +1131,10 @@ for n in map(int, sys.stdin.buffer.read().split()):
     explanation: [
       "只有連續 A–Z 或 a–z 才是單字，任何其他字元都結束目前片段。掃描時把字母轉小寫加入 word，遇到分隔字元就把非空 word 放進集合並清空。這會把大小寫不同的同字合併，標點與數字都不會混進字典。",
       "C++ 可直接使用有序 set，同時去重與排序；Python 先以 [A-Za-z]+ 擷取英文片段，再對片段轉小寫、用 set 去重後 sorted 輸出。先分詞可避免全文 Unicode 小寫轉換把非英文字元變成 ASCII 字母。EOF 時還要提交最後一個單字，避免文章最後沒有換行而漏字。每行結束本身也是分隔字元，不能跨行把片段接成一詞。",
+      "C++ 對每次出現的單字都要執行 set.insert，即使是重複詞，也需要搜尋既有節點；因此比較次數取決於包含重複的總詞數 T，而不只不同詞數 W。每次字串比較最壞還需掃過最長詞長 B。Python 則先以雜湊集合去重，再只排序 W 個不同詞。",
     ],
     complexity:
-      "L 字元、W 個不同單字；分詞 O(L)，排序約 O(W log W) 次字串比較，空間 O(L) 上界。",
+      "L 為總字元數、T 為含重複的詞數、W 為不同詞數、B 為最長詞長；C++ O(L+TB log(W+1))，Python 平均 O(L+WB log(W+1))，空間 O(L) 上界。",
     pitfall:
       "不能只按空白 split，像 road. 的句點必須排除；don't 在本題會切成 don 與 t。",
     traceLabel: "示意：Cat, cat2DOG!",

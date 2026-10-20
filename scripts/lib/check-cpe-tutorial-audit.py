@@ -16,6 +16,7 @@ import tempfile
 from collections import deque
 from contextlib import nullcontext
 from fractions import Fraction
+from decimal import Decimal, localcontext
 from functools import lru_cache
 
 
@@ -25,16 +26,180 @@ def normalized(value):
 
 
 def check_program(command, data, expected, label):
-    result = subprocess.run(command, input=data, text=True, encoding="utf-8", capture_output=True, timeout=90)
+    # Send exact bytes: Windows text-mode writes would turn CRLF into CRCRLF.
+    result = subprocess.run(command, input=data.encode("utf-8"), capture_output=True, timeout=90)
+    actual = result.stdout.decode("utf-8")
     if result.returncode:
-        raise AssertionError(f"{label}: exit {result.returncode}\n{result.stderr[-3000:]}")
-    assert normalized(result.stdout) == normalized(expected), (
-        f"{label}\ninput: {data[:2000]!r}\nexpected: {expected[:3000]!r}\nactual: {result.stdout[:3000]!r}"
+        raise AssertionError(f"{label}: exit {result.returncode}\n{result.stderr.decode('utf-8',errors='replace')[-3000:]}")
+    assert normalized(actual) == normalized(expected), (
+        f"{label}\ninput: {data[:2000]!r}\nexpected: {expected[:3000]!r}\nactual: {actual[:3000]!r}"
     )
 
 
 def cases():
     rng = random.Random(20261020)
+
+    # Exact Fraction oracle: enumerate every nonempty interval; retain earliest ties.
+    limit = (1 << 63) - 1
+    pool_cases = [
+        (10**18, 0, [(10**18, 20)]),
+        (limit, -limit - 1, [(limit, limit)]),
+        (limit, limit, [(limit, limit)]),
+        (limit, limit, [(limit - 1, limit), (1, limit)]),
+        (8*10**18, 0, [(4*10**18, limit), (4*10**18, -limit)]),
+        (1, 0, [(limit, limit)]),
+    ]
+    pool_rng = random.Random(52220261020)
+    for _ in range(200):
+        pool_cases.append((pool_rng.randint(1, 40), pool_rng.randint(-30, 30),
+                           [(pool_rng.randint(1, 20), pool_rng.randint(-50, 50))
+                            for _ in range(pool_rng.randint(1, 8))]))
+    pool_input, pool_answers = [], []
+    for capacity, target, jars in pool_cases:
+        best = None
+        for l in range(len(jars)):
+            for r in range(l, len(jars)):
+                chosen = jars[l:r+1]
+                volume = sum(v for v, _ in chosen)
+                if not capacity <= 2*volume or volume > capacity:
+                    continue
+                error = abs(sum(Fraction(v*t, volume) for v, t in chosen) - target)
+                if error <= 5 and (best is None or (error, l, r) < best):
+                    best = (error, l, r)
+        pool_input.append(f"{capacity} {target}\n{len(jars)}\n" +
+                          "\n".join(f"{v} {t}" for v, t in jars))
+        pool_answers.append("Not possible" if best is None else f"{best[1]} {best[2]}")
+    yield "a522", str(len(pool_input))+"\n"+"\n".join(pool_input), "\n".join(pool_answers), len(pool_cases)
+
+    # Two-decimal rendering must honor the lesson's no-negative-zero promise.
+    yield "a685", "3\n0 0 1 1000 -1 0 0 -1\n0 0 1000 1 0 -1 -1 0\n0 0 1 1 0 1 1 0\n", (
+        "INTERSECTING LINES OUTPUT\nPOINT 0.00 -1.00\nPOINT -1.00 0.00\nPOINT 0.50 0.50\nEND OF OUTPUT"), 3
+
+    dictionary = ["stop", "pots", "a", "tops"]
+    searches = ["post", "a", "q", "zzzz", "post"]
+    anagram_output = []
+    for query in searches:
+        anagram_output.append("Anagrams for: " + query)
+        matches = [word for word in dictionary if sorted(word) == sorted(query)]
+        if not matches:
+            anagram_output.append("No anagrams for: " + query)
+        anagram_output += [f"{i:3}) {word}" for i, word in enumerate(matches, 1)]
+    yield "a747", "1\n\n4\n"+"\n".join(dictionary+searches+["END"]), "\n".join(anagram_output), len(searches)
+
+    # Exact arithmetic combinations by physical denomination counts, not in-place DP.
+    money_values = (5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000)
+    @lru_cache(None)
+    def money_ways(index, remaining):
+        if index == len(money_values): return int(remaining == 0)
+        value = money_values[index]
+        return sum(money_ways(index+1, remaining-count*value)
+                   for count in range(remaining//value+1))
+    money_tokens = [("0.5",50), (".5",50), ("0.50",50), ("1",100),
+                    ("1.0",100), ("1.00",100), ("2.000",200)]
+    money_answers = [f"{cents//100}.{cents%100:02}".rjust(6)+f"{money_ways(0,cents):17}"
+                     for _,cents in money_tokens]
+    yield "a796", "\n".join(token for token,_ in money_tokens)+"\n0\n", "\n".join(money_answers), len(money_tokens)
+    yield "a790", "2\r\n\r\n1 1\r\n00\r\n01\r\n\r\n2 2\r\n01\r\n00\r\n", "3\n\n3", 2
+    yield "a797", "1 1\r\n0 0 E\r\nR\r\n0 0 N\r\nFRF\r\n0 0 W\r\n\r\n", "0 0 S\n1 1 E\n0 0 W", 3
+
+    # High-precision interval set cover, deliberately not endpoint-sorted greedy.
+    radar_cases = [(10**9, [(0,1),(2*10**9,1)]),
+                   (10**9, [(0,0),(2*10**9,0)]),
+                   (limit, [(-limit,0),(limit,0)]),
+                   (limit, [(-limit,1),(limit,1)]),
+                   (limit, [(-limit-1,0),(limit,0)]),
+                   (0, [(1,0),(1,0),(2,0)]), (-1, [(0,0)])]
+    radar_rng = random.Random(77920261021)
+    for _ in range(150):
+        d = radar_rng.randrange(9)
+        radar_cases.append((d, [(radar_rng.randrange(-10,11), radar_rng.randrange(d+2))
+                               for _ in range(radar_rng.randrange(1,8))]))
+    radar_input, radar_answers = [], []
+    with localcontext() as context:
+        context.prec = 150
+        for d, islands in radar_cases:
+            radar_input.append(f"{len(islands)} {d}\n"+"\n".join(f"{x} {y}" for x,y in islands))
+            if d < 0 or any(abs(y)>d for _,y in islands):
+                answer = -1
+            else:
+                intervals = []
+                for x,y in islands:
+                    radius = Decimal(d*d-y*y).sqrt()
+                    intervals.append((Decimal(x)-radius, Decimal(x)+radius))
+                coverages = [sum(1<<i for i,(left,right) in enumerate(intervals)
+                                 if left <= position <= right)
+                             for _,position in intervals]
+                costs = {0:0}
+                for coverage in coverages:
+                    for state,cost in list(costs.items()):
+                        union = state|coverage
+                        costs[union] = min(costs.get(union,1000),cost+1)
+                answer = costs[(1<<len(islands))-1]
+            radar_answers.append(f"Case {len(radar_answers)+1}: {answer}")
+    yield "a779", "\n".join(radar_input)+"\n0 0\n", "\n".join(radar_answers), len(radar_cases)
+
+    # Independent payment oracle enumerates every physical subset of tiny wallets.
+    coins = [1, 2, 4, 10, 20, 40]
+    change = [0] + [1000]*154
+    for amount in range(1, len(change)):
+        change[amount] = 1 + min(change[amount-v] for v in coins if v <= amount)
+    wallet_rng = random.Random(79420261020)
+    wallet_input, wallet_answers = [], []
+    for _ in range(100):
+        counts = [wallet_rng.randrange(3) for _ in coins]
+        if not any(counts): counts[0] = 1
+        total = sum(c*v for c, v in zip(counts, coins))
+        price = wallet_rng.randrange(1, min(99, total)+1)
+        answer = min(sum(paid)+change[sum(c*v for c, v in zip(paid, coins))-price]
+                     for paid in it.product(*(range(c+1) for c in counts))
+                     if sum(c*v for c, v in zip(paid, coins)) >= price)
+        cents = price*5
+        wallet_input.append(" ".join(map(str, counts)) + f" {cents//100}.{cents%100:02}")
+        wallet_answers.append(f"{answer:3}")
+    for count, index, price, answer in [(60000000, 5, 40, 1), (10**100, 5, 39, 2),
+                                       (10**100, 0, 99, 99), (10**100, 5, 0, 0)]:
+        counts = [0]*6
+        counts[index] = count
+        cents = price*5
+        wallet_input.append(" ".join(map(str, counts)) + f" {cents//100}.{cents%100:02}")
+        wallet_answers.append(f"{answer:3}")
+    wallet_input += ["+0 +0 +0 +0 +0 +0000001 2.00", "0 0 0 1 0 0 0.5", "0 0 0 1 0 0 .5"]
+    wallet_answers += ["  1", "  1", "  1"]
+    yield "a794", "\n".join(wallet_input)+"\n+0 +0 +0 +0 +0 +0\n", "\n".join(wallet_answers), len(wallet_input)
+
+    huge = "1234567890"*10
+    beyond_conversion_limit = "9"*5000
+    yield "a828", f"(2147483648,) ()\n(000123,) ({huge},L) (7,R) ()\n(9,L) ()\n({beyond_conversion_limit},) ()\n", (
+        f"2147483648\n123 {huge} 7\nnot complete\n{beyond_conversion_limit}"), 4
+    sequences = [["2147483648", "2147483649"], [huge, "-"+huge, "0"],
+                 ["-0002", "-2", "+0000", "-0", "+0003", "3"]]
+    integer_rng = random.Random(83120261020)
+    for _ in range(100):
+        sequences.append([str(integer_rng.randrange(-10**30, 10**30))
+                          for _ in range(integer_rng.randrange(1, 13))])
+    inversion_input, inversion_answers = [], []
+    for sequence in sequences:
+        values = list(map(int, sequence))
+        count = sum(values[i] > values[j] for i in range(len(values)) for j in range(i+1, len(values)))
+        inversion_input.append(str(len(values))+"\n"+" ".join(sequence))
+        inversion_answers.append(f"Minimum exchange operations : {count}")
+    inversion_input += [f"2\n{beyond_conversion_limit} 1", f"2\n-{beyond_conversion_limit} -1"]
+    inversion_answers += ["Minimum exchange operations : 1", "Minimum exchange operations : 0"]
+    yield "a831", "\n".join(inversion_input), "\n".join(inversion_answers), len(inversion_input)
+    set_pairs = [(["2147483648"], ["2147483649"]), (["+0001"], ["1"]),
+                 (["-0"], ["+000"]), ([huge, "-"+huge], [huge]),
+                 (["-2", "3"], ["3", "4"])]
+    set_input, set_answers = [], []
+    for first, second in set_pairs:
+        a, b = set(map(int, first)), set(map(int, second))
+        answer = ("A equals B" if a == b else "A is a proper subset of B" if a < b
+                  else "B is a proper subset of A" if b < a else "A and B are disjoint"
+                  if a.isdisjoint(b) else "I'm confused!")
+        set_input += [" ".join(first), " ".join(second)]
+        set_answers.append(answer)
+    set_input += [beyond_conversion_limit, "1"+"0"*5000]
+    set_answers.append("A and B are disjoint")
+    yield "a836", "\n".join(set_input)+"\n", "\n".join(set_answers), len(set_answers)
 
     # Balanced binary strings: enumerate integers, including the leading-bit rule.
     queries = list(it.product(range(1, 13), range(0, 11))) + [(64, 1), (64, 2)]
@@ -228,6 +393,13 @@ def cases():
                 best = elapsed if best is None else min(best, elapsed)
         queries.append(str(n) + "\n" + "\n".join(f"{p} {d}" for p, d in zip(x, deadlines)))
         answers.append("No solution" if best is None else str(best))
+    # Missing numeric ceilings must not turn an unreachable marker into a route.
+    queries += [
+        "4\n0 8000000000000000000\n1000000000000000000 1\n2000000000000000000 1\n3000000000000000000 8000000000000000000",
+        "3\n0 9000000000000000000\n2000000000000000000 1\n5000000000000000000 9000000000000000000",
+        "2\n-9223372036854775807 9000000000000000000\n9223372036854775807 9000000000000000000",
+    ]
+    answers += ["No solution", "7000000000000000000", "No solution"]
     yield "a595", "\n".join(queries), "\n".join(answers), len(queries)
 
     # BFS over both interval endpoints; A before M establishes the lexical tie.
@@ -402,12 +574,20 @@ def main():
     lessons = {lesson["code"]: lesson for lesson in json.load(sys.stdin)}
     suites = [case for case in cases() if case[0] in lessons]
     assert suites, "No oracle suites selected"
+    python_only = 0
     workspace = tempfile.TemporaryDirectory(prefix="cpe-tutorial-audit-", dir=pathlib.Path.cwd()) if options.cxx else nullcontext(None)
     with workspace as folder:
         root = pathlib.Path(folder) if folder else None
         for code, data, expected, count in suites:
             lesson = lessons[code]
             check_program([sys.executable, "-X", "utf8", "-c", lesson["python"]], data, expected, f"{code} Python")
+            if code == "a595":
+                # Python promises exact integer input, not a fabricated 10**60 ceiling.
+                d = 10**80
+                giant = f"4\n0 {8*d}\n{d} 1\n{2*d} 1\n{3*d} {8*d}\n"
+                check_program([sys.executable, "-X", "utf8", "-c", lesson["python"]],
+                              giant, "No solution", "a595 arbitrary-size Python sentinel")
+                python_only += 1
             status = "Python executed"
             if options.cxx:
                 source = root / f"{code}.cpp"
@@ -421,6 +601,8 @@ def main():
                     status += " and executed"
             print(f"{code}: {count} independent oracle cases passed ({status}).", flush=True)
     print(f"Passed {len(suites)} suites / {sum(case[3] for case in suites)} cases. No claim about untested lessons or judge AC.", flush=True)
+    if python_only:
+        print(f"Additionally passed {python_only} Python-only arbitrary-size integer case (outside C++ input range).", flush=True)
 
 
 if __name__ == "__main__":

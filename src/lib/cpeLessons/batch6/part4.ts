@@ -9,10 +9,12 @@ export const lessons = [
     explanation: [
       "把每個路徑字串作為唯一鍵，值是節點內容。重複鍵即使數值相同也代表重複指定，必須保留失敗旗標。當遇到 () 時檢查根的空路徑存在，且每個非根路徑去掉最後一字元後的父路徑也存在。逐點的父節點檢查自然保證整條祖先鏈完整。",
       "完整時依『路徑長度、路徑字典序』排序：長度就是深度，而相同深度下 L<R 對應由左到右，所以這正是層序。否則只輸出 not complete。() 代表目前樹結束而不是整份輸入結束；印完後清空字典與重複旗標，繼續讀到 EOF。",
+      "節點值沒有位數上限，而且只需保存與輸出，不必做算術。兩種語言都將值存成十進位字串：去掉可選的正負號後先移除前導零，全零統一成 0，非零負數才保留負號。題目保證值為正，因此合法資料輸出不含正號或多餘前導零；不使用 stoi 或 int() 解析長數值，也不更改 Python 的十進位轉換安全設定。",
     ],
-    complexity: "V 個節點、最長路徑 H；時間 O(VH+V log V×H)，空間 O(VH)。",
+    complexity:
+      "每棵樹 V 個節點、最長路徑 H、值最多 L 位；時間 O(VL+V(H+1) log(V+1))，狀態空間 O(V(L+H+1))。Python 整批讀入另需 O(總輸入長) 空間。",
     pitfall:
-      "不能只依路徑字典序排序，深層 LL 會排在淺層 R 前面；同值重複指定仍算不完整。",
+      "不能只依路徑字典序排序，深層 LL 會排在淺層 R 前面；同值重複指定仍算不完整。C++ 不可用 stoi 或 long long 限制值的位數，Python 也不應用 int() 解析沒有位數上限的十進位字串。",
     traceLabel: "示意：(4,L)、(8,R)、(5,) 依此順序輸入",
     trace: [
       {
@@ -46,14 +48,28 @@ export const lessons = [
 #include <vector>
 #include <algorithm>
 using namespace std;
+string normalizeDecimal(const string &s) {
+    size_t first = 0;
+    bool negative = false;
+    if (!s.empty() && (s[0] == '+' || s[0] == '-')) {
+        negative = s[0] == '-';
+        first = 1;
+    }
+    while (first < s.size() && s[first] == '0')
+        ++first;
+    if (first == s.size())
+        return "0";
+    string digits = s.substr(first);
+    return negative ? "-" + digits : digits;
+}
 int main() {
-    map<string, int> tree;
+    map<string, string> tree;
     bool duplicate = false;
     string token;
     while (cin >> token) {
         if (token != "()") {
             size_t comma = token.find(',');
-            int value = stoi(token.substr(1, comma - 1));
+            string value = normalizeDecimal(token.substr(1, comma - 1));
             string path = token.substr(comma + 1, token.size() - comma - 2);
             if (tree.count(path))
                 duplicate = true;
@@ -83,12 +99,20 @@ int main() {
 }`,
     python: String.raw`import sys
 
+def normalize_decimal(s):
+    negative = s[0] == '-'
+    digits = s[1:] if s[0] in '+-' else s
+    digits = digits.lstrip('0')
+    if not digits:
+        return '0'
+    return '-' + digits if negative else digits
+
 tree, duplicate = {}, False
 for token in sys.stdin.read().split():
     if token != '()':
         value, path = token[1:-1].split(',')
         duplicate |= path in tree
-        tree[path] = int(value)
+        tree[path] = normalize_decimal(value)
         continue
     ok = not duplicate and '' in tree and all(not p or p[:-1] in tree for p in tree)
     if ok:
@@ -258,9 +282,12 @@ for country in sorted(count):
     explanation: [
       "逆序對是 i<j 且 a[i]>a[j] 的一對位置。一次相鄰交換最多消除一個逆序對，所以排序至少需要原本的逆序對數；氣泡排序每次交換相鄰逆序，恰好用此數量完成，因此這就是最少交換次數。",
       "合併排序遞迴算左右半部，再合併兩個已排序區間。若右側值嚴格小於左側目前值，左側剩餘的所有元素都與它形成逆序對，一次加上剩餘個數。相等時先取左側，不計逆序。讀至 EOF，每筆以指定的 Minimum exchange operations : M 格式輸出。",
+      "輸入整數沒有位數上限，兩種語言都以規範化十進位字串保存：去掉正號、前導零，所有帶符號的零都統一成 0。比較時負數小於非負數；同號先比較數字位數，再比較字典序，兩者在負數時都反向。合併時以這個數值比較器判斷右值是否嚴格較小，因此 +001、1 視為相等，-10 也會正確排在 -2 之前。不以 int() 轉換長數值，也不更改 Python 的安全設定；只有有界的 N 與逆序對數需要整數，N≤1000 時最多 499500 對。",
     ],
-    complexity: "每筆時間 O(N log N)，空間 O(N)。",
-    pitfall: "相等元素不算逆序；右側較小時增加的是左側全部剩餘數，不只 1。",
+    complexity:
+      "每筆 N 個數、每數最多 L 位；時間 O(NL log(N+1))，狀態空間 O(NL)。Python 整批讀入另需 O(總輸入長) 空間。",
+    pitfall:
+      "相等元素不算逆序；右側較小時增加的是左側全部剩餘數，不只 1。不能直接以原字串字典序比較數值，負數的長度與字典序都要反向，-0 必須等同 0。",
     traceLabel: "示意：2,3,1",
     trace: [
       {
@@ -290,15 +317,39 @@ for country in sorted(count):
     ],
     cpp: String.raw`#include <iostream>
 #include <vector>
+#include <string>
 using namespace std;
-long long sortCount(vector<int> &a, vector<int> &tmp, int l, int r) {
+string normalizeDecimal(const string &s) {
+    size_t first = 0;
+    bool negative = false;
+    if (!s.empty() && (s[0] == '+' || s[0] == '-')) {
+        negative = s[0] == '-';
+        first = 1;
+    }
+    while (first < s.size() && s[first] == '0')
+        ++first;
+    if (first == s.size())
+        return "0";
+    string digits = s.substr(first);
+    return negative ? "-" + digits : digits;
+}
+bool numericLess(const string &a, const string &b) {
+    bool negativeA = a[0] == '-', negativeB = b[0] == '-';
+    if (negativeA != negativeB)
+        return negativeA;
+    size_t digitsA = a.size() - negativeA, digitsB = b.size() - negativeB;
+    if (digitsA != digitsB)
+        return negativeA ? digitsA > digitsB : digitsA < digitsB;
+    return negativeA ? a > b : a < b;
+}
+long long sortCount(vector<string> &a, vector<string> &tmp, int l, int r) {
     if (r - l <= 1)
         return 0;
     int m = (l + r) / 2;
     long long ans = sortCount(a, tmp, l, m) + sortCount(a, tmp, m, r);
     int i = l, j = m, k = l;
     while (i < m && j < r) {
-        if (a[i] <= a[j])
+        if (!numericLess(a[j], a[i]))
             tmp[k++] = a[i++];
         else {
             tmp[k++] = a[j++];
@@ -316,14 +367,33 @@ long long sortCount(vector<int> &a, vector<int> &tmp, int l, int r) {
 int main() {
     int n;
     while (cin >> n) {
-        vector<int> a(n), tmp(n);
-        for (int &x : a)
+        vector<string> a(n), tmp(n);
+        for (string &x : a) {
             cin >> x;
+            x = normalizeDecimal(x);
+        }
         cout << "Minimum exchange operations : " << sortCount(a, tmp, 0, n) << '\n';
     }
 }`,
     python: String.raw`import sys
 
+
+def normalize_decimal(s):
+    negative = s[0] == '-'
+    digits = s[1:] if s[0] in '+-' else s
+    digits = digits.lstrip('0')
+    if not digits:
+        return '0'
+    return '-' + digits if negative else digits
+
+def numeric_less(a, b):
+    negative_a, negative_b = a[0] == '-', b[0] == '-'
+    if negative_a != negative_b:
+        return negative_a
+    digits_a, digits_b = len(a) - negative_a, len(b) - negative_b
+    if digits_a != digits_b:
+        return digits_a > digits_b if negative_a else digits_a < digits_b
+    return a > b if negative_a else a < b
 
 def sort_count(a):
     if len(a) <= 1:
@@ -334,7 +404,7 @@ def sort_count(a):
     i = j = 0
     merged, count = [], x + y
     while i < len(left) and j < len(right):
-        if left[i] <= right[j]:
+        if not numeric_less(right[j], left[i]):
             merged.append(left[i])
             i += 1
         else:
@@ -346,9 +416,10 @@ def sort_count(a):
     return merged, count
 
 
-it = iter(map(int, sys.stdin.buffer.read().split()))
-for n in it:
-    a = [next(it) for _ in range(n)]
+it = iter(sys.stdin.read().split())
+for token in it:
+    n = int(token)
+    a = [normalize_decimal(next(it)) for _ in range(n)]
     print(f'Minimum exchange operations : {sort_count(a)[1]}')
 `,
   }),
@@ -675,10 +746,12 @@ for _ in range(next(it)):
     explanation: [
       "令 c=|A∩B|。若 c 同時等於 |A|、|B|，兩集合相等；若只等於 |A|，A 是 B 的真子集；若只等於 |B|，則 B 是 A 的真子集。這些檢查應放在 c=0 的互斥判斷之前，才能正確處理空集合。",
       "剩下若 c=0 就互不相交，否則有交集卻互不包含，輸出 I'm confused!。輸入每兩行構成一筆，行界線本身有意義，不能把全檔 split 後失去兩個集合的分界。用 set 表示集合並計算交集，不需比對原始排列順序。",
+      "兩種語言都先規範化十進位字串：移除正號與前導零，-0、+000 等都成為 0，非零負數才保留負號。這使數值相等當且僅當字串相等。C++ 的 set<string> 雖按字典序排列，這題只用成員查找、相等與交集，無需數值排序，因此字典序完全足夠。Python 同樣以字串為集合鍵，不用 int() 解析長數值，也不更改十進位轉換安全設定。",
     ],
     complexity:
-      "C++ 有序集合 O((|A|+|B|) log(|A|+|B|))，Python 雜湊平均 O(|A|+|B|)，空間 O(|A|+|B|)。",
-    pitfall: "集合順序不影響關係；相等不能誤列為真子集。",
+      "每筆 T 個輸入整數、每數最多 L 位；C++ 時間 O(TL log(T+1))，Python 雜湊平均時間 O(TL)，狀態空間 O(TL)。Python 整批讀入另需 O(總輸入長) 空間。",
+    pitfall:
+      "集合順序不影響關係；相等不能誤列為真子集。字串必須先規範化，讓 +001 與 1、-0 與 0 成為同一鍵，且不可用 int 解析後默默遺失超範圍元素。",
     traceLabel: "示意：A={1,2}，B={2,3}",
     trace: [
       {
@@ -714,12 +787,26 @@ for _ in range(next(it)):
 #include <sstream>
 #include <set>
 using namespace std;
-set<int> parse(const string &s) {
+string normalizeDecimal(const string &s) {
+    size_t first = 0;
+    bool negative = false;
+    if (!s.empty() && (s[0] == '+' || s[0] == '-')) {
+        negative = s[0] == '-';
+        first = 1;
+    }
+    while (first < s.size() && s[first] == '0')
+        ++first;
+    if (first == s.size())
+        return "0";
+    string digits = s.substr(first);
+    return negative ? "-" + digits : digits;
+}
+set<string> parse(const string &s) {
     istringstream in(s);
-    set<int> result;
-    int x;
+    set<string> result;
+    string x;
     while (in >> x)
-        result.insert(x);
+        result.insert(normalizeDecimal(x));
     return result;
 }
 int main() {
@@ -727,7 +814,7 @@ int main() {
     while (getline(cin, first) && getline(cin, second)) {
         auto a = parse(first), b = parse(second);
         size_t common = 0;
-        for (int x : a)
+        for (const string &x : a)
             common += b.count(x);
         if (common == a.size() && common == b.size())
             cout << "A equals B\n";
@@ -743,10 +830,19 @@ int main() {
 }`,
     python: String.raw`import sys
 
+def normalize_decimal(s):
+    negative = s[0] == '-'
+    digits = s[1:] if s[0] in '+-' else s
+    digits = digits.lstrip('0')
+    if not digits:
+        return '0'
+    return '-' + digits if negative else digits
+
 lines = iter(sys.stdin.read().splitlines())
 for first in lines:
     second = next(lines)
-    a, b = set(map(int, first.split())), set(map(int, second.split()))
+    a = {normalize_decimal(x) for x in first.split()}
+    b = {normalize_decimal(x) for x in second.split()}
     if a == b:
         print('A equals B')
     elif a < b:
@@ -1068,7 +1164,8 @@ for n in it:
       "先以 value=value×原進位+digit 從左到右解析數字，A 到 F 對應 10 到 15。再反覆取 value%目標進位，除掉已取出的位，最後反轉得到輸出。零必須特判為 0，且前導零不會保留。",
       "顯示器只容七位，任何可顯示數在最大進位 16 中都小於 16⁷。因此解析時可把 value 截在 16⁷：一旦達此界線，不論目標進位為何一定 ERROR，避免未明限輸入長度造成 C++ 溢位。小於此界線仍要轉換並檢查字串長度，因較小目標進位可能超過七位。最後將結果或 ERROR 靠右對齊寬度 7，讀到 EOF。",
     ],
-    complexity: "輸入長 L、結果長 D；時間 O(L+D)，空間 O(D)，數值飽和值固定。",
+    complexity:
+      "輸入長 L、結果長 D；C++ 每筆時間 O(L+D)，含輸入字串空間 O(L+D)，不含輸入的額外空間 O(D)。Python 整批分詞另需 O(總輸入長) 空間。",
     pitfall: "ERROR 前要有兩個空白；前導零不算輸出長度，0 的表示不能是空字串。",
     traceLabel: "示意：1A，15 進位轉 2 進位",
     trace: [

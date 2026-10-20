@@ -899,7 +899,8 @@ for s in map(int, sys.stdin.buffer.read().split()):
       "N≡1 (mod N−1)，所以任意位數的 N 進位整數，模 N−1 的結果都等於各位數值之和。先將 0–9、A–Z、a–z 依序解成 0–61；正負號不算數字，整數正負也不影響是否整除。",
       "可用進位至少是 max(2,最大位值+1)。從這裡到 62 逐一測試數字和能否被 N−1 整除，第一個成功者就是最小解，全部失敗則印指定訊息。讀到 EOF，每個表示各印一行，不需要把整數完整轉成十進位。",
     ],
-    complexity: "每筆時間 O(L+62)，空間 O(1)。",
+    complexity:
+      "每筆時間 O(L+62)；C++ 計算工作空間 O(1)，含輸入文字共 O(L)。Python 另有 O(L) 位值列表及 O(T) 整份輸入緩衝，T 為全部輸入長度。",
     pitfall:
       "大小寫代表不同位值；只有整除條件還不夠，進位必須容納最大數字符號。",
     traceLabel: "示意：字串 12",
@@ -1518,10 +1519,10 @@ sys.stdout.write('\n\n'.join(groups) + ('\n' if groups else ''))
     goal: "用排序後字串辨識異序詞並保持字典輸入順序。",
     explanation: [
       "兩個單字能以字母重排互換，等價於每個字母的數量完全相同，也等價於排序後的字串相同。先替字典每個詞計算簽章，查詢時只比較簽章，不需枚舉任何排列。",
-      "把同簽章的字典單字依輸入順序存入列表，查詢可直接取整份列表。先印 Anagrams for: word，再由 1 開始編號，編號寬度為 3；沒有結果則印 No anagrams for: word。END 只結束當組查詢，測試組之間留一空行，字典詞本身也可成為答案。",
+      "把同簽章的字典單字依輸入順序存入列表，查詢可直接取整份列表；C++ 用 find、Python 用 get，只讀查詢，不為查無結果的簽章建立空鍵。先印 Anagrams for: word，再由 1 開始編號，編號寬度為 3；沒有結果則印 No anagrams for: word。END 只結束當組查詢，測試組之間留一空行，字典詞本身也可成為答案。",
     ],
     complexity:
-      "字長≤L，預處理 O(NL log L)，每查詢 O(L log L+輸出量)；空間 O(NL)。",
+      "N 個字典詞、字長≤L；C++ 有序 map 預處理 O(NL(log(L+1)+log(N+2)))，每查詢 O(L(log(L+1)+log(N+2))+輸出字元數)，字典空間 O(NL)。Python 雜湊平均預處理 O(NL log(L+1))、每查詢 O(L log(L+1)+輸出字元數)，另有 O(T+B) 整份輸入及累積輸出緩衝，T、B 分別為全部輸入與輸出長度。",
     pitfall: "答案按字典輸入順序，不要為了簽章而把輸出詞列表也排序。",
     traceLabel: "示意：字典 eat、tea、tan，查詢 ate",
     trace: [
@@ -1574,12 +1575,14 @@ int main() {
             cout << '\n';
         while (cin >> s && s != "END") {
             cout << "Anagrams for: " << s << '\n';
-            auto &a = dict[signature(s)];
-            if (a.empty())
+            auto found = dict.find(signature(s));
+            if (found == dict.end())
                 cout << "No anagrams for: " << s << '\n';
-            else
+            else {
+                const auto &a = found->second;
                 for (size_t i = 0; i < a.size(); ++i)
                     cout << setw(3) << i + 1 << ") " << a[i] << '\n';
+            }
         }
     }
 }`,

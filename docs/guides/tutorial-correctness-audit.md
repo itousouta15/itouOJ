@@ -9,6 +9,8 @@
 - APCS 修正範例與動畫對齊、a455 的錯誤陷阱說明，以及數個忽略輸入儲存／惰性堆積成本的複雜度敘述。詳見 [APCS 紀錄](apcs-tutorial-audit.md)。
 - CPE 修正 a559 動畫遞迴數列、a824 Python 先轉小寫導致 Unicode 字元被誤當英文的分詞問題。詳見 [CPE 紀錄](cpe-tutorial-audit.md)。
 - 第二輪交叉審查補正 a095 與 a675 的空間／時間註記、a210 聯集用語；a184 改成保留空行，a216 改成每筆只拆第一個分隔空白，完整保留姓名。新增 LF／CRLF、空 S／T、複合姓名與穩定排序回歸，不改公開範例。
+- CPE 補充逐題審查後修正 a522 熱量溢位、a595 不可達標記變成假路徑、a685 負零、a747 不存在查詢意外插入空鍵、a794 超大錢包配置；a828／a831／a836 改成正規十進位字串，避免固定寬度轉換或 Python 十進位轉換長度限制。額外回歸包含大數、五千位整數、巨大硬幣數量與獨立暴力對照。
+- 另修正 a779 大座標的浮點誤判、a796 將 0.5 誤讀為 5 分，以及 a790／a797 的 CRLF 行尾問題。a779 用精確根式比較維持原本的區間貪心，C++ 明列有號 64 位元輸入／GNU __int128 契約，不用加大 epsilon 假裝修復精度。
 
 ## 驗證層級
 
@@ -20,6 +22,10 @@
 - [潛力組紀錄](toi-potential-tutorial-audit.md)
 - TOI 新教材另經獨立第二輪逐題審查：[第一批](toi-beginner-batch1-cross-review.md)、[第二批](toi-beginner-batch2-cross-review.md)、[第三批與 a086](toi-beginner-cross-review.md)。各文件記錄實際版本與有限案例，不把作者自行通過的測試當成第二輪證據。
 - 上述 APCS、CPE 紀錄
+
+CPE 第一輪的 Python／動畫閱讀之外，第二輪完整閱讀各題的 C++、goal、explanation、complexity、pitfall 與新題敘，覆蓋分別為 160+140+44+44=388 題。這是逐欄語意審查，不是 388 題都有獨立完整 oracle；各批仍有未測的最大效能與未定義來源規則。
+
+2026-10-21 整合後重跑 CPE 的 31 題獨立測試，共 11,985 組 Python 配對用案例，加一組 Python 專用任意精度反例，全數通過。變更的 25 題 CPE 公開範例、771 題來源契約、TypeScript、ESLint 也通過；最新 head 的 C++ 執行與 production／HTTP 測試由 PR CI 驗證。
 
 本機已通過 135 題新手組 Python 公開範例、771 題來源範例對應、TypeScript 與 ESLint。Windows 應用程式控制限制新 C++ 二進位執行，未停用或繞過；本機編譯成功不算執行成功。Linux CI 新增六組分批回歸，實際執行 C++ 與 Python；CPE 只跑針對性 oracle，不恢復已移除的全題庫編譯矩陣。頁面整合測試使用拋棄式資料庫，遍歷全部 135 個新手教學 URL、範例、C++ 顯示及儲存排序。
 

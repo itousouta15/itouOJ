@@ -784,7 +784,7 @@ for a in it:
       "再建二分圖，左側為電器個體，右側為實際插座個體；能轉接相容就連邊。逐件電器找增廣路：遇到已配對插座時嘗試替原電器改接，成功才讓新電器佔用。每次增廣增加一件供電電器，無增廣路後就是最大配對；答案為 m 減配對數。重複類型的插座仍須分開計數，資料間印一個空白行。",
     ],
     complexity:
-      "類型數 V、轉接邊 K；可達性 O(m(V+K))，配對 O(m²n)，空間 O(mn+V+K)。",
+      "類型數 V、轉接邊 K、m 件電器與 n 插座；C++ 有序容器時間 O((K+m(V+K+n))log(V+1)+m²n)，名稱比較成本另計；Python 雜湊平均 O(m(V+K+n)+m²n)。圖與配對空間 O(mn+V+K)，Python 另含輸入緩衝。",
     pitfall: "A B 不可反向解讀；只依序貪心搶插座可能阻擋需要特定插座的電器。",
     traceLabel: "示意：插座 B,C；電器 A,B；轉接 A→B、A→C",
     trace: [
@@ -977,14 +977,18 @@ int main() {
     for (int tc = 0; tc < t; ++tc) {
         do {
             getline(cin, line);
+            if (!line.empty() && line.back() == '\r') line.pop_back();
         } while (line.empty());
         int r, c;
         istringstream(line) >> r >> c;
         --r;
         --c;
         vector<string> g;
-        while (getline(cin, line) && !line.empty())
+        while (getline(cin, line)) {
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (line.empty()) break;
             g.push_back(line);
+        }
         vector<pair<int, int>> stack{{r, c}};
         g[r][c] = '1';
         int area = 0;
@@ -1335,12 +1339,15 @@ for k in it:
     concept: "有限付款與無限找零的雙動態規劃",
     goal: "枚舉實際付額，最小化付出與找回的硬幣總數。",
     explanation: [
-      "把金額統一除以 5 分，面額變為 1、2、4、10、20、40。pay[s] 表示用錢包中有限硬幣付出 s 的最少枚數，初始 pay[0]=0。將每種硬幣數量二進位分組，對每組做由大到小的 0/1 背包轉移，確保不超用；一組 g 枚的重量為 gv、成本為 g。",
-      "另外計算店家的 change[s]：各面額無限，用由小到大的轉移求最少找零枚數。對每個可達且不小於價格 p 的付額 s，總交換量是 pay[s]+change[s−p]，取最小即可。價格先以字串解析成整數分，避免浮點誤差。六個數量皆 0 時立即結束，不再讀價格；答案靠右寬度 3。",
+      "把金額統一除以 5 分，面額變為 1、2、4、10、20、40，價格 p<100。p=0 時不必交換硬幣，答案為 0。p>0 時，任意逐枚取錢包硬幣直到首次達到 p；因每枚至少 1 單位，至多付 p 枚，且最後一枚至多 40 單位，故溢付至多 39。店家用 1 單位硬幣找零至多 39 枚，因此必存在總交換數不超過 B=p+39≤138 的解。",
+      "最優解的付出枚數不超過總交換數，因此至多 B 枚，付額至多 W=40B≤5520。各面額只需保留 min(原數量,B) 枚；先移除數量字串可選的前導正號，再逐字讀數量並飽和到 B，之後才做任何數量乘法，不將巨大數量轉成固定長度整數，也不計算整個錢包總值。這個裁切仍保留至少一個最優解。",
+      "pay[s] 表示有限硬幣付出 s 的最少枚數，pay[0]=0，只計算到 W。將裁切後數量二進位分組，對每組做由大到小的 0/1 背包轉移，確保不超用；一組 g 枚的重量為 gv、成本為 g。店家的 change[s] 則以各面額無限、由小到大的轉移求最少找零枚數。",
+      "對每個可達且 p≤s≤W 的付額，取 pay[s]+change[s−p] 的最小值。價格以字串轉成整數分，小數不足兩位時在右側補零，例如 0.5 是 50 分；不使用浮點數。六個數量字串全為 0 時立即結束，不再讀價格；答案靠右寬度 3。",
     ],
-    complexity: "W 為錢包總值（5 分單位）；時間 O(WΣlog(cᵢ+1)+6W)，空間 O(W)。",
+    complexity:
+      "B=p+39≤138、W=40B≤5520、cᵢ′=min(cᵢ,B)；DP 時間 O(WΣlog(cᵢ′+1)+6W)，工作空間 O(W)。另以 O(I) 時間讀取輸入字元；C++ 保存當筆數量字串，Python 另有整份輸入緩衝 O(I)。",
     pitfall:
-      "只求剛好付款會漏掉以大幣付款再找零的更佳方案；有限硬幣轉移不可正向更新。",
+      "價格上限不是錢包總值上限；必須先裁切數量再乘面額。仍須考慮超額付款與找零，有限硬幣轉移不可正向更新。",
     traceLabel: "示意：有一枚 1 元、售價 0.95 元",
     trace: [
       {
@@ -1378,19 +1385,37 @@ for k in it:
 #include <iomanip>
 using namespace std;
 int main() {
-    int v[] = {1, 2, 4, 10, 20, 40}, c[6];
-    while (cin >> c[0]) {
+    int v[] = {1, 2, 4, 10, 20, 40};
+    string raw[6];
+    while (cin >> raw[0]) {
         for (int i = 1; i < 6; ++i)
-            cin >> c[i];
-        int w = 0;
-        for (int i = 0; i < 6; ++i)
-            w += v[i] * c[i];
-        if (!w)
+            cin >> raw[i];
+        for (string &s : raw)
+            if (!s.empty() && s[0] == '+')
+                s.erase(0, 1);
+        bool empty = true;
+        for (const string &s : raw)
+            if (s.find_first_not_of('0') != string::npos)
+                empty = false;
+        if (empty)
             break;
         string price;
         cin >> price;
-        int pos = int(price.find('.'));
-        int p = (stoi(price.substr(0, pos)) * 100 + stoi(price.substr(pos + 1))) / 5;
+        size_t pos = price.find('.');
+        string whole = price.substr(0, pos);
+        if (whole.empty()) whole = "0";
+        string fraction = pos == string::npos ? "" : price.substr(pos + 1);
+        fraction += "00";
+        int p = (stoi(whole) * 100 +
+                 10 * (fraction[0] - '0') + fraction[1] - '0') / 5;
+        if (p == 0) {
+            cout << setw(3) << 0 << '\n';
+            continue;
+        }
+        int bound = p + 39, w = 40 * bound, c[6] = {};
+        for (int i = 0; i < 6; ++i)
+            for (char digit : raw[i])
+                c[i] = min(bound, 10 * c[i] + digit - '0');
         const int inf = 100000000;
         vector<int> pay(w + 1, inf), change(w + 1, inf);
         pay[0] = change[0] = 0;
@@ -1416,12 +1441,23 @@ int main() {
 it = iter(sys.stdin.read().split())
 values = [1, 2, 4, 10, 20, 40]
 for token in it:
-    counts = [int(token)] + [int(next(it)) for _ in range(5)]
-    w = sum(c * v for c, v in zip(counts, values))
-    if not w:
+    raw_counts = [token] + [next(it) for _ in range(5)]
+    raw_counts = [count.removeprefix('+') for count in raw_counts]
+    if all(not count.strip('0') for count in raw_counts):
         break
-    whole, cents = next(it).split('.')
-    p = (int(whole) * 100 + int(cents)) // 5
+    whole, _, fraction = next(it).partition('.')
+    p = (int(whole or '0') * 100 + int((fraction + '00')[:2])) // 5
+    if p == 0:
+        print(f'{0:3d}')
+        continue
+    bound = p + 39
+    w = 40 * bound
+    counts = []
+    for raw in raw_counts:
+        count = 0
+        for digit in raw:
+            count = min(bound, 10 * count + ord(digit) - ord('0'))
+        counts.append(count)
     inf = 10**9
     pay, change = [inf] * (w + 1), [inf] * (w + 1)
     pay[0] = change[0] = 0
