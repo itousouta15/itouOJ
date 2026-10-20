@@ -22,6 +22,7 @@
     "test:apcs-lessons": "node --import ./scripts/ctf-test-loader.mjs scripts/verify-apcs-lessons.mjs",
     "test:cpe-lessons": "node --import ./scripts/ctf-test-loader.mjs scripts/verify-cpe-lessons.mjs",
     "test:cpe-course": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-cpe-course.mjs",
+    "test:course-layout": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-course-overview.mjs scripts/test-course-layout.mjs",
     "test:toi-potential-lessons": "node --import ./scripts/ctf-test-loader.mjs scripts/verify-toi-potential-lessons.mjs",
     "test:toi-potential-course": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-toi-potential-course.mjs",
     "test:toi-potential-algorithms": "node --import ./scripts/ctf-test-loader.mjs scripts/verify-toi-potential-algorithms.mjs",
