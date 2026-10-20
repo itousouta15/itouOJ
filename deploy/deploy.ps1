@@ -75,8 +75,9 @@ if ($dirty -and $Revision -eq "HEAD") {
     }
 }
 
-$head = (git rev-parse --short $Revision).Trim()
-if ($LASTEXITCODE -ne 0) { throw "找不到部署版本 $Revision" }
+$fullRevision = (git rev-parse --verify "${Revision}^{commit}").Trim()
+if ($LASTEXITCODE -ne 0 -or $fullRevision -notmatch '^[0-9a-f]{40}$') { throw "找不到部署版本 $Revision" }
+$head = $fullRevision.Substring(0, 7)
 Enable-EmscriptenEnvironment -SdkPath $EmsdkPath
 Write-Host "== Packaging $Revision ($head) =="
 Invoke-Native "git archive" { git archive --format=tar.gz -o "$env:TEMP\oj.tar.gz" $Revision }
@@ -106,12 +107,12 @@ Invoke-Native "stage release" {
 # blob is LF. Bash then reads the trailing CR as part of `pipefail` and exits
 # before any preflight or rollback handler is installed.
 Invoke-Native "normalize staged shell script" {
-    ssh $Server "sed -i 's/\r$//' $release/deploy/remote-release.sh $release/deploy/oj-service-control && bash -n $release/deploy/remote-release.sh && sh -n $release/deploy/oj-service-control"
+    ssh $Server "sed -i 's/\r$//' $release/deploy/remote-release.sh $release/deploy/oj-service-control $release/deploy/oj-gh-release.sh && bash -n $release/deploy/remote-release.sh $release/deploy/oj-gh-release.sh && sh -n $release/deploy/oj-service-control"
 }
 
 Write-Host "== Build / test / promote / verify / rollback on failure =="
 Invoke-Native "remote deploy" {
-    ssh $Server "bash $release/deploy/remote-release.sh $release"
+    ssh $Server "flock -n /run/oj-git-deploy.lock bash $release/deploy/remote-release.sh $release live $fullRevision"
 }
 
 # Double-check the persistent database directory after promotion. A release

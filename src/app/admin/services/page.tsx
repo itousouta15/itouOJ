@@ -14,6 +14,7 @@ export default async function AdminServicesPage() {
       <h1 className="page-title">伺服器服務</h1>
       <Link href="/admin/judge" className="text-sm text-blue hover:underline">← 回評測監控</Link>
       <Link href="/admin/hosts" className="text-sm text-blue hover:underline">設定遠端 Server →</Link>
+      <Link href="/admin/deployment" className="text-sm text-blue hover:underline">GitHub 一鍵部署 →</Link>
     </div>
     <AdminServices />
   </div>;

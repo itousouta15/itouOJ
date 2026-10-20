@@ -1,0 +1,85 @@
+name: Deploy requested GitHub release
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'itousouta15/itouOJ' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      DEPLOY_HOST: ${{ secrets.OJ_DEPLOY_HOST }}
+    steps:
+      - name: Configure dedicated SSH key
+        env:
+          KEY: ${{ secrets.OJ_DEPLOY_SSH_KEY }}
+          HOST_KEYS: ${{ secrets.OJ_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          test -n "$DEPLOY_HOST" && test -n "$KEY" && test -n "$HOST_KEYS"
+          mkdir -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/oj-deploy
+          printf '%s\n' "$HOST_KEYS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/oj-deploy ~/.ssh/known_hosts
+          printf 'Host deploy-target\n  HostName %s\n  User root\n  IdentityFile ~/.ssh/oj-deploy\n  IdentitiesOnly yes\n  BatchMode yes\n  StrictHostKeyChecking yes\n' "$DEPLOY_HOST" > ~/.ssh/config
+
+      - name: Claim one admin-requested revision
+        id: claim
+        run: |
+          target=$(ssh deploy-target /usr/bin/node /usr/local/sbin/oj-deploy-job.mjs claim)
+          if [ -n "$target" ]; then [[ "$target" =~ ^[a-f0-9]{40}$ ]]; fi
+          echo "sha=$target" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.claim.outputs.sha != ''
+        with:
+          ref: ${{ steps.claim.outputs.sha }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        if: steps.claim.outputs.sha != ''
+        with:
+          node-version: 22
+
+      - uses: mymindstorm/setup-emsdk@v14
+        if: steps.claim.outputs.sha != ''
+        with:
+          version: '4.0.23'
+
+      - name: Package pinned source and itouLang runtime
+        if: steps.claim.outputs.sha != ''
+        env:
+          TARGET: ${{ steps.claim.outputs.sha }}
+        run: |
+          git merge-base --is-ancestor "$TARGET" origin/master
+          git archive --format=tar.gz -o "$RUNNER_TEMP/oj.tar.gz" "$TARGET"
+          runtime=$(git rev-parse "$TARGET:vendor/itoulang")
+          node scripts/package-itoulang.mjs --revision "$runtime" --output "$RUNNER_TEMP/itoulang.tar.gz"
+
+      - name: Upload and promote verified release
+        if: steps.claim.outputs.sha != ''
+        env:
+          TARGET: ${{ steps.claim.outputs.sha }}
+        run: |
+          run_id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          stage="/tmp/oj-gh-$TARGET-$run_id"
+          ssh deploy-target "/usr/bin/node /usr/local/sbin/oj-deploy-job.mjs phase $TARGET uploading"
+          ssh deploy-target "test ! -e $stage && mkdir $stage"
+          scp "$RUNNER_TEMP/oj.tar.gz" "$RUNNER_TEMP/itoulang.tar.gz" "deploy-target:$stage/"
+          ssh deploy-target "/bin/bash /usr/local/sbin/oj-gh-release.sh $TARGET $run_id"
+
+      - name: Record failed deployment
+        if: failure() && steps.claim.outputs.sha != ''
+        env:
+          TARGET: ${{ steps.claim.outputs.sha }}
+        run: ssh deploy-target "/usr/bin/node /usr/local/sbin/oj-deploy-job.mjs fail $TARGET" || true

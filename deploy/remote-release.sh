@@ -9,6 +9,7 @@ SANDBOX=/opt/sandbox-runner
 ITOULANG_DIR=/opt/piston-data/packages/node/20.11.1/itoulang
 NODE_RUNTIME=/opt/piston-data/packages/node/20.11.1/bin/node
 BACKUP=/opt/oj-deploy-backups/$(date -u +%Y%m%d-%H%M%S)
+REVISION=${3:-}
 SITE_STOPPED=0
 WORKER_STOPPED=0
 SITE_STARTED=0
@@ -68,6 +69,16 @@ rollback() {
     else
       rm -f /usr/local/sbin/oj-service-control-server.mjs
     fi
+    if [[ -f "$BACKUP/oj-deploy-job.mjs" ]]; then
+      install -m 644 "$BACKUP/oj-deploy-job.mjs" /usr/local/sbin/oj-deploy-job.mjs
+    else
+      rm -f /usr/local/sbin/oj-deploy-job.mjs
+    fi
+    if [[ -f "$BACKUP/oj-gh-release.sh" ]]; then
+      install -m 755 "$BACKUP/oj-gh-release.sh" /usr/local/sbin/oj-gh-release.sh
+    else
+      rm -f /usr/local/sbin/oj-gh-release.sh
+    fi
     if [[ -f "$BACKUP/online-judge-control.service" ]]; then
       install -m 644 "$BACKUP/online-judge-control.service" /etc/systemd/system/online-judge-control.service
     else
@@ -99,6 +110,7 @@ trap rollback ERR
 [[ -d "$SOURCE/sandbox-runner/src" && -f "$SOURCE/.env" && -f "$APP/oj.db" ]] || {
   echo "Missing staged source or persistent app bindings" >&2; exit 1;
 }
+[[ -z "$REVISION" || "$REVISION" =~ ^[a-f0-9]{40}$ ]] || { echo 'Invalid release revision' >&2; exit 1; }
 mkdir -p /opt/oj-deploy-backups
 mkdir "$BACKUP"
 export DATABASE_URL="file:$APP/oj.db"
@@ -129,11 +141,14 @@ python3 "$SOURCE/sandbox-runner/test/test_compile_cache.py" \
 echo '== Build staged Next.js app =='
 sh -n "$SOURCE/deploy/oj-service-control"
 node --check "$SOURCE/deploy/oj-service-control-server.mjs"
+node --check "$SOURCE/deploy/oj-deploy-job.mjs"
+bash -n "$SOURCE/deploy/oj-gh-release.sh"
 node --check "$SOURCE/scripts/host-agent.mjs"
 npm --prefix "$SOURCE" ci --include=dev --silent
 npm --prefix "$SOURCE" run generate --silent
 npm --prefix "$SOURCE" run build
 npm --prefix "$SOURCE" run test:services
+npm --prefix "$SOURCE" run test:deployment
 ( cd "$SOURCE" && TMPDIR="$SOURCE" npm run test:hosts )
 echo '== Verify playground execution and saved-template migration =='
 npm --prefix "$SOURCE" run test:playground
@@ -173,6 +188,8 @@ cp /etc/systemd/system/sandbox-interactive.service "$BACKUP/sandbox-interactive.
 cp /etc/systemd/system/online-judge-worker.service "$BACKUP/online-judge-worker.service"
 [[ ! -f /usr/local/sbin/oj-service-control ]] || cp -a /usr/local/sbin/oj-service-control "$BACKUP/oj-service-control"
 [[ ! -f /usr/local/sbin/oj-service-control-server.mjs ]] || cp -a /usr/local/sbin/oj-service-control-server.mjs "$BACKUP/oj-service-control-server.mjs"
+[[ ! -f /usr/local/sbin/oj-deploy-job.mjs ]] || cp -a /usr/local/sbin/oj-deploy-job.mjs "$BACKUP/oj-deploy-job.mjs"
+[[ ! -f /usr/local/sbin/oj-gh-release.sh ]] || cp -a /usr/local/sbin/oj-gh-release.sh "$BACKUP/oj-gh-release.sh"
 [[ ! -f /etc/systemd/system/online-judge-control.service ]] || cp -a /etc/systemd/system/online-judge-control.service "$BACKUP/online-judge-control.service"
 [[ ! -f /etc/sudoers.d/online-judge-control ]] || cp -a /etc/sudoers.d/online-judge-control "$BACKUP/online-judge-control.sudoers"
 sqlite3 "$APP/oj.db" ".backup '$BACKUP/oj.db'"
@@ -221,7 +238,10 @@ install -m 644 "$SOURCE/deploy/online-judge-worker.service" /etc/systemd/system/
 CONTROL_CHANGED=1
 install -m 755 "$SOURCE/deploy/oj-service-control" /usr/local/sbin/oj-service-control
 install -m 644 "$SOURCE/deploy/oj-service-control-server.mjs" /usr/local/sbin/oj-service-control-server.mjs
+install -m 644 "$SOURCE/deploy/oj-deploy-job.mjs" /usr/local/sbin/oj-deploy-job.mjs
+install -m 755 "$SOURCE/deploy/oj-gh-release.sh" /usr/local/sbin/oj-gh-release.sh
 install -m 644 "$SOURCE/deploy/online-judge-control.service" /etc/systemd/system/online-judge-control.service
+install -d -m 700 /var/lib/oj-git-deploy
 rm -f /etc/sudoers.d/online-judge-control
 systemctl daemon-reload
 systemctl enable --now online-judge-control
@@ -255,4 +275,21 @@ judge_status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_
 echo '== Sync and validate OJ nginx upload limit =='
 # Normalize the staged script too: git archive on Windows can produce CRLF.
 tr -d '\r' < "$SOURCE/deploy/sync-nginx-upload-limit.sh" | bash -s -- "$SOURCE/deploy/nginx-oj.conf"
+touch "$BACKUP/deploy-success"
+# Retain the newest three successful rollback points. Old failed attempts can be
+# removed once they are older than the third successful backup.
+mapfile -t successful < <(find /opt/oj-deploy-backups -mindepth 2 -maxdepth 2 -name deploy-success \
+  -printf '%h\n' | sort -r)
+if (( ${#successful[@]} > 3 )); then
+  cutoff=${successful[2]}
+  for old in /opt/oj-deploy-backups/[0-9]*; do
+    [[ -d "$old" && ! -L "$old" && "${old##*/}" =~ ^[0-9]{8}-[0-9]{6}$ ]] || continue
+    if [[ "$old" < "$cutoff" ]]; then rm -rf -- "$old" || echo "Could not prune $old" >&2; fi
+  done
+fi
+if [[ -n "$REVISION" ]]; then
+  install -d -m 700 /var/lib/oj-git-deploy
+  printf '%s\n' "$REVISION" > /var/lib/oj-git-deploy/revision.next
+  mv -f /var/lib/oj-git-deploy/revision.next /var/lib/oj-git-deploy/revision
+fi
 echo "Deployment verified. Backup: $BACKUP"
