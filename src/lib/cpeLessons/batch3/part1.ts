@@ -68,21 +68,26 @@ int main() {
         cout << "Case " << cs << ": " << prefix(k, b) - prefix(k, a - 1) << '\n';
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
+
 def prefix(k, rows):
     if rows == 0:
         return 0
     if k == 0:
         return 1
-    half = 1 << (k-1)
+    half = 1 << (k - 1)
     if rows <= half:
-        return 2 * prefix(k-1, rows)
-    return 2 * 3**(k-1) + prefix(k-1, rows-half)
+        return 2 * prefix(k - 1, rows)
+    return 2 * 3 ** (k - 1) + prefix(k - 1, rows - half)
+
+
 it = iter(map(int, sys.stdin.buffer.read().split()))
 t = next(it)
-for cs in range(1, t+1):
+for cs in range(1, t + 1):
     k, a, b = next(it), next(it), next(it)
-    print(f"Case {cs}: {prefix(k,b)-prefix(k,a-1)}")`,
+    print(f"Case {cs}: {prefix(k, b) - prefix(k, a - 1)}")
+`,
   }),
   defineCpeLesson("a589", {
     topic: "sorting",
@@ -149,7 +154,8 @@ int main() {
         cout << answer << '\n';
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 it = iter(map(int, sys.stdin.buffer.read().split()))
 for _ in range(next(it)):
     n = next(it)
@@ -161,7 +167,8 @@ for _ in range(next(it)):
             answer += 1
             down = not down
         last = x
-    print(answer)`,
+    print(answer)
+`,
   }),
   defineCpeLesson("a590", {
     topic: "sorting",
@@ -244,7 +251,8 @@ int main() {
             cout << total << '\n';
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 it = iter(map(int, sys.stdin.buffer.read().split()))
 for _ in range(next(it)):
     land = []
@@ -263,7 +271,8 @@ for _ in range(next(it)):
         total += value
         if total > 5000000:
             break
-    print(total if total <= 5000000 else "Too expensive")`,
+    print(total if total <= 5000000 else "Too expensive")
+`,
   }),
   defineCpeLesson("a591", {
     topic: "dp",
@@ -345,28 +354,32 @@ int main() {
                     "house.\n";
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 it = iter(map(int, sys.stdin.buffer.read().split()))
 for w in it:
     h = next(it)
     if w == h == 0:
         break
     wolves = {(next(it), next(it)) for _ in range(next(it))}
-    dp = [0]*(w+1)
+    dp = [0] * (w + 1)
     dp[0] = 1
-    for y in range(h+1):
-        for x in range(w+1):
-            if (x,y) in wolves:
+    for y in range(h + 1):
+        for x in range(w + 1):
+            if (x, y) in wolves:
                 dp[x] = 0
             elif x:
-                dp[x] += dp[x-1]
+                dp[x] += dp[x - 1]
     a = dp[w]
     if a == 0:
         print("There is no path.")
     elif a == 1:
         print("There is one path from Little Red Riding Hood's house to her grandmother's house.")
     else:
-        print(f"There are {a} paths from Little Red Riding Hood's house to her grandmother's house.")`,
+        print(
+            f"There are {a} paths from Little Red Riding Hood's house to her grandmother's house."
+        )
+`,
   }),
   defineCpeLesson("a592", {
     topic: "number-theory",
@@ -432,14 +445,16 @@ int main() {
         cout << ones + 1 << ' ' << (1LL << n) - low + 1 << '\n';
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 it = iter(map(int, sys.stdin.buffer.read().split()))
 for _ in range(next(it)):
     n, x = next(it), next(it)
     if x == 0:
         print(1, 1)
     else:
-        print(x.bit_count()+1, (1 << n)-(x & -x)+1)`,
+        print(x.bit_count() + 1, (1 << n) - (x & -x) + 1)
+`,
   }),
   defineCpeLesson("a593", {
     topic: "geometry",
@@ -525,19 +540,23 @@ int main() {
         }
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
+
 def inside(poly, q):
     x, y = q
     answer = False
     for i, (ax, ay) in enumerate(poly):
-        bx, by = poly[i-1]
+        bx, by = poly[i - 1]
         if (ay > y) != (by > y):
-            cross = ax + (bx-ax)*(y-ay)/(by-ay)
+            cross = ax + (bx - ax) * (y - ay) / (by - ay)
             if cross > x:
                 answer = not answer
     return answer
+
+
 it = iter(map(int, sys.stdin.buffer.read().split()))
-for cs in range(1, next(it)+1):
+for cs in range(1, next(it) + 1):
     walls = []
     for _ in range(next(it)):
         walls.append([(next(it), next(it)) for _ in range(next(it))])
@@ -545,7 +564,8 @@ for cs in range(1, next(it)+1):
     for _ in range(next(it)):
         a = (next(it), next(it))
         b = (next(it), next(it))
-        print(sum(inside(p,a) != inside(p,b) for p in walls))`,
+        print(sum(inside(p, a) != inside(p, b) for p in walls))
+`,
   }),
   defineCpeLesson("a594", {
     topic: "sorting",
@@ -614,7 +634,8 @@ int main() {
         cout << min(u, w) << '\n';
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 it = iter(map(int, sys.stdin.buffer.read().split()))
 for a in it:
     b = next(it)
@@ -622,7 +643,8 @@ for a in it:
         break
     x = {next(it) for _ in range(a)}
     y = {next(it) for _ in range(b)}
-    print(min(len(x-y), len(y-x)))`,
+    print(min(len(x - y), len(y - x)))
+`,
   }),
   defineCpeLesson("a595", {
     topic: "dp",
@@ -631,7 +653,7 @@ for a in it:
     goal: "在嚴格期限下，以線性記憶體計算最早完成時間。",
     explanation: [
       "位置已排序，走過一個寶藏時立刻取得不會有壞處，所以已取得的寶藏總可視為連續區間。令 L(l,r)、R(l,r) 分別表示取完 [l,r] 且停在左、右端的最早時間。初始任選起點，單點狀態為 0，但期限必須大於 0。從 [l+1,r] 走到 l，或從 [l,r−1] 走到 r，分別比較兩個舊端點的移動距離。",
-      "轉移得到的時間必須嚴格小於新寶藏期限，因為到達期限當下就消失；失敗狀態設為無限大。對同一區間及端點，較早到達永遠不劣，因此只保留最早值即可。依區間長度遞增，用兩組長度 n 的陣列滾動保存上一層，避免 O(n²) 記憶體。最後兩端取小；讀至 EOF，無解輸出 No solution。",
+      "轉移得到的時間必須嚴格小於新寶藏期限，因為到達期限當下就消失；失敗狀態設為無限大。對同一區間及端點，較早到達永遠不劣，因此只保留最早值即可。依區間長度遞增，用兩組長度 n 的陣列滾動保存上一層，避免 O(n²) 記憶體。若一整層都無法到達，較大區間也不可能合法，可提早結束。另先檢查從任一端直走能否符合全部期限：若可行，時間恰等於兩端距離，已達必走距離下界，可直接輸出。其餘才做 DP，最後兩端取小；讀至 EOF，無解輸出 No solution。",
     ],
     complexity:
       "時間 O(n²)，額外空間 O(n)；n=10000 時 Python 的平方迴圈成本較高。",
@@ -683,19 +705,34 @@ int main() {
             cin >> x[i] >> deadline[i];
             left[i] = right[i] = deadline[i] > 0 ? 0 : inf;
         }
+        bool forward = true, backward = true;
+        for (int i = 0; i < n; ++i) {
+            forward = forward && x[i] - x[0] < deadline[i];
+            backward = backward && x[n - 1] - x[i] < deadline[i];
+        }
+        if (forward || backward) {
+            cout << x[n - 1] - x[0] << '\n';
+            continue;
+        }
         for (int len = 2; len <= n; ++len) {
             vector<long long> nl(n, inf), nr(n, inf);
+            bool reachable = false;
             for (int l = 0, r = len - 1; r < n; ++l, ++r) {
-                long long a =
-                    min(left[l + 1] + x[l + 1] - x[l], right[l + 1] + x[r] - x[l]);
+                long long a = min(left[l + 1] + x[l + 1] - x[l], right[l + 1] + x[r] - x[l]);
                 long long b = min(left[l] + x[r] - x[l], right[l] + x[r] - x[r - 1]);
-                if (a < deadline[l])
+                if (a < deadline[l]) {
                     nl[l] = a;
-                if (b < deadline[r])
+                    reachable = true;
+                }
+                if (b < deadline[r]) {
                     nr[l] = b;
+                    reachable = true;
+                }
             }
             left.swap(nl);
             right.swap(nr);
+            if (!reachable)
+                break;
         }
         long long ans = min(left[0], right[0]);
         if (ans == inf)
@@ -704,27 +741,42 @@ int main() {
             cout << ans << '\n';
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 it = iter(map(int, sys.stdin.buffer.read().split()))
 INF = 10**60
 for n in it:
     x, deadline = [], []
     for _ in range(n):
-        x.append(next(it)); deadline.append(next(it))
+        x.append(next(it))
+        deadline.append(next(it))
+    if all(v - x[0] < d for v, d in zip(x, deadline)) or all(
+        x[-1] - v < d for v, d in zip(x, deadline)
+    ):
+        print(x[-1] - x[0])
+        continue
     left = [0 if d > 0 else INF for d in deadline]
     right = left[:]
-    for length in range(2, n+1):
-        size = n-length+1
-        nl, nr = [INF]*size, [INF]*size
+    for length in range(2, n + 1):
+        size = n - length + 1
+        nl, nr = [INF] * size, [INF] * size
+        reachable = False
         for l in range(size):
-            r = l+length-1
-            a = min(left[l+1]+x[l+1]-x[l], right[l+1]+x[r]-x[l])
-            b = min(left[l]+x[r]-x[l], right[l]+x[r]-x[r-1])
-            if a < deadline[l]: nl[l] = a
-            if b < deadline[r]: nr[l] = b
+            r = l + length - 1
+            a = min(left[l + 1] + x[l + 1] - x[l], right[l + 1] + x[r] - x[l])
+            b = min(left[l] + x[r] - x[l], right[l] + x[r] - x[r - 1])
+            if a < deadline[l]:
+                nl[l] = a
+                reachable = True
+            if b < deadline[r]:
+                nr[l] = b
+                reachable = True
         left, right = nl, nr
+        if not reachable:
+            break
     answer = min(left[0], right[0])
-    print("No solution" if answer == INF else answer)`,
+    print("No solution" if answer == INF else answer)
+`,
   }),
   defineCpeLesson("a596", {
     topic: "search",
@@ -794,8 +846,8 @@ int main() {
                 bool ok = true;
                 char ch = g[r][c];
                 for (int i = -d; i <= d; ++i)
-                    if (g[r - d][c + i] != ch || g[r + d][c + i] != ch ||
-                        g[r + i][c - d] != ch || g[r + i][c + d] != ch)
+                    if (g[r - d][c + i] != ch || g[r + d][c + i] != ch || g[r + i][c - d] != ch ||
+                        g[r + i][c + d] != ch)
                         ok = false;
                 if (!ok)
                     break;
@@ -804,22 +856,29 @@ int main() {
         }
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 it = iter(sys.stdin.buffer.read().split())
 for _ in range(int(next(it))):
-    m,n,q = int(next(it)),int(next(it)),int(next(it))
+    m, n, q = int(next(it)), int(next(it)), int(next(it))
     g = [next(it) for _ in range(m)]
-    print(m,n,q)
+    print(m, n, q)
     for _ in range(q):
-        r,c = int(next(it)),int(next(it))
+        r, c = int(next(it)), int(next(it))
         d = 1
-        while r-d >= 0 and r+d < m and c-d >= 0 and c+d < n:
+        while r - d >= 0 and r + d < m and c - d >= 0 and c + d < n:
             ch = g[r][c]
-            if any(g[r-d][c+i] != ch or g[r+d][c+i] != ch or
-                   g[r+i][c-d] != ch or g[r+i][c+d] != ch for i in range(-d,d+1)):
+            if any(
+                g[r - d][c + i] != ch
+                or g[r + d][c + i] != ch
+                or g[r + i][c - d] != ch
+                or g[r + i][c + d] != ch
+                for i in range(-d, d + 1)
+            ):
                 break
             d += 1
-        print(2*d-1)`,
+        print(2 * d - 1)
+`,
   }),
   defineCpeLesson("a597", {
     topic: "simulation",
@@ -876,15 +935,18 @@ int main() {
         cout << seen.size() << '\n';
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 for token in sys.stdin.buffer.read().split():
     a = int(token)
-    if a == 0: break
+    if a == 0:
+        break
     seen = set()
     while a not in seen:
         seen.add(a)
-        a = (a*a//100)%10000
-    print(len(seen))`,
+        a = (a * a // 100) % 10000
+    print(len(seen))
+`,
   }),
   defineCpeLesson("a598", {
     topic: "number-theory",
@@ -991,8 +1053,7 @@ int main() {
                             if (i)
                                 add(runs, 'M', 1);
                         }
-                        if (length < bestLen ||
-                            (length == bestLen && lexLess(runs, best))) {
+                        if (length < bestLen || (length == bestLen && lexLess(runs, best))) {
                             bestLen = length;
                             best = runs;
                         }
@@ -1019,53 +1080,72 @@ int main() {
         cout << '\n';
     }
 }`,
-    python: `import sys
-def lex_less(a,b):
+    python: String.raw`import sys
+
+
+def lex_less(a, b):
     a, b = [list(x) for x in a], [list(x) for x in b]
     i = j = 0
     while i < len(a) and j < len(b):
-        if a[i][0] != b[j][0]: return a[i][0] < b[j][0]
+        if a[i][0] != b[j][0]:
+            return a[i][0] < b[j][0]
         z = min(a[i][1], b[j][1])
-        a[i][1] -= z; b[j][1] -= z
-        if not a[i][1]: i += 1
-        if not b[j][1]: j += 1
+        a[i][1] -= z
+        b[j][1] -= z
+        if not a[i][1]:
+            i += 1
+        if not b[j][1]:
+            j += 1
     return i == len(a) and j < len(b)
-def solve(a,m,p,q,r,s):
+
+
+def solve(a, m, p, q, r, s):
     power, t, best_len, best = 1, 0, 10**30, []
-    while p*power <= s:
-        low = max(0, (r-p*power+a-1)//a)
-        high = (s-q*power)//a
+    while p * power <= s:
+        low = max(0, (r - p * power + a - 1) // a)
+        high = (s - q * power) // a
         unit = 1
-        for j in range(t+1):
-            z = (low+unit-1)//unit*unit
+        for j in range(t + 1):
+            z = (low + unit - 1) // unit * unit
             if z <= high:
                 digits, v = [], z
                 for _ in range(t):
-                    digits.append(v % m); v //= m
+                    digits.append(v % m)
+                    v //= m
                 digits.append(v)
                 runs = []
-                for i in range(t,-1,-1):
-                    if digits[i]: runs.append(('A',digits[i]))
+                for i in range(t, -1, -1):
+                    if digits[i]:
+                        runs.append(('A', digits[i]))
                     if i:
                         if runs and runs[-1][0] == 'M':
-                            runs[-1] = ('M',runs[-1][1]+1)
-                        else: runs.append(('M',1))
-                length = t+sum(digits)
-                if length < best_len or (length == best_len and lex_less(runs,best)):
+                            runs[-1] = ('M', runs[-1][1] + 1)
+                        else:
+                            runs.append(('M', 1))
+                length = t + sum(digits)
+                if length < best_len or (length == best_len and lex_less(runs, best)):
                     best_len, best = length, runs
             unit *= m
-        if m == 1: break
-        power *= m; t += 1
-    if best_len == 10**30: return 'impossible'
-    if best_len == 0: return 'empty'
-    return ' '.join(str(n)+ch for ch,n in best)
-it = iter(map(int,sys.stdin.buffer.read().split()))
+        if m == 1:
+            break
+        power *= m
+        t += 1
+    if best_len == 10**30:
+        return 'impossible'
+    if best_len == 0:
+        return 'empty'
+    return ' '.join(str(n) + ch for ch, n in best)
+
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 cs = 0
 for a in it:
-    m,p,q,r,s = [next(it) for _ in range(5)]
-    if a == 0: break
+    m, p, q, r, s = [next(it) for _ in range(5)]
+    if a == 0:
+        break
     cs += 1
-    print(f"Case {cs}: {solve(a,m,p,q,r,s)}")`,
+    print(f"Case {cs}: {solve(a, m, p, q, r, s)}")
+`,
   }),
   defineCpeLesson("a599", {
     topic: "dp",
@@ -1120,17 +1200,19 @@ int main() {
         cout << dp[n] << '\n';
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
-    k,m = next(it),next(it)
-    dp = [1]+[0]*n
+    k, m = next(it), next(it)
+    dp = [1] + [0] * n
     for _ in range(k):
-        nd = [0]*(n+1)
-        for s in range(1,n+1):
-            nd[s] = sum(dp[s-w] for w in range(1,min(m,s)+1))
+        nd = [0] * (n + 1)
+        for s in range(1, n + 1):
+            nd[s] = sum(dp[s - w] for w in range(1, min(m, s) + 1))
         dp = nd
-    print(dp[n])`,
+    print(dp[n])
+`,
   }),
   defineCpeLesson("a600", {
     topic: "geometry",
@@ -1193,22 +1275,26 @@ int main() {
         cout << volume << '\n';
     }
 }`,
-    python: `import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+    python: String.raw`import sys
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
-    if n == 0: break
-    lo,hi = None,None
+    if n == 0:
+        break
+    lo, hi = None, None
     for _ in range(n):
         p = [next(it) for _ in range(3)]
         d = next(it)
         if lo is None:
-            lo,hi = p[:],[v+d for v in p]
+            lo, hi = p[:], [v + d for v in p]
         else:
-            lo = [max(lo[j],p[j]) for j in range(3)]
-            hi = [min(hi[j],p[j]+d) for j in range(3)]
+            lo = [max(lo[j], p[j]) for j in range(3)]
+            hi = [min(hi[j], p[j] + d) for j in range(3)]
     volume = 1
-    for j in range(3): volume *= max(0,hi[j]-lo[j])
-    print(volume)`,
+    for j in range(3):
+        volume *= max(0, hi[j] - lo[j])
+    print(volume)
+`,
   }),
   defineCpeLesson("a601", {
     topic: "strings",
@@ -1275,19 +1361,22 @@ int main() {
         cout << answer << '\n';
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 it = iter(sys.stdin.buffer.read().split())
 for _ in range(int(next(it))):
-    k,w = int(next(it)),int(next(it))
+    k, w = int(next(it)), int(next(it))
     previous = next(it)
     answer = k
-    for _ in range(w-1):
+    for _ in range(w - 1):
         word = next(it)
         overlap = k
-        while previous[k-overlap:] != word[:overlap]: overlap -= 1
-        answer += k-overlap
+        while previous[k - overlap :] != word[:overlap]:
+            overlap -= 1
+        answer += k - overlap
         previous = word
-    print(answer)`,
+    print(answer)
+`,
   }),
   defineCpeLesson("a602", {
     topic: "graphs",
@@ -1370,8 +1459,7 @@ int main() {
                                 stack.pop_back();
                                 for (int k = 0; k < 4; ++k) {
                                     int u = a + dr[k], v = b + dc[k];
-                                    if (u >= 0 && u < h && v >= 0 && v < w &&
-                                        g[u][v] == 'X') {
+                                    if (u >= 0 && u < h && v >= 0 && v < w && g[u][v] == 'X') {
                                         g[u][v] = '*';
                                         stack.push_back({u, v});
                                     }
@@ -1390,43 +1478,55 @@ int main() {
         cout << "\n\n";
     }
 }`,
-    python: `import sys
+    python: String.raw`import sys
+
 it = iter(sys.stdin.buffer.read().split())
 cs = 0
 for token in it:
-    w,h = int(token),int(next(it))
-    if w == h == 0: break
+    w, h = int(token), int(next(it))
+    if w == h == 0:
+        break
     g = [bytearray(next(it)) for _ in range(h)]
     seen = set()
     answers = []
-    def neighbors(r,c):
-        for a,b in ((r-1,c),(r+1,c),(r,c-1),(r,c+1)):
-            if 0 <= a < h and 0 <= b < w: yield a,b
+
+    def neighbors(r, c):
+        for a, b in ((r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)):
+            if 0 <= a < h and 0 <= b < w:
+                yield a, b
+
     for r in range(h):
         for c in range(w):
-            if g[r][c] == 46 or (r,c) in seen: continue
-            stack, cells = [(r,c)], []
-            seen.add((r,c))
+            if g[r][c] == 46 or (r, c) in seen:
+                continue
+            stack, cells = [(r, c)], []
+            seen.add((r, c))
             while stack:
-                x,y = stack.pop(); cells.append((x,y))
-                for a,b in neighbors(x,y):
-                    if g[a][b] != 46 and (a,b) not in seen:
-                        seen.add((a,b)); stack.append((a,b))
+                x, y = stack.pop()
+                cells.append((x, y))
+                for a, b in neighbors(x, y):
+                    if g[a][b] != 46 and (a, b) not in seen:
+                        seen.add((a, b))
+                        stack.append((a, b))
             pips = 0
-            for x,y in cells:
-                if g[x][y] != 88: continue
+            for x, y in cells:
+                if g[x][y] != 88:
+                    continue
                 pips += 1
-                stack = [(x,y)]; g[x][y] = 42
+                stack = [(x, y)]
+                g[x][y] = 42
                 while stack:
-                    a,b = stack.pop()
-                    for u,v in neighbors(a,b):
+                    a, b = stack.pop()
+                    for u, v in neighbors(a, b):
                         if g[u][v] == 88:
-                            g[u][v] = 42; stack.append((u,v))
+                            g[u][v] = 42
+                            stack.append((u, v))
             answers.append(pips)
     cs += 1
     print(f"Throw {cs}")
     print(*sorted(answers))
-    print()`,
+    print()
+`,
   }),
   defineCpeLesson("a603", {
     topic: "graphs",
@@ -1501,23 +1601,30 @@ int main() {
         cout << ans << '\n';
     }
 }`,
-    python: `import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+    python: String.raw`import sys
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for _ in range(next(it)):
-    n,m,l = next(it),next(it),next(it)
-    graph = [[] for _ in range(n+1)]
-    for _ in range(m): graph[next(it)].append(next(it))
-    seen = bytearray(n+1)
+    n, m, l = next(it), next(it), next(it)
+    graph = [[] for _ in range(n + 1)]
+    for _ in range(m):
+        graph[next(it)].append(next(it))
+    seen = bytearray(n + 1)
     answer = 0
     for _ in range(l):
         z = next(it)
-        if seen[z]: continue
-        stack = [z]; seen[z] = 1
+        if seen[z]:
+            continue
+        stack = [z]
+        seen[z] = 1
         while stack:
-            u = stack.pop(); answer += 1
+            u = stack.pop()
+            answer += 1
             for v in graph[u]:
                 if not seen[v]:
-                    seen[v] = 1; stack.append(v)
-    print(answer)`,
+                    seen[v] = 1
+                    stack.append(v)
+    print(answer)
+`,
   }),
 ];

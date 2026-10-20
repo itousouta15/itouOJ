@@ -74,26 +74,32 @@ int main() {
         cout << answer << '\n';
     }
 }`,
-    python: String.raw`import sys,math
+    python: String.raw`import sys, math
+
 LIMIT = 10000000
-prime = bytearray(b'\x01')*LIMIT
+prime = bytearray(b'\x01') * LIMIT
 prime[0:2] = b'\x00\x00'
-for p in range(2,math.isqrt(LIMIT-1)+1):
-    if prime[p]: prime[p*p:LIMIT:p] = b'\x00'*((LIMIT-1-p*p)//p+1)
+for p in range(2, math.isqrt(LIMIT - 1) + 1):
+    if prime[p]:
+        prime[p * p : LIMIT : p] = b'\x00' * ((LIMIT - 1 - p * p) // p + 1)
 it = iter(sys.stdin.buffer.read().split())
 for _ in range(int(next(it))):
-    counts = [0]*10
-    for ch in next(it): counts[ch-48] += 1
+    counts = [0] * 10
+    for ch in next(it):
+        counts[ch - 48] += 1
+
     def dfs(value):
         answer = 0
         for d in range(10):
             if counts[d] and (value or d):
                 counts[d] -= 1
-                nxt = value*10+d
-                answer += prime[nxt]+dfs(nxt)
+                nxt = value * 10 + d
+                answer += prime[nxt] + dfs(nxt)
                 counts[d] += 1
         return answer
-    print(dfs(0))`,
+
+    print(dfs(0))
+`,
   }),
   defineCpeLesson("a621", {
     topic: "dp",
@@ -139,12 +145,12 @@ for _ in range(int(next(it))):
 #include <string>
 #include <vector>
 using namespace std;
-int cents(string s) {
+long long cents(string s) {
     auto p = s.find('.');
     if (p == string::npos)
-        return stoi(s) * 100;
+        return stoll(s) * 100;
     string f = s.substr(p + 1) + "00";
-    return stoi(s.substr(0, p)) * 100 + stoi(f.substr(0, 2));
+    return stoll(s.substr(0, p)) * 100 + stoll(f.substr(0, 2));
 }
 int main() {
     int t;
@@ -152,8 +158,8 @@ int main() {
     while (t--) {
         int n, m;
         cin >> n >> m;
-        const int INF = 1000000000;
-        vector<vector<int>> d(n + 1, vector<int>(n + 1, INF));
+        const long long INF = 4000000000000000000LL;
+        vector<vector<long long>> d(n + 1, vector<long long>(n + 1, INF));
         for (int i = 0; i <= n; ++i)
             d[i][i] = 0;
         while (m--) {
@@ -168,32 +174,32 @@ int main() {
                     d[i][j] = min(d[i][j], d[i][k] + d[k][j]);
         int p;
         cin >> p;
-        map<int, int> savings;
+        map<int, long long> savings;
         while (p--) {
             int v;
             string value;
             cin >> v >> value;
             savings[v] += cents(value);
         }
-        vector<int> node = {0}, save = {0};
+        vector<int> node = {0};
+        vector<long long> save = {0};
         for (auto [v, s] : savings) {
             node.push_back(v);
             save.push_back(s);
         }
         p = savings.size();
-        vector<vector<int>> memo(p + 1, vector<int>(1 << p, -INF));
-        function<int(int, int)> best = [&](int u, int mask) {
-            int &ans = memo[u][mask];
+        vector<vector<long long>> memo(p + 1, vector<long long>(1 << p, -INF));
+        function<long long(int, int)> best = [&](int u, int mask) {
+            long long &ans = memo[u][mask];
             if (ans != -INF)
                 return ans;
             ans = -d[node[u]][0];
             for (int v = 1; v <= p; ++v)
                 if (mask & (1 << (v - 1)))
-                    ans = max(ans, save[v] - d[node[u]][node[v]] +
-                                       best(v, mask ^ (1 << (v - 1))));
+                    ans = max(ans, save[v] - d[node[u]][node[v]] + best(v, mask ^ (1 << (v - 1))));
             return ans;
         };
-        int answer = best(0, (1 << p) - 1);
+        long long answer = best(0, (1 << p) - 1);
         if (answer <= 0)
             cout << "Don't leave the house\n";
         else
@@ -203,38 +209,51 @@ int main() {
 }`,
     python: String.raw`import sys
 from functools import lru_cache
+
+
 def cents(token):
     s = token.decode()
-    whole,_,fraction = s.partition('.')
-    return int(whole)*100+int((fraction+'00')[:2])
+    whole, _, fraction = s.partition('.')
+    return int(whole) * 100 + int((fraction + '00')[:2])
+
+
 it = iter(sys.stdin.buffer.read().split())
 for _ in range(int(next(it))):
-    n,m = int(next(it)),int(next(it))
-    dist = [[10**15]*(n+1) for _ in range(n+1)]
-    for i in range(n+1): dist[i][i] = 0
+    n, m = int(next(it)), int(next(it))
+    dist = [[10**60] * (n + 1) for _ in range(n + 1)]
+    for i in range(n + 1):
+        dist[i][i] = 0
     for _ in range(m):
-        u,v,cost = int(next(it)),int(next(it)),cents(next(it))
-        dist[u][v] = dist[v][u] = min(dist[u][v],cost)
-    for k in range(n+1):
-        for i in range(n+1):
-            for j in range(n+1): dist[i][j] = min(dist[i][j],dist[i][k]+dist[k][j])
+        u, v, cost = int(next(it)), int(next(it)), cents(next(it))
+        dist[u][v] = dist[v][u] = min(dist[u][v], cost)
+    for k in range(n + 1):
+        for i in range(n + 1):
+            for j in range(n + 1):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
     savings = {}
     for _ in range(int(next(it))):
-        v,value = int(next(it)),cents(next(it))
-        savings[v] = savings.get(v,0)+value
-    nodes = [0]+list(savings)
-    save = [0]+list(savings.values())
+        v, value = int(next(it)), cents(next(it))
+        savings[v] = savings.get(v, 0) + value
+    nodes = [0] + list(savings)
+    save = [0] + list(savings.values())
     p = len(savings)
+
     @lru_cache(None)
-    def best(u,mask):
+    def best(u, mask):
         answer = -dist[nodes[u]][0]
-        for v in range(1,p+1):
-            bit = 1 << (v-1)
+        for v in range(1, p + 1):
+            bit = 1 << (v - 1)
             if mask & bit:
-                answer = max(answer,save[v]-dist[nodes[u]][nodes[v]]+best(v,mask^bit))
+                answer = max(answer, save[v] - dist[nodes[u]][nodes[v]] + best(v, mask ^ bit))
         return answer
-    answer = best(0,(1 << p)-1)
-    print('Daniel can save $'+f'{answer//100}.{answer%100:02d}' if answer > 0 else "Don't leave the house")`,
+
+    answer = best(0, (1 << p) - 1)
+    print(
+        'Daniel can save $' + f'{answer // 100}.{answer % 100:02d}'
+        if answer > 0
+        else "Don't leave the house"
+    )
+`,
   }),
   defineCpeLesson("a622", {
     topic: "trees",
@@ -328,26 +347,36 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 it = iter(sys.stdin.buffer.read().split())
 for _ in range(int(next(it))):
-    values,ids,stack = [],{},[]
+    values, ids, stack = [], {}, []
+
     def intern(s):
         if s not in ids:
-            ids[s] = len(values); values.append(s)
+            ids[s] = len(values)
+            values.append(s)
         return ids[s]
+
     empty = intern(frozenset())
     for _ in range(int(next(it))):
         op = next(it)
-        if op == b'PUSH': stack.append(empty)
-        elif op == b'DUP': stack.append(stack[-1])
+        if op == b'PUSH':
+            stack.append(empty)
+        elif op == b'DUP':
+            stack.append(stack[-1])
         else:
-            a,b = stack.pop(),stack.pop()
-            if op == b'ADD': s = values[b] | {a}
-            elif op == b'UNION': s = values[a] | values[b]
-            else: s = values[a] & values[b]
+            a, b = stack.pop(), stack.pop()
+            if op == b'ADD':
+                s = values[b] | {a}
+            elif op == b'UNION':
+                s = values[a] | values[b]
+            else:
+                s = values[a] & values[b]
             stack.append(intern(frozenset(s)))
         print(len(values[stack[-1]]))
-    print('***')`,
+    print('***')
+`,
   }),
   defineCpeLesson("a623", {
     topic: "dp",
@@ -415,17 +444,19 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 lines = iter(sys.stdin.read().splitlines())
 for a in lines:
     b = next(lines)
-    dp = [0]*(len(b)+1)
+    dp = [0] * (len(b) + 1)
     for x in a:
         diagonal = 0
-        for j,y in enumerate(b,1):
+        for j, y in enumerate(b, 1):
             above = dp[j]
-            dp[j] = diagonal+1 if x == y else max(dp[j],dp[j-1])
+            dp[j] = diagonal + 1 if x == y else max(dp[j], dp[j - 1])
             diagonal = above
-    print(dp[-1])`,
+    print(dp[-1])
+`,
   }),
   defineCpeLesson("a624", {
     topic: "strings",
@@ -476,8 +507,7 @@ for a in lines:
 #include <string>
 using namespace std;
 bool ends(const string &s, const string &tail) {
-    return s.size() >= tail.size() &&
-           s.compare(s.size() - tail.size(), tail.size(), tail) == 0;
+    return s.size() >= tail.size() && s.compare(s.size() - tail.size(), tail.size(), tail) == 0;
 }
 int main() {
     int l, n;
@@ -495,8 +525,7 @@ int main() {
         else if (a.size() > 1 && a.back() == 'y' &&
                  string("aeiou").find(a[a.size() - 2]) == string::npos)
             b = a.substr(0, a.size() - 1) + "ies";
-        else if (ends(a, "o") || ends(a, "s") || ends(a, "ch") || ends(a, "sh") ||
-                 ends(a, "x"))
+        else if (ends(a, "o") || ends(a, "s") || ends(a, "ch") || ends(a, "sh") || ends(a, "x"))
             b = a + "es";
         else
             b = a + "s";
@@ -504,16 +533,22 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 it = iter(sys.stdin.read().split())
-l,n = int(next(it)),int(next(it))
-irregular = {next(it):next(it) for _ in range(l)}
+l, n = int(next(it)), int(next(it))
+irregular = {next(it): next(it) for _ in range(l)}
 for _ in range(n):
     word = next(it)
-    if word in irregular: answer = irregular[word]
-    elif len(word) > 1 and word.endswith('y') and word[-2] not in 'aeiou': answer = word[:-1]+'ies'
-    elif word.endswith(('o','s','ch','sh','x')): answer = word+'es'
-    else: answer = word+'s'
-    print(answer)`,
+    if word in irregular:
+        answer = irregular[word]
+    elif len(word) > 1 and word.endswith('y') and word[-2] not in 'aeiou':
+        answer = word[:-1] + 'ies'
+    elif word.endswith(('o', 's', 'ch', 'sh', 'x')):
+        answer = word + 'es'
+    else:
+        answer = word + 's'
+    print(answer)
+`,
   }),
   defineCpeLesson("a625", {
     topic: "graphs",
@@ -599,26 +634,36 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
     m = next(it)
-    if n == m == 0: break
+    if n == m == 0:
+        break
     edges = []
     for _ in range(m):
-        u,v,w = next(it),next(it),next(it); edges.append((w,u,v))
-    parent,size = list(range(n)),[1]*n
+        u, v, w = next(it), next(it), next(it)
+        edges.append((w, u, v))
+    parent, size = list(range(n)), [1] * n
+
     def root(x):
         while parent[x] != x:
-            parent[x] = parent[parent[x]]; x = parent[x]
+            parent[x] = parent[parent[x]]
+            x = parent[x]
         return x
+
     answer = []
-    for w,u,v in sorted(edges):
-        u,v = root(u),root(v)
-        if u == v: answer.append(w)
+    for w, u, v in sorted(edges):
+        u, v = root(u), root(v)
+        if u == v:
+            answer.append(w)
         else:
-            if size[u] < size[v]: u,v = v,u
-            parent[v] = u; size[u] += size[v]
-    print(' '.join(map(str,answer)) if answer else 'forest')`,
+            if size[u] < size[v]:
+                u, v = v, u
+            parent[v] = u
+            size[u] += size[v]
+    print(' '.join(map(str, answer)) if answer else 'forest')
+`,
   }),
   defineCpeLesson("a626", {
     topic: "graphs",
@@ -726,41 +771,57 @@ int main() {
     python: String.raw`import sys
 from collections import deque
 from array import array
+
 it = iter(sys.stdin.buffer.read().split())
 for _ in range(int(next(it))):
-    rows,cols = int(next(it)),int(next(it))
+    rows, cols = int(next(it)), int(next(it))
     grid = b''.join(next(it) for _ in range(rows))
-    size = rows*cols
-    fire = array('i',[-1])*size
+    size = rows * cols
+    fire = array('i', [-1]) * size
     queue = deque()
     start = 0
-    for v,ch in enumerate(grid):
-        if ch == 70: fire[v] = 0; queue.append(v)
-        elif ch == 74: start = v
+    for v, ch in enumerate(grid):
+        if ch == 70:
+            fire[v] = 0
+            queue.append(v)
+        elif ch == 74:
+            start = v
+
     def neighbors(v):
-        x,y = divmod(v,cols)
-        if x: yield v-cols
-        if x+1 < rows: yield v+cols
-        if y: yield v-1
-        if y+1 < cols: yield v+1
+        x, y = divmod(v, cols)
+        if x:
+            yield v - cols
+        if x + 1 < rows:
+            yield v + cols
+        if y:
+            yield v - 1
+        if y + 1 < cols:
+            yield v + 1
+
     while queue:
         u = queue.popleft()
         for v in neighbors(u):
             if grid[v] != 35 and fire[v] < 0:
-                fire[v] = fire[u]+1; queue.append(v)
-    seen = bytearray(size); seen[start] = 1
+                fire[v] = fire[u] + 1
+                queue.append(v)
+    seen = bytearray(size)
+    seen[start] = 1
     queue.append(start)
-    minute,answer = 0,None
+    minute, answer = 0, None
     while queue and answer is None:
         for _ in range(len(queue)):
-            u = queue.popleft(); x,y = divmod(u,cols)
-            if x == 0 or x == rows-1 or y == 0 or y == cols-1:
-                answer = minute+1; break
+            u = queue.popleft()
+            x, y = divmod(u, cols)
+            if x == 0 or x == rows - 1 or y == 0 or y == cols - 1:
+                answer = minute + 1
+                break
             for v in neighbors(u):
-                if grid[v] != 35 and not seen[v] and (fire[v] < 0 or minute+1 < fire[v]):
-                    seen[v] = 1; queue.append(v)
+                if grid[v] != 35 and not seen[v] and (fire[v] < 0 or minute + 1 < fire[v]):
+                    seen[v] = 1
+                    queue.append(v)
         minute += 1
-    print(answer if answer is not None else 'IMPOSSIBLE')`,
+    print(answer if answer is not None else 'IMPOSSIBLE')
+`,
   }),
   defineCpeLesson("a627", {
     topic: "graphs",
@@ -822,14 +883,17 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
-for cs in range(1,next(it)+1):
-    m,k = next(it),next(it)
-    out = [0]*m
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
+for cs in range(1, next(it) + 1):
+    m, k = next(it), next(it)
+    out = [0] * m
     for _ in range(k):
-        x,y = next(it),next(it); out[x] |= 1 << y
-    ok = all(not (out[i]&out[j]) or out[i] == out[j] for i in range(m) for j in range(i))
-    print(f"Case #{cs}: {'Yes' if ok else 'No'}")`,
+        x, y = next(it), next(it)
+        out[x] |= 1 << y
+    ok = all(not (out[i] & out[j]) or out[i] == out[j] for i in range(m) for j in range(i))
+    print(f"Case #{cs}: {'Yes' if ok else 'No'}")
+`,
   }),
   defineCpeLesson("a628", {
     topic: "dp",
@@ -895,18 +959,24 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 it = iter(sys.stdin.buffer.read().split())
 for _ in range(int(next(it))):
     s = next(it)
-    n = len(s); dp = [-1]*(n+1); dp[0] = 0
+    n = len(s)
+    dp = [-1] * (n + 1)
+    dp[0] = 0
     for i in range(n):
         value = 0
-        for j in range(i,min(n,i+10)):
-            if j > i and s[i] == 48: break
-            value = value*10+s[j]-48
-            if value > 2147483647: break
-            dp[j+1] = max(dp[j+1],dp[i]+value)
-    print(dp[n])`,
+        for j in range(i, min(n, i + 10)):
+            if j > i and s[i] == 48:
+                break
+            value = value * 10 + s[j] - 48
+            if value > 2147483647:
+                break
+            dp[j + 1] = max(dp[j + 1], dp[i] + value)
+    print(dp[n])
+`,
   }),
   defineCpeLesson("a629", {
     topic: "search",
@@ -969,8 +1039,7 @@ int main() {
                 if (c != d) {
                     long long key = (a[d] - a[c] + bias) * base;
                     auto it = lower_bound(pairs.begin(), pairs.end(), key);
-                    for (int k = 0; k < 3 && it != pairs.end() && *it < key + base;
-                         ++k, ++it) {
+                    for (int k = 0; k < 3 && it != pairs.end() && *it < key + base; ++k, ++it) {
                         long long code = *it % base;
                         int i = code / n, j = code % n;
                         if (i != c && i != d && j != c && j != d) {
@@ -988,26 +1057,36 @@ int main() {
 }`,
     python: String.raw`import sys
 from bisect import bisect_left
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
-    if n == 0: break
+    if n == 0:
+        break
     a = sorted(next(it) for _ in range(n))
-    base,bias = n*n,1 << 30
-    pairs = sorted((a[i]+a[j]+bias)*base+i*n+j for i in range(n) for j in range(i+1,n))
+    base, bias = n * n, 1 << 30
+    pairs = sorted(
+        (a[i] + a[j] + bias) * base + i * n + j for i in range(n) for j in range(i + 1, n)
+    )
     answer = None
-    for d in range(n-1,-1,-1):
+    for d in range(n - 1, -1, -1):
         for c in range(n):
-            if c == d: continue
-            key = (a[d]-a[c]+bias)*base
-            at = bisect_left(pairs,key)
-            for k in range(at,min(at+3,len(pairs))):
-                if pairs[k] >= key+base: break
-                i,j = divmod(pairs[k]%base,n)
+            if c == d:
+                continue
+            key = (a[d] - a[c] + bias) * base
+            at = bisect_left(pairs, key)
+            for k in range(at, min(at + 3, len(pairs))):
+                if pairs[k] >= key + base:
+                    break
+                i, j = divmod(pairs[k] % base, n)
                 if i != c and i != d and j != c and j != d:
-                    answer = a[d]; break
-            if answer is not None: break
-        if answer is not None: break
-    print('no solution' if answer is None else answer)`,
+                    answer = a[d]
+                    break
+            if answer is not None:
+                break
+        if answer is not None:
+            break
+    print('no solution' if answer is None else answer)
+`,
   }),
   defineCpeLesson("a630", {
     topic: "graphs",
@@ -1067,8 +1146,7 @@ int main() {
                 auto [a, b] = stack.back();
                 stack.pop_back();
                 ++count;
-                int rr[] = {a - 1, a + 1, a, a},
-                    cc[] = {b, b, (b + n - 1) % n, (b + 1) % n};
+                int rr[] = {a - 1, a + 1, a, a}, cc[] = {b, b, (b + n - 1) % n, (b + 1) % n};
                 for (int k = 0; k < 4; ++k) {
                     int u = rr[k], v = cc[k];
                     if (u >= 0 && u < m && !seen[u][v] && g[u][v] == land) {
@@ -1089,26 +1167,36 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 it = iter(sys.stdin.buffer.read().split())
 for token in it:
-    m,n = int(token),int(next(it))
+    m, n = int(token), int(next(it))
     g = [next(it) for _ in range(m)]
-    x,y = int(next(it)),int(next(it)); land = g[x][y]
+    x, y = int(next(it)), int(next(it))
+    land = g[x][y]
     seen = set()
-    def flood(r,c):
-        stack = [(r,c)]; seen.add((r,c)); count = 0
+
+    def flood(r, c):
+        stack = [(r, c)]
+        seen.add((r, c))
+        count = 0
         while stack:
-            a,b = stack.pop(); count += 1
-            for u,v in ((a-1,b),(a+1,b),(a,(b-1)%n),(a,(b+1)%n)):
-                if 0 <= u < m and (u,v) not in seen and g[u][v] == land:
-                    seen.add((u,v)); stack.append((u,v))
+            a, b = stack.pop()
+            count += 1
+            for u, v in ((a - 1, b), (a + 1, b), (a, (b - 1) % n), (a, (b + 1) % n)):
+                if 0 <= u < m and (u, v) not in seen and g[u][v] == land:
+                    seen.add((u, v))
+                    stack.append((u, v))
         return count
-    flood(x,y)
+
+    flood(x, y)
     answer = 0
     for r in range(m):
         for c in range(n):
-            if g[r][c] == land and (r,c) not in seen: answer = max(answer,flood(r,c))
-    print(answer)`,
+            if g[r][c] == land and (r, c) not in seen:
+                answer = max(answer, flood(r, c))
+    print(answer)
+`,
   }),
   defineCpeLesson("a631", {
     topic: "number-theory",
@@ -1181,21 +1269,28 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-def egcd(a,b):
-    if b == 0: return a,1,0
-    g,x,y = egcd(b,a%b)
-    return g,y,x-(a//b)*y
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+
+def egcd(a, b):
+    if b == 0:
+        return a, 1, 0
+    g, x, y = egcd(b, a % b)
+    return g, y, x - (a // b) * y
+
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for a in it:
     b = next(it)
-    g,x,y = egcd(a,b); u,v = b//g,a//g
+    g, x, y = egcd(a, b)
+    u, v = b // g, a // g
     candidates = []
-    for center in ((-x)//u,y//v):
-        for t in range(center-1,center+2):
-            nx,ny = x+u*t,y-v*t
-            candidates.append((abs(nx)+abs(ny),nx > ny,nx,ny))
-    _,_,x,y = min(candidates)
-    print(x,y,g)`,
+    for center in ((-x) // u, y // v):
+        for t in range(center - 1, center + 2):
+            nx, ny = x + u * t, y - v * t
+            candidates.append((abs(nx) + abs(ny), nx > ny, nx, ny))
+    _, _, x, y = min(candidates)
+    print(x, y, g)
+`,
   }),
   defineCpeLesson("a632", {
     topic: "number-theory",
@@ -1268,22 +1363,28 @@ int main() {
              << '\n';
     }
 }`,
-    python: String.raw`import sys,math
-from bisect import bisect_left,bisect_right
-U,LIMIT = 1000000,10**12-1
-prime = bytearray(b'\x01')*(U+1); prime[0:2] = b'\x00\x00'
-for p in range(2,math.isqrt(U)+1):
-    if prime[p]: prime[p*p:U+1:p] = b'\x00'*((U-p*p)//p+1)
-powers = []
-for p in range(2,U+1):
+    python: String.raw`import sys, math
+from bisect import bisect_left, bisect_right
+
+U, LIMIT = 1000000, 10**12 - 1
+prime = bytearray(b'\x01') * (U + 1)
+prime[0:2] = b'\x00\x00'
+for p in range(2, math.isqrt(U) + 1):
     if prime[p]:
-        v = p*p
-        while v <= LIMIT: powers.append(v); v *= p
+        prime[p * p : U + 1 : p] = b'\x00' * ((U - p * p) // p + 1)
+powers = []
+for p in range(2, U + 1):
+    if prime[p]:
+        v = p * p
+        while v <= LIMIT:
+            powers.append(v)
+            v *= p
 powers.sort()
-it = iter(map(int,sys.stdin.buffer.read().split()))
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for _ in range(next(it)):
-    lo,hi = next(it),next(it)
-    print(bisect_right(powers,hi)-bisect_left(powers,lo))`,
+    lo, hi = next(it), next(it)
+    print(bisect_right(powers, hi) - bisect_left(powers, lo))
+`,
   }),
   defineCpeLesson("a633", {
     topic: "search",
@@ -1339,24 +1440,26 @@ int main() {
             for (int j = i; j < n; ++j)
                 if (!sums.insert(a[i] + a[j]).second)
                     ok = false;
-        cout << "Case #" << ++cs << ": It is " << (ok ? "" : "not ")
-             << "a B2-Sequence.\n\n";
+        cout << "Case #" << ++cs << ": It is " << (ok ? "" : "not ") << "a B2-Sequence.\n\n";
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 cs = 0
 for n in it:
     a = [next(it) for _ in range(n)]
-    ok = a[0] > 0 and all(a[i] > a[i-1] for i in range(1,n))
+    ok = a[0] > 0 and all(a[i] > a[i - 1] for i in range(1, n))
     seen = set()
     for i in range(n):
-        for j in range(i,n):
-            value = a[i]+a[j]
-            if value in seen: ok = False
+        for j in range(i, n):
+            value = a[i] + a[j]
+            if value in seen:
+                ok = False
             seen.add(value)
     cs += 1
-    print(f"Case #{cs}: It is {'' if ok else 'not '}a B2-Sequence.\n")`,
+    print(f"Case #{cs}: It is {'' if ok else 'not '}a B2-Sequence.\n")
+`,
   }),
   defineCpeLesson("a634", {
     topic: "number-theory",
@@ -1432,24 +1535,34 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-def egcd(a,b):
-    if b == 0: return a,1,0
-    g,x,y = egcd(b,a%b)
-    return g,y,x-(a//b)*y
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+
+def egcd(a, b):
+    if b == 0:
+        return a, 1, 0
+    g, x, y = egcd(b, a % b)
+    return g, y, x - (a // b) * y
+
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
-    if n == 0: break
-    c1,n1,c2,n2 = [next(it) for _ in range(4)]
-    g,x,y = egcd(n1,n2)
-    if n%g:
-        print('failed'); continue
-    x *= n//g; y *= n//g
-    dx,dy = n2//g,n1//g
-    lo,hi = -(x//dx),y//dy
+    if n == 0:
+        break
+    c1, n1, c2, n2 = [next(it) for _ in range(4)]
+    g, x, y = egcd(n1, n2)
+    if n % g:
+        print('failed')
+        continue
+    x *= n // g
+    y *= n // g
+    dx, dy = n2 // g, n1 // g
+    lo, hi = -(x // dx), y // dy
     if lo > hi:
-        print('failed'); continue
-    t = lo if c1*dx-c2*dy >= 0 else hi
-    print(x+dx*t,y-dy*t)`,
+        print('failed')
+        continue
+    t = lo if c1 * dx - c2 * dy >= 0 else hi
+    print(x + dx * t, y - dy * t)
+`,
   }),
   defineCpeLesson("a635", {
     topic: "number-theory",
@@ -1510,17 +1623,23 @@ int main() {
         cout << j + 1 << '\n';
     }
 }`,
-    python: String.raw`import sys,math
+    python: String.raw`import sys, math
+
 U = 40000
-prime = bytearray(b'\x01')*(U+1); prime[0:2] = b'\x00\x00'
-for p in range(2,math.isqrt(U)+1):
-    if prime[p]: prime[p*p:U+1:p] = b'\x00'*((U-p*p)//p+1)
-primes = [i for i in range(2,U+1) if prime[i]]
+prime = bytearray(b'\x01') * (U + 1)
+prime[0:2] = b'\x00\x00'
+for p in range(2, math.isqrt(U) + 1):
+    if prime[p]:
+        prime[p * p : U + 1 : p] = b'\x00' * ((U - p * p) // p + 1)
+primes = [i for i in range(2, U + 1) if prime[i]]
 for token in sys.stdin.buffer.read().split():
     n = int(token)
-    if n == 0: break
+    if n == 0:
+        break
     j = 0
-    for size in range(2,n+1): j = (j+primes[n-size])%size
-    print(j+1)`,
+    for size in range(2, n + 1):
+        j = (j + primes[n - size]) % size
+    print(j + 1)
+`,
   }),
 ];

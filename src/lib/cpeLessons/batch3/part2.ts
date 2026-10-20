@@ -59,14 +59,17 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 for line in sys.stdin:
-    counts = dict.fromkeys(letters,0)
+    counts = dict.fromkeys(letters, 0)
     for ch in line:
-        if ch in counts: counts[ch] += 1
+        if ch in counts:
+            counts[ch] += 1
     best = max(counts.values())
     answer = ''.join(ch for ch in letters if best and counts[ch] == best)
-    print(answer,best)`,
+    print(answer, best)
+`,
   }),
   defineCpeLesson("a605", {
     topic: "geometry",
@@ -131,15 +134,19 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(float,sys.stdin.buffer.read().split()))
+
+it = iter(map(float, sys.stdin.buffer.read().split()))
 for x in it:
-    p = [(x,next(it))]+[(next(it),next(it)) for _ in range(3)]
-    common = next(p[i] for i in range(4) for j in range(i+1,4) if p[i] == p[j])
-    a = sum(v[0] for v in p)-3*common[0]
-    b = sum(v[1] for v in p)-3*common[1]
-    if abs(a) < 1e-7: a = 0.0
-    if abs(b) < 1e-7: b = 0.0
-    print(f'{a:.3f} {b:.3f}')`,
+    p = [(x, next(it))] + [(next(it), next(it)) for _ in range(3)]
+    common = next(p[i] for i in range(4) for j in range(i + 1, 4) if p[i] == p[j])
+    a = sum(v[0] for v in p) - 3 * common[0]
+    b = sum(v[1] for v in p) - 3 * common[1]
+    if abs(a) < 1e-7:
+        a = 0.0
+    if abs(b) < 1e-7:
+        b = 0.0
+    print(f'{a:.3f} {b:.3f}')
+`,
   }),
   defineCpeLesson("a606", {
     topic: "strings",
@@ -208,17 +215,21 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 for line in sys.stdin:
     s = line.rstrip('\r\n')
     r = s[::-1]
-    text = r+'#'+s
-    pi = [0]*len(text)
-    for i in range(1,len(text)):
-        j = pi[i-1]
-        while j and text[i] != text[j]: j = pi[j-1]
-        if text[i] == text[j]: j += 1
+    text = r + '#' + s
+    pi = [0] * len(text)
+    for i in range(1, len(text)):
+        j = pi[i - 1]
+        while j and text[i] != text[j]:
+            j = pi[j - 1]
+        if text[i] == text[j]:
+            j += 1
         pi[i] = j
-    print(s+r[pi[-1]:])`,
+    print(s + r[pi[-1] :])
+`,
   }),
   defineCpeLesson("a607", {
     topic: "simulation",
@@ -277,30 +288,41 @@ int main() {
         int cost = 0;
         for (int j = 0; j < 3; ++j)
             cost += count[j] * rate[type[0] - 'A'][j];
-        string money = to_string(cost / 100) + "." + (cost % 100 < 10 ? "0" : "") +
-                       to_string(cost % 100);
+        string money =
+            to_string(cost / 100) + "." + (cost % 100 < 10 ? "0" : "") + to_string(cost % 100);
         cout << setw(10) << phone << setw(6) << count[0] << setw(6) << count[1] << setw(6)
              << count[2] << setw(3) << type << setw(8) << money << '\n';
     }
 }`,
     python: String.raw`import sys
-rates = {'A':(10,6,2),'B':(25,15,5),'C':(53,33,13),'D':(87,47,17),'E':(144,80,30)}
+
+rates = {
+    'A': (10, 6, 2),
+    'B': (25, 15, 5),
+    'C': (53, 33, 13),
+    'D': (87, 47, 17),
+    'E': (144, 80, 30),
+}
 for line in sys.stdin:
     fields = line.split()
-    if not fields: continue
-    if fields[0] == '#': break
-    kind,phone = fields[:2]
-    h1,m1,h2,m2 = map(int,fields[2:])
-    start,end = h1*60+m1,h2*60+m2
-    if end <= start: end += 1440
-    count = [0,0,0]
-    for minute in range(start,end):
-        x = minute%1440
+    if not fields:
+        continue
+    if fields[0] == '#':
+        break
+    kind, phone = fields[:2]
+    h1, m1, h2, m2 = map(int, fields[2:])
+    start, end = h1 * 60 + m1, h2 * 60 + m2
+    if end <= start:
+        end += 1440
+    count = [0, 0, 0]
+    for minute in range(start, end):
+        x = minute % 1440
         band = 0 if 480 <= x < 1080 else 1 if 1080 <= x < 1320 else 2
         count[band] += 1
-    cost = sum(x*y for x,y in zip(count,rates[kind]))
-    money = f'{cost//100}.{cost%100:02d}'
-    print(f'{phone:>10}{count[0]:6d}{count[1]:6d}{count[2]:6d}{kind:>3}{money:>8}')`,
+    cost = sum(x * y for x, y in zip(count, rates[kind]))
+    money = f'{cost // 100}.{cost % 100:02d}'
+    print(f'{phone:>10}{count[0]:6d}{count[1]:6d}{count[2]:6d}{kind:>3}{money:>8}')
+`,
   }),
   defineCpeLesson("a608", {
     topic: "geometry",
@@ -361,14 +383,18 @@ int main() {
     }
 }`,
     python: String.raw`import sys, math
+
 for line in sys.stdin:
-    if not line.strip(): continue
-    s,a,unit = line.split()
-    r,a = 6440+float(s),float(a)
-    if unit == 'min': a /= 60
+    if not line.strip():
+        continue
+    s, a, unit = line.split()
+    r, a = 6440 + float(s), float(a)
+    if unit == 'min':
+        a /= 60
     a %= 360
-    theta = math.radians(min(a,360-a))
-    print(f'{r*theta:.6f} {2*r*math.sin(theta/2):.6f}')`,
+    theta = math.radians(min(a, 360 - a))
+    print(f'{r * theta:.6f} {2 * r * math.sin(theta / 2):.6f}')
+`,
   }),
   defineCpeLesson("a609", {
     topic: "dp",
@@ -425,8 +451,7 @@ int main() {
             for (int k = min(n, i + 1); k >= 1; --k)
                 dp[k] |= dp[k - 1] << (x + 50);
         }
-        long long hi = numeric_limits<long long>::min(),
-                  lo = numeric_limits<long long>::max();
+        long long hi = numeric_limits<long long>::min(), lo = numeric_limits<long long>::max();
         for (int u = 0; u <= 100 * n; ++u)
             if (dp[n][u]) {
                 long long x = u - 50 * n, value = x * (total - x);
@@ -437,23 +462,27 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
     m = next(it)
-    dp = [1]+[0]*n
+    dp = [1] + [0] * n
     total = 0
-    for i in range(n+m):
-        x = next(it); total += x
-        for k in range(min(n,i+1),0,-1): dp[k] |= dp[k-1] << (x+50)
-    hi,lo = -10**30,10**30
+    for i in range(n + m):
+        x = next(it)
+        total += x
+        for k in range(min(n, i + 1), 0, -1):
+            dp[k] |= dp[k - 1] << (x + 50)
+    hi, lo = -(10**30), 10**30
     states = dp[n]
     while states:
         bit = states & -states
-        x = bit.bit_length()-1-50*n
-        value = x*(total-x)
-        hi,lo = max(hi,value),min(lo,value)
+        x = bit.bit_length() - 1 - 50 * n
+        value = x * (total - x)
+        hi, lo = max(hi, value), min(lo, value)
         states -= bit
-    print(hi,lo)`,
+    print(hi, lo)
+`,
   }),
   defineCpeLesson("a610", {
     topic: "number-theory",
@@ -522,18 +551,25 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
     m = next(it)
     if n == 1:
-        print(1); continue
+        print(1)
+        continue
     if n < 1 or m <= 1:
-        print('Boring!'); continue
+        print('Boring!')
+        continue
     answer = [n]
-    while n > 1 and n%m == 0:
-        n //= m; answer.append(n)
-    if n == 1: print(*answer)
-    else: print('Boring!')`,
+    while n > 1 and n % m == 0:
+        n //= m
+        answer.append(n)
+    if n == 1:
+        print(*answer)
+    else:
+        print('Boring!')
+`,
   }),
   defineCpeLesson("a611", {
     topic: "sorting",
@@ -622,25 +658,32 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 it = iter(sys.stdin.buffer.read().split())
 for _ in range(int(next(it))):
     n = int(next(it))
-    count = [0]*n
+    count = [0] * n
     while True:
         token = next(it)
         for ch in token:
-            if 65 <= ch < 65+n: count[ch-65] += 1
-        if 35 in token: break
-    weights = sorted(count,reverse=True)
-    need = [weights[i:i+2] for i in range(0,n,2)]
-    used,order = set(),[]
+            if 65 <= ch < 65 + n:
+                count[ch - 65] += 1
+        if 35 in token:
+            break
+    weights = sorted(count, reverse=True)
+    need = [weights[i : i + 2] for i in range(0, n, 2)]
+    used, order = set(), []
     for i in range(n):
-        group = need[min(i,n-1-i)]
+        group = need[min(i, n - 1 - i)]
         for j in range(n):
             if j not in used and count[j] in group:
-                used.add(j); order.append(j); group.remove(count[j]); break
-    print(' '.join(chr(65+j) for j in order))
-    print(*(count[j] for j in order))`,
+                used.add(j)
+                order.append(j)
+                group.remove(count[j])
+                break
+    print(' '.join(chr(65 + j) for j in order))
+    print(*(count[j] for j in order))
+`,
   }),
   defineCpeLesson("a612", {
     topic: "geometry",
@@ -704,15 +747,22 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for _ in range(next(it)):
-    a,b,c,d = sorted(next(it) for _ in range(4))
-    if a <= 0: answer = 'banana'
-    elif a == d: answer = 'square'
-    elif a == b and c == d: answer = 'rectangle'
-    elif a+b+c > d: answer = 'quadrangle'
-    else: answer = 'banana'
-    print(answer)`,
+    a, b, c, d = sorted(next(it) for _ in range(4))
+    if a <= 0:
+        answer = 'banana'
+    elif a == d:
+        answer = 'square'
+    elif a == b and c == d:
+        answer = 'rectangle'
+    elif a + b + c > d:
+        answer = 'quadrangle'
+    else:
+        answer = 'banana'
+    print(answer)
+`,
   }),
   defineCpeLesson("a613", {
     topic: "trees",
@@ -753,7 +803,9 @@ for _ in range(next(it)):
 #include <string>
 #include <vector>
 using namespace std;
-int sign(int x) { return (x > 0) - (x < 0); }
+int sign(int x) {
+    return (x > 0) - (x < 0);
+}
 int main() {
     int n, k;
     while (cin >> n >> k) {
@@ -796,30 +848,47 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 it = iter(sys.stdin.buffer.read().split())
-def sign(x): return (x > 0)-(x < 0)
+
+
+def sign(x):
+    return (x > 0) - (x < 0)
+
+
 for token in it:
-    n,k = int(token),int(next(it))
+    n, k = int(token), int(next(it))
     size = 1
-    while size < n: size *= 2
-    tree = [1]*(2*size)
-    for i in range(n): tree[size+i] = sign(int(next(it)))
-    for i in range(size-1,0,-1): tree[i] = tree[i*2]*tree[i*2+1]
+    while size < n:
+        size *= 2
+    tree = [1] * (2 * size)
+    for i in range(n):
+        tree[size + i] = sign(int(next(it)))
+    for i in range(size - 1, 0, -1):
+        tree[i] = tree[i * 2] * tree[i * 2 + 1]
     answer = []
     for _ in range(k):
-        op,i,j = next(it),int(next(it)),int(next(it))
+        op, i, j = next(it), int(next(it)), int(next(it))
         if op == b'C':
-            p = size+i-1; tree[p] = sign(j)
+            p = size + i - 1
+            tree[p] = sign(j)
             while p > 1:
-                p //= 2; tree[p] = tree[p*2]*tree[p*2+1]
+                p //= 2
+                tree[p] = tree[p * 2] * tree[p * 2 + 1]
         else:
-            l,r,value = size+i-1,size+j,1
+            l, r, value = size + i - 1, size + j, 1
             while l < r:
-                if l&1: value *= tree[l]; l += 1
-                if r&1: r -= 1; value *= tree[r]
-                l //= 2; r //= 2
+                if l & 1:
+                    value *= tree[l]
+                    l += 1
+                if r & 1:
+                    r -= 1
+                    value *= tree[r]
+                l //= 2
+                r //= 2
             answer.append('0' if value == 0 else '+' if value > 0 else '-')
-    print(''.join(answer))`,
+    print(''.join(answer))
+`,
   }),
   defineCpeLesson("a614", {
     topic: "graphs",
@@ -930,30 +999,38 @@ int main() {
 }`,
     python: String.raw`import sys
 from collections import deque
+
 lines = iter(sys.stdin.read().splitlines())
 dictionary = set()
 for line in lines:
-    if line == '': break
+    if line == '':
+        break
     dictionary.add(line)
 outputs = []
 for line in lines:
-    if not line.strip(): continue
-    start,goal = line.split()
-    parent = {start:None} if start in dictionary and goal in dictionary else {}
+    if not line.strip():
+        continue
+    start, goal = line.split()
+    parent = {start: None} if start in dictionary and goal in dictionary else {}
     queue = deque(parent)
     while queue and goal not in parent:
         u = queue.popleft()
         for i in range(len(u)):
             for ch in 'abcdefghijklmnopqrstuvwxyz':
-                v = u[:i]+ch+u[i+1:]
+                v = u[:i] + ch + u[i + 1 :]
                 if v in dictionary and v not in parent:
-                    parent[v] = u; queue.append(v)
-    if goal not in parent: outputs.append('No solution.')
+                    parent[v] = u
+                    queue.append(v)
+    if goal not in parent:
+        outputs.append('No solution.')
     else:
-        path,v = [],goal
-        while v is not None: path.append(v); v = parent[v]
+        path, v = [], goal
+        while v is not None:
+            path.append(v)
+            v = parent[v]
         outputs.append('\n'.join(reversed(path)))
-print('\n\n'.join(outputs))`,
+print('\n\n'.join(outputs))
+`,
   }),
   defineCpeLesson("a615", {
     topic: "sorting",
@@ -1012,13 +1089,17 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for _ in range(next(it)):
     n = next(it)
     lo = hi = next(it)
-    for _ in range(n-1):
-        x = next(it); lo = min(lo,x); hi = max(hi,x)
-    print(2*(hi-lo))`,
+    for _ in range(n - 1):
+        x = next(it)
+        lo = min(lo, x)
+        hi = max(hi, x)
+    print(2 * (hi - lo))
+`,
   }),
   defineCpeLesson("a616", {
     topic: "graphs",
@@ -1090,24 +1171,34 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 cs = 0
 for n in it:
     m = next(it)
-    if n == m == 0: break
-    parent,size = list(range(n+1)),[1]*(n+1)
+    if n == m == 0:
+        break
+    parent, size = list(range(n + 1)), [1] * (n + 1)
+
     def root(x):
         while parent[x] != x:
-            parent[x] = parent[parent[x]]; x = parent[x]
+            parent[x] = parent[parent[x]]
+            x = parent[x]
         return x
+
     count = n
     for _ in range(m):
-        a,b = root(next(it)),root(next(it))
-        if a == b: continue
-        if size[a] < size[b]: a,b = b,a
-        parent[b] = a; size[a] += size[b]; count -= 1
+        a, b = root(next(it)), root(next(it))
+        if a == b:
+            continue
+        if size[a] < size[b]:
+            a, b = b, a
+        parent[b] = a
+        size[a] += size[b]
+        count -= 1
     cs += 1
-    print(f'Case {cs}: {count}')`,
+    print(f'Case {cs}: {count}')
+`,
   }),
   defineCpeLesson("a617", {
     topic: "math",
@@ -1149,11 +1240,12 @@ for n in it:
 #include <string>
 #include <vector>
 using namespace std;
-long long countLeap(long long y) { return y / 4 - y / 100 + y / 400; }
+long long countLeap(long long y) {
+    return y / 4 - y / 100 + y / 400;
+}
 int main() {
-    vector<string> months = {"January",   "February", "March",    "April",
-                             "May",       "June",     "July",     "August",
-                             "September", "October",  "November", "December"};
+    vector<string> months = {"January", "February", "March",     "April",   "May",      "June",
+                             "July",    "August",   "September", "October", "November", "December"};
     int t;
     cin >> t;
     for (int cs = 1; cs <= t; ++cs) {
@@ -1167,22 +1259,32 @@ int main() {
         }
         long long lo = years[0] + (mon[0] > 2),
                   hi = years[1] - (mon[1] < 2 || (mon[1] == 2 && day[1] < 29));
-        cout << "Case " << cs << ": " << (lo > hi ? 0 : countLeap(hi) - countLeap(lo - 1))
-             << '\n';
+        cout << "Case " << cs << ": " << (lo > hi ? 0 : countLeap(hi) - countLeap(lo - 1)) << '\n';
     }
 }`,
     python: String.raw`import sys
-months = 'January February March April May June July August September October November December'.split()
+
+months = (
+    'January February March April May June July August September October November December'.split()
+)
+
+
 def read_date():
-    month,day,year = sys.stdin.readline().split()
-    return int(year),months.index(month)+1,int(day.rstrip(','))
-def count(y): return y//4-y//100+y//400
-for cs in range(1,int(sys.stdin.readline())+1):
-    y,m,d = read_date()
-    lo = y+(m > 2)
-    y,m,d = read_date()
-    hi = y-(m < 2 or (m == 2 and d < 29))
-    print(f'Case {cs}: {max(0,count(hi)-count(lo-1))}')`,
+    month, day, year = sys.stdin.readline().split()
+    return int(year), months.index(month) + 1, int(day.rstrip(','))
+
+
+def count(y):
+    return y // 4 - y // 100 + y // 400
+
+
+for cs in range(1, int(sys.stdin.readline()) + 1):
+    y, m, d = read_date()
+    lo = y + (m > 2)
+    y, m, d = read_date()
+    hi = y - (m < 2 or (m == 2 and d < 29))
+    print(f'Case {cs}: {max(0, count(hi) - count(lo - 1))}')
+`,
   }),
   defineCpeLesson("a618", {
     topic: "graphs",
@@ -1288,40 +1390,54 @@ int main() {
                 ok = false;
         }
         cout << (ok ? "YES: " : "NO: ") << b.name
-             << (ok ? " is a more detailed version of "
-                    : " is not a more detailed version of ")
+             << (ok ? " is a more detailed version of " : " is not a more detailed version of ")
              << a.name << '\n';
     }
 }`,
     python: String.raw`import sys
 from collections import deque
+
 lines = iter(line.strip() for line in sys.stdin if line.strip())
+
+
 def read_map(name):
-    graph,edges = {},[]
+    graph, edges = {}, []
     for line in lines:
-        if line == '* * *': break
-        a,b = line.split()
-        graph.setdefault(a,[]).append(b); graph.setdefault(b,[]).append(a)
-        edges.append((a,b))
-    return graph,edges
+        if line == '* * *':
+            break
+        a, b = line.split()
+        graph.setdefault(a, []).append(b)
+        graph.setdefault(b, []).append(a)
+        edges.append((a, b))
+    return graph, edges
+
+
 for name_a in lines:
-    if name_a == 'END': break
-    old,edges = read_map(name_a)
+    if name_a == 'END':
+        break
+    old, edges = read_map(name_a)
     name_b = next(lines)
-    new,_ = read_map(name_b)
+    new, _ = read_map(name_b)
     ok = old.keys() <= new.keys()
-    for start,goal in edges:
-        if not ok: break
-        seen,queue = {start},deque([start])
+    for start, goal in edges:
+        if not ok:
+            break
+        seen, queue = {start}, deque([start])
         while queue and goal not in seen:
             u = queue.popleft()
             for v in new[u]:
-                if v in seen: continue
+                if v in seen:
+                    continue
                 seen.add(v)
-                if v == goal or v not in old: queue.append(v)
+                if v == goal or v not in old:
+                    queue.append(v)
         ok = goal in seen
-    print(f'YES: {name_b} is a more detailed version of {name_a}' if ok else
-          f'NO: {name_b} is not a more detailed version of {name_a}')`,
+    print(
+        f'YES: {name_b} is a more detailed version of {name_a}'
+        if ok
+        else f'NO: {name_b} is not a more detailed version of {name_a}'
+    )
+`,
   }),
   defineCpeLesson("a619", {
     topic: "dp",
@@ -1394,18 +1510,25 @@ int main() {
 }`,
     python: String.raw`import sys
 from bisect import bisect_left
+
+
 def lengths(a):
-    tails,out = [],[]
+    tails, out = [], []
     for x in a:
-        p = bisect_left(tails,x)
-        out.append(p+1)
-        if p == len(tails): tails.append(x)
-        else: tails[p] = x
+        p = bisect_left(tails, x)
+        out.append(p + 1)
+        if p == len(tails):
+            tails.append(x)
+        else:
+            tails[p] = x
     return out
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
     a = [next(it) for _ in range(n)]
-    left,right = lengths(a),lengths(a[::-1])[::-1]
-    print(max(2*min(l,r)-1 for l,r in zip(left,right)))`,
+    left, right = lengths(a), lengths(a[::-1])[::-1]
+    print(max(2 * min(l, r) - 1 for l, r in zip(left, right)))
+`,
   }),
 ];

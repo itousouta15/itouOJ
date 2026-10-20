@@ -83,22 +83,28 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
-for cs in range(1,next(it)+1):
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
+for cs in range(1, next(it) + 1):
     cost = [next(it) for _ in range(36)]
-    if cs > 1: print()
+    if cs > 1:
+        print()
     print(f'Case {cs}:')
     for _ in range(next(it)):
-        n = next(it); values = []
-        for base in range(2,37):
-            x,total = n,0
+        n = next(it)
+        values = []
+        for base in range(2, 37):
+            x, total = n, 0
             while True:
-                total += cost[x%base]; x //= base
-                if x == 0: break
+                total += cost[x % base]
+                x //= base
+                if x == 0:
+                    break
             values.append(total)
         best = min(values)
-        bases = [base for base,value in enumerate(values,2) if value == best]
-        print(f'Cheapest base(s) for number {n}:',*bases)`,
+        bases = [base for base, value in enumerate(values, 2) if value == best]
+        print(f'Cheapest base(s) for number {n}:', *bases)
+`,
   }),
   defineCpeLesson("a637", {
     topic: "trees",
@@ -165,21 +171,25 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for m in it:
     n = next(it)
-    if m == n == 0: break
-    height,answer = [0]*(n+1),0
+    if m == n == 0:
+        break
+    height, answer = [0] * (n + 1), 0
     for _ in range(m):
-        for c in range(n): height[c] = 0 if next(it) else height[c]+1
+        for c in range(n):
+            height[c] = 0 if next(it) else height[c] + 1
         stack = []
-        for i in range(n+1):
+        for i in range(n + 1):
             while stack and height[stack[-1]] > height[i]:
                 h = height[stack.pop()]
-                left = stack[-1]+1 if stack else 0
-                answer = max(answer,h*(i-left))
+                left = stack[-1] + 1 if stack else 0
+                answer = max(answer, h * (i - left))
             stack.append(i)
-    print(answer)`,
+    print(answer)
+`,
   }),
   defineCpeLesson("a638", {
     topic: "graphs",
@@ -254,22 +264,27 @@ int main() {
         cout << sqrt((double)edges[p - s - 1]) << '\n';
     }
 }`,
-    python: String.raw`import sys,math
-it = iter(map(int,sys.stdin.buffer.read().split()))
+    python: String.raw`import sys, math
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for _ in range(next(it)):
-    s,p = next(it),next(it)
-    points = [(next(it),next(it)) for _ in range(p)]
-    dist,used = [10**30]*p,bytearray(p)
-    dist[0] = 0; edges = []
+    s, p = next(it), next(it)
+    points = [(next(it), next(it)) for _ in range(p)]
+    dist, used = [10**30] * p, bytearray(p)
+    dist[0] = 0
+    edges = []
     for step in range(p):
-        u = min((i for i in range(p) if not used[i]),key=dist.__getitem__)
+        u = min((i for i in range(p) if not used[i]), key=dist.__getitem__)
         used[u] = 1
-        if step: edges.append(dist[u])
-        x,y = points[u]
-        for v,(a,b) in enumerate(points):
-            if not used[v]: dist[v] = min(dist[v],(x-a)**2+(y-b)**2)
+        if step:
+            edges.append(dist[u])
+        x, y = points[u]
+        for v, (a, b) in enumerate(points):
+            if not used[v]:
+                dist[v] = min(dist[v], (x - a) ** 2 + (y - b) ** 2)
     edges.sort()
-    print(f'{math.sqrt(edges[p-s-1]):.2f}')`,
+    print(f'{math.sqrt(edges[p - s - 1]):.2f}')
+`,
   }),
   defineCpeLesson("a639", {
     topic: "combinatorics",
@@ -357,21 +372,24 @@ int main() {
         cout << answer << '\n';
     }
 }`,
-    python: String.raw`import sys,math
+    python: String.raw`import sys, math
+
 it = iter(sys.stdin.read().split())
 for _ in range(int(next(it))):
     k = int(next(it))
-    a,b = [next(it) for _ in range(6)],[next(it) for _ in range(6)]
-    options = [sorted({row[c] for row in a}&{row[c] for row in b}) for c in range(5)]
-    total = math.prod(map(len,options))
+    a, b = [next(it) for _ in range(6)], [next(it) for _ in range(6)]
+    options = [sorted({row[c] for row in a} & {row[c] for row in b}) for c in range(5)]
+    total = math.prod(map(len, options))
     if k > total:
-        print('NO'); continue
-    rank,answer = k-1,[]
+        print('NO')
+        continue
+    rank, answer = k - 1, []
     for c in range(5):
-        block = math.prod(len(options[j]) for j in range(c+1,5))
-        index,rank = divmod(rank,block)
+        block = math.prod(len(options[j]) for j in range(c + 1, 5))
+        index, rank = divmod(rank, block)
         answer.append(options[c][index])
-    print(''.join(answer))`,
+    print(''.join(answer))
+`,
   }),
   defineCpeLesson("a640", {
     topic: "search",
@@ -425,8 +443,7 @@ int main() {
         vector<long long> a(n + 1);
         for (auto &x : a)
             cin >> x;
-        long long lo = *max_element(a.begin(), a.end()),
-                  hi = accumulate(a.begin(), a.end(), 0LL);
+        long long lo = *max_element(a.begin(), a.end()), hi = accumulate(a.begin(), a.end(), 0LL);
         while (lo < hi) {
             long long mid = lo + (hi - lo) / 2, current = 0;
             int days = 1;
@@ -446,19 +463,26 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
-    k = next(it); a = [next(it) for _ in range(n+1)]
-    lo,hi = max(a),sum(a)
+    k = next(it)
+    a = [next(it) for _ in range(n + 1)]
+    lo, hi = max(a), sum(a)
     while lo < hi:
-        mid = (lo+hi)//2
-        days,current = 1,0
+        mid = (lo + hi) // 2
+        days, current = 1, 0
         for x in a:
-            if current+x > mid: days += 1; current = 0
+            if current + x > mid:
+                days += 1
+                current = 0
             current += x
-        if days <= k+1: hi = mid
-        else: lo = mid+1
-    print(lo)`,
+        if days <= k + 1:
+            hi = mid
+        else:
+            lo = mid + 1
+    print(lo)
+`,
   }),
   defineCpeLesson("a641", {
     topic: "math",
@@ -519,16 +543,20 @@ int main() {
         cout << answer << '\n';
     }
 }`,
-    python: String.raw`import sys,math
+    python: String.raw`import sys, math
+
 it = iter(sys.stdin.buffer.read().split())
 for _ in range(int(next(it))):
-    n,p,i = int(next(it)),float(next(it)),int(next(it))
-    if p == 0: answer = 0.0
-    elif p == 1: answer = float(i == 1)
+    n, p, i = int(next(it)), float(next(it)), int(next(it))
+    if p == 0:
+        answer = 0.0
+    elif p == 1:
+        answer = float(i == 1)
     else:
         logq = math.log1p(-p)
-        answer = math.exp((i-1)*logq)*p/(-math.expm1(n*logq))
-    print(f'{answer:.4f}')`,
+        answer = math.exp((i - 1) * logq) * p / (-math.expm1(n * logq))
+    print(f'{answer:.4f}')
+`,
   }),
   defineCpeLesson("a642", {
     topic: "number-theory",
@@ -585,18 +613,24 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
+
 def prefix(n):
     answer = 0
     while n > 0:
-        q,r = divmod(n,10)
-        answer += 45*q+r*(r+1)//2
+        q, r = divmod(n, 10)
+        answer += 45 * q + r * (r + 1) // 2
         n = q
     return answer
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for p in it:
     q = next(it)
-    if p < 0 and q < 0: break
-    print(prefix(q)-prefix(p-1))`,
+    if p < 0 and q < 0:
+        break
+    print(prefix(q) - prefix(p - 1))
+`,
   }),
   defineCpeLesson("a643", {
     topic: "graphs",
@@ -680,8 +714,7 @@ int main() {
             long long answer = INF;
             for (int j = i + 1; j < count; ++j)
                 if (mask & (1 << j))
-                    answer =
-                        min(answer, d[odd[i]][odd[j]] + match(mask ^ (1 << i) ^ (1 << j)));
+                    answer = min(answer, d[odd[i]][odd[j]] + match(mask ^ (1 << i) ^ (1 << j)));
             return memo[mask] = answer;
         };
         cout << total + match((1 << count) - 1) << '\n';
@@ -689,30 +722,47 @@ int main() {
 }`,
     python: String.raw`import sys
 from functools import lru_cache
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
-    if n == 0: break
-    m = next(it); dist = [[10**30]*n for _ in range(n)]; degree = [0]*n; total = 0
-    for i in range(n): dist[i][i] = 0
+    if n == 0:
+        break
+    m = next(it)
+    dist = [[10**30] * n for _ in range(n)]
+    degree = [0] * n
+    total = 0
+    for i in range(n):
+        dist[i][i] = 0
     for _ in range(m):
-        u,v,w = next(it)-1,next(it)-1,next(it)
-        total += w; degree[u] += 1; degree[v] += 1
-        dist[u][v] = dist[v][u] = min(dist[u][v],w)
+        u, v, w = next(it) - 1, next(it) - 1, next(it)
+        total += w
+        degree[u] += 1
+        degree[v] += 1
+        dist[u][v] = dist[v][u] = min(dist[u][v], w)
     for k in range(n):
         for i in range(n):
-            for j in range(n): dist[i][j] = min(dist[i][j],dist[i][k]+dist[k][j])
-    odd = [i for i in range(n) if degree[i]%2]
+            for j in range(n):
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
+    odd = [i for i in range(n) if degree[i] % 2]
+
     @lru_cache(None)
     def match(mask):
-        if mask == 0: return 0
-        first = mask & -mask; i = first.bit_length()-1; rest = mask^first
+        if mask == 0:
+            return 0
+        first = mask & -mask
+        i = first.bit_length() - 1
+        rest = mask ^ first
         answer = 10**30
         choices = rest
         while choices:
-            bit = choices & -choices; j = bit.bit_length()-1
-            answer = min(answer,dist[odd[i]][odd[j]]+match(rest^bit)); choices ^= bit
+            bit = choices & -choices
+            j = bit.bit_length() - 1
+            answer = min(answer, dist[odd[i]][odd[j]] + match(rest ^ bit))
+            choices ^= bit
         return answer
-    print(total+match((1 << len(odd))-1))`,
+
+    print(total + match((1 << len(odd)) - 1))
+`,
   }),
   defineCpeLesson("a644", {
     topic: "dp",
@@ -790,14 +840,19 @@ int main() {
         cout << answer[n] << '\n';
 }`,
     python: String.raw`import sys
+
 answer = [0]
-step,repeat = 1,1
+step, repeat = 1, 1
 while len(answer) <= 10000:
     for _ in range(repeat):
-        if len(answer) > 10000: break
-        answer.append(answer[-1]+step)
-    step *= 2; repeat += 1
-for token in sys.stdin.buffer.read().split(): print(answer[int(token)])`,
+        if len(answer) > 10000:
+            break
+        answer.append(answer[-1] + step)
+    step *= 2
+    repeat += 1
+for token in sys.stdin.buffer.read().split():
+    print(answer[int(token)])
+`,
   }),
   defineCpeLesson("a645", {
     topic: "sorting",
@@ -869,16 +924,23 @@ int main() {
 }`,
     python: String.raw`import sys
 from functools import cmp_to_key
-it = iter(map(int,sys.stdin.buffer.read().split()))
-def compare(x,y):
-    difference = x[0]*y[1]-y[0]*x[1]
-    return (difference > 0)-(difference < 0) if difference else x[2]-y[2]
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
+
+
+def compare(x, y):
+    difference = x[0] * y[1] - y[0] * x[1]
+    return (difference > 0) - (difference < 0) if difference else x[2] - y[2]
+
+
 for cs in range(next(it)):
     n = next(it)
-    jobs = [(next(it),next(it),i+1) for i in range(n)]
+    jobs = [(next(it), next(it), i + 1) for i in range(n)]
     jobs.sort(key=cmp_to_key(compare))
-    if cs: print()
-    print(*(job[2] for job in jobs))`,
+    if cs:
+        print()
+    print(*(job[2] for job in jobs))
+`,
   }),
   defineCpeLesson("a646", {
     topic: "number-theory",
@@ -934,11 +996,15 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 for s in sys.stdin.read().split():
-    if s == '0': break
+    if s == '0':
+        break
     remainder = 0
-    for ch in s: remainder = (10*remainder+ord(ch)-48)%11
-    print(s+(' is a multiple of 11.' if remainder == 0 else ' is not a multiple of 11.'))`,
+    for ch in s:
+        remainder = (10 * remainder + ord(ch) - 48) % 11
+    print(s + (' is a multiple of 11.' if remainder == 0 else ' is not a multiple of 11.'))
+`,
   }),
   defineCpeLesson("a647", {
     topic: "dp",
@@ -994,16 +1060,22 @@ int main() {
         cout << fib(n, 1LL << m).first << '\n';
 }`,
     python: String.raw`import sys
-def fib(n,mod):
-    if n == 0: return 0,1%mod
-    a,b = fib(n//2,mod)
-    c = a*(2*b-a)%mod
-    d = (a*a+b*b)%mod
-    return (d,(c+d)%mod) if n%2 else (c,d)
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+
+def fib(n, mod):
+    if n == 0:
+        return 0, 1 % mod
+    a, b = fib(n // 2, mod)
+    c = a * (2 * b - a) % mod
+    d = (a * a + b * b) % mod
+    return (d, (c + d) % mod) if n % 2 else (c, d)
+
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for n in it:
     m = next(it)
-    print(fib(n,1 << m)[0])`,
+    print(fib(n, 1 << m)[0])
+`,
   }),
   defineCpeLesson("a648", {
     topic: "math",
@@ -1066,15 +1138,21 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for _ in range(next(it)):
-    wall = [[0]*(r+1) for r in range(9)]
-    for r in range(0,9,2):
-        for c in range(0,r+1,2): wall[r][c] = next(it)
-    for c in range(1,9,2): wall[8][c] = (wall[6][c-1]-wall[8][c-1]-wall[8][c+1])//2
-    for r in range(7,-1,-1):
-        for c in range(r+1): wall[r][c] = wall[r+1][c]+wall[r+1][c+1]
-    for row in wall: print(*row)`,
+    wall = [[0] * (r + 1) for r in range(9)]
+    for r in range(0, 9, 2):
+        for c in range(0, r + 1, 2):
+            wall[r][c] = next(it)
+    for c in range(1, 9, 2):
+        wall[8][c] = (wall[6][c - 1] - wall[8][c - 1] - wall[8][c + 1]) // 2
+    for r in range(7, -1, -1):
+        for c in range(r + 1):
+            wall[r][c] = wall[r + 1][c] + wall[r + 1][c + 1]
+    for row in wall:
+        print(*row)
+`,
   }),
   defineCpeLesson("a649", {
     topic: "simulation",
@@ -1139,14 +1217,19 @@ int main() {
     }
 }`,
     python: String.raw`import sys
-it = iter(map(int,sys.stdin.buffer.read().split()))
+
+it = iter(map(int, sys.stdin.buffer.read().split()))
 for _ in range(next(it)):
-    n = next(it); count = 0
+    n = next(it)
+    count = 0
     while True:
-        n += int(str(n)[::-1]); count += 1
+        n += int(str(n)[::-1])
+        count += 1
         s = str(n)
-        if s == s[::-1]: break
-    print(count,n)`,
+        if s == s[::-1]:
+            break
+    print(count, n)
+`,
   }),
   defineCpeLesson("a650", {
     topic: "combinatorics",
@@ -1206,12 +1289,16 @@ int main() {
     }
 }`,
     python: String.raw`import sys
+
 for token in sys.stdin.buffer.read().split():
-    n = int(token); base = n*(n+1)//2; answer = []
-    for d in (2,3,4):
-        equal = sum(i**d for i in range(1,n+1))
-        answer.extend((equal,base**d-equal))
-    print(*answer)`,
+    n = int(token)
+    base = n * (n + 1) // 2
+    answer = []
+    for d in (2, 3, 4):
+        equal = sum(i**d for i in range(1, n + 1))
+        answer.extend((equal, base**d - equal))
+    print(*answer)
+`,
   }),
   defineCpeLesson("a651", {
     topic: "sorting",
@@ -1259,8 +1346,7 @@ int main() {
         vector<string> a(n);
         for (auto &s : a)
             cin >> s;
-        sort(a.begin(), a.end(),
-             [](const string &x, const string &y) { return x + y > y + x; });
+        sort(a.begin(), a.end(), [](const string &x, const string &y) { return x + y > y + x; });
         for (auto &s : a)
             cout << s;
         cout << '\n';
@@ -1268,13 +1354,20 @@ int main() {
 }`,
     python: String.raw`import sys
 from functools import cmp_to_key
-def compare(a,b): return (a+b < b+a)-(a+b > b+a)
+
+
+def compare(a, b):
+    return (a + b < b + a) - (a + b > b + a)
+
+
 it = iter(sys.stdin.read().split())
 for token in it:
     n = int(token)
-    if n == 0: break
+    if n == 0:
+        break
     numbers = [next(it) for _ in range(n)]
     numbers.sort(key=cmp_to_key(compare))
-    print(''.join(numbers))`,
+    print(''.join(numbers))
+`,
   }),
 ];
