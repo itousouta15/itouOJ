@@ -56,7 +56,8 @@ export default function AdminDeployment() {
       <div className="card p-4"><p className="text-sm text-mute">GitHub master</p><p className="mono mt-2 break-all">{snapshot?.latest ?? "暫時無法查詢"}</p></div>
     </div>
     <div className="card mt-4 p-4">
-      <p className="font-semibold">{updating ? "部署進行中" : snapshot?.job.state === "failed" || snapshot?.job.state === "interrupted" ? "部署失敗，可查看紀錄後重試" :
+      <p className="font-semibold">{updating ? "部署進行中" : snapshot?.job.state === "cancelled" ? "過期的部署請求已取消" :
+        snapshot?.job.state === "failed" || snapshot?.job.state === "interrupted" ? "部署失敗，可查看紀錄後重試" :
         !snapshot?.latest ? "GitHub 狀態無法取得" : !snapshot.deployed ? "尚未建立正式站版本紀錄" : newer ? "有新版本可部署" : "已是最新版本"}</p>
       {snapshot?.job.phase && <p className="mt-2 text-sm text-dim">階段：{phaseNames[snapshot.job.phase] ?? snapshot.job.phase}</p>}
       {snapshot?.job.runId && <a className="mt-2 inline-block text-sm text-blue hover:underline"
