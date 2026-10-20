@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createControlServer, readDeployLogTail } from "../deploy/oj-service-control-server.mjs";
 import { createDeployJobStore } from "../deploy/oj-deploy-job.mjs";
+import { isStrictlyNewer } from "../deploy/oj-compare-commit.mjs";
 import { createDeploymentAdminHandler } from "../src/lib/deploymentAdmin.ts";
 import { accountNavGroups, navLinksFor } from "../src/lib/navLinks.ts";
 
@@ -108,4 +109,18 @@ test("durable deployment claim is single-use, pinned and cannot succeed before m
   assert.equal(store.claim(), other);
   assert.equal(store.fail(other), true);
   assert.equal(JSON.parse(await readFile(join(directory, "status.json"), "utf8")).state, "failed");
+});
+
+test("only a strict GitHub fast-forward can be deployed", async () => {
+  const deployed = "a".repeat(40), candidate = "b".repeat(40);
+  const response = (status, ahead) => async (url) => {
+    assert.match(url, new RegExp(`/compare/${deployed}\\.\\.\\.${candidate}$`));
+    return Response.json({ status, ahead_by: ahead });
+  };
+  assert.equal(await isStrictlyNewer(deployed, candidate, response("ahead", 1)), true);
+  assert.equal(await isStrictlyNewer(deployed, candidate, response("behind", 0)), false);
+  assert.equal(await isStrictlyNewer(deployed, candidate, response("diverged", 1)), false);
+  assert.equal(await isStrictlyNewer(deployed, deployed, () => { throw new Error("must not fetch"); }), false);
+  assert.equal(await isStrictlyNewer("invalid", candidate, () => { throw new Error("must not fetch"); }), false);
+  await assert.rejects(() => isStrictlyNewer(deployed, candidate, async () => Response.json({}, { status: 404 })));
 });

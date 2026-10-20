@@ -74,6 +74,11 @@ rollback() {
     else
       rm -f /usr/local/sbin/oj-deploy-job.mjs
     fi
+    if [[ -f "$BACKUP/oj-compare-commit.mjs" ]]; then
+      install -m 644 "$BACKUP/oj-compare-commit.mjs" /usr/local/sbin/oj-compare-commit.mjs
+    else
+      rm -f /usr/local/sbin/oj-compare-commit.mjs
+    fi
     if [[ -f "$BACKUP/oj-gh-release.sh" ]]; then
       install -m 755 "$BACKUP/oj-gh-release.sh" /usr/local/sbin/oj-gh-release.sh
     else
@@ -142,6 +147,7 @@ echo '== Build staged Next.js app =='
 sh -n "$SOURCE/deploy/oj-service-control"
 node --check "$SOURCE/deploy/oj-service-control-server.mjs"
 node --check "$SOURCE/deploy/oj-deploy-job.mjs"
+node --check "$SOURCE/deploy/oj-compare-commit.mjs"
 bash -n "$SOURCE/deploy/oj-gh-release.sh"
 node --check "$SOURCE/scripts/host-agent.mjs"
 npm --prefix "$SOURCE" ci --include=dev --silent
@@ -189,6 +195,7 @@ cp /etc/systemd/system/online-judge-worker.service "$BACKUP/online-judge-worker.
 [[ ! -f /usr/local/sbin/oj-service-control ]] || cp -a /usr/local/sbin/oj-service-control "$BACKUP/oj-service-control"
 [[ ! -f /usr/local/sbin/oj-service-control-server.mjs ]] || cp -a /usr/local/sbin/oj-service-control-server.mjs "$BACKUP/oj-service-control-server.mjs"
 [[ ! -f /usr/local/sbin/oj-deploy-job.mjs ]] || cp -a /usr/local/sbin/oj-deploy-job.mjs "$BACKUP/oj-deploy-job.mjs"
+[[ ! -f /usr/local/sbin/oj-compare-commit.mjs ]] || cp -a /usr/local/sbin/oj-compare-commit.mjs "$BACKUP/oj-compare-commit.mjs"
 [[ ! -f /usr/local/sbin/oj-gh-release.sh ]] || cp -a /usr/local/sbin/oj-gh-release.sh "$BACKUP/oj-gh-release.sh"
 [[ ! -f /etc/systemd/system/online-judge-control.service ]] || cp -a /etc/systemd/system/online-judge-control.service "$BACKUP/online-judge-control.service"
 [[ ! -f /etc/sudoers.d/online-judge-control ]] || cp -a /etc/sudoers.d/online-judge-control "$BACKUP/online-judge-control.sudoers"
@@ -239,6 +246,7 @@ CONTROL_CHANGED=1
 install -m 755 "$SOURCE/deploy/oj-service-control" /usr/local/sbin/oj-service-control
 install -m 644 "$SOURCE/deploy/oj-service-control-server.mjs" /usr/local/sbin/oj-service-control-server.mjs
 install -m 644 "$SOURCE/deploy/oj-deploy-job.mjs" /usr/local/sbin/oj-deploy-job.mjs
+install -m 644 "$SOURCE/deploy/oj-compare-commit.mjs" /usr/local/sbin/oj-compare-commit.mjs
 install -m 755 "$SOURCE/deploy/oj-gh-release.sh" /usr/local/sbin/oj-gh-release.sh
 install -m 644 "$SOURCE/deploy/online-judge-control.service" /etc/systemd/system/online-judge-control.service
 install -d -m 700 /var/lib/oj-git-deploy

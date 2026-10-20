@@ -5,6 +5,7 @@ import { chmodSync, closeSync, fstatSync, openSync, readFileSync, readSync, rena
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { isStrictlyNewer } from "./oj-compare-commit.mjs";
 
 const run = promisify(execFile);
 const socketPath = "/run/oj-service-control/control.sock";
@@ -108,6 +109,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       if (!deployed || !available || deployed === available || ["queued", "running"].includes(job.state)) {
         throw new Error("No newer release available");
       }
+      if (!(await isStrictlyNewer(deployed, available))) throw new Error("GitHub master is not newer than the deployed revision");
       const queued = { state: "queued", phase: "queued", target: available, startedAt: new Date().toISOString() };
       writeFileSync(`${deployState}/build.log`, `[${queued.startedAt}] 等待 GitHub Actions 領取 ${available}\n`, { mode: 0o600 });
       writeFileSync(`${deployState}/status.next`, JSON.stringify(queued), { mode: 0o600 });
