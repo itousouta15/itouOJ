@@ -12,7 +12,9 @@ test ! -e "$RELEASE"
 mkdir "$RELEASE"
 tar tzf "$STAGE/oj.tar.gz" >/dev/null
 tar tzf "$STAGE/itoulang.tar.gz" >/dev/null
-tar xzf "$STAGE/oj.tar.gz" -C "$RELEASE"
+gzip -dc "$STAGE/oj.tar.gz" > "$STAGE/oj.tar"
+[[ "$(git get-tar-commit-id < "$STAGE/oj.tar")" == "$SHA" ]] || { echo 'Uploaded source does not match the claimed commit' >&2; exit 2; }
+tar xf "$STAGE/oj.tar" -C "$RELEASE"
 tar xzf "$STAGE/itoulang.tar.gz" -C "$RELEASE"
 ln -s /opt/online-judge/.env "$RELEASE/.env"
 sed -i 's/\r$//' "$RELEASE/deploy/remote-release.sh" "$RELEASE/deploy/oj-service-control" "$RELEASE/deploy/oj-gh-release.sh"

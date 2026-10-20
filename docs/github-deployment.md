@@ -8,7 +8,8 @@
 
 站上 `online-judge-control` 只開放固定的 `/deployment` 請求，不接受從網頁指定
 Git URL、指令或提交。Actions 領取後會驗證提交仍在 GitHub `master` 歷史中；
-遠端腳本只部署該提交，驗證後才更新 `/var/lib/oj-git-deploy/revision`。
+遠端腳本還會檢查原始碼壓縮檔內的 Git 提交編號是否吻合，驗證後才更新
+`/var/lib/oj-git-deploy/revision`。
 網站與 `nginx` 停止時，管理頁不能用，仍須從 SSH／主控台恢復。
 
 ## 首次設定
