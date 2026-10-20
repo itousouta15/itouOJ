@@ -1,2 +1,0 @@
-# Only this root-owned helper is callable by the website account.
-oj ALL=(root) NOPASSWD: /usr/local/sbin/oj-service-control

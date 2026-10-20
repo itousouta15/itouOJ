@@ -57,15 +57,30 @@ rollback() {
     systemctl daemon-reload
   fi
   if (( CONTROL_CHANGED )); then
+    systemctl disable --now online-judge-control || true
     if [[ -f "$BACKUP/oj-service-control" ]]; then
       install -m 755 "$BACKUP/oj-service-control" /usr/local/sbin/oj-service-control
     else
       rm -f /usr/local/sbin/oj-service-control
     fi
+    if [[ -f "$BACKUP/oj-service-control-server.mjs" ]]; then
+      install -m 644 "$BACKUP/oj-service-control-server.mjs" /usr/local/sbin/oj-service-control-server.mjs
+    else
+      rm -f /usr/local/sbin/oj-service-control-server.mjs
+    fi
+    if [[ -f "$BACKUP/online-judge-control.service" ]]; then
+      install -m 644 "$BACKUP/online-judge-control.service" /etc/systemd/system/online-judge-control.service
+    else
+      rm -f /etc/systemd/system/online-judge-control.service
+    fi
     if [[ -f "$BACKUP/online-judge-control.sudoers" ]]; then
       install -m 440 "$BACKUP/online-judge-control.sudoers" /etc/sudoers.d/online-judge-control
     else
       rm -f /etc/sudoers.d/online-judge-control
+    fi
+    systemctl daemon-reload
+    if [[ -f "$BACKUP/online-judge-control.service" ]]; then
+      systemctl enable --now online-judge-control || true
     fi
   fi
   if (( INTERACTIVE_CHANGED )); then systemctl restart sandbox-interactive || true; fi
@@ -113,10 +128,11 @@ python3 "$SOURCE/sandbox-runner/test/test_compile_cache.py" \
 
 echo '== Build staged Next.js app =='
 sh -n "$SOURCE/deploy/oj-service-control"
-visudo -cf "$SOURCE/deploy/online-judge-control.sudoers"
+node --check "$SOURCE/deploy/oj-service-control-server.mjs"
 npm --prefix "$SOURCE" ci --include=dev --silent
 npm --prefix "$SOURCE" run generate --silent
 npm --prefix "$SOURCE" run build
+npm --prefix "$SOURCE" run test:services
 echo '== Verify playground execution and saved-template migration =='
 npm --prefix "$SOURCE" run test:playground
 echo '== Verify CTF against disposable databases and the staged production build =='
@@ -154,6 +170,8 @@ cp /etc/systemd/system/sandbox-server.service "$BACKUP/sandbox-server.service"
 cp /etc/systemd/system/sandbox-interactive.service "$BACKUP/sandbox-interactive.service"
 cp /etc/systemd/system/online-judge-worker.service "$BACKUP/online-judge-worker.service"
 [[ ! -f /usr/local/sbin/oj-service-control ]] || cp -a /usr/local/sbin/oj-service-control "$BACKUP/oj-service-control"
+[[ ! -f /usr/local/sbin/oj-service-control-server.mjs ]] || cp -a /usr/local/sbin/oj-service-control-server.mjs "$BACKUP/oj-service-control-server.mjs"
+[[ ! -f /etc/systemd/system/online-judge-control.service ]] || cp -a /etc/systemd/system/online-judge-control.service "$BACKUP/online-judge-control.service"
 [[ ! -f /etc/sudoers.d/online-judge-control ]] || cp -a /etc/sudoers.d/online-judge-control "$BACKUP/online-judge-control.sudoers"
 sqlite3 "$APP/oj.db" ".backup '$BACKUP/oj.db'"
 
@@ -188,6 +206,7 @@ mv "$APP/.next" "$BACKUP/.next"
 mv "$APP/node_modules" "$BACKUP/node_modules"
 rsync -a --exclude='.env' --exclude='oj.db*' --exclude='.next*' \
   --exclude='node_modules' --exclude='*.bak*' "$SOURCE/" "$APP/"
+rm -f "$APP/deploy/online-judge-control.sudoers"
 rsync -a --delete "$SOURCE/src/" "$APP/src/"
 mv "$SOURCE/.next" "$APP/.next"
 mv "$SOURCE/node_modules" "$APP/node_modules"
@@ -199,14 +218,20 @@ runuser -u oj -- sqlite3 "$APP/oj.db" \
 install -m 644 "$SOURCE/deploy/online-judge-worker.service" /etc/systemd/system/online-judge-worker.service
 CONTROL_CHANGED=1
 install -m 755 "$SOURCE/deploy/oj-service-control" /usr/local/sbin/oj-service-control
-install -m 440 "$SOURCE/deploy/online-judge-control.sudoers" /etc/sudoers.d/online-judge-control
-visudo -cf /etc/sudoers.d/online-judge-control
-runuser -u oj -- sudo -n -l /usr/local/sbin/oj-service-control worker start >/dev/null
+install -m 644 "$SOURCE/deploy/oj-service-control-server.mjs" /usr/local/sbin/oj-service-control-server.mjs
+install -m 644 "$SOURCE/deploy/online-judge-control.service" /etc/systemd/system/online-judge-control.service
+rm -f /etc/sudoers.d/online-judge-control
 systemctl daemon-reload
+systemctl enable --now online-judge-control
+systemctl restart online-judge-control
+systemctl is-active --quiet online-judge-control
+control_status=$(runuser -u oj -- setpriv --no-new-privs curl --silent --show-error --max-time 10 \
+  --unix-socket /run/oj-service-control/control.sock -o /dev/null -w '%{http_code}' http://localhost/control)
+[[ "$control_status" == 405 ]]
 SITE_STARTED=1
 systemctl start online-judge online-judge-worker
 sleep 3
-systemctl is-active --quiet sandbox-server online-judge online-judge-worker
+systemctl is-active --quiet sandbox-server online-judge online-judge-worker online-judge-control
 curl --fail --silent --show-error --max-time 30 -o /dev/null http://127.0.0.1:3000/
 curl --fail --silent --show-error --max-time 30 -o /dev/null https://oj.itousouta.me/
 set -a

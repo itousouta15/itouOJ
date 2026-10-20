@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { request as httpRequest } from "node:http";
 import { promisify } from "node:util";
 import { MANAGED_SERVICES, type ManagedService, type ServiceAction, type ServiceState } from "@/lib/managedServices";
 
@@ -22,9 +23,20 @@ export async function getManagedServices(): Promise<ServiceState[]> {
 }
 
 export async function manageService(service: ManagedService, action: ServiceAction) {
-  // sudoers grants access only to the root-owned, argument-validating helper.
-  await run("/usr/bin/sudo", ["-n", "/usr/local/sbin/oj-service-control", service, action],
-    { timeout: 10_000, maxBuffer: 1024 });
+  // The website has NoNewPrivileges=true: sudo cannot elevate here. The
+  // root-owned, allowlisted controller accepts only local Unix-socket requests.
+  await new Promise<void>((resolve, reject) => {
+    const body = JSON.stringify({ service, action });
+    const request = httpRequest({ socketPath: "/run/oj-service-control/control.sock", path: "/control",
+      method: "POST", headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } }, (response) => {
+      response.resume();
+      response.on("error", reject);
+      response.on("end", () => response.statusCode === 200 ? resolve() : reject(new Error("Control operation failed")));
+    });
+    request.setTimeout(55_000, () => request.destroy(new Error("Control operation timed out")));
+    request.on("error", reject);
+    request.end(body);
+  });
 }
 
 type Session = { role: string; userId?: string } | null;

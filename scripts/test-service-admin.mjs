@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { createControlServer } from "../deploy/oj-service-control-server.mjs";
 import { createServiceAdminHandler } from "../src/lib/serviceAdmin.ts";
 import { accountNavGroups, isNavActive, navLinksFor } from "../src/lib/navLinks.ts";
 
@@ -88,4 +89,28 @@ test("service failures hide privileged command details and navigation is admin-o
   assert.ok(!navLinksFor(false).some((link) => link.href === "/admin/services"));
   assert.equal(isNavActive("/admin/services", "/admin/services"), true);
   assert.equal(isNavActive("/admin/services", "/admin/problems"), false);
+});
+
+test("the root controller independently rejects arbitrary operations and limits requests", async (t) => {
+  const actions = [];
+  const server = createControlServer(async (service, action) => {
+    actions.push([service, action]);
+    if (service === "worker") throw new Error("private-systemctl-error");
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const url = `http://127.0.0.1:${server.address().port}/control`;
+  const post = (body) => fetch(url, { method: "POST", body: JSON.stringify(body) });
+  assert.equal((await fetch(url)).status, 405);
+  for (const body of [
+    { service: "website", action: "start" }, { service: "worker", action: "stop" },
+    { service: "proxy", action: "restart" }, { service: "nginx.service", action: "reload" },
+    { service: "proxy", action: { toString: "reload" } },
+  ]) assert.equal((await post(body)).status, 400);
+  assert.equal((await fetch(url, { method: "POST", body: "invalid json" })).status, 400);
+  assert.equal((await fetch(url, { method: "POST", body: "x".repeat(257) })).status, 413);
+  assert.deepEqual(actions, []);
+  assert.equal((await post({ service: "proxy", action: "reload" })).status, 200);
+  assert.equal((await post({ service: "worker", action: "start" })).status, 503);
+  assert.deepEqual(actions, [["proxy", "reload"], ["worker", "start"]]);
 });
