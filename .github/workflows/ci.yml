@@ -52,6 +52,9 @@ jobs:
       - name: Playground execution tests
         run: npm run test:playground
 
+      - name: Course ordering tests
+        run: npm run test:courses
+
       - name: Build
         run: npm run build
 
