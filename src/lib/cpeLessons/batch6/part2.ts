@@ -8,7 +8,7 @@ export const lessons = [
     goal: "用整數金額計算包含紙鈔的所有組合數。",
     explanation: [
       "所有金額都是 5 分的倍數，除以 5 後上限只有 6000。十一種面額縮為 1、2、4、10、20、40、100、200、400、1000、2000。令 ways[0]=1，逐面額處理並由小到大更新 ways[s]+=ways[s−v]。",
-      "處理完某種面額後，ways[s] 就是只用已加入面額的組合數；金額正向更新容許重複使用，面額外迴圈則避免把排列重複計算。先一次預算所有金額，再回答 EOF 前、0.00 之前的查詢。金額用字串解析成分，輸出寬度 6 的兩位小數與寬度 17 的方法數，C++ 使用 64 位元整數。",
+      "處理完某種面額後，ways[s] 就是只用已加入面額的組合數；金額正向更新容許重複使用，面額外迴圈則避免把排列重複計算。先一次預算所有金額，再回答 EOF 前、零金額之前的查詢。金額按十進位小數的位置解析成分：0.5、.5、0.50 都是 50 分，小數不足兩位在右側補零，整數 1 是 100 分。輸出寬度 6 的兩位小數與寬度 17 的方法數，C++ 使用 64 位元整數。",
     ],
     complexity: "A=6000；預處理時間 O(11A)、空間 O(A)，每次查詢 O(1)。",
     pitfall: "金額欄與方法數欄直接相接，不額外插入分隔空格；0.00 是終止標記。",
@@ -55,8 +55,12 @@ int main() {
             ways[s] += ways[s - v];
     string token;
     while (cin >> token) {
-        int p = int(token.find('.'));
-        int cents = stoi(token.substr(0, p)) * 100 + stoi(token.substr(p + 1));
+        size_t p = token.find('.');
+        string whole = token.substr(0, p);
+        string fraction = p == string::npos ? "" : token.substr(p + 1);
+        if (whole.empty()) whole = "0";
+        fraction += "00";
+        int cents = stoi(whole) * 100 + 10 * (fraction[0] - '0') + fraction[1] - '0';
         if (!cents)
             break;
         string money =
@@ -72,8 +76,8 @@ for v in (1, 2, 4, 10, 20, 40, 100, 200, 400, 1000, 2000):
     for s in range(v, 6001):
         ways[s] += ways[s - v]
 for token in sys.stdin.read().split():
-    a, b = token.split('.')
-    cents = int(a) * 100 + int(b)
+    whole, _, fraction = token.partition('.')
+    cents = int(whole or '0') * 100 + int((fraction + '00')[:2])
     if cents == 0:
         break
     money = f'{cents // 100}.{cents % 100:02d}'
@@ -144,7 +148,7 @@ int main() {
                 d = (d + 3) % 4;
             else if (cmd == 'R')
                 d = (d + 1) % 4;
-            else {
+            else if (cmd == 'F') {
                 int nx = x + dx[d], ny = y + dy[d];
                 if (nx < 0 || nx > xmax || ny < 0 || ny > ymax) {
                     if (scent.count({x, y}))
@@ -179,7 +183,7 @@ for header in lines:
             d = (d - 1) % 4
         elif cmd == 'R':
             d = (d + 1) % 4
-        else:
+        elif cmd == 'F':
             nx, ny = x + delta[d][0], y + delta[d][1]
             if not (0 <= nx <= xmax and 0 <= ny <= ymax):
                 if (x, y) in scent:
@@ -200,7 +204,8 @@ for header in lines:
       "只把出現在邊兩端的編號當作節點。非空樹必須恰有一個入度為 0 的根，其餘每點入度恰為 1；重複輸入同一條邊也會增加入度，不能先用集合去重。空邊集合依題意直接判為樹。",
       "通過入度檢查後，從根沿有向邊走訪，要求所有節點都可達。單靠根與入度條件仍可能漏掉與根分離的環；加入可達性後，任何可達環都會迫使根有入邊或某點有兩個入邊，因此這些條件充分。0 0 結束一筆，負數對結束整份輸入，案例編號從 1 起。",
     ],
-    complexity: "每筆時間 O(V+E)，空間 O(V+E)。",
+    complexity:
+      "每筆 C++ 有序 map/set 時間 O((V+E)log(V+1))，Python 雜湊平均 O(V+E)；圖與走訪空間 O(V+E)，Python 另有整份輸入緩衝。",
     pitfall: "邊是有向的；有一個根不代表整張圖連通。",
     traceLabel: "示意：1→2、1→3",
     trace: [

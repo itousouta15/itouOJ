@@ -549,7 +549,8 @@ for n in it:
       "把目前整數的十進位數字排序，遞增排列轉成 B，反向排列轉成 A，再令下一數為 C=A−B。因每步取整數表示，B 的前導零自然消失，下一回合也不保留原位數，例如 100 會產生 99。",
       "每次先列印運算並讓鏈長加一，再檢查 C 是否已在先前算出的結果中；若已出現就停止，否則加入集合繼續。起始數不能預放集合，這是本地規則的重要細節。讀到輸入 0 結束，但鏈中計算出的 0 仍要繼續到重複。每條鏈後印一空行，包含最後一條。",
     ],
-    complexity: "鏈長 L、每數最多 d=9 位，時間 O(Ld log d)，空間 O(L)。",
+    complexity:
+      "鏈長 L、每數最多 d=9 位；C++ 時間 O(Ld log(d+1)+L log(L+1))，Python 雜湊平均 O(Ld log(d+1))；鏈狀態空間 O(L)，Python 另有整份輸入緩衝。",
     pitfall: "初始數不先標記；最後一次導致重複的運算也算鏈長。",
     traceLabel: "示意：1234 的前後狀態",
     trace: [
@@ -1398,11 +1399,15 @@ for token in it:
     concept: "圓覆蓋轉區間刺點貪心",
     goal: "將每座島轉成可放雷達的海岸區間。",
     explanation: [
-      "雷達位於 (r,0)，島嶼 (x,y) 可被覆蓋等價於 (r−x)²+y²≤d²。若 |y|>d 就不可能，否則 r 必須落在 [x−√(d²−y²),x+√(d²−y²)]。問題因此變成用最少實數點命中全部閉區間。",
-      "依區間右端遞增排序。若上一個雷達不在目前區間，就在目前右端設新雷達；它覆蓋此區間且盡可能向右，將任何可行解中覆蓋目前區間的雷達移到此處，都不會減少對尚未處理區間的覆蓋，故貪心最優。無解仍要讀完當組島嶼。讀到 0 0 結束，輸出 Case k: 答案，浮點比較只使用很小容差處理相切誤差。",
+      "雷達位於 (r,0)，島嶼 (x,y) 可被覆蓋等價於 (r−x)²+y²≤d²。d<0 或 |y|>d 就不可能；否則令 q=d²−y²，可放雷達的閉區間是 [x−√q,x+√q]。題目輸入 x、y、d 都是整數，因此保存 (x,q)，不計算浮點根號。d=0 時只有 y=0 合法，區間退化為單一點。",
+      "依區間右端精確遞增排序。若上一座雷達嚴格位於目前左端之外，就在目前右端設新雷達。將任一可行解中覆蓋目前區間的雷達移到此右端，不會失去任何尚未處理且原本被它覆蓋的區間，因此貪心最優。雷達保存為所選區間的右端表示 (x,q)，不必把它轉成近似實數；相切時仍能共用同一座。",
+      "端點比較先處理 x 或 q 的明顯大小關係，只有兩邊皆非負才平方消去根號。比較右端時，若 x₁<x₂，令 g=x₂−x₁；q₁>q₂ 且 t=q₁−q₂−g²>0 時，比較 t² 與 4g²q₂。判斷新左端是否超過已選右端時，先要求 g=x新−x選>0、t=g²−q選−q新>0，再比較 t² 與 4q選q新。等號都不是嚴格分離；程式另處理 t=0 與 q選=0，避免除以零。",
+      "C++ 明示採用支援 GNU __int128 的編譯器，x、y 為有號 64 位整數，非負 d 也在有號 64 位範圍；負 d 輸出 -1。差值先擴成有號 128 位再相減，q 與差值平方用無號 128 位。四次方交叉乘積可能溢位，因此改比較 t/(2g²) 與 (2q₂)/t，或 t/(2q選) 與 (2q新)/t；Euclid 分數比較器只做整除與餘數，不建立交叉乘積。Python 用任意精度整數直接比較平方乘積。每組即使無解仍讀滿 n 個點，0 0 才結束。",
     ],
-    complexity: "時間 O(n log n)，空間 O(n)。",
-    pitfall: "雷達座標不必是整數；只按島嶼 x 座標排序不足以保證最優。",
+    complexity:
+      "排序 O(n log n) 次、掃描 O(n) 次精確比較；C++ 每次至多 O(log U) 次整除，U 為 128 位中間值上界，固定字寬下時間 O(n log n)、區間空間 O(n)。Python 另計大整數算術及整份輸入緩衝。",
+    pitfall:
+      "雷達可在非整數座標；相切必須判為可共用，不能用 epsilon 改變邊界。C++ 不可直接在 64 位相減、取 abs(LLONG_MIN)，或建立可能溢位的四次方乘積。",
     traceLabel: "示意：d=2，島 (0,2)、(3,0)、(6,2)",
     trace: [
       {
@@ -1430,58 +1435,150 @@ for token in it:
     cpp: String.raw`#include <iostream>
 #include <vector>
 #include <algorithm>
-#include <cmath>
-#include <limits>
 using namespace std;
+// Requires GNU/Clang 128-bit integer support; input coordinates/radius are signed 64-bit.
+using i128 = __int128;
+using u128 = unsigned __int128;
+struct Interval {
+    long long x;
+    u128 q; // Endpoints are x - sqrt(q), x + sqrt(q); q < 2^126.
+};
+// Compare a/b with c/d, b,d > 0, without overflowing cross-products.
+constexpr int compare_fraction(u128 a, u128 b, u128 c, u128 d) {
+    int direction = 1;
+    while (true) {
+        u128 qa = a / b, qc = c / d;
+        if (qa != qc)
+            return direction * (qa < qc ? -1 : 1);
+        u128 ra = a % b, rc = c % d;
+        if (ra == 0 || rc == 0) {
+            if (ra == rc)
+                return 0;
+            return direction * (ra == 0 ? -1 : 1);
+        }
+        // Equal integer parts: reciprocate the positive fractional remainders.
+        a = b;
+        b = ra;
+        c = d;
+        d = rc;
+        direction = -direction;
+    }
+}
+int compare_right(const Interval &a, const Interval &b) {
+    if (a.x == b.x)
+        return a.q == b.q ? 0 : (a.q < b.q ? -1 : 1);
+    if (a.x > b.x)
+        return -compare_right(b, a);
+    if (a.q <= b.q)
+        return -1;
+    u128 gap = u128(i128(b.x) - i128(a.x)), gap2 = gap * gap;
+    u128 delta = a.q - b.q;
+    if (delta < gap2)
+        return -1;
+    if (delta == gap2)
+        return b.q == 0 ? 0 : -1;
+    u128 t = delta - gap2;
+    // t > 0 implies gap2 < q_a < 2^126, so both doubled terms fit.
+    // Sign of t^2 - 4*gap2*q_b equals that of these two fractions.
+    return compare_fraction(t, 2 * gap2, 2 * b.q, t);
+}
+bool left_after_right(const Interval &next, const Interval &chosen) {
+    if (next.x <= chosen.x)
+        return false;
+    u128 gap = u128(i128(next.x) - i128(chosen.x)), gap2 = gap * gap;
+    if (chosen.q == 0)
+        return gap2 > next.q;
+    u128 sum = chosen.q + next.q;
+    if (gap2 <= sum)
+        return false;
+    u128 t = gap2 - sum;
+    // Compare t^2 > 4*q_chosen*q_next without forming either product.
+    return compare_fraction(t, 2 * chosen.q, 2 * next.q, t) > 0;
+}
 int main() {
     int n, cs = 0;
-    double d;
+    long long d;
     while (cin >> n >> d && (n || d)) {
-        vector<pair<double, double>> a;
+        vector<Interval> a;
         bool ok = d >= 0;
         for (int i = 0; i < n; ++i) {
-            double x, y;
+            long long x, y;
             cin >> x >> y;
-            if (abs(y) > d) {
+            i128 ay = y;
+            if (ay < 0)
+                ay = -ay;
+            if (d < 0 || ay > i128(d)) {
                 ok = false;
                 continue;
             }
-            double dx = sqrt(max(0.0, d * d - y * y));
-            a.push_back({x + dx, x - dx});
+            u128 radius = u128(d), height = u128(ay);
+            a.push_back({x, radius * radius - height * height});
         }
-        sort(a.begin(), a.end());
+        sort(a.begin(), a.end(), [](const Interval &a, const Interval &b) {
+            return compare_right(a, b) < 0;
+        });
         int count = 0;
-        double radar = -numeric_limits<double>::infinity();
-        for (auto [right, left] : a)
-            if (radar < left - 1e-10) {
-                radar = right;
+        Interval chosen{};
+        bool placed = false;
+        for (const Interval &next : a)
+            if (!placed || left_after_right(next, chosen)) {
+                chosen = next;
+                placed = true;
                 ++count;
             }
         cout << "Case " << ++cs << ": " << (ok ? count : -1) << '\n';
     }
 }`,
-    python: String.raw`import sys, math
+    python: String.raw`import sys
+from functools import cmp_to_key
+
+def compare_right(a, b):
+    x1, q1 = a
+    x2, q2 = b
+    if x1 == x2:
+        return (q1 > q2) - (q1 < q2)
+    if x1 > x2:
+        return -compare_right(b, a)
+    if q1 <= q2:
+        return -1
+    gap = x2 - x1
+    t = q1 - q2 - gap * gap
+    if t < 0:
+        return -1
+    if t == 0:
+        return 0 if q2 == 0 else -1
+    # Signs were checked before squaring; Python products are arbitrary precision.
+    lhs, rhs = t * t, 4 * gap * gap * q2
+    return (lhs > rhs) - (lhs < rhs)
+
+def left_after_right(next_interval, chosen):
+    x, q = next_interval
+    old_x, old_q = chosen
+    gap = x - old_x
+    if gap <= 0:
+        return False
+    t = gap * gap - old_q - q
+    return t > 0 and t * t > 4 * old_q * q
 
 it = iter(sys.stdin.read().split())
 cs = 0
 for token in it:
-    n, d = int(token), float(next(it))
+    n, d = int(token), int(next(it))
     if n == 0 and d == 0:
         break
     intervals = []
     ok = d >= 0
     for _ in range(n):
-        x, y = float(next(it)), float(next(it))
-        if abs(y) > d:
+        x, y = int(next(it)), int(next(it))
+        if d < 0 or abs(y) > d:
             ok = False
             continue
-        dx = math.sqrt(max(0, d * d - y * y))
-        intervals.append((x + dx, x - dx))
-    radar = -math.inf
+        intervals.append((x, d * d - y * y))
+    chosen = None
     count = 0
-    for right, left in sorted(intervals):
-        if radar < left - 1e-10:
-            radar = right
+    for interval in sorted(intervals, key=cmp_to_key(compare_right)):
+        if chosen is None or left_after_right(interval, chosen):
+            chosen = interval
             count += 1
     cs += 1
     print(f'Case {cs}: {count if ok else -1}')

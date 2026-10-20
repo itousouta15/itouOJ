@@ -1385,12 +1385,13 @@ for n in data:
     concept: "連續區間枚舉與有理誤差比較",
     goal: "精確比較加權溫度誤差，保留最早的最佳區間。",
     explanation: [
-      "固定起點l後向右延伸，累加水量V與偏差熱量E=Σvolume·(temperature−target)。混合溫度與目標的距離正好是|E|/V；只評估ceil(capacity/2)≤V≤capacity的區間，並要求誤差≤5。水量為非負物理量，一旦V超過容量，後面不會減少，可停止此起點的延伸。",
-      "最多3000罐，O(N²)枚舉可行。按l遞增、r遞增掃描，只在誤差嚴格改善時更新，所以同誤差自然保留較小起點再較小終點。Python用整數交叉乘；C++用64位元累積量，分數比較採商餘數與倒數交替比較，避免兩個分數交叉乘溢位。沒有有效方案輸出Not possible；零水量區間不能定義溫度，略過。",
+      "固定起點l後向右延伸，累加水量V與偏差熱量E=Σvolume·(temperature−target)。混合溫度與目標的距離正好是|E|/V；只評估ceil(capacity/2)≤V≤capacity的區間，並要求誤差≤5。水量非負，因此加入前若jar.volume>capacity−V，就停止此起點的延伸，不先做可能溢位的加法。",
+      "最多3000罐，O(N²)枚舉可行。按l遞增、r遞增掃描，只在誤差嚴格改善時更新，所以同誤差自然保留較小起點再較小終點。Python用任意精度整數交叉乘；C++的偏差熱量用GNU擴充的有號__int128，先提升溫度再相減，分數比較用unsigned __int128的商餘數與倒數交替比較，不做交叉乘。沒有有效方案輸出Not possible；零水量區間不能定義溫度，略過。",
+      "C++版本的輸入契約為容量1到2^63−1、每罐水量0到2^63−1，目標與各罐溫度介於−2^63到2^63−1。加入前的容量檢查確保累積水量≤capacity；溫差絕對值≤2^64−1，因此每個前綴的|E|≤capacity×最大溫差<2^127，連取負值求絕對值也安全，並不需要假設熱量能放進64位元。__int128是固定128位元的GNU編譯器擴充，不是任意精度；Python整數沒有此固定位寬限制。",
     ],
     complexity: "枚舉 O(N²)；C++ 每次分數比較另需 O(log V)，空間 O(N)。",
     pitfall:
-      "不是平均各罐溫度，必須以水量加權；容量奇數時半滿門檻應向上取整。本地題敘未列水量、溫度上限，C++版本假設累積水量與帶符號偏差熱量可存入64位元；Python整數沒有此限制。",
+      "不是平均各罐溫度，必須以水量加權；容量奇數時半滿門檻應向上取整。本地題敘未列數值上限，C++版本明訂單一輸入的有號64位元契約，並要求支援GNU __int128擴充的編譯器；不可先用64位元相減或相乘再轉型，也不可先加水量再檢查容量。",
     traceLabel: "示意：容量10、目標20，水罐(3,10)、(3,30)、(4,20)",
     trace: [
       {
@@ -1429,8 +1430,9 @@ for n in data:
 #include <utility>
 #include <cstdlib>
 using namespace std;
-bool lessFraction(unsigned long long a, unsigned long long b, unsigned long long c,
-                  unsigned long long d) {
+using Wide = __int128;
+using UWide = unsigned __int128;
+bool lessFraction(UWide a, UWide b, UWide c, UWide d) {
     bool reversed = false;
     while (true) {
         if (a / b != c / d)
@@ -1459,17 +1461,21 @@ int main() {
         for (auto &jar : jars)
             cin >> jar.first >> jar.second;
         int left = -1, right = -1;
-        unsigned long long bestError = 0, bestVolume = 1;
+        UWide bestError = 0, bestVolume = 1;
         for (int l = 0; l < n; ++l) {
-            long long volume = 0, error = 0;
+            long long volume = 0;
+            Wide error = 0;
             for (int r = l; r < n; ++r) {
-                volume += jars[r].first;
-                error += jars[r].first * (jars[r].second - target);
-                if (volume > capacity)
+                // Nonnegative volumes; never add beyond the signed-64-bit capacity.
+                if (jars[r].first > capacity - volume)
                     break;
+                volume += jars[r].first;
+                Wide delta = static_cast<Wide>(jars[r].second) - static_cast<Wide>(target);
+                error += static_cast<Wide>(jars[r].first) * delta;
                 if (volume <= 0 || volume < capacity / 2 + capacity % 2)
                     continue;
-                unsigned long long e = llabs(error), v = volume;
+                UWide e = error < 0 ? static_cast<UWide>(-error) : static_cast<UWide>(error);
+                UWide v = static_cast<UWide>(volume);
                 if (e / v > 5 || (e / v == 5 && e % v))
                     continue;
                 if (left < 0 || lessFraction(e, v, bestError, bestVolume)) {

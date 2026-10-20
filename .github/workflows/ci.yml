@@ -55,6 +55,14 @@ jobs:
       - name: Course ordering tests
         run: npm run test:courses
 
+      - name: TOI beginner problem-specific lessons and reference programs
+        run: npm run test:toi-beginner-lessons -- --python python3 --cxx g++
+
+      - name: Exact tutorial coverage and source examples
+        run: npm run test:tutorial-coverage
+
+      - name: TOI beginner reference programs
+        run: npm run test:toi-beginner-programs -- --python python3 --cxx g++
       - name: Bug report tests
         run: npm run test:reports
 
@@ -80,6 +88,42 @@ jobs:
         env:
           TOI_POTENTIAL_TEST_PRODUCTION: "1"
         run: npm run test:toi-potential-course
+
+  tutorial-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: TOI beginner batch 1
+            command: node --import ./scripts/ctf-test-loader.mjs scripts/lib/check-toi-beginner-batch1.mjs --python python3 --cxx g++
+          - name: TOI beginner batch 2
+            command: python3 scripts/lib/check-toi-beginner-batch2.py --python python3 --cxx g++
+          - name: TOI beginner batch 3
+            command: python3 scripts/lib/check-toi-beginner-batch3.py --python python3 --cxx g++
+          - name: APCS independent checks
+            command: node --import ./scripts/ctf-test-loader.mjs scripts/lib/check-apcs-tutorial-audit.mjs --python python3 --cxx g++ --stress
+          - name: CPE targeted regressions
+            command: node --import ./scripts/ctf-test-loader.mjs scripts/lib/check-cpe-tutorial-audit.mjs --python python3 --cxx g++ --traces
+          - name: TOI potential independent checks
+            command: node --import ./scripts/ctf-test-loader.mjs scripts/lib/check-toi-potential-tutorial-audit.mjs --regressions --python python3 --cxx g++
+    name: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install test dependencies
+        run: npm ci --ignore-scripts
+      - name: Run independent program checks
+        run: ${{ matrix.command }}
+      - name: Changed CPE public reference programs (targeted, not a bulk matrix)
+        if: matrix.name == 'CPE targeted regressions'
+        run: npm run test:cpe-lessons -- --code a522,a559,a566,a595,a618,a675,a676,a685,a709,a740,a747,a755,a770,a779,a789,a790,a794,a796,a797,a798,a824,a828,a831,a836,a841 --python python3 --cxx g++
 
   toi-potential-programs:
     runs-on: ubuntu-latest

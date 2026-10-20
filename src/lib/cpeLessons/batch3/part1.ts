@@ -658,7 +658,7 @@ for a in it:
     complexity:
       "時間 O(n²)，額外空間 O(n)；n=10000 時 Python 的平方迴圈成本較高。",
     pitfall:
-      "判斷是 arrival < deadline，不能接受等於；起點可任選，不固定在最左端。",
+      "判斷是 arrival < deadline，不能接受等於；起點可任選，不固定在最左端。不可達狀態不能再加距離。C++ 輸入座標／期限須可存入有號 64 位元，並用 GNU __int128 擴充計算距離與加法，超過可用期限才飽和；Python 的不可達標記大於所有期限，不用固定常數假裝無限大。",
     traceLabel: "示意：位置 1、3、5，期限 3、1、8",
     trace: [
       {
@@ -694,11 +694,17 @@ for a in it:
     ],
     cpp: String.raw`#include <algorithm>
 #include <iostream>
+#include <limits>
 #include <vector>
 using namespace std;
 int main() {
     int n;
-    const long long inf = 4000000000000000000LL;
+    const long long inf = numeric_limits<long long>::max();
+    auto advance = [](long long time, __int128 distance) -> long long {
+        if (time == inf) return inf;
+        __int128 arrival = (__int128)time + distance;
+        return arrival >= inf ? inf : (long long)arrival;
+    };
     while (cin >> n) {
         vector<long long> x(n), deadline(n), left(n), right(n);
         for (int i = 0; i < n; ++i) {
@@ -707,19 +713,21 @@ int main() {
         }
         bool forward = true, backward = true;
         for (int i = 0; i < n; ++i) {
-            forward = forward && x[i] - x[0] < deadline[i];
-            backward = backward && x[n - 1] - x[i] < deadline[i];
+            forward = forward && (__int128)x[i] - x[0] < deadline[i];
+            backward = backward && (__int128)x[n - 1] - x[i] < deadline[i];
         }
         if (forward || backward) {
-            cout << x[n - 1] - x[0] << '\n';
+            cout << (long long)((__int128)x[n - 1] - x[0]) << '\n';
             continue;
         }
         for (int len = 2; len <= n; ++len) {
             vector<long long> nl(n, inf), nr(n, inf);
             bool reachable = false;
             for (int l = 0, r = len - 1; r < n; ++l, ++r) {
-                long long a = min(left[l + 1] + x[l + 1] - x[l], right[l + 1] + x[r] - x[l]);
-                long long b = min(left[l] + x[r] - x[l], right[l] + x[r] - x[r - 1]);
+                long long a = min(advance(left[l + 1], (__int128)x[l + 1] - x[l]),
+                                  advance(right[l + 1], (__int128)x[r] - x[l]));
+                long long b = min(advance(left[l], (__int128)x[r] - x[l]),
+                                  advance(right[l], (__int128)x[r] - x[r - 1]));
                 if (a < deadline[l]) {
                     nl[l] = a;
                     reachable = true;
@@ -744,12 +752,12 @@ int main() {
     python: String.raw`import sys
 
 it = iter(map(int, sys.stdin.buffer.read().split()))
-INF = 10**60
 for n in it:
     x, deadline = [], []
     for _ in range(n):
         x.append(next(it))
         deadline.append(next(it))
+    INF = max(0, max(deadline)) + 1
     if all(v - x[0] < d for v, d in zip(x, deadline)) or all(
         x[-1] - v < d for v, d in zip(x, deadline)
     ):
@@ -763,8 +771,10 @@ for n in it:
         reachable = False
         for l in range(size):
             r = l + length - 1
-            a = min(left[l + 1] + x[l + 1] - x[l], right[l + 1] + x[r] - x[l])
-            b = min(left[l] + x[r] - x[l], right[l] + x[r] - x[r - 1])
+            a = min(left[l + 1] + x[l + 1] - x[l] if left[l + 1] != INF else INF,
+                    right[l + 1] + x[r] - x[l] if right[l + 1] != INF else INF)
+            b = min(left[l] + x[r] - x[l] if left[l] != INF else INF,
+                    right[l] + x[r] - x[r - 1] if right[l] != INF else INF)
             if a < deadline[l]:
                 nl[l] = a
                 reachable = True
