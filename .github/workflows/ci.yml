@@ -68,6 +68,11 @@ jobs:
           CPE_TEST_PRODUCTION: "1"
         run: npm run test:cpe-course
 
+      - name: Course layout integration tests
+        env:
+          COURSE_LAYOUT_TEST_PRODUCTION: "1"
+        run: npm run test:course-layout
+
       - name: TOI potential course integration tests
         env:
           TOI_POTENTIAL_TEST_PRODUCTION: "1"
