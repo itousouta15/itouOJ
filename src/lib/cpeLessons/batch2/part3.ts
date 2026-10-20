@@ -338,7 +338,7 @@ for _ in range(next(it)):
     ],
     complexity: "每筆時間 O(N+K)，空間 O(N+K)。",
     pitfall: "縮窗要先記錄合法長度，再移除左端；頻率降至0才失去一種必要值。",
-    traceLabel: "示意：N=6、M=5、K=3，序列1、2、3、2、4、5",
+    traceLabel: "示意：N=6、M=5、K=3，序列1、2、3、2、3、4",
     trace: [
       {
         title: "加入1、2",
@@ -363,7 +363,7 @@ for _ in range(next(it)):
       {
         title: "縮小與後續",
         description: "移去1後失效；後面再無1，最佳保持3。",
-        cells: ["2", "3", "2", "4", "5"],
+        cells: ["2", "3", "2", "3", "4"],
         active: [0, 1, 2, 3, 4],
         variables: [
           ["涵蓋種類", "2"],
