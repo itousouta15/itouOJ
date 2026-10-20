@@ -13,6 +13,7 @@ import ProblemWorkspace from "@/components/ProblemWorkspace";
 import { markdownSnippet } from "@/lib/textSnippet";
 import { PROBLEM_CODE_RE } from "@/lib/problemCode";
 import { getLessonCourseTitles } from "@/lib/courseLessons";
+import { getCpeLessonHref } from "@/lib/cpeCourse";
 
 export const dynamic = "force-dynamic";
 
@@ -134,7 +135,7 @@ export default async function ProblemPage({
             lessonHref={
               lessonCourse
                 ? `/courses/${lessonCourse.courseId}/lessons/${problemCode}`
-                : undefined
+                : getCpeLessonHref(problemCode, problem.tags.map((pt) => pt.tag.name))
             }
             adminHref={
               session?.role === "ADMIN"
