@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 
 type Snapshot = { deployed: string | null; latest: string | null;
   job: { state: string; phase?: string; target?: string | null; startedAt?: string; updatedAt?: string;
-    message?: string | null; runId?: string }; logs: string };
+    message?: string | null; runId?: string }; logs: string;
+  previous?: { state: string; target?: string | null; runId?: string } | null; previousLogs?: string };
 const phaseNames: Record<string, string> = {
   queued: "等待 GitHub Actions", claimed: "已領取工作", packaging: "打包中",
   uploading: "上傳中", verifying: "正式站建置與驗證中", done: "完成",
@@ -77,6 +78,16 @@ export default function AdminDeployment() {
       <pre className="mono max-h-96 overflow-auto whitespace-pre-wrap break-words text-xs text-dim"
         aria-label="部署執行紀錄">{snapshot?.logs || "目前沒有部署紀錄；GitHub 建置階段請看 Actions 紀錄。"}</pre>
     </div>
+    {snapshot?.previous && <div className="card mt-4 p-4">
+      <h2 className="mb-2 font-semibold">前一次部署紀錄</h2>
+      <p className="mb-2 text-sm text-dim">{snapshot.previous.state}：<span className="mono">{snapshot.previous.target ?? "—"}</span></p>
+      {snapshot.previous.runId && <a className="mb-3 inline-block text-sm text-blue hover:underline"
+        href={`https://github.com/itousouta15/itouOJ/actions/runs/${snapshot.previous.runId}`} target="_blank" rel="noopener noreferrer">
+        查看前一次 GitHub Actions 紀錄 →
+      </a>}
+      <pre className="mono max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs text-dim"
+        aria-label="前一次部署執行紀錄">{snapshot.previousLogs || "沒有保存正式站輸出。"}</pre>
+    </div>}
     {error && <p className="card mt-4 p-4 text-sm text-red" role="alert">{error}</p>}
   </section>;
 }

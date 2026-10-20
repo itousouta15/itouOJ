@@ -5,9 +5,27 @@ type Session = { role: string } | null;
 const revision = /^[a-f0-9]{40}$/;
 type DeployJob = { state: string; phase?: string; target?: string | null; startedAt?: string;
   updatedAt?: string; message?: string | null; runId?: string };
+const safeJob = (value: unknown): DeployJob => {
+  const job = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  return { state: typeof job.state === "string" ? job.state : "unknown",
+    phase: typeof job.phase === "string" ? job.phase : undefined,
+    target: typeof job.target === "string" && revision.test(job.target) ? job.target : null,
+    startedAt: typeof job.startedAt === "string" ? job.startedAt : undefined,
+    updatedAt: typeof job.updatedAt === "string" ? job.updatedAt : undefined,
+    message: typeof job.message === "string" ? job.message.slice(0, 160) : null,
+    runId: typeof job.runId === "string" && /^[0-9]{1,20}$/.test(job.runId) ? job.runId : undefined };
+};
+export function deploymentSnapshot(data: unknown) {
+  const source = data && typeof data === "object" ? data as Record<string, unknown> : {};
+  return { deployed: typeof source.deployed === "string" && revision.test(source.deployed) ? source.deployed : null,
+    latest: typeof source.latest === "string" && revision.test(source.latest) ? source.latest : null,
+    job: safeJob(source.job), logs: typeof source.logs === "string" ? source.logs.slice(-32 * 1024) : "",
+    previous: source.previous ? safeJob(source.previous) : null,
+    previousLogs: typeof source.previousLogs === "string" ? source.previousLogs.slice(-32 * 1024) : "" };
+}
 
 export async function readDeployment(method: "GET" | "POST") {
-  return new Promise<{ deployed: string | null; latest: string | null; job: DeployJob; logs: string }>((resolve, reject) => {
+  return new Promise<ReturnType<typeof deploymentSnapshot>>((resolve, reject) => {
     const request = httpRequest({ socketPath: "/run/oj-service-control/control.sock", path: "/deployment", method }, (response) => {
       const chunks: Buffer[] = [];
       let size = 0;
@@ -19,24 +37,13 @@ export async function readDeployment(method: "GET" | "POST") {
       response.on("error", reject);
       response.on("end", () => {
         if (method === "POST") {
-          if (response.statusCode === 202) resolve({ deployed: null, latest: null, job: { state: "queued" }, logs: "" });
+          if (response.statusCode === 202) resolve(deploymentSnapshot({ job: { state: "queued" } }));
           else reject(new Error("Deployment request rejected"));
           return;
         }
         if (response.statusCode !== 200) return reject(new Error("Deployment controller unavailable"));
         try {
-          const data = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-          const job = data.job && typeof data.job === "object" ? data.job : {};
-          resolve({ deployed: revision.test(data.deployed) ? data.deployed : null,
-            latest: revision.test(data.latest) ? data.latest : null,
-            job: { state: typeof job.state === "string" ? job.state : "unknown",
-              phase: typeof job.phase === "string" ? job.phase : undefined,
-              target: revision.test(job.target) ? job.target : null,
-              startedAt: typeof job.startedAt === "string" ? job.startedAt : undefined,
-              updatedAt: typeof job.updatedAt === "string" ? job.updatedAt : undefined,
-              message: typeof job.message === "string" ? job.message.slice(0, 160) : null,
-              runId: typeof job.runId === "string" && /^[0-9]{1,20}$/.test(job.runId) ? job.runId : undefined },
-            logs: typeof data.logs === "string" ? data.logs.slice(-32 * 1024) : "" });
+          resolve(deploymentSnapshot(JSON.parse(Buffer.concat(chunks).toString("utf8"))));
         } catch { reject(new Error("Invalid deployment response")); }
       });
     });

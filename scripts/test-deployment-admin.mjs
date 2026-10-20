@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createControlServer, readDeployLogTail } from "../deploy/oj-service-control-server.mjs";
+import { archiveDeployment, createControlServer, readDeployLogTail } from "../deploy/oj-service-control-server.mjs";
 import { createDeployJobStore } from "../deploy/oj-deploy-job.mjs";
 import { isStrictlyNewer } from "../deploy/oj-compare-commit.mjs";
-import { createDeploymentAdminHandler } from "../src/lib/deploymentAdmin.ts";
+import { createDeploymentAdminHandler, deploymentSnapshot } from "../src/lib/deploymentAdmin.ts";
 import { accountNavGroups, navLinksFor } from "../src/lib/navLinks.ts";
 
 const request = (method = "GET", origin = "http://127.0.0.1") => new Request("http://127.0.0.1/api/admin/deployment", {
@@ -123,4 +123,24 @@ test("only a strict GitHub fast-forward can be deployed", async () => {
   assert.equal(await isStrictlyNewer(deployed, deployed, () => { throw new Error("must not fetch"); }), false);
   assert.equal(await isStrictlyNewer("invalid", candidate, () => { throw new Error("must not fetch"); }), false);
   await assert.rejects(() => isStrictlyNewer(deployed, candidate, async () => Response.json({}, { status: 404 })));
+});
+
+test("a new request preserves the previous log and only allowlisted fields reach admins", async (t) => {
+  const parent = join(tmpdir(), "opencode");
+  await mkdir(parent, { recursive: true });
+  const directory = await mkdtemp(join(parent, "deploy-log-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const last = { state: "succeeded", target: "a".repeat(40), runId: "39449310645", privateToken: "never-ship" };
+  await writeFile(join(directory, "status.json"), JSON.stringify(last));
+  await writeFile(join(directory, "build.log"), "Previous release verified\n");
+  archiveDeployment(directory);
+  await writeFile(join(directory, "status.json"), JSON.stringify({ state: "queued", target: "b".repeat(40) }));
+  await writeFile(join(directory, "build.log"), "Queued next release\n");
+  assert.deepEqual(JSON.parse(await readFile(join(directory, "previous-status.json"), "utf8")), last);
+  assert.equal(await readFile(join(directory, "previous.log"), "utf8"), "Previous release verified\n");
+  const safe = deploymentSnapshot({ previous: last, previousLogs: readDeployLogTail(join(directory, "previous.log")),
+    job: { state: "queued" }, logs: "Queued next release\n" });
+  assert.equal(safe.previous.runId, "39449310645");
+  assert.equal(safe.previousLogs, "Previous release verified\n");
+  assert.doesNotMatch(JSON.stringify(safe), /never-ship|privateToken/);
 });

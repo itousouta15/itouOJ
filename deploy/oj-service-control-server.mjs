@@ -1,7 +1,7 @@
 // This file is installed root-owned outside the website's writable app tree.
 import { execFile } from "node:child_process";
 import { createServer } from "node:http";
-import { chmodSync, closeSync, fstatSync, openSync, readFileSync, readSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, closeSync, copyFileSync, fstatSync, openSync, readFileSync, readSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -30,6 +30,18 @@ export function readDeployLogTail(path, limit = 32 * 1024) {
     if (error.code === "ENOENT") return "";
     throw error;
   } finally { if (fd !== undefined) closeSync(fd); }
+}
+
+export function archiveDeployment(directory) {
+  try {
+    copyFileSync(`${directory}/status.json`, `${directory}/previous-status.next`);
+    renameSync(`${directory}/previous-status.next`, `${directory}/previous-status.json`);
+    try { copyFileSync(`${directory}/build.log`, `${directory}/previous.log`); }
+    catch (error) {
+      if (error.code !== "ENOENT") throw error;
+      writeFileSync(`${directory}/previous.log`, "", { mode: 0o600 });
+    }
+  } catch (error) { if (error.code !== "ENOENT") throw error; }
 }
 
 export function createControlServer(perform, deployment) {
@@ -93,16 +105,19 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
   const deployment = {
     async status() {
-      let deployed = null, job = { state: "idle" };
+      let deployed = null, job = { state: "idle" }, previous = null;
       try { const value = readFileSync(`${deployState}/revision`, "utf8").trim(); if (revisionPattern.test(value)) deployed = value; }
       catch { /* Initial bootstrap has not installed a revision marker. */ }
       try { job = JSON.parse(readFileSync(`${deployState}/status.json`, "utf8")); }
       catch { /* There has been no queued deployment yet. */ }
+      try { previous = JSON.parse(readFileSync(`${deployState}/previous-status.json`, "utf8")); }
+      catch { /* There has not been a second deployment yet. */ }
       if (["queued", "running"].includes(job.state) &&
         Date.now() - Date.parse(job.updatedAt ?? job.startedAt) > 2 * 60 * 60_000) {
         job = { ...job, state: "interrupted", message: "部署等候或執行逾時，請查看 GitHub Actions 紀錄。" };
       }
-      return { deployed, latest: await githubRevision(), job, logs: readDeployLogTail(`${deployState}/build.log`) };
+      return { deployed, latest: await githubRevision(), job, logs: readDeployLogTail(`${deployState}/build.log`),
+        previous, previousLogs: readDeployLogTail(`${deployState}/previous.log`) };
     },
     async start() {
       const { deployed, latest: available, job } = await this.status();
@@ -110,6 +125,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         throw new Error("No newer release available");
       }
       if (!(await isStrictlyNewer(deployed, available))) throw new Error("GitHub master is not newer than the deployed revision");
+      archiveDeployment(deployState);
       const queued = { state: "queued", phase: "queued", target: available, startedAt: new Date().toISOString() };
       writeFileSync(`${deployState}/build.log`, `[${queued.startedAt}] 等待 GitHub Actions 領取 ${available}\n`, { mode: 0o600 });
       writeFileSync(`${deployState}/status.next`, JSON.stringify(queued), { mode: 0o600 });
