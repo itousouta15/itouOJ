@@ -40,6 +40,8 @@ Git URL、指令或提交。Actions 領取後會驗證提交仍在 GitHub `maste
    ```
 
    權杖過期時在同一路徑更新即可，不需重啟網站。
+   若日誌出現 `GitHub HTTP 403`，請確認 Actions 權限設成 **Read and write**；
+   **Read** 只能查看 workflow，不能觸發部署。
 4. 按管理頁的部署按鈕，或在 GitHub 手動執行 `Deploy requested GitHub release`
    workflow 讓已排入的工作啟動；工作沒有排入時不會部署。
 

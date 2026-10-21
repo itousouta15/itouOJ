@@ -161,5 +161,6 @@ test("instant trigger dispatches only the fixed master workflow without exposing
     return new Response(null, { status: 204 });
   });
   assert.equal(calls, 1);
-  await assert.rejects(() => dispatchDeployment(secret, async () => new Response(null, { status: 403 })));
+  await assert.rejects(() => dispatchDeployment(secret, async () => new Response(null, { status: 403 })),
+    (error) => error.status === 403 && !error.message.includes(secret));
 });

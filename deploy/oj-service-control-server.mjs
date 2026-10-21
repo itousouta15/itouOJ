@@ -54,7 +54,7 @@ export async function dispatchDeployment(token, fetcher = fetch) {
   });
   if (response.status !== 204) {
     await response.body?.cancel();
-    throw new Error(`Workflow dispatch HTTP ${response.status}`);
+    throw Object.assign(new Error("Workflow dispatch rejected"), { status: response.status });
   }
   await response.body?.cancel();
 }
@@ -159,8 +159,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         appendFileSync(`${deployState}/build.log`, `[${new Date().toISOString()}] 已要求 GitHub Actions 立即啟動\n`);
         return { queued: true, triggerMode: "instant" };
       } catch (error) {
-        console.error(JSON.stringify({ event: "deploy.dispatch_failed", error: error instanceof Error ? error.name : "Unknown" }));
-        appendFileSync(`${deployState}/build.log`, `[${new Date().toISOString()}] 立即觸發未成功，保留工作等待排程接手\n`);
+        const code = Number.isInteger(error?.status) ? error.status : null;
+        console.error(JSON.stringify({ event: "deploy.dispatch_failed", status: code,
+          error: error instanceof Error ? error.name : "Unknown" }));
+        appendFileSync(`${deployState}/build.log`, `[${new Date().toISOString()}] 立即觸發未成功（${code ? `GitHub HTTP ${code}` : "連線錯誤"}），保留工作等待排程接手\n`);
         return { queued: true, triggerMode: "scheduled" };
       }
     },
