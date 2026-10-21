@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { archiveDeployment, createControlServer, readDeployLogTail } from "../deploy/oj-service-control-server.mjs";
+import { archiveDeployment, createControlServer, dispatchDeployment, readDeployLogTail } from "../deploy/oj-service-control-server.mjs";
 import { createDeployJobStore } from "../deploy/oj-deploy-job.mjs";
 import { isStrictlyNewer } from "../deploy/oj-compare-commit.mjs";
 import { createDeploymentAdminHandler, deploymentSnapshot } from "../src/lib/deploymentAdmin.ts";
@@ -17,8 +17,8 @@ test("only current admins may see versions or start a same-origin deployment", a
   let session = null, reads = 0, starts = 0;
   const handler = createDeploymentAdminHandler({ getSession: async () => session,
     getStatus: async () => { reads++; return { deployed: "a".repeat(40), latest: "b".repeat(40),
-      job: { state: "idle", runId: "39439085504" }, logs: "Built and verified" }; },
-    start: async () => { starts++; return { deployed: null, latest: null, job: { state: "queued" }, logs: "" }; },
+      job: { state: "idle", runId: "39439085504" }, logs: "Built and verified", triggerMode: "instant" }; },
+    start: async () => { starts++; return { deployed: null, latest: null, job: { state: "queued" }, logs: "", triggerMode: "instant" }; },
   });
   for (session of [null, { role: "USER" }]) {
     assert.equal((await handler(request())).status, 403);
@@ -39,7 +39,9 @@ test("only current admins may see versions or start a same-origin deployment", a
   }
   assert.equal((await handler(request("PUT"))).status, 405);
   assert.equal(starts, 0);
-  assert.equal((await handler(request("POST"))).status, 202);
+  const queued = await handler(request("POST"));
+  assert.equal(queued.status, 202);
+  assert.equal((await queued.json()).triggerMode, "instant");
   assert.equal(starts, 1);
   session = { role: "USER" };
   assert.equal((await handler(request("POST"))).status, 403);
@@ -64,8 +66,8 @@ test("deployment route never returns controller error details, and navigation is
 test("local controller dispatches only its fixed deployment endpoint", async (t) => {
   let starts = 0;
   const server = createControlServer(async () => { throw new Error("service not used"); }, {
-    status: async () => ({ deployed: "a".repeat(40), latest: "b".repeat(40), job: { state: "idle" }, logs: "local output" }),
-    start: async () => { starts++; },
+    status: async () => ({ deployed: "a".repeat(40), latest: "b".repeat(40), job: { state: "idle" }, logs: "local output", triggerMode: "instant" }),
+    start: async () => { starts++; return { queued: true, triggerMode: "instant" }; },
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
@@ -74,7 +76,9 @@ test("local controller dispatches only its fixed deployment endpoint", async (t)
   assert.equal((await (await fetch(`${base}/deployment`)).json()).logs, "local output");
   assert.equal((await fetch(`${base}/deployment?revision=malicious`, { method: "POST" })).status, 405);
   assert.equal(starts, 0);
-  assert.equal((await fetch(`${base}/deployment`, { method: "POST" })).status, 202);
+  const queued = await fetch(`${base}/deployment`, { method: "POST" });
+  assert.equal(queued.status, 202);
+  assert.equal((await queued.json()).triggerMode, "instant");
   assert.equal(starts, 1);
 });
 
@@ -143,4 +147,19 @@ test("a new request preserves the previous log and only allowlisted fields reach
   assert.equal(safe.previous.runId, "39449310645");
   assert.equal(safe.previousLogs, "Previous release verified\n");
   assert.doesNotMatch(JSON.stringify(safe), /never-ship|privateToken/);
+});
+
+test("instant trigger dispatches only the fixed master workflow without exposing its token", async () => {
+  const secret = "github_pat_test_only_abcdefghijklmnopqrstuvwxyz";
+  let calls = 0;
+  await dispatchDeployment(secret, async (url, options) => {
+    calls++;
+    assert.equal(url, "https://api.github.com/repos/itousouta15/itouOJ/actions/workflows/deploy.yml/dispatches");
+    assert.equal(options.method, "POST");
+    assert.equal(options.headers.Authorization, `Bearer ${secret}`);
+    assert.deepEqual(JSON.parse(options.body), { ref: "master" });
+    return new Response(null, { status: 204 });
+  });
+  assert.equal(calls, 1);
+  await assert.rejects(() => dispatchDeployment(secret, async () => new Response(null, { status: 403 })));
 });

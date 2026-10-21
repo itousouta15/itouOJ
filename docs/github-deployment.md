@@ -1,10 +1,12 @@
 # GitHub master 一鍵部署
 
 管理員在 `/admin/deployment` 可比較正式站版本與 GitHub `master`，按一下排入
-**當下看到的確切提交**。GitHub Actions（`.github/workflows/deploy.yml`）每 5 分鐘
-檢查一次；有待部署版本才下載原始碼、用 Emscripten 4.0.23 建置喵++ Wasm、將
-兩份壓縮檔傳至伺服器，並呼叫既有 `deploy/remote-release.sh` 做建置、測試、切換和
-必要時的回復。網站不保存 GitHub 個人權杖，也不在正式站上編譯 Wasm。
+**當下看到的確切提交**。設定專用 GitHub Actions 權杖後，按鈕會立即觸發 workflow；
+若尚未設定或即時觸發暫時失敗，工作仍會留在佇列等待 GitHub Actions
+（`.github/workflows/deploy.yml`）的排程接手。Actions 有待部署版本才下載原始碼、
+用 Emscripten 4.0.23 建置喵++ Wasm、將兩份壓縮檔傳至伺服器，並呼叫既有
+`deploy/remote-release.sh` 做建置、測試、切換和必要時的回復。網站程序不讀取
+GitHub 權杖，也不在正式站上編譯 Wasm。
 
 站上 `online-judge-control` 只開放固定的 `/deployment` 請求，不接受從網頁指定
 Git URL、指令或提交。Actions 領取後會驗證提交仍在 GitHub `master` 歷史中；
@@ -22,8 +24,24 @@ Git URL、指令或提交。Actions 領取後會驗證提交仍在 GitHub `maste
    - `OJ_DEPLOY_KNOWN_HOSTS`：已核對指紋的正式站 SSH 主機公鑰紀錄。
 2. 先用 `deploy/deploy.ps1` 部署含此功能的提交，腳本會安裝 root-owned 的排程
    狀態程式，並於成功後寫入正式站提交編號。
-3. 按管理頁的部署按鈕，或在 GitHub 手動執行 `Deploy requested GitHub release`
-   workflow 讓已排入的工作立即啟動；工作沒有排入時不會部署。
+3. 如需按鈕後立即執行，在 GitHub 建立**僅限此 repository**、具有 **Actions:
+   Read and write** 權限的細粒度 Personal Access Token。由主機 root 將權杖存到
+   `/etc/online-judge/deploy-dispatch-token`（root 擁有，`0600`；目錄 `0700`），
+   不要放入網站 `.env`、Git、瀏覽器或對話內容。控制服務會用它只呼叫固定的
+   `deploy.yml`、固定的 `master`；沒有權杖時管理頁會顯示排程模式。
+   在正式站以 root 登入後，可用下列指令讓輸入不出現在 shell history：
+
+   ```sh
+   install -d -m 700 /etc/online-judge
+   read -rs -p 'GitHub Actions token: ' DEPLOY_TOKEN; printf '\n'
+   install -m 600 /dev/null /etc/online-judge/deploy-dispatch-token
+   printf '%s' "$DEPLOY_TOKEN" > /etc/online-judge/deploy-dispatch-token
+   unset DEPLOY_TOKEN
+   ```
+
+   權杖過期時在同一路徑更新即可，不需重啟網站。
+4. 按管理頁的部署按鈕，或在 GitHub 手動執行 `Deploy requested GitHub release`
+   workflow 讓已排入的工作啟動；工作沒有排入時不會部署。
 
 GitHub Actions 的來源必須包含目前正式站版本；排入時及正式切換前都會檢查
 目標提交確實比目前版本新。若兩條歷史分叉或目標較舊，部署會停止，不會

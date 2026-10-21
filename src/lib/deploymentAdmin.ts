@@ -19,6 +19,7 @@ export function deploymentSnapshot(data: unknown) {
   const source = data && typeof data === "object" ? data as Record<string, unknown> : {};
   return { deployed: typeof source.deployed === "string" && revision.test(source.deployed) ? source.deployed : null,
     latest: typeof source.latest === "string" && revision.test(source.latest) ? source.latest : null,
+    triggerMode: source.triggerMode === "instant" ? "instant" as const : "scheduled" as const,
     job: safeJob(source.job), logs: typeof source.logs === "string" ? source.logs.slice(-32 * 1024) : "",
     previous: source.previous ? safeJob(source.previous) : null,
     previousLogs: typeof source.previousLogs === "string" ? source.previousLogs.slice(-32 * 1024) : "" };
@@ -37,7 +38,10 @@ export async function readDeployment(method: "GET" | "POST") {
       response.on("error", reject);
       response.on("end", () => {
         if (method === "POST") {
-          if (response.statusCode === 202) resolve(deploymentSnapshot({ job: { state: "queued" } }));
+          if (response.statusCode === 202) {
+            try { resolve(deploymentSnapshot({ ...JSON.parse(Buffer.concat(chunks).toString("utf8")), job: { state: "queued" } })); }
+            catch { reject(new Error("Invalid deployment response")); }
+          }
           else reject(new Error("Deployment request rejected"));
           return;
         }
@@ -67,8 +71,8 @@ export function createDeploymentAdminHandler(options: {
       if (request.method === "GET") return json(await options.getStatus());
       if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
       if (!isAdminSameOrigin(request)) return json({ error: "來源不符" }, 403);
-      await options.start();
-      return json({ queued: true }, 202);
+      const result = await options.start();
+      return json({ queued: true, triggerMode: result.triggerMode }, 202);
     } catch (error) {
       console.error(JSON.stringify({ event: "deploy.admin.failed", error: error instanceof Error ? error.name : "Unknown" }));
       return json({ error: "目前無法讀取或啟動部署，請檢查伺服器日誌" }, 503);

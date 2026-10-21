@@ -1,7 +1,7 @@
 // This file is installed root-owned outside the website's writable app tree.
 import { execFile } from "node:child_process";
 import { createServer } from "node:http";
-import { chmodSync, closeSync, copyFileSync, fstatSync, openSync, readFileSync, readSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, closeSync, copyFileSync, fstatSync, openSync, readFileSync, readSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -10,6 +10,7 @@ import { isStrictlyNewer } from "./oj-compare-commit.mjs";
 const run = promisify(execFile);
 const socketPath = "/run/oj-service-control/control.sock";
 const deployState = "/var/lib/oj-git-deploy";
+const dispatchTokenPath = "/etc/online-judge/deploy-dispatch-token";
 const revisionPattern = /^[a-f0-9]{40}$/;
 const allowed = new Set([
   "website:restart", "proxy:start", "proxy:reload", "worker:start", "worker:restart",
@@ -44,6 +45,20 @@ export function archiveDeployment(directory) {
   } catch (error) { if (error.code !== "ENOENT") throw error; }
 }
 
+export async function dispatchDeployment(token, fetcher = fetch) {
+  const response = await fetcher("https://api.github.com/repos/itousouta15/itouOJ/actions/workflows/deploy.yml/dispatches", {
+    method: "POST", redirect: "error", signal: AbortSignal.timeout(15_000),
+    headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json", "User-Agent": "itouOJ-deployment", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ ref: "master" }),
+  });
+  if (response.status !== 204) {
+    await response.body?.cancel();
+    throw new Error(`Workflow dispatch HTTP ${response.status}`);
+  }
+  await response.body?.cancel();
+}
+
 export function createControlServer(perform, deployment) {
   return createServer(async (request, response) => {
     const reply = (status, body) => {
@@ -54,7 +69,7 @@ export function createControlServer(perform, deployment) {
       if (!deployment) return reply(404);
       try {
         if (request.method === "GET") return reply(200, await deployment.status());
-        if (request.method === "POST") { await deployment.start(); return reply(202, { queued: true }); }
+        if (request.method === "POST") return reply(202, await deployment.start());
       } catch (error) {
         console.error(JSON.stringify({ event: "deploy.control_failed", error: error instanceof Error ? error.name : "Unknown" }));
         return reply(503, { error: "Deployment controller unavailable" });
@@ -89,6 +104,12 @@ export function createControlServer(perform, deployment) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   let latest = { revision: null, checkedAt: 0 };
   let pendingCheck;
+  function dispatchToken() {
+    try {
+      const value = readFileSync(dispatchTokenPath, "utf8").trim();
+      return /^[A-Za-z0-9_]{20,512}$/.test(value) ? value : null;
+    } catch (error) { if (error.code === "ENOENT") return null; throw error; }
+  }
   async function githubRevision() {
     if (Date.now() - latest.checkedAt < 60_000) return latest.revision;
     pendingCheck ??= (async () => {
@@ -117,7 +138,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         job = { ...job, state: "interrupted", message: "部署等候或執行逾時，請查看 GitHub Actions 紀錄。" };
       }
       return { deployed, latest: await githubRevision(), job, logs: readDeployLogTail(`${deployState}/build.log`),
-        previous, previousLogs: readDeployLogTail(`${deployState}/previous.log`) };
+        previous, previousLogs: readDeployLogTail(`${deployState}/previous.log`),
+        triggerMode: dispatchToken() ? "instant" : "scheduled" };
     },
     async start() {
       const { deployed, latest: available, job } = await this.status();
@@ -130,6 +152,17 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       writeFileSync(`${deployState}/build.log`, `[${queued.startedAt}] 等待 GitHub Actions 領取 ${available}\n`, { mode: 0o600 });
       writeFileSync(`${deployState}/status.next`, JSON.stringify(queued), { mode: 0o600 });
       renameSync(`${deployState}/status.next`, `${deployState}/status.json`);
+      const token = dispatchToken();
+      if (!token) return { queued: true, triggerMode: "scheduled" };
+      try {
+        await dispatchDeployment(token);
+        appendFileSync(`${deployState}/build.log`, `[${new Date().toISOString()}] 已要求 GitHub Actions 立即啟動\n`);
+        return { queued: true, triggerMode: "instant" };
+      } catch (error) {
+        console.error(JSON.stringify({ event: "deploy.dispatch_failed", error: error instanceof Error ? error.name : "Unknown" }));
+        appendFileSync(`${deployState}/build.log`, `[${new Date().toISOString()}] 立即觸發未成功，保留工作等待排程接手\n`);
+        return { queued: true, triggerMode: "scheduled" };
+      }
     },
   };
   const server = createControlServer(async (service, action) => {

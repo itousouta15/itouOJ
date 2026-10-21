@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 type Snapshot = { deployed: string | null; latest: string | null;
+  triggerMode: "instant" | "scheduled";
   job: { state: string; phase?: string; target?: string | null; startedAt?: string; updatedAt?: string;
     message?: string | null; runId?: string }; logs: string;
   previous?: { state: string; target?: string | null; runId?: string } | null; previousLogs?: string };
@@ -18,6 +19,7 @@ const resultNames: Record<string, string> = {
 export default function AdminDeployment() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [refresh, setRefresh] = useState(0);
 
@@ -42,11 +44,13 @@ export default function AdminDeployment() {
   }, [refresh]);
 
   async function start() {
-    setBusy(true); setError(null);
+    setBusy(true); setError(null); setMessage(null);
     try {
       const response = await fetch("/api/admin/deployment", { method: "POST", credentials: "same-origin", cache: "no-store" });
       if (!response.ok) throw new Error(response.status === 403 ? "管理員登入已失效，請重新登入。" : "部署無法開始，請查看伺服器日誌。");
+      const result = await response.json();
       setSnapshot((current) => current ? { ...current, job: { state: "queued" } } : current);
+      setMessage(result.triggerMode === "instant" ? "已要求 GitHub Actions 立即啟動。" : "已排入工作，等待 GitHub 排程接手。");
       setRefresh((value) => value + 1);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "部署無法開始。"); }
     finally { setBusy(false); }
@@ -55,7 +59,9 @@ export default function AdminDeployment() {
   const updating = snapshot?.job.state === "queued" || snapshot?.job.state === "running";
   const newer = !!snapshot?.deployed && !!snapshot?.latest && snapshot.deployed !== snapshot.latest;
   return <section aria-label="GitHub 部署">
-    <p className="mb-4 text-sm text-dim">比較正式站與 GitHub master 的已推送版本。按下按鈕後會排入該提交，GitHub Actions 通常在 5 分鐘內接手，建置與測試通過後才切換網站。</p>
+    <p className="mb-4 text-sm text-dim">比較正式站與 GitHub master 的已推送版本。按下按鈕後會排入該提交，GitHub Actions 負責建置與測試，通過後才切換網站。</p>
+    {snapshot && <p className="mb-4 text-sm text-dim">{snapshot.triggerMode === "instant" ? "即時觸發已設定：按下部署後會立即請 GitHub Actions 啟動。" :
+      "目前使用排程接手；若要按下後立即啟動，需設定專用 GitHub Actions 權杖。"}</p>}
     <div className="grid gap-3 md:grid-cols-2">
       <div className="card p-4"><p className="text-sm text-mute">正式站版本</p><p className="mono mt-2 break-all">{snapshot?.deployed ?? "尚無版本紀錄"}</p></div>
       <div className="card p-4"><p className="text-sm text-mute">GitHub master</p><p className="mono mt-2 break-all">{snapshot?.latest ?? "暫時無法查詢"}</p></div>
@@ -93,5 +99,6 @@ export default function AdminDeployment() {
         aria-label="前一次部署執行紀錄">{snapshot.previousLogs || "沒有保存正式站輸出。"}</pre>
     </div>}
     {error && <p className="card mt-4 p-4 text-sm text-red" role="alert">{error}</p>}
+    {message && <p className="card mt-4 p-4 text-sm text-dim" role="status">{message}</p>}
   </section>;
 }
