@@ -9,6 +9,7 @@ import { once } from "node:events";
 import { createServer } from "node:net";
 import Database from "better-sqlite3";
 import { SignJWT } from "jose";
+import { toiBeginnerProblemCatalog } from "../src/lib/toiBeginnerProblemCatalog.ts";
 
 const tempRoot = resolve(process.env.COURSE_LAYOUT_TEST_TEMP_ROOT || tmpdir());
 const directory = mkdtempSync(join(tempRoot, "itouoj-course-layout-http-"));
@@ -64,7 +65,7 @@ before(
     for (const [id, code, title, difficulty, type, isPublic] of [
       [6, "a006", "加總與迴圈", "easy", "PROGRAMMING", true],
       [29, "a029", "0/1 背包", "hard", "PROGRAMMING", true],
-      [86, "a086", "TOI 統計入門", "easy", "PROGRAMMING", true],
+      [86, "a086", "TOI 2026/03 新手組：湯圓", "easy", "PROGRAMMING", true],
       [458, "a458", "APCS 判斷入門", "easy", "PROGRAMMING", true],
       [900, "a900", "新增的未分類練習", "custom", "PROGRAMMING", true],
       [901, null, "觀念選擇題", "medium", "RECOGNITION", true],
@@ -131,6 +132,34 @@ before(
         },
       });
     }
+    await prisma.problem.createMany({
+      data: toiBeginnerProblemCatalog
+        .filter((problem) => problem.code !== "a086")
+        .map((problem) => ({
+          id: Number(problem.code.slice(1)),
+          order: Number(problem.code.slice(1)),
+          problemCode: problem.code,
+          title: problem.title,
+          statement: "Disposable full-curriculum fixture.",
+          isPublic: true,
+          type: "PROGRAMMING",
+        })),
+    });
+    await prisma.course.create({
+      data: {
+        id: 10,
+        title: "TOI 新手組 練習",
+        isPublic: true,
+        problems: {
+          create: [...toiBeginnerProblemCatalog]
+            .reverse()
+            .map((problem, order) => ({
+              problemId: Number(problem.code.slice(1)),
+              order,
+            })),
+        },
+      },
+    });
     const socket = createServer();
     socket.listen(0, "127.0.0.1");
     await once(socket, "listening");
@@ -304,6 +333,15 @@ test("known tutorials route to lessons; unmatched and recognition entries stay p
     assert.ok(html.includes("其他練習") || id === 2);
     const lesson = await request(`/courses/${id}/lessons/${code}`);
     assert.equal(lesson.status, 200);
+    if (code === "a086") {
+      const text = await lesson.text();
+      assert.ok(text.includes("湯圓需求、購買盒數與剩餘顆數"));
+      assert.ok(text.includes("2 7\n2 6"));
+      assert.ok(text.includes("sesameBoxes"));
+      assert.ok(text.includes("sesame_boxes"));
+      assert.ok(!text.includes("17 5"));
+      assert.ok(!text.includes("total / size"));
+    }
   }
 });
 
@@ -332,6 +370,25 @@ test("search by code, name and method combines filters, expands matches, and res
     1,
   );
   assert.equal(entryCount(await page("/courses/1?level=other")), 1);
+});
+
+test("programming tutorials never render for a recognition entry sharing a taught code", async () => {
+  await prisma.problem.update({
+    where: { id: 86 },
+    data: { type: "RECOGNITION" },
+  });
+  try {
+    assert.equal((await request("/courses/4/lessons/a086")).status, 404);
+    assert.equal(
+      (await request("/courses/4/lessons/a086", "admin")).status,
+      404,
+    );
+  } finally {
+    await prisma.problem.update({
+      where: { id: 86 },
+      data: { type: "PROGRAMMING" },
+    });
+  }
 });
 
 test("progress and member rankings use the whole course under filtering, not other users or duplicate ACs", async () => {
@@ -389,3 +446,52 @@ test("private course, hidden entries, join code and member data remain protected
   assert.ok(outsider.includes('aria-label="課程排行"'));
   assert.equal((await request("/courses/not-an-id")).status, 404);
 });
+
+test(
+  "all 135 beginner routes render their own source example and complete reference, with saved navigation order",
+  { timeout: 180000 },
+  async () => {
+    const { toiBeginnerLessons } =
+      await import("../src/lib/toiBeginnerLessons.ts");
+    const overview = await page("/courses/10");
+    assert.equal(entryCount(overview), 135);
+    const sequence = [...toiBeginnerProblemCatalog].reverse();
+    const escape = (value) =>
+      value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#x27;");
+    for (const [index, problem] of sequence.entries()) {
+      const code = problem.code;
+      assert.ok(overview.includes(`href="/courses/10/lessons/${code}"`), code);
+      const lesson = toiBeginnerLessons[code];
+      assert.equal(lesson?.code, code);
+      const html = rendered(await page(`/courses/10/lessons/${code}`));
+      assert.ok(html.includes(escape(lesson.goal)), `${code}: wrong goal`);
+      assert.ok(
+        html.includes(escape(lesson.sampleInput)),
+        `${code}: wrong source input`,
+      );
+      assert.ok(
+        html.includes(escape(lesson.sampleOutput)),
+        `${code}: wrong source output`,
+      );
+      assert.ok(
+        html.includes(escape(lesson.cpp)),
+        `${code}: wrong reference program`,
+      );
+      assert.ok(
+        !html.includes("toi-read-calculate"),
+        `${code}: generic topic fallback leaked`,
+      );
+      for (const neighbor of [sequence[index - 1], sequence[index + 1]])
+        if (neighbor)
+          assert.ok(
+            html.includes(`href="/courses/10/lessons/${neighbor.code}"`),
+            `${code}: saved navigation order changed`,
+          );
+    }
+  },
+);

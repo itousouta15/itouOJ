@@ -6,7 +6,7 @@ export async function resolve(specifier, context, nextResolve) {
   const target = specifier.startsWith("@/") ? new URL(specifier.slice(2), sourceRoot).href : specifier;
   try { return await nextResolve(target, context); }
   catch (error) {
-    if (error.code !== "ERR_MODULE_NOT_FOUND") throw error;
+    if (!["ERR_MODULE_NOT_FOUND", "ERR_UNSUPPORTED_DIR_IMPORT"].includes(error.code)) throw error;
     for (const extension of [".ts", ".tsx", ".js"]) {
       try { return await nextResolve(target + extension, context); } catch { /* try next extension */ }
     }

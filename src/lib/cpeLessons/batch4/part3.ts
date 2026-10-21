@@ -128,7 +128,7 @@ print('\n\n'.join(out))
     goal: "不用斜率，統一處理垂直線、平行線與交點。",
     explanation: [
       "兩線寫成 A+t·u 與 C+s·v，其中 u=B−A、v=D−C。二維叉積 cross(u,v)=ux·vy−uy·vx。若此值為 0，方向平行；再檢查 cross(C−A,u)，也是 0 才表示重合，否則沒有交點。輸入整數座標，可先用整數叉積精確分類。",
-      "若方向叉積不為 0，對等式取與 v 的叉積，得到 t=cross(C−A,v)/cross(u,v)，代回 A+t·u 算交點。最後才使用浮點數並輸出兩位小數，接近 0 的輸出先正規成 0，避免 −0.00。每批先印固定標題，全部案例後印 END OF OUTPUT；本題是直線，不限制 t 在 [0,1]。",
+      "若方向叉積不為 0，對等式取與 v 的叉積，得到 t=cross(C−A,v)/cross(u,v)，代回 A+t·u 算交點。最後才使用浮點數，先將各座標格式化為兩位小數，再把恰為 -0.00 的文字改成 0.00，避免負零而不另猜 epsilon。每批先印固定標題，全部案例後印 END OF OUTPUT；本題是直線，不限制 t 在 [0,1]。",
     ],
     complexity: "每筆時間與空間 O(1)。",
     pitfall: "用斜率相除會遇到垂直線；平行與重合必須分開判斷。",
@@ -158,10 +158,17 @@ print('\n\n'.join(out))
     ],
     cpp: String.raw`#include <iostream>
 #include <iomanip>
-#include <cmath>
+#include <sstream>
+#include <string>
 using namespace std;
 long long cross(long long ax, long long ay, long long bx, long long by) {
     return ax * by - ay * bx;
+}
+string formatCoordinate(long double value) {
+    ostringstream out;
+    out << fixed << setprecision(2) << value;
+    string text = out.str();
+    return text == "-0.00" ? "0.00" : text;
 }
 int main() {
     int tests;
@@ -177,11 +184,7 @@ int main() {
         else {
             long double t = (long double)cross(cx - ax, cy - ay, vx, vy) / den;
             long double x = ax + t * ux, y = ay + t * uy;
-            if (fabsl(x) < 0.0005L)
-                x = 0;
-            if (fabsl(y) < 0.0005L)
-                y = 0;
-            cout << fixed << setprecision(2) << "POINT " << x << ' ' << y << '\n';
+            cout << "POINT " << formatCoordinate(x) << ' ' << formatCoordinate(y) << '\n';
         }
     }
     cout << "END OF OUTPUT\n";
@@ -191,6 +194,11 @@ int main() {
 
 def cross(ax, ay, bx, by):
     return ax * by - ay * bx
+
+
+def format_coordinate(value):
+    text = f'{value:.2f}'
+    return '0.00' if text == '-0.00' else text
 
 
 it = iter(map(int, sys.stdin.buffer.read().split()))
@@ -204,11 +212,7 @@ for _ in range(next(it)):
     else:
         t = cross(cx - ax, cy - ay, vx, vy) / den
         x, y = ax + t * ux, ay + t * uy
-        if abs(x) < 0.0005:
-            x = 0.0
-        if abs(y) < 0.0005:
-            y = 0.0
-        print(f'POINT {x:.2f} {y:.2f}')
+        print(f'POINT {format_coordinate(x)} {format_coordinate(y)}')
 print('END OF OUTPUT')
 `,
   }),
