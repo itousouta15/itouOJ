@@ -69,7 +69,7 @@
         "list[list[current].next].next = list[current].next ;"
       ],
       "answerIndex": 1,
-      "explanation": "將 current 的下一個元素（list[current].next） 設為「下一個元素（list[current].next）的下一個元素」：list[list[current.next].next 即可。\n\n以題目中的例子說明：current 為 3（list[3]），list[3].next 為 1，則：\n    list[list[3].next].next = list[1].next = 2\n![image](https://hackmd.io/_uploads/rJDpYSRkC.png)\n（這只是移動串列的指標跳過 list[1]，實際上資料並未移除。）"
+      "explanation": "要移除 current 的下一個節點，應讓 list[current].next 直接指向被略過節點的下一個節點：\n\n```cpp\nlist[current].next = list[list[current].next].next;\n```\n\n外層的 if 已確認 list[current].next != -1，因此可以存取這個下一個節點。current 是陣列索引，必須先以 list[current] 取得節點，再讀取它的 next 欄位。\n\n以 current = 3 為例，原本的連結是 3 → 1 → 2 → -1。因為 list[3].next = 1、list[1].next = 2，賦值後 list[3].next = 2，連結變成 3 → 2 → -1，其餘節點的順序不變。這只改變連結、略過 list[1]，不會清除或搬動陣列中的資料。"
     },
     {
       "number": 12,
@@ -97,7 +97,7 @@
         "k = i;\ni = j;\nj = i % k;"
       ],
       "answerIndex": 0,
-      "explanation": "輾轉除法：以大數做為除數，小數做為被除數，若整除則小數就是最大公因數；若未整除就以原來的被除數（小數）做為除數，相除的餘數做為被除數，繼續做除法運算，直到整除為止。\n\n以題目中的數值為例：第一次除法「76/48」未整除數，餘數為28；第二次除法「48/28」未整除，餘數為20；……；第五次除法「8/4」整除，最大公因數為 4。\n\n程式碼中「while((i%j)!=0)」表示 i 為除數，j 為被除數，迴圈中為未整除時的處理程式碼，故其程序應為：\n(1) 求餘數 -> k = i % j;（第一個空格）\n(2) 以原來的被除數（小數）做為除數 -> i = j;（第二個空格）\n(3) 以相除的餘數做為被除數 -> j = k;（第三個空格）"
+      "explanation": "在 i % j 中，i 是被除數，j 是除數。例如 76 = 1 × 48 + 28，所以 76 % 48 = 28。\n\n輾轉相除法利用 gcd(i, j) = gcd(j, i % j)。餘數不為 0 時，要先保存餘數，再把原除數 j 當作新的被除數、把餘數當作新的除數：\n\n```cpp\nk = i % j;\ni = j;\nj = k;\n```\n\n必須先保存餘數；若先覆寫 i，就無法使用原本的 i 計算 i % j。\n\n| 被除數 i | 除數 j | 餘數 i % j |\n| --- | --- | --- |\n| 76 | 48 | 28 |\n| 48 | 28 | 20 |\n| 28 | 20 | 8 |\n| 20 | 8 | 4 |\n| 8 | 4 | 0 |\n\n當 i % j = 0 時，while 不再執行，當時的除數 j 就是最大公因數，因此最後輸出 4。"
     },
     {
       "number": 14,
