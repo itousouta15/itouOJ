@@ -61,6 +61,9 @@ jobs:
       - name: Exact tutorial coverage and source examples
         run: npm run test:tutorial-coverage
 
+      - name: Tutorial explanation migration and independent regressions
+        run: npm run test:tutorial-corrections
+
       - name: TOI beginner reference programs
         run: npm run test:toi-beginner-programs -- --python python3 --cxx g++
       - name: Bug report tests
