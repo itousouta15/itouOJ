@@ -1,0 +1,386 @@
+.figure {
+  border: 1px solid var(--bd2);
+  background: var(--inset);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.figureHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 1rem;
+  margin-bottom: 1.4rem;
+  color: var(--tx);
+  font-weight: 600;
+}
+
+.figureIndex,
+.nodeLabel,
+.stepPath,
+.module code,
+.operationNumber {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--blue);
+}
+
+.clientGrid,
+.serviceGrid,
+.branchGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.node {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--bd2);
+  background: var(--panel);
+}
+
+.node strong,
+.serverTitle strong,
+.serverGrid strong {
+  color: var(--tx);
+  line-height: 1.4;
+}
+
+.node > span:last-child,
+.serverGrid span,
+.figureNote,
+.branch p,
+.module p,
+.operations p {
+  color: var(--dim);
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 3rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.73rem;
+  color: var(--blue);
+}
+
+.connector span {
+  font-size: 1.3rem;
+}
+
+.serverNode {
+  border: 1px solid var(--purple);
+  background: color-mix(in srgb, var(--purple) 8%, var(--panel));
+  padding: 1rem;
+}
+
+.serverTitle {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.serverGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.serverGrid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.85rem;
+  border: 1px solid var(--bd);
+  background: var(--inset);
+}
+
+.figureNote {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--bd);
+  padding-top: 1rem;
+}
+
+.inlineCode {
+  margin: 0 0.3em;
+  color: var(--blue);
+  font-size: 0.85em;
+}
+
+.steps {
+  position: relative;
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps::before {
+  position: absolute;
+  top: 1.25rem;
+  bottom: 1.25rem;
+  left: 1.35rem;
+  width: 1px;
+  background: var(--purple);
+  content: "";
+}
+
+.step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.7rem minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: start;
+}
+
+.stepNumber {
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  border: 1px solid var(--purple);
+  border-radius: 50%;
+  background: var(--inset);
+  color: var(--blue);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+}
+
+.stepContent {
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--bd);
+  background: var(--panel);
+}
+
+.stepContent h3,
+.module h3,
+.operations h3 {
+  margin-top: 0.3rem;
+  color: var(--tx);
+  font-weight: 600;
+}
+
+.stepContent p {
+  margin-top: 0.25rem;
+  color: var(--dim);
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.stepPath,
+.module code {
+  overflow-wrap: anywhere;
+}
+
+.branchGrid {
+  margin-top: 0.85rem;
+}
+
+.branch {
+  padding: 1rem;
+  border-left: 2px solid var(--purple);
+  background: var(--inset);
+}
+
+.branch strong {
+  color: var(--tx);
+}
+
+.branch p {
+  margin-top: 0.35rem;
+}
+
+.moduleGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.module {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--bd);
+  background: var(--inset);
+}
+
+.module h3 {
+  margin-top: 0.5rem;
+}
+
+.module p {
+  margin-top: 0.35rem;
+}
+
+.domainHub,
+.domainStorage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--purple);
+  background: color-mix(in srgb, var(--purple) 8%, var(--panel));
+  padding: 0.85rem;
+  text-align: center;
+}
+
+.domainHub strong,
+.domainStorage strong {
+  color: var(--tx);
+}
+
+.domainStorage span:last-child {
+  color: var(--dim);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.domainLanes {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.domainLane {
+  min-width: 0;
+  border: 1px solid var(--bd2);
+  border-left: 3px solid var(--blue);
+  background: var(--panel);
+  padding: 0.7rem 0.85rem 0.85rem;
+}
+
+.domainLane:nth-child(3n + 2) {
+  border-left-color: var(--purple);
+}
+
+.domainLane:nth-child(3n) {
+  border-left-color: var(--green);
+}
+
+.domainLaneHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.domainLaneHeading span,
+.domainLaneHeading code,
+.domainStage span {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68rem;
+  color: var(--blue);
+}
+
+.domainLaneHeading strong {
+  color: var(--tx);
+  font-size: 0.88rem;
+}
+
+.domainLaneHeading code {
+  margin-left: auto;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.domainSequence {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1.5rem minmax(0, 1fr) 1.5rem minmax(0, 1fr);
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.domainStage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  min-height: 3.8rem;
+  justify-content: center;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--bd);
+  background: var(--inset);
+}
+
+.domainStage strong {
+  color: var(--tx);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.domainArrow {
+  color: var(--blue);
+  text-align: center;
+}
+
+.operations {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.operations > div {
+  min-width: 0;
+  border-top: 1px solid var(--purple);
+  padding-top: 0.8rem;
+}
+
+.operations p {
+  margin-top: 0.4rem;
+}
+
+@media (max-width: 640px) {
+  .clientGrid,
+  .serviceGrid,
+  .branchGrid,
+  .moduleGrid,
+  .operations {
+    grid-template-columns: 1fr;
+  }
+
+  .serverGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .clientGrid,
+  .serviceGrid {
+    gap: 0.5rem;
+  }
+
+  .node {
+    padding: 0.8rem;
+  }
+
+  .domainLaneHeading code {
+    width: 100%;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .domainSequence {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+
+  .domainStage {
+    min-height: 0;
+  }
+
+  .domainArrow {
+    line-height: 1;
+    transform: rotate(90deg);
+  }
+}

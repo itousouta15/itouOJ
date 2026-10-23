@@ -4,11 +4,12 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { avatarSrc } from "@/lib/avatar";
 import Avatar from "@/components/Avatar";
+import ProjectArchitecture from "./ProjectArchitecture";
 
 export const metadata: Metadata = {
   title: "關於 itouOJ",
   description:
-    "認識 itouOJ：由郭家睿（伊藤蒼太、itouSouta）開發的線上程式解題與競賽平台，提供題庫、即時評測、識讀練習與競賽功能。",
+    "認識 itouOJ：由郭家睿（伊藤蒼太、itouSouta）開發的線上程式解題與競賽平台，了解功能、專案架構、判題流程與開源資訊。",
   alternates: { canonical: "/about" },
 };
 
@@ -27,7 +28,7 @@ export default async function AboutPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="mx-auto max-w-5xl space-y-8">
       <header>
         <div className="flex items-center gap-4">
           <Image
@@ -72,6 +73,8 @@ export default async function AboutPage() {
           除了線上競賽，itouOJ 也提供 Windows 收件程式。網路不穩或暫時斷線時，選手可先在本機測試與暫存提交，恢復連線後再批次上傳到競賽伺服器。
         </p>
       </section>
+
+      <ProjectArchitecture />
 
       <section className="card space-y-4 p-6">
         <h2 className="section-title">作者與開源</h2>

@@ -67,11 +67,6 @@ export default function SiteLoader() {
     };
   }, []);
 
-  // 品牌字體在 idle 時載入；不要讓字體請求阻塞 logo 或頁面顯示。
-  useEffect(() => {
-    document.documentElement.classList.add("fonts-ready");
-  }, []);
-
   if (gone) return null;
 
   return (
@@ -87,7 +82,6 @@ export default function SiteLoader() {
           .motion-progress {
             animation: none !important;
           }
-          .logo { opacity: 1 !important; }
         `}</style>
       </noscript>
       <div
