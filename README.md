@@ -166,6 +166,8 @@ Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一�
 
    開啟 <http://localhost:3000>。新資料庫一開始沒有題目；可以在後台建立題目，或用 `node scripts/import-recognition-questions.mjs` 匯入隨專案提供的識讀題。
 
+   HackMD 三題教學實作練習（營火晚會、最短包含字串、考拉茲數字反推）可先用 `node scripts/import-hackmd-three-problems.mjs --check` 核對，再以 `--db 明確的SQLite路徑` 匯入；包含來源範例及非官方自製測資，詳見[匯入與驗證說明](docs/guides/hackmd-three-problems.md)。
+
 4. 註冊帳號後，若需要第一位管理員，在受信任的機器上執行（將 `YOUR_USERNAME` 換成帳號）：
 
    ```sh
