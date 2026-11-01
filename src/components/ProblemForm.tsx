@@ -16,7 +16,7 @@ interface TestCaseInput {
 
 interface SubtaskInput {
   points: number;
-  checkMode: "full" | "firstLine";
+  checkMode: "full" | "firstLine" | "float";
 }
 
 export interface ProblemFormData {
@@ -746,12 +746,13 @@ export default function ProblemForm({
                         value={s.checkMode}
                         onChange={(e) =>
                           setSubtask(i, {
-                            checkMode: e.target.value as "full" | "firstLine",
+                             checkMode: e.target.value as "full" | "firstLine" | "float",
                           })
                         }
                       >
                         <option value="full">完整比對輸出</option>
                         <option value="firstLine">只比對第一行</option>
+                        <option value="float">浮點數比對（絕對或相對誤差 ≤ 10⁻⁶）</option>
                       </select>
                     </div>
                     <button

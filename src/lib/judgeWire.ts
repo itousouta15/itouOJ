@@ -15,7 +15,7 @@ export const judgeJobSchema = z.object({
   recognition: z.object({ selectedIndex: integer.nullable(), answerIndex: integer.nullable() }).strict().nullable(),
   hasSubtasks: z.boolean(),
   groups: z.array(z.object({
-    points: integer.max(10000).nullable(), subtaskOrder: integer.nullable(), checkMode: z.enum(["full", "firstLine"]),
+    points: integer.max(10000).nullable(), subtaskOrder: integer.nullable(), checkMode: z.enum(["full", "firstLine", "float"]),
     tests: z.array(z.object({ id, input: z.string().max(JUDGE_JOB_BYTES), output: z.string().max(JUDGE_JOB_BYTES) }).strict()).max(1000),
   }).strict()).max(100),
 }).strict().refine((job) => job.groups.reduce((n, group) => n + group.tests.length, 0) <= 1000);

@@ -394,6 +394,20 @@ test("native report evidence distinguishes user exits, timeout, OOM, signals and
   });
 });
 
+test("floating-point judging accepts the stated tolerance without accepting non-numeric output", () => {
+  const execution = parseSandboxExecution(nativeRunResponse(nativeRunCases.find((sample) => sample.verdict === "AC"))).run;
+  const verdict = (text, expected = "3.0000000000", mode = "float") =>
+    runVerdict({ ...execution, stdout: text }, 1000, 64 * 1024 * 1024, expected, mode);
+  assert.equal(verdict("3\n"), "AC");
+  assert.equal(verdict("3.000002", "3"), "AC");
+  assert.equal(verdict("0.0000009", "0"), "AC");
+  assert.equal(verdict("3.000004", "3"), "WA");
+  assert.equal(verdict("3 4", "3"), "WA");
+  assert.equal(verdict("NaN"), "WA");
+  assert.equal(verdict("3x"), "WA");
+  assert.equal(verdict("3", "3.0000000000", "full"), "WA");
+});
+
 test("versioned compile failure uses the stage report, while compiler infrastructure is retried", async (t) => {
   const { db } = await judgeFixture(t);
   const job = await loadJudgeJob(db, 1);

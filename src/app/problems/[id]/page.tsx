@@ -202,6 +202,8 @@ export default async function ProblemPage({
                         <td className="table-cell text-dim">
                           {s.checkMode === "firstLine"
                             ? "只看輸出第一行是否正確"
+                            : s.checkMode === "float"
+                              ? "浮點數絕對或相對誤差 ≤ 10⁻⁶"
                             : "完整輸出需完全正確"}
                         </td>
                       </tr>

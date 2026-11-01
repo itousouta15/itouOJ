@@ -58,7 +58,7 @@ async function readJudgeJob(db: JobDatabase, submissionId: number): Promise<Judg
     hasSubtasks: problem.subtasks.length > 0,
     groups: problem.subtasks.length ? problem.subtasks.map((st) => ({
       points: st.points, subtaskOrder: st.order,
-      checkMode: st.checkMode === "firstLine" ? "firstLine" : "full",
+      checkMode: st.checkMode === "firstLine" || st.checkMode === "float" ? st.checkMode : "full",
       tests: problem.testCases.filter((tc) => tc.subtaskId === st.id).map(test),
     })) : [{ points: null, subtaskOrder: null, checkMode: "full", tests: problem.testCases.map(test) }],
   };

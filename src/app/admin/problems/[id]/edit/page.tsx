@@ -84,7 +84,7 @@ export default async function EditProblemPage({
           tagIds: problem.tags.map((t) => t.tagId),
           subtasks: problem.subtasks.map((s) => ({
             points: s.points,
-            checkMode: s.checkMode === "firstLine" ? "firstLine" : "full",
+            checkMode: s.checkMode === "firstLine" || s.checkMode === "float" ? s.checkMode : "full",
           })),
           testCases: problem.testCases.map((tc) => ({
             input: tc.input,

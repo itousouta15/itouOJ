@@ -32,7 +32,7 @@ export type JudgeJob = {
   groups: {
     points: number | null;
     subtaskOrder: number | null;
-    checkMode: "full" | "firstLine";
+    checkMode: "full" | "firstLine" | "float";
     tests: { id: number; input: string; output: string }[];
   }[];
 };
@@ -58,9 +58,21 @@ export function normalizeOutput(text: string): string {
     .map((line) => line.replace(/[ \t]+$/g, "")).join("\n").replace(/\n+$/g, "");
 }
 
+function floatOutputMatches(actual: string, expected: string): boolean {
+  const number = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+  const received = actual.trim().split(/\s+/);
+  const wanted = expected.trim().split(/\s+/);
+  return received.length === wanted.length && received.every((token, i) => {
+    if (!number.test(token) || !number.test(wanted[i])) return false;
+    const a = Number(token), b = Number(wanted[i]);
+    return Number.isFinite(a) && Number.isFinite(b) &&
+      Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b));
+  });
+}
+
 export function runVerdict(
   run: ExecutionPhase, timeLimitMs: number, _memoryLimitBytes: number,
-  expected: string, checkMode: "full" | "firstLine" = "full",
+  expected: string, checkMode: "full" | "firstLine" | "float" = "full",
 ): Verdict {
   if (run.termination) {
     switch (run.termination.cause) {
@@ -82,7 +94,9 @@ export function runVerdict(
   if (run.code !== 0) return "RE";
   const actual = normalizeOutput(run.stdout);
   const want = normalizeOutput(expected);
-  return (checkMode === "firstLine" ? actual.split("\n")[0] === want.split("\n")[0] : actual === want) ? "AC" : "WA";
+  const matches = checkMode === "firstLine" ? actual.split("\n")[0] === want.split("\n")[0]
+    : checkMode === "float" ? floatOutputMatches(actual, want) : actual === want;
+  return matches ? "AC" : "WA";
 }
 
 // Shared by execution and coordinator validation. Enforce complete, correctly

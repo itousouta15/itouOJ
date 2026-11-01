@@ -382,7 +382,8 @@ model Subtask {
   problem   Problem    @relation(fields: [problemId], references: [id], onDelete: Cascade)
   order     Int        @default(0) // 子題序號（1, 2, 3...），決定配分表與判題順序
   points    Int // 此子題配分；一題的所有子題配分總和應為 100
-  // full = 完整比對輸出；firstLine = 只比對輸出第一行，其餘內容忽略
+  // full = 完整比對輸出；firstLine = 只比對輸出第一行，其餘內容忽略；
+  // float = 數值輸出以絕對或相對誤差 1e-6 比對
   // （對應「只要某一行對就給分、後面明細寫錯不扣分」這種官方配分規則）
   checkMode String     @default("full")
   testCases TestCase[]

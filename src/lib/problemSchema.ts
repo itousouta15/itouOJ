@@ -37,7 +37,7 @@ export const problemSchema = z
       .array(
         z.object({
           points: z.number().int().min(1).max(100),
-          checkMode: z.enum(["full", "firstLine"]).default("full"),
+          checkMode: z.enum(["full", "firstLine", "float"]).default("full"),
         })
       )
       .default([]),
