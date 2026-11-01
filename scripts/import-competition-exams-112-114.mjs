@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import Database from "better-sqlite3";
-import { exams } from "../prisma/seed-data/competition-exams-112-114.mjs";
+import { exams, sampleOnlyNotice, customTestsNotice } from "../prisma/seed-data/competition-exams-112-114.mjs";
 import { nextProblemCode } from "./lib/problemCode.mjs";
 
 const args = process.argv.slice(2);
@@ -61,6 +61,7 @@ if (args.includes("--check")) {
     const test = db.prepare(`INSERT INTO TestCase (problemId, subtaskId, input, output, isSample, "order") VALUES (?, ?, ?, ?, 1, ?)`);
     const refreshStatement = db.prepare("UPDATE Problem SET statement = ? WHERE id = ?");
     const findTest = db.prepare("SELECT id FROM TestCase WHERE problemId = ? AND input = ? AND output = ?");
+    const hiddenCount = db.prepare("SELECT COUNT(*) AS value FROM TestCase WHERE problemId = ? AND isSample = 0");
     const findSubtask = db.prepare('SELECT id FROM Subtask WHERE problemId = ? ORDER BY "order" LIMIT 1');
     const nextTestOrder = db.prepare('SELECT COALESCE(MAX("order"), 0) AS value FROM TestCase WHERE problemId = ?');
     const result = db.transaction(() => {
@@ -74,12 +75,12 @@ if (args.includes("--check")) {
           `## 輸入格式\n\n${p.input}`,
           `## 輸出格式\n\n${p.output}`,
           `## 限制\n\n${p.limits}`,
-          `## 原始試題與評測範圍\n\n[閱讀「${exam.name}」原卷第 ${p.page} 頁（含圖表、評分細節）](${exam.pdf}#page=${p.page})。\n\n目前只有原卷公開範例可作為評測資料，**AC 僅表示通過公開範例，不代表通過正式競賽測資**。`,
+          `## 原始試題與評測範圍\n\n[閱讀「${exam.name}」原卷第 ${p.page} 頁（含圖表、評分細節）](${exam.pdf}#page=${p.page})。\n\n${sampleOnlyNotice}`,
         ].join("\n\n");
         const existing = find.get(title);
         if (existing) {
           if (!args.includes("--refresh")) { skipped.push({ title, ...existing }); continue; }
-          refreshStatement.run(statement, existing.id);
+          refreshStatement.run(hiddenCount.get(existing.id).value ? statement.replace(sampleOnlyNotice, customTestsNotice) : statement, existing.id);
           let missing = 0;
           let testOrder = nextTestOrder.get(existing.id).value;
           const subtaskId = findSubtask.get(existing.id)?.id ?? null;
@@ -92,7 +93,8 @@ if (args.includes("--check")) {
           continue;
         }
         const id = Number(insert.run(title, statement, p.difficulty, code, ++order).lastInsertRowid);
-        const subtaskId = exam.pdf === "/exams/114-national.pdf" && p.title.startsWith("G.")
+        const subtaskId = (exam.pdf === "/exams/114-national.pdf" && p.title.startsWith("G.")) ||
+          (exam.pdf === "/exams/112-zhongtou.pdf" && p.title === "遊樂場移動")
           ? Number(subtask.run(id).lastInsertRowid) : null;
         p.samples.forEach(([input, output], i) => test.run(id, subtaskId, input, output, i + 1));
         created.push({ title, id, code, samples: p.samples.length });

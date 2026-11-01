@@ -1,5 +1,7 @@
 // 逐題整理自使用者提供的三份試題 PDF。原始排版、圖示與完整敘述請見 public/exams/。
 // PDF 沒有正式測資；此處只保存原卷公開範例，匯入時會在題敘明示評測範圍。
+export const sampleOnlyNotice = "目前只有原卷公開範例可作為評測資料，**AC 僅表示通過公開範例，不代表通過正式競賽測資**。";
+export const customTestsNotice = "本站另以自製隱藏測資評測（**非官方測資**）；AC 僅表示通過本站目前的測資，不等於正式競賽成績。";
 const question = (title, page, description, input, output, limits, samples, difficulty = "medium") => ({
   title, page, description, input, output, limits, samples, difficulty,
 });
@@ -58,7 +60,7 @@ export const exams = [
       question("遊樂場移動", 12,
         "在 M×N 格點上，可沿水平或垂直相鄰格點走一單位距離，也可走 K 條雙向空橋。每條空橋的距離為端點的歐幾里得距離，先截斷至小數點後一位（不四捨五入）。求起點到終點最短步行距離。",
         "依序輸入 M N、起點座標、終點座標、空橋數 K，再輸入 K 行，每行四個整數表示空橋的兩個端點。",
-        "輸出最短距離；整數結果可只印整數。", "原卷未給 M、N、K 的數值上限。", [
+        "輸出最短距離；整數結果可只印整數。評測時以數值比對，容許絕對或相對誤差 10⁻⁶。", "原卷未給 M、N、K 的數值上限。", [
           ["6 7\n1 1\n6 5\n3\n3 1 5 4\n1 2 3 4\n4 4 6 5", "7"],
         ]),
       question("數字 N 的質因數乘積的排列順序", 13,
