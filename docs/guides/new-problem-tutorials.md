@@ -53,6 +53,10 @@ npm run test:new-problem-course
 Windows 上由 Node 呼叫既有 WSL `kali-linux`，C++ 程式僅在 Linux `/tmp` 編譯、執行；
 不產生或執行 Windows 測試執行檔。
 CI 以七個批次執行相同的 Linux 驗證。
+使用 `boost::multiprecision::cpp_int` 的 C++ 解法需要 Boost 標頭；
+CI 明確安裝 `libboost-dev`，評測主機的安裝步驟也已在 `sandbox-runner/README.md` 補上。
+其餘 183 份原先未使用大整數的程式已移除多餘的 Boost 引入。
+本次未修改正式評測機套件，也未驗證線上主機是否已具備這項依賴。
 加上 `--report <path>` 可保存逐題結果與兩種程式的 SHA-256；CI 會保存這些報告。
 若只修改個別題目，可用 `--codes b133,b233` 增量重驗。
 `scripts/summarize-new-problem-verification.mjs` 接受各批及增量報告的檔案路徑，

@@ -149,7 +149,7 @@ Java 已停止接受新提交；歷史判題資料仍保留。
 ## 建置與部署
 
 ```bash
-apt install libseccomp-dev libmicrohttpd-dev libcjson-dev build-essential
+apt install libseccomp-dev libmicrohttpd-dev libcjson-dev build-essential libboost-dev
 cd sandbox-runner && make        # 產出 jail、sandbox-server
 ```
 
@@ -193,7 +193,7 @@ Next.js 預設連線 `http://127.0.0.1:8091`，不同位置可設定 `INTERACTIV
 在專案的 `sandbox-runner` 目錄，另開 PowerShell 執行：
 
 ```powershell
-wsl -u root -- apt-get install -y gcc g++ libseccomp-dev python3 nodejs
+wsl -u root -- apt-get install -y gcc g++ libseccomp-dev libboost-dev python3 nodejs
 wsl -u root -- gcc -O2 -Wall -Wextra -o jail src/jail.c src/cgroup.c src/caps.c src/seccomp.c -lseccomp
 wsl -u root -- python3 dev-wsl.py
 ```
