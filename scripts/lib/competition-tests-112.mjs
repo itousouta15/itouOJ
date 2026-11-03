@@ -74,7 +74,7 @@ function vending(input) {
 function voting(input) {
   const lines = input.trim().split(/\r?\n/).map((s) => s.trim());
   const m = Number(lines[0]), n = Number(lines[1]);
-  const ballots = lines.slice(2, n + 2).map((line) => line.includes(" ") ? line.split(/\s+/).map(Number) : [...line].map(Number));
+  const ballots = lines.slice(2, n + 2).map((line) => line.split(/\s+/).map(Number));
   const alive = new Set(Array.from({ length: m }, (_, i) => i + 1));
   while (alive.size) {
     const votes = Array(m + 1).fill(0);

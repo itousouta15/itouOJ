@@ -1,4 +1,4 @@
-// node scripts/import-competition-exams-112-114.mjs [--check] [--refresh] [--db path]
+// node scripts/import-competition-exams-112-114.mjs [--check] [--refresh] [--only title] [--db path]
 // 題目與原卷一同進版控；只匯入原卷公開範例，不宣稱有完整評測資料。
 import "dotenv/config";
 import assert from "node:assert/strict";
@@ -11,11 +11,15 @@ import { nextProblemCode } from "./lib/problemCode.mjs";
 
 const args = process.argv.slice(2);
 const index = args.indexOf("--db");
+const onlyIndex = args.indexOf("--only");
+const onlyTitle = onlyIndex === -1 ? null : args[onlyIndex + 1];
 if (args.filter((arg) => arg === "--db").length > 1 ||
+    args.filter((arg) => arg === "--only").length > 1 ||
     (index !== -1 && (!args[index + 1] || args[index + 1].startsWith("--"))) ||
-    args.some((arg, i) => !["--check", "--refresh", "--db"].includes(arg) && i !== index + 1) ||
+    (onlyIndex !== -1 && (!onlyTitle || onlyTitle.startsWith("--") || !args.includes("--refresh"))) ||
+    args.some((arg, i) => !["--check", "--refresh", "--db", "--only"].includes(arg) && i !== index + 1 && i !== onlyIndex + 1) ||
     (args.includes("--check") && args.includes("--refresh"))) {
-  throw new Error("用法：node scripts/import-competition-exams-112-114.mjs [--check] [--refresh] [--db 資料庫路徑]");
+  throw new Error("用法：node scripts/import-competition-exams-112-114.mjs [--check] [--refresh] [--only 題目完整標題] [--db 資料庫路徑]");
 }
 
 const titles = new Set();
@@ -39,6 +43,7 @@ for (const exam of exams) {
   console.log(`${exam.name}：${exam.problems.length} 題，${pdfPath}`);
 }
 assert.equal(total, 29, "預期共 29 題");
+if (onlyTitle) assert.ok(titles.has(onlyTitle), `找不到題目：${onlyTitle}`);
 if (args.includes("--check")) {
   console.log(`核對完成：${total} 題及三份原卷；未修改資料庫。`);
 } else {
@@ -61,6 +66,8 @@ if (args.includes("--check")) {
     const test = db.prepare(`INSERT INTO TestCase (problemId, subtaskId, input, output, isSample, "order") VALUES (?, ?, ?, ?, 1, ?)`);
     const refreshStatement = db.prepare("UPDATE Problem SET statement = ? WHERE id = ?");
     const findTest = db.prepare("SELECT id FROM TestCase WHERE problemId = ? AND input = ? AND output = ?");
+    const findLegacySample = db.prepare("SELECT id FROM TestCase WHERE problemId = ? AND input = ? AND output = ? AND isSample = 1");
+    const updateSampleInput = db.prepare("UPDATE TestCase SET input = ? WHERE id = ? AND isSample = 1");
     const hiddenCount = db.prepare("SELECT COUNT(*) AS value FROM TestCase WHERE problemId = ? AND isSample = 0");
     const findSubtask = db.prepare('SELECT id FROM Subtask WHERE problemId = ? ORDER BY "order" LIMIT 1');
     const nextTestOrder = db.prepare('SELECT COALESCE(MAX("order"), 0) AS value FROM TestCase WHERE problemId = ?');
@@ -70,6 +77,7 @@ if (args.includes("--check")) {
       const created = [], skipped = [], refreshed = [];
       for (const exam of exams) for (const p of exam.problems) {
         const title = `${exam.name}｜${p.title}`;
+        if (onlyTitle && title !== onlyTitle) continue;
         const statement = [
           `## 題目描述\n\n${p.description}`,
           `## 輸入格式\n\n${p.input}`,
@@ -86,6 +94,15 @@ if (args.includes("--check")) {
           const subtaskId = findSubtask.get(existing.id)?.id ?? null;
           for (const [input, output] of p.samples) {
             if (findTest.get(existing.id, input, output)) continue;
+            // a852 的舊範例誤將各候選人編號連寫；保留測資 ID 與評測紀錄，直接修正輸入。
+            if (exam.pdf === "/exams/112-zhongtou.pdf" && p.title === "總統大選排序複選制") {
+              const legacyInput = input.split("\n").map((line, i) => i < 2 ? line : line.replaceAll(" ", "")).join("\n");
+              const legacy = findLegacySample.get(existing.id, legacyInput, output);
+              if (legacy) {
+                updateSampleInput.run(input, legacy.id);
+                continue;
+              }
+            }
             test.run(existing.id, subtaskId, input, output, ++testOrder);
             missing++;
           }
