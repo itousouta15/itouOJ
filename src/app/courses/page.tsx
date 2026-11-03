@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { cpeProblemWhere } from "@/lib/cpeCourse";
 import { toiPotentialProblemWhere } from "@/lib/toiPotentialCourse";
 import { toiPotentialTopics } from "@/lib/toiPotentialLessonTypes";
+import { newProblemWhere, newProblemTopics } from "@/lib/newProblemLessons";
 
 export const metadata: Metadata = {
   title: "課程",
@@ -51,6 +52,7 @@ export default async function CoursesPage() {
         : Promise.resolve([]),
     ]);
   const listedCourses = courses;
+  const practiceCount = await prisma.problem.count({ where: newProblemWhere(isAdmin) });
 
   // 已加入的課程與各課程進度
   const joinedSet = new Set<number>();
@@ -94,7 +96,7 @@ export default async function CoursesPage() {
         )}
       </div>
 
-      {courses.length === 0 && cpeCount === 0 && toiPotentialCount === 0 ? (
+      {courses.length === 0 && cpeCount === 0 && toiPotentialCount === 0 && practiceCount === 0 ? (
         <div className="card p-10 text-center text-sm text-mute">
           還沒有課程
           {isAdmin && (
@@ -111,6 +113,11 @@ export default async function CoursesPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
+          {practiceCount > 0 && <Link href="/courses/practice" className="card motion-card block p-5 hover:bg-panel2">
+            <h2 className="section-title">競賽與專題逐題教學</h2>
+            <p className="mt-2 text-sm text-dim">依主題與難度學習新增題目，包含解題推導、動畫步驟及 C++ / Python 程式。</p>
+            <p className="mono mt-3 text-xs text-mute">{practiceCount} 題 · {newProblemTopics.length} 個主題 · 不需加入代碼</p>
+          </Link>}
           {toiPotentialCount > 0 && (
             <Link
               href="/courses/toi-potential"

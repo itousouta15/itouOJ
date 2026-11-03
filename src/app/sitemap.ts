@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
+import { getNewProblemLessonHref } from "@/lib/newProblemLessons";
 
 // Visibility changes must take effect without rebuilding the website. This also
 // allows release builds before the additive CTF migration reaches the live DB.
@@ -31,6 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/recognition`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/ctf`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/courses`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${base}/courses/practice`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/contests`, changeFrequency: "daily", priority: 0.8 },
     { url: `${base}/ranking`, changeFrequency: "daily", priority: 0.6 },
     { url: `${base}/announcements`, changeFrequency: "weekly", priority: 0.5 },
@@ -40,6 +42,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
+    ...problems.flatMap((p) => {
+      const href = p.problemCode ? getNewProblemLessonHref(p.problemCode) : undefined;
+      return href ? [{ url: base + href, changeFrequency: "monthly" as const, priority: 0.7 }] : [];
+    }),
     ...ctfChallenges.map((c) => ({
       url: `${base}/ctf/${c.id}`, lastModified: c.updatedAt,
       changeFrequency: "weekly" as const, priority: 0.7,

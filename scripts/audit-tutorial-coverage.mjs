@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { apcsCourseLessons } from "../src/lib/apcsCourseLessons.ts";
 import { apcsPastExamLessons } from "../src/lib/apcsPastExamLessons.ts";
 import { apcsPastExamSamples } from "../src/lib/apcsPastExamSamples.ts";
@@ -10,6 +10,8 @@ import { toiPotentialLessons } from "../src/lib/toiPotentialLessons.ts";
 import { toiPotentialProblemCatalog } from "../src/lib/toiPotentialProblemCatalog.ts";
 import { toiBeginnerLessons } from "../src/lib/toiBeginnerLessons.ts";
 import { toiBeginnerProblemCatalog } from "../src/lib/toiBeginnerProblemCatalog.ts";
+import { newProblemLessons } from "../src/lib/newProblemLessons.ts";
+import newProblemSource from "./fixtures/new-problem-lessons/source.json" with { type: "json" };
 import { getCourseLesson } from "../src/lib/courseLessons.ts";
 import {
   getToiTopicForProblem,
@@ -27,6 +29,7 @@ const archiveCatalog = Object.entries(apcsPastExamSamples).map(
   ([code, samples]) => ({ code, samples }),
 );
 const groups = [
+  { name: "Competition and topic practice", lessons: newProblemLessons, catalog: newProblemSource.problems, count: 647 },
   {
     name: "APCS introductory",
     title: "APCS 實作題：由簡到難",
@@ -58,6 +61,7 @@ const groups = [
 ];
 const failures = [];
 const allCodes = new Set();
+const registry = new Map();
 const beginnerTopicCodes = toiCourseTopics.flatMap((topic) => topic.codes);
 assert.equal(
   new Set(beginnerTopicCodes).size,
@@ -83,6 +87,8 @@ const normalize = (text) =>
     .join("\n")
     .replace(/\n+$/, "");
 let sourceMatches = 0;
+let publicExamples = 0;
+let constructedExamples = 0;
 for (const group of groups) {
   const expected = group.catalog.map((problem) => problem.code).sort();
   const actual = Object.keys(group.lessons).sort();
@@ -102,6 +108,7 @@ for (const group of groups) {
       failures.push(`${code}: missing problem-specific lesson`);
       continue;
     }
+    registry.set(code, lesson);
     if (lesson.code !== code)
       failures.push(`${code}: lesson belongs to ${lesson.code}`);
     if (group.title && getCourseLesson(group.title, code) !== lesson)
@@ -146,6 +153,12 @@ for (const group of groups) {
     const source = live?.get(code) ?? problem;
     if (live && !live.has(code))
       failures.push(`${code}: missing current source snapshot`);
+    if (source.samples.length === 0 && lesson.exampleKind === "constructed") {
+      if (!lesson.sampleOutput.trim()) failures.push(`${code}: empty constructed teaching output`);
+      else ++constructedExamples;
+      continue;
+    }
+    ++publicExamples;
     const sampleMatch = source.samples.some(
       (sample) =>
         normalize(sample.input) === normalize(lesson.sampleInput) &&
@@ -167,11 +180,11 @@ for (const group of groups) {
 }
 assert.equal(
   allCodes.size,
-  771,
-  "Expected 771 distinct known tutorial problems; update coverage baseline explicitly for additions",
+  1418,
+  "Expected 1418 distinct known tutorial problems; update coverage baseline explicitly for additions",
 );
 console.log(
-  `Source example matches: ${sourceMatches}/771 (${live ? "fresh live snapshot" : "recorded public catalogs"}). This checks coverage/contracts, not a proof of algorithm correctness.`,
+  `Source example matches: ${sourceMatches}/${publicExamples} (${live ? "fresh live snapshot" : "recorded public catalogs"}); ${constructedExamples} explicitly labeled teaching examples for questions without public examples. This checks coverage/contracts, not a proof of algorithm correctness.`,
 );
 console.log(
   "a344 remains a known contradictory source: sample matching is not solution verification.",
@@ -179,4 +192,10 @@ console.log(
 if (failures.length) {
   console.error(failures.join("\n"));
   process.exitCode = 1;
+} else {
+  const output = args.indexOf("--registry-output");
+  if (output >= 0) {
+    assert.ok(args[output + 1], "--registry-output needs a JSON path");
+    await writeFile(args[output + 1], JSON.stringify([...registry.values()], null, 2) + "\n");
+  }
 }

@@ -15,6 +15,7 @@ import { PROBLEM_CODE_RE } from "@/lib/problemCode";
 import { getLessonCourseTitles } from "@/lib/courseLessons";
 import { getCpeLessonHref } from "@/lib/cpeCourse";
 import { getToiPotentialLessonHref } from "@/lib/toiPotentialCourse";
+import { getNewProblemLessonHref } from "@/lib/newProblemLessons";
 
 export const dynamic = "force-dynamic";
 
@@ -138,6 +139,7 @@ export default async function ProblemPage({
                 ? `/courses/${lessonCourse.courseId}/lessons/${problemCode}`
                 : getToiPotentialLessonHref(problemCode, problem.tags.map((pt) => pt.tag.name))
                   ?? getCpeLessonHref(problemCode, problem.tags.map((pt) => pt.tag.name))
+                  ?? getNewProblemLessonHref(problemCode)
             }
             adminHref={
               session?.role === "ADMIN"

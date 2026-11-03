@@ -64,6 +64,12 @@ jobs:
       - name: Exact tutorial coverage and source examples
         run: npm run test:tutorial-coverage
 
+      - name: New problem tutorial source contracts and independent case coverage
+        run: npm run test:new-problem-lessons
+
+      - name: Guarded clarification of original Hanoi ring-number rules
+        run: npm run test:new-problem-corrections
+
       - name: Tutorial explanation migration and independent regressions
         run: npm run test:tutorial-corrections
 
@@ -88,6 +94,11 @@ jobs:
           CPE_TEST_PRODUCTION: "1"
         run: npm run test:cpe-course
 
+      - name: Competition and topic course visibility, search and tutorial links
+        env:
+          PRACTICE_TEST_PRODUCTION: "1"
+        run: npm run test:new-problem-course
+
       - name: Course layout integration tests
         env:
           COURSE_LAYOUT_TEST_PRODUCTION: "1"
@@ -97,6 +108,35 @@ jobs:
         env:
           TOI_POTENTIAL_TEST_PRODUCTION: "1"
         run: npm run test:toi-potential-course
+
+  new-problem-tutorials:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        batch: [competition, national1, national2, practice1, practice2, practice3, practice4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Verify every C++ and Python solution against samples and independent cases
+        run: node scripts/verify-new-problem-lessons.mjs --batch ${{ matrix.batch }} --runtime --report new-problem-${{ matrix.batch }}-verification.json
+      - name: Exhaustive tandem-repeat oracle and maximum-size regressions
+        if: matrix.batch == 'practice1'
+        run: python3 scripts/lib/check-tandem-tutorial.py
+      - name: Keep per-program results and source hashes
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: new-problem-${{ matrix.batch }}-verification
+          path: new-problem-${{ matrix.batch }}-verification.json
 
   tutorial-regressions:
     runs-on: ubuntu-latest
