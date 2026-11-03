@@ -43,6 +43,9 @@ jobs:
       - name: Recognition parser self-test
         run: node scripts/parse-reading-bank.mjs --self-test
 
+      - name: HackMD problem import, independent oracles and Linux C++ references
+        run: npm run test:hackmd-problems
+
       - name: CTF beginner challenge tests
         run: npm run test:ctf-beginner
 
