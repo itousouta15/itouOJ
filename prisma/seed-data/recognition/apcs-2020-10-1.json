@@ -41,7 +41,7 @@
         "1"
       ],
       "answerIndex": 1,
-      "explanation": "質數有 0 個偶數"
+      "explanation": "輸出為 0。外層 i 從 3 開始且每次加 2，所以 i 一定是奇數；內層從奇數 i² 開始，每次加偶數 2i，故只會把奇數索引的 a[j] 設為 1。最後累加的是偶數索引 a[0],a[2],…,a[1000]，它們仍全為 0。\n\n這不是因為「質數沒有偶數」：2 本身就是偶質數。輸出為 0 的原因是程式沒有標記任何偶數索引。"
     },
     {
       "number": 4,
@@ -89,7 +89,7 @@
       "number": 7,
       "category": "C",
       "question": "將上述 程式碼1 化簡成 程式碼2 ，請問空格中應該填入的程式碼為何？",
-      "code": "// 程式碼1\nchar f(int x, int y) {\n    if(x>10){\n        if(y<3){\n            return \"B\";\n        }\n        else{\n            if(x>y)return \"A\";\n            else return \"B\";\n        }\n    }\n    else return \"A\";\n}\n\n// 程式碼2\nchar f(int x, int y) {\n    if(____________________)\n        return 'B';\n    else return 'A';\n}",
+      "code": "// 程式碼1\nchar f(int x, int y) {\n    if(x>10){\n        if(y<3){\n            return 'B';\n        }\n        else{\n            if(x>y)return 'A';\n            else return 'B';\n        }\n    }\n    else return 'A';\n}\n\n// 程式碼2\nchar f(int x, int y) {\n    if(____________________)\n        return 'B';\n    else return 'A';\n}",
       "options": [
         "`x>10 || y<3 && x<=y`",
         "`x>10 && y<3 && x<=y`",

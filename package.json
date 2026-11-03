@@ -37,7 +37,8 @@
     "judge:remote": "node --import ./scripts/ctf-test-loader.mjs scripts/judge-remote-worker.mjs",
     "test:ctf": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-ctf.mjs",
     "test:ctf-beginner": "node --test scripts/test-ctf-beginner.mjs",
-    "test:ctf-web-labs": "node --test scripts/test-ctf-web-labs.mjs"
+    "test:ctf-web-labs": "node --test scripts/test-ctf-web-labs.mjs",
+    "test:recognition-corrections": "node --import ./scripts/ctf-test-loader.mjs --test scripts/test-recognition-audit-corrections.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

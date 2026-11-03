@@ -949,9 +949,9 @@ for cs in range(next(it)):
     goal: "不用大整數也能判斷千位數是否為 11 的倍數。",
     explanation: [
       "從左到右讀數字字元，若已讀前綴餘數為 r，加入新數字 d 後的新前綴是 10×前綴+d，因此新餘數為 (10r+d)%11。歸納可知，讀完整串後 r 就是整數除以 11 的餘數。",
-      "每一步 r 都在 0–10，永遠不會溢位，也無須把長達 1000 位的輸入轉成機器整數。保留原字串供輸出，餘數為 0 就印 is a multiple of 11.，否則印 is not a multiple of 11.。單獨的 0 結束，不輸出該行。",
+      "每一步 r 都在 0–10，永遠不會溢位，也無須把長達 1000 位的輸入轉成機器整數。每行讀一筆並保留原字串供輸出，不把所有輸入一次讀入記憶體；餘數為 0 就印 is a multiple of 11.，否則印 is not a multiple of 11.。單獨的 0 結束，不輸出該行。",
     ],
-    complexity: "每筆時間 O(L)，除原字串外空間 O(1)。",
+    complexity: "每筆時間 O(L)，總空間 O(L)（含目前輸入與輸出字串）；取餘運算額外空間 O(1)。Python 逐行讀取，不保留其他筆輸入。",
     pitfall: "輸出必須保留輸入數字；結束標記是字串 0，不應先轉成有界整數。",
     traceLabel: "示意：1122",
     trace: [
@@ -997,7 +997,10 @@ int main() {
 }`,
     python: String.raw`import sys
 
-for s in sys.stdin.read().split():
+for line in sys.stdin:
+    s = line.strip()
+    if not s:
+        continue
     if s == '0':
         break
     remainder = 0

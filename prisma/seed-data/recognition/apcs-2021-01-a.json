@@ -61,7 +61,7 @@
       "number": 5,
       "category": "C",
       "question": "執行上述的函數時回傳的結果： $f$(14) = 28 ，$f$(10) = 21 ， $f$(6) = 12，判斷式該如何選擇才能符合對應關係？",
-      "code": "int f ( int n ){\n    if ( n < 2 )\n        return n ;    \n    else\n        return n + f(__________) ;\n}",
+      "code": "int f ( int n ){\n    if ( n < 2 )\n        return n ;    \n    else\n        return n + f(__________) ;\n}",
       "options": [
         "$\\frac{n+1}{2}$",
         "$\\frac{n}{2}$",
@@ -69,7 +69,7 @@
         "$\\frac{n}{2}+1$"
       ],
       "answerIndex": 0,
-      "explanation": ""
+      "explanation": "選 (n+1)/2，這裡採 C 整數除法。呼叫依序為 14→7→4→2→1，總和 28；10→5→3→2→1，總和 21；6→3→2→1，總和 12。n<2 時直接回傳 n，使遞迴終止。程式使用一般 ASCII 空白，可將空格填成 (n+1)/2 後編譯。"
     },
     {
       "number": 6,
@@ -175,19 +175,19 @@
       "question": "輸出的字串為何？",
       "code": "int main(){\n    char s[] = \"3*5/6+2-1\" ;\n    char a[10] = {} ;\n    char b[10] = {} ;\n    int la = 0, lb = 0 ;\n    for ( int i = 0 ; i < strlen(s) ; i += 1 ){\n        switch( s[i] ){\n            case '+': \n            case '-': \n            case '*': \n            case '/':\n                a[la] = s[i] ;\n                la = la + 1 ;\n                break ;\n            default : \n                b[lb] = s[i] ;\n                lb = lb + 1 ;\n        }\n    }\n    while( la ){\n        la = la - 1 ;\n        b[ lb ] = a[ la ] ;\n        lb = lb + 1 ;\n    }\n    b[lb] = '\\0' ;\n    printf(\"%s\\n\",b ) ;\n}\n",
       "options": [
-        "35621*/+ -",
-        "*/+ -35621",
-        "35621- +/*",
+        "35621*/+-",
+        "*/+-35621",
+        "35621-+/*",
         "*35/9+2-1"
       ],
       "answerIndex": 2,
-      "explanation": ""
+      "explanation": "掃描時把數字依原順序存進 b，得到 35621；運算子依序存進 a，得到 */+-。接著從 a 的尾端取出運算子，依序附加 -、+、/、*，所以精確輸出為 35621-+/*，中間沒有空格，最後換行。"
     },
     {
       "number": 14,
       "category": "C",
-      "question": "邊長Ｎ為奇數的魔方陣，依照下列規則填入１到 $N^{2}$ 的數字就能保證每一行和每一列以及斜對角的數字總和都相同。\n(1) 由最下面那一列的中間格開始填入1\n(2) 接續格在前一格的左下方，除非超出邊界或格內已填數字\n(3) 超出下邊界，則接續格改為左邊一行的最上面一列，除非超出左邊界如說明(6)\n(4) 超出左邊界，則接續格改為下面一列的最右邊一行，除非超出下邊界如說明(6)\n(5) 若接續格已填有數字，接續格改為原格上方一格\n(6) 若下面及左邊同時超出邊界時，接續格改為原格的上方一格",
-      "code": "int main(){\n    int n ;\n    scanf(\"%d\", &n) ;\n    int mat[n][n] = {};\n    int x = n-1 , y = (n - 1) / 2 ;\n    for(int i = 1 ; i <= n * n ; i = i + 1 ){\n        int a = _____ ;\n        int b = _____ ;\n        if ( mat[a][b] ){\n            a = ( x + 1 )% n;\n            b = y ;\n        }\n        x = a ;\n        y = b ;\n        mat[x][y] = i ;\n    }\n}",
+      "question": "【本站修正版練習，非原卷逐字轉錄】原收錄的起點、移動方向與程式落子順序互相矛盾，以下統一為可驗證的規則。\n\n給定奇數 N（1≤N≤99），建立 N×N 魔方陣，使每列、每欄及兩條主對角線總和皆為 N(N²+1)/2。mat[x][y] 的 x 從上往下增加，y 從左往右增加。\n\n先在最上列中央填入 1；之後嘗試往右上移一格，超出邊界時循環到另一側。若該格已填數字，則從原格往下移一格、欄不變。請選出兩個空格依序應填入的式子。",
+      "code": "#include <stdio.h>\n\nint main(void) {\n    int n;\n    scanf(\"%d\", &n);\n    int mat[99][99] = {0};\n    int x = 0, y = (n - 1) / 2;\n    mat[x][y] = 1;\n    for (int i = 2; i <= n * n; ++i) {\n        int a = _____;\n        int b = _____;\n        if (mat[a][b]) {\n            a = (x + 1) % n;\n            b = y;\n        }\n        x = a;\n        y = b;\n        mat[x][y] = i;\n    }\n}\n",
       "options": [
         "(x-1+n)%n , (y+1+n)%n",
         "(x-1+n)%n , (y-1+n)%n",
@@ -195,7 +195,7 @@
         "(x+1+n)%n , (y-1+n)%n"
       ],
       "answerIndex": 0,
-      "explanation": ""
+      "explanation": "依本題明確定義的索引，往右上移動是 x−1、y+1，加上 n 再取餘可處理邊界，因此選 (x−1+n)%n 與 (y+1+n)%n。必須先把 1 放在最上列中央，再從 2 開始移動與落子；遇到已填格才改從原格往下。\n\nN=3 時得到：\n\n```text\n8 1 6\n3 5 7\n4 9 2\n```\n\n每列、每欄及兩條對角線均為 15。原收錄版本在 N=3 的反對角線會得到 24，不能視為正確魔方陣；此修正版不宣稱還原原卷。"
     }
   ],
   "paper": "A 卷"

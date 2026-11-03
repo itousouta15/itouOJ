@@ -1,0 +1,154 @@
+[
+  {
+    "file": "apcs-2017-03",
+    "source": "APCS 2017/03",
+    "paper": null,
+    "question": {
+      "number": 17,
+      "category": "C",
+      "question": "給定右側函式 F( )，F( ) 執行完所回傳的 x 值為何？",
+      "code": "int F (int n) {\n   int x = 0;\n   for (int i=1; i<=n; i=i+1)\n      for (int j=i; j<=n; j=j+1)\n         for (int k=1; k<=n; k=k*2)\n            x = x + 1;\n   return x;\n}",
+      "options": [
+        "$n(n+1)\\sqrt{\\lfloor \\log_2 n \\rfloor}$",
+        "$n^2(n+1)/2$",
+        "$n(n+1)\\lfloor \\log_2 (n)+1 \\rfloor/2$",
+        "$n(n+1)/2$"
+      ],
+      "answerIndex": 2,
+      "explanation": "+ 前兩個迴圈(i 及 j)執行次數：\n    i=1 時，j = 1, 2, ......, n，共執行 n 次。\n    i=2 時，j = 2, ......, n，共執行(n-1)次。\n    ......\n    i=n 時，j = n，共執行 1 次。\n    前兩個迴圈執行 $n+(n-1)+(n-2)+......+2+1 = n(n+1)/2$\n+ 第三個迴圈 (k) 執行次數：$\\log_2(n)+1$。以 n=8 為例：\n    第 1 次迴圈：k = 1。\n    第 2 次圈 ： k = 1 * 2 = 2。\n    第 3 次圈 ： k = 2 * 2 = 4。\n    第 4 次迴圈：k = 4 * 2 = 8，迴圈結束。\n    執行次數：$\\log_2(8) + 1 = 3 + 1 = 4$。\n+ 所以解答為：$n(n+1)/2 * (log_2(n)+1) = n(n+1)\\lfloor \\log_2 (n)+1 \\rfloor/2$"
+    }
+  },
+  {
+    "file": "apcs-2020-10-1",
+    "source": "APCS 2020/10",
+    "paper": "第一場",
+    "question": {
+      "number": 3,
+      "category": "C",
+      "question": "請問該程式碼執行後輸出為何？",
+      "code": "int a[1001] = {0};\n    for (int i = 3; i <= 1000; i = i + 2) {\n        for (int j = i*i; j <= 1000; j = j + i + i) {\n            a[j] = 1;\n        }\n    }\n    int sum = 0;\n    for(int i = 0; i <= 1000; i = i + 2) {\n        sum = sum + a[i];\n    }\n    printf(\"%d\",sum);",
+      "options": [
+        "332",
+        "0",
+        "168",
+        "1"
+      ],
+      "answerIndex": 1,
+      "explanation": "質數有 0 個偶數"
+    }
+  },
+  {
+    "file": "apcs-2020-10-1",
+    "source": "APCS 2020/10",
+    "paper": "第一場",
+    "question": {
+      "number": 7,
+      "category": "C",
+      "question": "將上述 程式碼1 化簡成 程式碼2 ，請問空格中應該填入的程式碼為何？",
+      "code": "// 程式碼1\nchar f(int x, int y) {\n    if(x>10){\n        if(y<3){\n            return \"B\";\n        }\n        else{\n            if(x>y)return \"A\";\n            else return \"B\";\n        }\n    }\n    else return \"A\";\n}\n\n// 程式碼2\nchar f(int x, int y) {\n    if(____________________)\n        return 'B';\n    else return 'A';\n}",
+      "options": [
+        "`x>10 || y<3 && x<=y`",
+        "`x>10 && y<3 && x<=y`",
+        "`x>10 && y<3 || x>10 && x<=y`",
+        "`x>10 && y<3 || x<=y`"
+      ],
+      "answerIndex": 2,
+      "explanation": "```\n    'B' : x>10 && y<3 || x>10 && y>=3 && x<=y\n          A    *  B   +  A    *  B'   *  C\n    AB + AB'C\n    A(B+B'C)\n    A(B+C)\n    AB+AC\n    x>10 && y<3 || x>10 && x<=y\n```"
+    }
+  },
+  {
+    "file": "apcs-2021-01-a",
+    "source": "APCS 2021/01",
+    "paper": "A 卷",
+    "question": {
+      "number": 5,
+      "category": "C",
+      "question": "執行上述的函數時回傳的結果： $f$(14) = 28 ，$f$(10) = 21 ， $f$(6) = 12，判斷式該如何選擇才能符合對應關係？",
+      "code": "int f ( int n ){\n    if ( n < 2 )\n        return n ;    \n    else\n        return n + f(__________) ;\n}",
+      "options": [
+        "$\\frac{n+1}{2}$",
+        "$\\frac{n}{2}$",
+        "$\\frac{n-1}{2}$",
+        "$\\frac{n}{2}+1$"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    }
+  },
+  {
+    "file": "apcs-2021-01-a",
+    "source": "APCS 2021/01",
+    "paper": "A 卷",
+    "question": {
+      "number": 13,
+      "category": "C",
+      "question": "輸出的字串為何？",
+      "code": "int main(){\n    char s[] = \"3*5/6+2-1\" ;\n    char a[10] = {} ;\n    char b[10] = {} ;\n    int la = 0, lb = 0 ;\n    for ( int i = 0 ; i < strlen(s) ; i += 1 ){\n        switch( s[i] ){\n            case '+': \n            case '-': \n            case '*': \n            case '/':\n                a[la] = s[i] ;\n                la = la + 1 ;\n                break ;\n            default : \n                b[lb] = s[i] ;\n                lb = lb + 1 ;\n        }\n    }\n    while( la ){\n        la = la - 1 ;\n        b[ lb ] = a[ la ] ;\n        lb = lb + 1 ;\n    }\n    b[lb] = '\\0' ;\n    printf(\"%s\\n\",b ) ;\n}\n",
+      "options": [
+        "35621*/+ -",
+        "*/+ -35621",
+        "35621- +/*",
+        "*35/9+2-1"
+      ],
+      "answerIndex": 2,
+      "explanation": ""
+    }
+  },
+  {
+    "file": "apcs-2021-01-a",
+    "source": "APCS 2021/01",
+    "paper": "A 卷",
+    "question": {
+      "number": 14,
+      "category": "C",
+      "question": "邊長Ｎ為奇數的魔方陣，依照下列規則填入１到 $N^{2}$ 的數字就能保證每一行和每一列以及斜對角的數字總和都相同。\n(1) 由最下面那一列的中間格開始填入1\n(2) 接續格在前一格的左下方，除非超出邊界或格內已填數字\n(3) 超出下邊界，則接續格改為左邊一行的最上面一列，除非超出左邊界如說明(6)\n(4) 超出左邊界，則接續格改為下面一列的最右邊一行，除非超出下邊界如說明(6)\n(5) 若接續格已填有數字，接續格改為原格上方一格\n(6) 若下面及左邊同時超出邊界時，接續格改為原格的上方一格",
+      "code": "int main(){\n    int n ;\n    scanf(\"%d\", &n) ;\n    int mat[n][n] = {};\n    int x = n-1 , y = (n - 1) / 2 ;\n    for(int i = 1 ; i <= n * n ; i = i + 1 ){\n        int a = _____ ;\n        int b = _____ ;\n        if ( mat[a][b] ){\n            a = ( x + 1 )% n;\n            b = y ;\n        }\n        x = a ;\n        y = b ;\n        mat[x][y] = i ;\n    }\n}",
+      "options": [
+        "(x-1+n)%n , (y+1+n)%n",
+        "(x-1+n)%n , (y-1+n)%n",
+        "(x+1+n)%n , (y+1+n)%n",
+        "(x+1+n)%n , (y-1+n)%n"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    }
+  },
+  {
+    "file": "apcs-2021-01-b",
+    "source": "APCS 2021/01",
+    "paper": "B 卷",
+    "question": {
+      "number": 4,
+      "category": "C",
+      "question": "執行上述程式碼時依序輸入 10, 9, 8, ..., 1 ，請問陣列內的數字為何？",
+      "code": "int num[ 10 ] ;\nfor( int i = 0 ; i < 10 ; i = i + 1 ) \n    scanf( “%d”, &num[ ( i + 6 ) % 10 ] ) ;",
+      "options": [
+        "{ 6, 5, 4, 3, 2, 1, 10, 9, 8, 7 }",
+        "{ 5, 6, 7, 8, 9, 10, 1, 2, 3, 4 }",
+        "{ 4, 5, 6, 7, 8, 9, 10, 1, 2, 3 }",
+        "{ 9, 8, 7, 6, 5, 4, 3, 2, 1, 10 }"
+      ],
+      "answerIndex": 0,
+      "explanation": ""
+    }
+  },
+  {
+    "file": "apcs-2021-01-b",
+    "source": "APCS 2021/01",
+    "paper": "B 卷",
+    "question": {
+      "number": 7,
+      "category": "C",
+      "question": "以下選項敘述何者正確？",
+      "code": "int a[10] = { 10, 9, 7, 2, 3, 4, 5, 6, 1, 8 } ;\nint b[10] = { 2, 1, 3, 4, 5, 6, 7, 2, 4, 5 } ;\nfor (int i = 0 ; i < 10 ; i = i + 1 ) {\n    a[ b[i] - 1 ] = b[ a[i] ] + 1\n}\nprintf(\"%d\", a[7]);",
+      "options": [
+        "輸出 2",
+        "輸出 6",
+        "a[ ] 的索引值錯誤",
+        "b[ ] 的索引值錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": ""
+    }
+  }
+]
