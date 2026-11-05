@@ -1,0 +1,427 @@
+{
+  "code": "a904",
+  "lesson": {
+    "code": "a904",
+    "title": "100 全國資訊學科能力競賽（2011）｜股票趨勢",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "端點 DP、列區間樹與分欄最大值打包",
+    "goal": "每列只查一次合法前驅矩形，消除不同間距種類數的額外掃描因子。",
+    "explanation": [
+      "dp[i][j] 只表示以 a[i]=b[j] 作最後匹配的最佳長度，其他位置記 0。若新字母間距為 g，合法前驅恰在 [i−g−1,i−1]×[j−g−1,j−1]，取矩形最大值加 1；空矩形最大值視為 0，允許從這個匹配重新開始。",
+      "以 a 的位置作線段樹索引，每個葉節點保存一整列 dp 的向量；內部節點保存各欄分別取最大後的向量。處理第 i 列時，只查列範圍 [max(0,i−g−1),i)，就一次得到所有欄的垂直最大值。g 只依當列字母決定，不需要同時為其他 25 種間距計算。",
+      "對取得的欄向量用單調佇列維護前 g+1 欄最大值，便得到每個 j 的完整前驅矩形最大值。先查完當列全部匹配，再把整列寫入樹，確保不會重複使用當前 a 位置；水平窗也只包含 j 之前的位置。",
+      "每個合法鏈的最後匹配一定由上述合法矩形內某個前驅延伸；反之矩形內的合法鏈加上新匹配必符合兩邊間距，因此 DP 不漏解也不高估。線段樹只是把垂直區間最大值拆成互不重疊節點，逐欄最大值的結合性保證結果與直接掃描一致。",
+      "C++ 以 uint16_t 向量儲存節點；Python 將各欄打包為 16 位元欄位，DP 值最多 800，低 15 位足夠，最高位作保護。令 GUARD 的每欄最高位為 1，((x|GUARD)−y)&GUARD 的該欄為 1 恰在 x≥y；展開此比較遮罩後，在各欄分別選 x 或 y，可一次完成節點向量合併，完全沒有浮點或跨欄進借位。",
+      "兩字串可互換，因此以較短者作樹的列數。未給間距的字母用不小於兩序列長度的值表示無限制；這只是精確等價的表示，不是截斷合法搜尋。每組限制各自重建 DP。"
+    ],
+    "complexity": "令 a=min(|S|,|T|)、b=max(|S|,|T|)、Q≤5。C++ 總時間 O(Qab log(a+1))、空間 O(ab)。Python 令 L=ceil(16b/w) 為打包向量的機器字數，總時間 O(Q(ab+a log(a+1)L))，空間 O(ab) 位元及 O(b) 暫存整數；大整數合併不是 O(1)。輸入字串與 read().split() 詞元另需 O(I) 空間。",
+    "pitfall": "限制屬於新加入的字母，且兩邊前驅索引都必須嚴格小於目前位置。不能在列尚未算完時提前更新樹，也不能把水平窗含入當前 j。",
+    "sampleInput": "ACBDCAA\nADDBCDBAC\n2\n$\nA 2 B 0 C 3 D 0 $",
+    "sampleOutput": "4 3",
+    "traceLabel": "教學示意（以步驟描述中的輸入為準）",
+    "trace": [
+      {
+        "title": "零間距示意",
+        "description": "α=ABC、β=AXBC，全部字母間距0。",
+        "cells": [
+          "ABC",
+          "AXBC"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "起點匹配A",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "無法接上B",
+        "description": "A到B在β中間隔X，不符合B的零間距，B只能重新開始。",
+        "cells": [
+          "B:1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "B端點",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "接上C",
+        "description": "兩序列中的B、C都相鄰，可以得到BC長度2。",
+        "cells": [
+          "B",
+          "C"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "GLCS",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    ios::sync_with_stdio(false); cin.tie(nullptr);\n    string a,b;int queries;cin>>a>>b>>queries;\n    if(a.size()>b.size())swap(a,b);\n    int n=a.size(),m=b.size(),size=1;while(size<n)size*=2;\n    for(int query=0;query<queries;query++) {\n        vector<int> gap(26,max(n,m));string symbol;\n        while(cin>>symbol && symbol!=\"$\")cin>>gap[symbol[0]-'A'];\n        vector<vector<unsigned short>> tree(2*size,vector<unsigned short>(m));\n        int answer=0;\n        for(int i=0;i<n;i++) {\n            int g=gap[a[i]-'A'],l=size+max(0,i-g-1),r=size+i;\n            vector<unsigned short> vertical(m),row(m);\n            auto combine=[&](int node) {\n                for(int j=0;j<m;j++)vertical[j]=max(vertical[j],tree[node][j]);\n            };\n            while(l<r) {\n                if(l&1)combine(l++);\n                if(r&1)combine(--r);\n                l/=2;r/=2;\n            }\n            deque<int> q;\n            for(int j=0;j<m;j++) {\n                if(j) {\n                    while(!q.empty()&&vertical[q.back()]<=vertical[j-1])q.pop_back();\n                    q.push_back(j-1);\n                }\n                while(!q.empty()&&q.front()<j-g-1)q.pop_front();\n                if(a[i]==b[j]) {\n                    row[j]=1+(q.empty()?0:vertical[q.front()]);\n                    answer=max(answer,int(row[j]));\n                }\n            }\n            int node=size+i;tree[node]=move(row);\n            for(node/=2;node;node/=2)\n                for(int j=0;j<m;j++)tree[node][j]=max(tree[2*node][j],tree[2*node+1][j]);\n        }\n        if(query)cout<<' ';cout<<answer;\n    }\n    cout<<'\\n';\n}\n",
+    "python": "import sys\nfrom collections import deque\n\n\ndef glcs(a, b, gap):\n    # The gap constraint is symmetric in the two strings.\n    if len(a) > len(b):\n        a, b = b, a\n    n, m = len(a), len(b)\n    size = 1 << (n - 1).bit_length()\n    tree = [0] * (2 * size)\n    # DP values <=800, so 15 value bits plus one guard bit are ample.\n    one = int.from_bytes(b'\\x01\\x00' * m, 'little')\n    guard = one << 15\n    all_values = one * 32767\n\n    def merge(x, y):\n        choose_x = ((((x | guard) - y) & guard) >> 15) * 32767\n        return (x & choose_x) | (y & (all_values ^ choose_x))\n\n    answer = 0\n    for i, c in enumerate(a):\n        g = gap[ord(c) - 65]\n        left, right = size + max(0, i - g - 1), size + i\n        best = 0\n        # Componentwise maximum of all completed rows in the legal row window.\n        while left < right:\n            if left & 1:\n                best = merge(best, tree[left]); left += 1\n            if right & 1:\n                right -= 1; best = merge(best, tree[right])\n            left //= 2; right //= 2\n\n        packed = best.to_bytes(2 * m, 'little')\n        vertical = [packed[2*j] | (packed[2*j+1] << 8) for j in range(m)]\n        horizontal = deque()\n        output = bytearray(2 * m)\n        for j, x in enumerate(b):\n            if j:\n                value = vertical[j-1]\n                while horizontal and horizontal[-1][1] <= value:\n                    horizontal.pop()\n                horizontal.append((j-1, value))\n            minimum_column = j - g - 1\n            while horizontal and horizontal[0][0] < minimum_column:\n                horizontal.popleft()\n            if c == x:\n                value = 1 + (horizontal[0][1] if horizontal else 0)\n                output[2*j] = value & 255\n                output[2*j+1] = value >> 8\n                if value > answer:\n                    answer = value\n\n        node = size + i\n        tree[node] = int.from_bytes(output, 'little')\n        node //= 2\n        # Publish the row only after every matching endpoint has been computed.\n        while node:\n            tree[node] = merge(tree[2*node], tree[2*node+1])\n            node //= 2\n    return answer\n\n\ndef main():\n    tokens = iter(sys.stdin.read().split())\n    a, b = next(tokens), next(tokens)\n    count = int(next(tokens))\n    output = []\n    for _ in range(count):\n        gap = [max(len(a),len(b))] * 26\n        while True:\n            symbol = next(tokens)\n            if symbol == '$':\n                break\n            gap[ord(symbol)-65] = int(next(tokens))\n        output.append(glcs(a,b,gap))\n    print(*output)\n\n\nif __name__ == '__main__':\n    main()\n"
+  },
+  "checks": [
+    {
+      "code": "a904",
+      "input": "BCACCA\nCCCBAB\n1\nC 0 A 0 B 2 $",
+      "output": "2",
+      "reason": "獨立枚舉所有匹配端點鏈，直接逐對檢查新字母間距。"
+    },
+    {
+      "code": "a904",
+      "input": "CBBBBB\nBBBCCC\n1\nC 0 A 2 B 1 $",
+      "output": "3",
+      "reason": "獨立枚舉所有匹配端點鏈，直接逐對檢查新字母間距。"
+    },
+    {
+      "code": "a904",
+      "input": "CBCAAC\nCCAAAC\n1\nC 2 A 2 B 2 $",
+      "output": "5",
+      "reason": "獨立枚舉所有匹配端點鏈，直接逐對檢查新字母間距。"
+    },
+    {
+      "code": "a904",
+      "input": "BACCCB\nBBBCAA\n1\nC 2 A 1 B 1 $",
+      "output": "2",
+      "reason": "獨立枚舉所有匹配端點鏈，直接逐對檢查新字母間距。"
+    },
+    {
+      "code": "a904",
+      "input": "CCABBC\nAABAAA\n1\nC 1 A 0 B 2 $",
+      "output": "2",
+      "reason": "獨立枚舉所有匹配端點鏈，直接逐對檢查新字母間距。"
+    },
+    {
+      "code": "a904",
+      "input": "BAACAA\nAACBCC\n1\nC 0 A 1 B 2 $",
+      "output": "3",
+      "reason": "獨立枚舉所有匹配端點鏈，直接逐對檢查新字母間距。"
+    },
+    {
+      "code": "a904",
+      "input": "BACBBB\nAACBCA\n1\nC 1 A 1 B 1 $",
+      "output": "3",
+      "reason": "獨立枚舉所有匹配端點鏈，直接逐對檢查新字母間距。"
+    },
+    {
+      "code": "a904",
+      "input": "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRST\nABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRST\n5\nA 0 B 1 C 2 D 3 E 4 F 5 G 6 H 7 I 8 J 9 K 10 L 11 M 12 N 13 O 14 P 15 Q 16 R 17 S 18 T 19 U 20 V 21 W 22 X 23 Y 24 Z 25 $\nA 0 B 1 C 2 D 3 E 4 F 5 G 6 H 7 I 8 J 9 K 10 L 11 M 12 N 13 O 14 P 15 Q 16 R 17 S 18 T 19 U 20 V 21 W 22 X 23 Y 24 Z 25 $\nA 0 B 1 C 2 D 3 E 4 F 5 G 6 H 7 I 8 J 9 K 10 L 11 M 12 N 13 O 14 P 15 Q 16 R 17 S 18 T 19 U 20 V 21 W 22 X 23 Y 24 Z 25 $\nA 0 B 1 C 2 D 3 E 4 F 5 G 6 H 7 I 8 J 9 K 10 L 11 M 12 N 13 O 14 P 15 Q 16 R 17 S 18 T 19 U 20 V 21 W 22 X 23 Y 24 Z 25 $\nA 0 B 1 C 2 D 3 E 4 F 5 G 6 H 7 I 8 J 9 K 10 L 11 M 12 N 13 O 14 P 15 Q 16 R 17 S 18 T 19 U 20 V 21 W 22 X 23 Y 24 Z 25 $",
+      "output": "800 800 800 800 800",
+      "reason": "Maximum800 identical sequences,5 configurations,26 gap kinds; full diagonal achieves upper bound800."
+    },
+    {
+      "code": "a904",
+      "input": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n5\nA 0 $\nA 1 $\nA 7 $\nA 400 $\n$",
+      "output": "800 800 800 800 800",
+      "reason": "Maximum800 dense matching endpoints, DP values cross byte boundary; all five different window sizes attain full diagonal800."
+    },
+    {
+      "code": "a904",
+      "input": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB\nBABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABA\n5\nA 0 B 0 $\nA 1 B 2 $\nA 400 B 400 $\n$\nA 7 B 3 $",
+      "output": "799 799 799 799 799",
+      "reason": "Maximum800 shifted alternating sequences: contiguous common string799 is valid for every gap, while unequal strings cannot have common subsequence800."
+    }
+  ],
+  "limits": {
+    "liveUrl": "https://oj.itousouta.me/problems/a904",
+    "baseTimeLimitMs": 2000,
+    "pythonTimeMultiplier": 3,
+    "effectivePythonLimitMs": 6000,
+    "memoryLimitMb": 512,
+    "multiplierEvidence": "src/lib/languages.ts python.timeMultiplier=3; src/lib/judgeCore.ts multiplies job.timeLimitMs by lang.timeMultiplier",
+    "liveObservedBaseText": "時間限制2000ms / 記憶體512MB",
+    "livePageSha256": "209ea14bfbf188dcf26db2902a6ceb358b58b03e55829df77f3f1be06d337181",
+    "languageConfigSha256": "3ba9d6d537943da536389078b3a78816b659600d810c5175aa8058b654a9a46f",
+    "judgeCoreSha256": "119fd81df705798131664c85c2cbed6cc48559fb3515cf8d79c30cc95c052a1e"
+  },
+  "validation": {
+    "status": "pass",
+    "environment": "WSL kali-linux/Linux; g++ -std=c++17 -O2 and Python3",
+    "codeHashes": {
+      "cpp": "7dc1cc712647f36bee3e52b501aff4d3bdc7bd623a1fd09aaa564c458a84b2ec",
+      "python": "5f860a7f9ba128f0d0977f9d3b3c6e93440be1d3c7ca96e317c4b08ffbfe30ac"
+    },
+    "independentProbeCount": 200,
+    "runtime": [
+      {
+        "case": 0,
+        "language": "cpp",
+        "inputSha256": "e0db275392585ee5d9351735b2c2154f86a1bb079a2e6a306d4524d822d6a95f",
+        "expectedSha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+        "actual": "2",
+        "seconds": 0.002,
+        "limitSeconds": 2.0,
+        "passed": true
+      },
+      {
+        "case": 0,
+        "language": "python",
+        "inputSha256": "e0db275392585ee5d9351735b2c2154f86a1bb079a2e6a306d4524d822d6a95f",
+        "expectedSha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+        "actual": "2",
+        "seconds": 0.0203,
+        "limitSeconds": 6.0,
+        "passed": true
+      },
+      {
+        "case": 1,
+        "language": "cpp",
+        "inputSha256": "a6814365a965171cbae4c974312597872d029701eb0eb068767173fb52e8c19d",
+        "expectedSha256": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "actual": "3",
+        "seconds": 0.0019,
+        "limitSeconds": 2.0,
+        "passed": true
+      },
+      {
+        "case": 1,
+        "language": "python",
+        "inputSha256": "a6814365a965171cbae4c974312597872d029701eb0eb068767173fb52e8c19d",
+        "expectedSha256": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "actual": "3",
+        "seconds": 0.0194,
+        "limitSeconds": 6.0,
+        "passed": true
+      },
+      {
+        "case": 2,
+        "language": "cpp",
+        "inputSha256": "e07019ec4f56abfa15054437d63fa7a34691131c39ba6111b9553e9e9d47b2d6",
+        "expectedSha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+        "actual": "5",
+        "seconds": 0.0019,
+        "limitSeconds": 2.0,
+        "passed": true
+      },
+      {
+        "case": 2,
+        "language": "python",
+        "inputSha256": "e07019ec4f56abfa15054437d63fa7a34691131c39ba6111b9553e9e9d47b2d6",
+        "expectedSha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+        "actual": "5",
+        "seconds": 0.0219,
+        "limitSeconds": 6.0,
+        "passed": true
+      },
+      {
+        "case": 3,
+        "language": "cpp",
+        "inputSha256": "9d20cb738ff7f46f817984e44f3b849afb774ead6c23151c565ca6963bdc03b5",
+        "expectedSha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+        "actual": "2",
+        "seconds": 0.0019,
+        "limitSeconds": 2.0,
+        "passed": true
+      },
+      {
+        "case": 3,
+        "language": "python",
+        "inputSha256": "9d20cb738ff7f46f817984e44f3b849afb774ead6c23151c565ca6963bdc03b5",
+        "expectedSha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+        "actual": "2",
+        "seconds": 0.0205,
+        "limitSeconds": 6.0,
+        "passed": true
+      },
+      {
+        "case": 4,
+        "language": "cpp",
+        "inputSha256": "fa2c63832de2e1546387860a2623c0957a2fd1c98f332f970b51bc8bbf2a4ea7",
+        "expectedSha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+        "actual": "2",
+        "seconds": 0.0019,
+        "limitSeconds": 2.0,
+        "passed": true
+      },
+      {
+        "case": 4,
+        "language": "python",
+        "inputSha256": "fa2c63832de2e1546387860a2623c0957a2fd1c98f332f970b51bc8bbf2a4ea7",
+        "expectedSha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35",
+        "actual": "2",
+        "seconds": 0.0196,
+        "limitSeconds": 6.0,
+        "passed": true
+      },
+      {
+        "case": 5,
+        "language": "cpp",
+        "inputSha256": "b329572f43481d1efa0da8b890a7e882d51970ef45a0ebfb1c187cea0d3e6a56",
+        "expectedSha256": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "actual": "3",
+        "seconds": 0.0019,
+        "limitSeconds": 2.0,
+        "passed": true
+      },
+      {
+        "case": 5,
+        "language": "python",
+        "inputSha256": "b329572f43481d1efa0da8b890a7e882d51970ef45a0ebfb1c187cea0d3e6a56",
+        "expectedSha256": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "actual": "3",
+        "seconds": 0.0211,
+        "limitSeconds": 6.0,
+        "passed": true
+      },
+      {
+        "case": 6,
+        "language": "cpp",
+        "inputSha256": "ca02c2c52482a52a905f8baf910a05b19c1faec9b234456670e299c2b761b99a",
+        "expectedSha256": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "actual": "3",
+        "seconds": 0.002,
+        "limitSeconds": 2.0,
+        "passed": true
+      },
+      {
+        "case": 6,
+        "language": "python",
+        "inputSha256": "ca02c2c52482a52a905f8baf910a05b19c1faec9b234456670e299c2b761b99a",
+        "expectedSha256": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
+        "actual": "3",
+        "seconds": 0.0209,
+        "limitSeconds": 6.0,
+        "passed": true
+      },
+      {
+        "case": 7,
+        "language": "cpp",
+        "inputSha256": "373fab9660caf6a5edd015333512c2b99151fdca07be28237fe2188751f42cd4",
+        "expectedSha256": "c33a915bed8c8aa8a4a28414bb9424904099b1d0f8a4244f9077b3b13113cf98",
+        "actual": "4 3",
+        "seconds": 0.002,
+        "limitSeconds": 2.0,
+        "passed": true
+      },
+      {
+        "case": 7,
+        "language": "python",
+        "inputSha256": "373fab9660caf6a5edd015333512c2b99151fdca07be28237fe2188751f42cd4",
+        "expectedSha256": "c33a915bed8c8aa8a4a28414bb9424904099b1d0f8a4244f9077b3b13113cf98",
+        "actual": "4 3",
+        "seconds": 0.0201,
+        "limitSeconds": 6.0,
+        "passed": true
+      },
+      {
+        "case": 8,
+        "language": "cpp",
+        "inputSha256": "d28b991e725b8c85700cae3b664c3c4fd5d8002dcef857e9b961c88b517b1e2e",
+        "expectedSha256": "b3cf14221c4243ed6efcececb91c633a8d20cd44a312ac53118e2d8289a2874f",
+        "actual": "800 800 800 800 800",
+        "seconds": 0.0421,
+        "limitSeconds": 2.0,
+        "passed": true
+      },
+      {
+        "case": 8,
+        "language": "python",
+        "inputSha256": "d28b991e725b8c85700cae3b664c3c4fd5d8002dcef857e9b961c88b517b1e2e",
+        "expectedSha256": "b3cf14221c4243ed6efcececb91c633a8d20cd44a312ac53118e2d8289a2874f",
+        "actual": "800 800 800 800 800",
+        "seconds": 1.9575,
+        "limitSeconds": 6.0,
+        "passed": true
+      }
+    ],
+    "maximumStress": [
+      {
+        "code": "a904",
+        "extraCase": 0,
+        "language": "cpp",
+        "inputSha256": "b49a73979e6d13362791efcbd090d3a72dc5557fea490006722bb3177cb66a88",
+        "outputSha256": "b3cf14221c4243ed6efcececb91c633a8d20cd44a312ac53118e2d8289a2874f",
+        "limitSeconds": 2.0,
+        "actual": "800 800 800 800 800",
+        "passed": true,
+        "seconds": 0.0376
+      },
+      {
+        "code": "a904",
+        "extraCase": 0,
+        "language": "python",
+        "inputSha256": "b49a73979e6d13362791efcbd090d3a72dc5557fea490006722bb3177cb66a88",
+        "outputSha256": "b3cf14221c4243ed6efcececb91c633a8d20cd44a312ac53118e2d8289a2874f",
+        "limitSeconds": 6.0,
+        "actual": "800 800 800 800 800",
+        "passed": true,
+        "seconds": 2.3549
+      },
+      {
+        "code": "a904",
+        "extraCase": 1,
+        "language": "cpp",
+        "inputSha256": "18bda1aea31a16d2a3938cfbd87af16d038c05a4782b1fc8704b432c574297a9",
+        "outputSha256": "74eb2fb40b42de2ef1c02232373309ab26e9845027da8f98afefae0ea6b4b81b",
+        "limitSeconds": 2.0,
+        "actual": "799 799 799 799 799",
+        "passed": true,
+        "seconds": 0.0434
+      },
+      {
+        "code": "a904",
+        "extraCase": 1,
+        "language": "python",
+        "inputSha256": "18bda1aea31a16d2a3938cfbd87af16d038c05a4782b1fc8704b432c574297a9",
+        "outputSha256": "74eb2fb40b42de2ef1c02232373309ab26e9845027da8f98afefae0ea6b4b81b",
+        "limitSeconds": 6.0,
+        "actual": "799 799 799 799 799",
+        "passed": true,
+        "seconds": 2.4155
+      }
+    ],
+    "pythonVersion": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+    "releaseStatus": "released-ready-for-parent-integration",
+    "additionalPublicSamples": [
+      {
+        "code": "a904",
+        "publicSample": 2,
+        "language": "cpp",
+        "inputSha256": "6149b9218d6a4e626c11418ce58802b7241672b5bacda81e66695400a6758a3c",
+        "expectedSha256": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+        "actual": "4",
+        "seconds": 0.0021,
+        "passed": true
+      },
+      {
+        "code": "a904",
+        "publicSample": 2,
+        "language": "python",
+        "inputSha256": "6149b9218d6a4e626c11418ce58802b7241672b5bacda81e66695400a6758a3c",
+        "expectedSha256": "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+        "actual": "4",
+        "seconds": 0.0227,
+        "passed": true
+      }
+    ],
+    "summary": {
+      "independentFunctionOracleProbes": 200,
+      "programExecutions": 24,
+      "publicSamplesPerLanguage": 2,
+      "retainedIndependentChecksPerLanguage": 10,
+      "failures": 0,
+      "maxMeasuredSecondsByLanguage": {
+        "cpp": 0.0434,
+        "python": 2.4155
+      },
+      "scope": "Candidate files only; national1 author file untouched. No fullnational1 rerun."
+    }
+  }
+}

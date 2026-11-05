@@ -67,7 +67,7 @@ before(
       [29, "a029", "0/1 背包", "hard", "PROGRAMMING", true],
       [86, "a086", "TOI 2026/03 新手組：湯圓", "easy", "PROGRAMMING", true],
       [458, "a458", "APCS 判斷入門", "easy", "PROGRAMMING", true],
-      [900, "a900", "新增的未分類練習", "custom", "PROGRAMMING", true],
+      [900, "z900", "新增的未分類練習", "custom", "PROGRAMMING", true],
       [901, null, "觀念選擇題", "medium", "RECOGNITION", true],
       [902, "a902", "HIDDEN-PROBLEM-FIXTURE", "easy", "PROGRAMMING", false],
       [903, null, "待設定題號", "easy", "PROGRAMMING", true],
@@ -328,8 +328,8 @@ test("known tutorials route to lessons; unmatched and recognition entries stay p
   ]) {
     const html = await page(`/courses/${id}`);
     assert.ok(html.includes(`href="/courses/${id}/lessons/${code}"`));
-    assert.ok(html.includes('href="/problems/a900"'));
-    assert.ok(!html.includes(`href="/courses/${id}/lessons/a900"`));
+    assert.ok(html.includes('href="/problems/z900"'));
+    assert.ok(!html.includes(`href="/courses/${id}/lessons/z900"`));
     assert.ok(html.includes("其他練習") || id === 2);
     const lesson = await request(`/courses/${id}/lessons/${code}`);
     assert.equal(lesson.status, 200);

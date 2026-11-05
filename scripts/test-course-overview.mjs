@@ -44,7 +44,7 @@ test("all APCS archived entries have one primary home and keep saved order withi
 test("TOI topics keep teacher order without assigning unknown codes to a false tutorial", () => {
   const codes = toiCourseTopics.flatMap((unit) => unit.codes);
   const entries = codes.map((code, index) => entry(index + 1, code)).reverse();
-  entries.push(entry(1000, "a999"));
+  entries.push(entry(1000, "z999"));
   const units = buildCourseUnits("TOI 新手組 練習", entries);
   assert.equal(units.at(-1).id, "additional");
   assert.equal(units.flatMap((unit) => unit.entries).length, entries.length);
@@ -55,15 +55,22 @@ test("TOI topics keep teacher order without assigning unknown codes to a false t
     );
   assert.equal(
     courseEntryHref(4, "TOI 新手組 練習", entries.at(-1)),
-    "/problems/a999",
+    "/problems/z999",
   );
+});
+
+test("new a and b tutorials are reachable from ordinary courses without inventing a course-specific lesson", () => {
+  for (const code of ["a877", "b001", "b376"]) {
+    assert.equal(courseEntryHref(4, "自訂課程", entry(1000, code)), `/courses/practice/lessons/${code}`);
+  }
+  assert.equal(courseEntryHref(4, "自訂課程", entry(1001, "b001", "easy", "RECOGNITION")), "/recognition/q/1001");
 });
 
 test("ordinary courses preserve the complete saved sequence including mixed and unknown difficulty", () => {
   const entries = [
     entry(1, "a029", "hard"),
     entry(2, "a006"),
-    entry(3, "a999", "custom"),
+    entry(3, "z999", "custom"),
     entry(4, "a010"),
     entry(5, null, "medium", "RECOGNITION"),
   ];

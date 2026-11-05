@@ -1,0 +1,681 @@
+{
+  "code": "a980",
+  "status": "cpp-ready-python-unsuitable-for-max-limit-recommendation",
+  "concept": "全域隨機投影、區間線性相減與整數打包",
+  "goal": "利用乘積最多2n個非零元素定位答案，並分別理解C++模運算與Python大整數打包的成本及機率保證。",
+  "explanation": [
+    "A、B可能都很稠密，只有C=AB稀疏。對任意欄區間S與向量v，以A(B_S v)取得C_S v，不必先算整個乘積。",
+    "全域只產生一次T=ceil(42/log(P))組獨立均勻向量，之後限制到各固定二分欄區間。非零列的每個投影為均勻分布；只有全部T個分量都為0才捨棄。",
+    "每個節點保留父區間投影，只計算左半投影；右半由父減左取得。單欄時，任一非零隨機係數的反元素都能從投影精確還原C[i,j]，省去最後一次長內積。最後依列、欄排序。",
+    "C++：T個投影分量分開存成模P整數，乘加用64位元累積後才取模；右半投影直接在模P下相減。n(P−1)²≤6999999440000011200<2^63，因此不溢位。random_device直接作均勻抽樣來源，沒有固定種子；機率界仍以底層提供理想獨立均勻亂數為前提。",
+    "Python：令s[k]=sum_j B[k,j]、H=(P−1)max(max_k s[k], max_i sum_k A[i,k]s[k])，b=bit_length(H)、Q=2^b。將T個投影係數放入同一整數的T個Q進位區塊，用Python3.12的math.sumprod一次完成所有投影。",
+    "H同時涵蓋每個Bv與A(Bv)的未取模係數，包含A完全沒有使用到的B列，因此所有區塊都小於Q、不互相進位。先精確作整數乘加與相減，再逐區塊取模；不經浮點近似，也不減少T。",
+    "正確性是Monte Carlo保證：對所有固定的真實非零列與二分區間作聯合界，最多72800個事件，漏項機率≤72800/P^T≤72800 exp(-42)<5×10^−14。區間可以共用向量，聯合界不要求區間彼此獨立；輸出的每個值都精確，但仍可能漏項。",
+    "參考原理：https://nhspc2020.twpca.org/editorial/editorial.html 。Python實際最大範圍效能限制請見performanceNote，不應把大整數乘加視為常數成本。"
+  ],
+  "complexity": "C++：O(Tn² log n)次64位元乘加、O(Tn²+n log P)次取模，O(n²+Tn log n)個機器字空間。Python：O(n² log n)個純量乘打包整數的乘加；打包長度L=Tb=O(T log(nP))位元，每次仍需O(L/word)機器字工作，不能宣稱二次位元時間；矩陣使用2n²個32位元整數，額外O(nL log n)位元及O(n log n)筆列資料。T介於3與12。",
+  "pitfall": "不能假設A、B稀疏；不能把共用區間當成獨立事件證明；Python上界H必須同時涵蓋Bv與A(Bv)，尤其A有全零欄時。不能將大整數操作當成常數時間，也不能把有限測試通過說成確定性正確或最大範圍通過時限。",
+  "performanceNote": "建議使用C++。Python版在本機部分最大測資超過本站19.5秒額度，尚不適合作為最大範圍可通過時限的提交建議，宜作教學與較小規模參考；本機計時不代表正式評測結果。",
+  "traceLabel": "P=37，A=I，B=[[0,3],[2,0]]。只展示第一個全域投影分量v=(1,1)；程式仍使用完整T=12個獨立分量。",
+  "trace": [
+    {
+      "title": "父區間投影",
+      "description": "全域第一個向量為(1,1)，所以父投影A(Bv)=(3,2)。H=108，Python可用Q=128打包各分量。",
+      "cells": [
+        "列1投影3",
+        "列2投影2"
+      ],
+      "active": [
+        0,
+        1
+      ],
+      "variables": [
+        [
+          "T",
+          "12"
+        ],
+        [
+          "Q",
+          "128"
+        ]
+      ]
+    },
+    {
+      "title": "只計算左半",
+      "description": "左半只含第1欄，其投影為(0,2)，所以左半只保留第2列。",
+      "cells": [
+        "左列1:0",
+        "左列2:2"
+      ],
+      "active": [
+        1
+      ],
+      "variables": [
+        [
+          "左投影",
+          "(0,2)"
+        ]
+      ]
+    },
+    {
+      "title": "相減取得右半",
+      "description": "右投影=(3,2)−(0,2)=(3,0)，不必重算另一個完整內積。右半只保留第1列。",
+      "cells": [
+        "右列1:3",
+        "右列2:0"
+      ],
+      "active": [
+        0
+      ],
+      "variables": [
+        [
+          "右投影",
+          "(3,0)"
+        ]
+      ]
+    },
+    {
+      "title": "單欄還原並排序",
+      "description": "示例係數都是1，除回係數後得到C[1,2]=3、C[2,1]=2；依位置排序輸出。",
+      "cells": [
+        "1 2 3",
+        "2 1 2"
+      ],
+      "active": [
+        0,
+        1
+      ],
+      "variables": [
+        [
+          "非零數",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "python": "import sys, random, math\nfrom array import array\nfrom itertools import islice\nfrom math import sumprod\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        yield from map(int, line.split())\n\nit = numbers()\nsub, n, P = next(it), next(it), next(it)\nA = [array(\"I\", islice(it, n)) for _ in range(n)]\nB = [array(\"I\", islice(it, n)) for _ in range(n)]\nT = math.ceil(42 / math.log(P))\nrow_sums = [sum(row) for row in B]\nH = (P-1)*max(max(row_sums), max(sumprod(row, row_sums) for row in A))\nbits = H.bit_length()\nmask = (1 << bits)-1\nrng = random.SystemRandom()\nvectors = []\ninverses = []\nfor j in range(n):\n    values = [rng.randrange(P) for _ in range(T)]\n    vectors.append(sum(x << (t*bits) for t,x in enumerate(values)))\n    inverses.append(next(((t*bits, pow(x,-1,P)) for t,x in enumerate(values) if x), (0,0)))\nout = []\n\ndef nonzero(z):\n    for _ in range(T):\n        if (z & mask) % P:\n            return True\n        z >>= bits\n    return False\n\ndef solve(l,r,w,rows):\n    if not rows:\n        return\n    if r-l == 1:\n        offset, inv = inverses[l]\n        for i,z in rows:\n            value = ((z >> offset) & mask)%P*inv%P\n            if value:\n                out.append((i+1,l+1,value))\n        return\n    mid=(l+r)//2\n    v=vectors[l:mid]\n    leftw=[sumprod(row[l:mid],v) for row in B]\n    rightw=[x-y for x,y in zip(w,leftw)]\n    left=[]\n    right=[]\n    for i,z in rows:\n        a=sumprod(A[i],leftw)\n        b=z-a\n        if nonzero(a):\n            left.append((i,a))\n        if nonzero(b):\n            right.append((i,b))\n    solve(l,mid,leftw,left)\n    solve(mid,r,rightw,right)\n\nw=[sumprod(row,vectors) for row in B]\nrows=[]\nfor i,row in enumerate(A):\n    z=sumprod(row,w)\n    if nonzero(z):\n        rows.append((i,z))\nsolve(0,n,w,rows)\nprint(\"\\n\".join(\" \".join(map(str,t)) for t in sorted(out)))\n",
+  "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nint n, P;\nvector<vector<int>> A, B;\nvector<array<int,3>> answer;\nint power(int a, int b) {\n    ll r=1;\n    for (;b;b>>=1,a=ll(a)*a%P) if(b&1) r=r*a%P;\n    return int(r);\n}\ntemplate<int T> void run() {\n    using Vec=array<int,T>;\n    struct Row { int i; Vec z; };\n    vector<Vec> v(n);\n    vector<pair<int,int>> inv(n,{-1,0});\n    random_device rng;\n    uniform_int_distribution<int> dist(0,P-1);\n    for(int j=0;j<n;j++) for(int t=0;t<T;t++) {\n        v[j][t]=dist(rng);\n        if(inv[j].first<0 && v[j][t]) inv[j]={t,power(v[j][t],P-2)};\n    }\n    auto nonzero=[](const Vec &z) { for(int x:z) if(x) return true; return false; };\n    auto projectB=[&](int l,int r) {\n        vector<Vec> w(n);\n        for(int k=0;k<n;k++) {\n            array<ll,T> z{};\n            for(int j=l;j<r;j++) for(int t=0;t<T;t++) z[t]+=ll(B[k][j])*v[j][t];\n            for(int t=0;t<T;t++) w[k][t]=z[t]%P;\n        }\n        return w;\n    };\n    auto projectA=[&](int i,const vector<Vec> &w) {\n        array<ll,T> z{};\n        for(int k=0;k<n;k++) for(int t=0;t<T;t++) z[t]+=ll(A[i][k])*w[k][t];\n        Vec result;\n        for(int t=0;t<T;t++) result[t]=z[t]%P;\n        return result;\n    };\n    function<void(int,int,const vector<Vec>&,const vector<Row>&)> solve;\n    solve=[&](int l,int r,const vector<Vec> &w,const vector<Row> &rows) {\n        if(rows.empty()) return;\n        if(r-l==1) {\n            auto [t,u]=inv[l];\n            if(t<0) return;\n            for(auto &row:rows) {\n                int value=ll(row.z[t])*u%P;\n                if(value) answer.push_back({row.i+1,l+1,value});\n            }\n            return;\n        }\n        int mid=(l+r)/2;\n        auto lw=projectB(l,mid), rw=w;\n        for(int k=0;k<n;k++) for(int t=0;t<T;t++) {\n            rw[k][t]-=lw[k][t];\n            if(rw[k][t]<0) rw[k][t]+=P;\n        }\n        vector<Row> left,right;\n        for(auto &row:rows) {\n            Vec a=projectA(row.i,lw), b;\n            for(int t=0;t<T;t++) { b[t]=row.z[t]-a[t]; if(b[t]<0) b[t]+=P; }\n            if(nonzero(a)) left.push_back({row.i,a});\n            if(nonzero(b)) right.push_back({row.i,b});\n        }\n        solve(l,mid,lw,left);\n        solve(mid,r,rw,right);\n    };\n    auto w=projectB(0,n);\n    vector<Row> rows;\n    for(int i=0;i<n;i++) { auto z=projectA(i,w); if(nonzero(z)) rows.push_back({i,z}); }\n    solve(0,n,w,rows);\n}\nint main() {\n    ios::sync_with_stdio(false); cin.tie(nullptr);\n    int sub; cin>>sub>>n>>P;\n    A.assign(n,vector<int>(n)); B=A;\n    for(auto &row:A) for(int &x:row) cin>>x;\n    for(auto &row:B) for(int &x:row) cin>>x;\n    int T=ceil(42/log(double(P)));\n    switch(T) {\n        case 3:run<3>();break; case 4:run<4>();break;\n        case 5:run<5>();break; case 6:run<6>();break;\n        case 7:run<7>();break; case 8:run<8>();break;\n        case 9:run<9>();break; case 10:run<10>();break;\n        case 11:run<11>();break; case 12:run<12>();break;\n    }\n    sort(answer.begin(),answer.end());\n    for(auto [i,j,x]:answer) cout<<i<<' '<<j<<' '<<x<<'\\n';\n}\n",
+  "proof": {
+    "python": "Let s[k]=sum_j B[k,j] and H=(P-1)*max(max_k s[k], max_i sum_k A[i,k]*s[k]). Every raw Bv coefficient is <=(P-1)*s[k]<=H, including rows with A[:,k]=0. Every raw A(Bv) coefficient is <=(P-1)*sum_k A[i,k]*s[k]<=H. Q=2^H.bit_length()>H therefore prevents all inter-lane carries. Packed integer linearity and nonnegative coefficients give w(parent)=w(left)+w(right) and z(parent)=z(left)+z(right), so subtraction yields the exact nonnegative right projection. T=ceil(42/log(P)) independent SystemRandom vectors are sampled globally once; restrict them to fixed dyadic intervals. Each true row/interval pair is missed with probability P^(-T). Union over at most 72800 fixed true pairs gives <=72800 exp(-42)<5e-14 without requiring interval independence or adaptive conditioning. Singleton division by a nonzero vector component recovers an exact C entry. H>0 follows from the promised nonzero product. Computing H costs an extra ordinary n*n matrix-vector multiplication, without modulo. No input-family detection or weakened error bound is used.",
+    "cpp": "All T vectors are drawn once with uniform_int_distribution driven directly by random_device. Restricted interval projections are linear over F_P. Compute only left Bv and left A(Bv); subtract from parent residues to get right projections exactly. At singleton divide projection by a nonzero vector component. The same fixed-interval union bound <=72800 exp(-42) applies under the ideal independent uniform random-source assumption. Every emitted entry is exact. Each inner sum contains <=n products of residues <=P-1, so n(P-1)^2<2^63 prevents overflow. random_device quality is implementation-dependent; Linux libstdc++ uses the OS random source."
+  },
+  "compatibility": {
+    "minimumPython": "3.12",
+    "configuredPython": "3.12.0",
+    "testedPython": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+    "python312Execution": "Not available on this host; runtime execution was Python3.13.12. All submitted APIs are documented in Python3.12, and no Python3.13-only helper is used. math.sumprod was introduced in3.12; integer inputs stay exact. islice, array, int.bit_length and pow(a,-1,P) predate3.12.",
+    "pythonDocs": "https://docs.python.org/3.12/library/math.html#math.sumprod",
+    "fallback": "No optional package or 3.13 helper requires a fallback; math.sumprod requires the site's configured Python>=3.12.",
+    "python312CiCommand": "python3.12 scripts/fixtures/new-problem-lessons/a980-performance.py --compatibility-smoke",
+    "compatibilitySmoke": "Two official samples and exact integer sumprod with >180-bit operands pass on the installed3.13.12. The same Linux-only smoke mode is available for actual3.12 CI; no3.12 execution is claimed.",
+    "testedCompiler": "g++ (Debian 16.2.0-1) 16.2.0",
+    "configuredCompiler": "GCC10.2; not locally executed",
+    "linuxGuard": "a980-performance.py explicitly rejects non-Linux before any compilation or execution."
+  },
+  "verification": {
+    "pythonSha256": "4f5baceb92efba38b8f88ebc837a0cc4562061b9f8484909b7a7df8ba3d7ca0b",
+    "cppSha256": "a48423b0dc26322379f315d71cd4685e053386c8cdd20b0992801f6cd2db012e",
+    "pythonChecks": [
+      {
+        "case": "sample",
+        "wallSeconds": 0.03830355699994925,
+        "cpuSeconds": 0.024288999999999998,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "sample",
+        "wallSeconds": 0.040896971999984544,
+        "cpuSeconds": 0.02179,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n2-P37",
+        "wallSeconds": 0.04090221899997459,
+        "cpuSeconds": 0.021831999999999997,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n2-P2801",
+        "wallSeconds": 0.04114335399998481,
+        "cpuSeconds": 0.021623,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n2-P49999991",
+        "wallSeconds": 0.04098420000002534,
+        "cpuSeconds": 0.022758,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n3-P37",
+        "wallSeconds": 0.04089693700001362,
+        "cpuSeconds": 0.023756999999999997,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n3-P2801",
+        "wallSeconds": 0.04114807299998802,
+        "cpuSeconds": 0.023473,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n3-P49999991",
+        "wallSeconds": 0.020659905000002254,
+        "cpuSeconds": 0.019941,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n7-P37",
+        "wallSeconds": 0.041091074000007666,
+        "cpuSeconds": 0.021887999999999998,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n7-P2801",
+        "wallSeconds": 0.040859226999998555,
+        "cpuSeconds": 0.024072,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n7-P49999991",
+        "wallSeconds": 0.040819797000040126,
+        "cpuSeconds": 0.021156,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n12-P37",
+        "wallSeconds": 0.04084569400004057,
+        "cpuSeconds": 0.022192,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n12-P2801",
+        "wallSeconds": 0.020841568000037114,
+        "cpuSeconds": 0.020062999999999998,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n12-P49999991",
+        "wallSeconds": 0.040955380999946556,
+        "cpuSeconds": 0.024378999999999998,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n38-P37",
+        "wallSeconds": 0.04091343099997857,
+        "cpuSeconds": 0.024928,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n38-P2801",
+        "wallSeconds": 0.04091458799996417,
+        "cpuSeconds": 0.023157999999999998,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n38-P49999991",
+        "wallSeconds": 0.04100493400000005,
+        "cpuSeconds": 0.023101,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "unused-large-B-rows-n38-P37",
+        "wallSeconds": 0.04181645600004913,
+        "cpuSeconds": 0.023233,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "unused-large-B-rows-n38-P49999991",
+        "wallSeconds": 0.04085714000001417,
+        "cpuSeconds": 0.022323,
+        "peakRssKiB": 28372,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      }
+    ],
+    "cppChecks": [
+      {
+        "case": "sample",
+        "wallSeconds": 0.032364501999950335,
+        "cpuSeconds": 0.0028699999999999997,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "sample",
+        "wallSeconds": 0.021146700999906898,
+        "cpuSeconds": 0.0022689999999999997,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n2-P37",
+        "wallSeconds": 0.02069337800003268,
+        "cpuSeconds": 0.001676,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n2-P2801",
+        "wallSeconds": 0.020731988000079582,
+        "cpuSeconds": 0.0016539999999999999,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n2-P49999991",
+        "wallSeconds": 0.020772845999999845,
+        "cpuSeconds": 0.001815,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n3-P37",
+        "wallSeconds": 0.02072840100004214,
+        "cpuSeconds": 0.00172,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n3-P2801",
+        "wallSeconds": 0.02074714299999414,
+        "cpuSeconds": 0.001661,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n3-P49999991",
+        "wallSeconds": 0.020752008000044952,
+        "cpuSeconds": 0.001772,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n7-P37",
+        "wallSeconds": 0.020829892000051586,
+        "cpuSeconds": 0.002265,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n7-P2801",
+        "wallSeconds": 0.02070974599996589,
+        "cpuSeconds": 0.001762,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n7-P49999991",
+        "wallSeconds": 0.020869779000008748,
+        "cpuSeconds": 0.00181,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n12-P37",
+        "wallSeconds": 0.020889112000077148,
+        "cpuSeconds": 0.002159,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n12-P2801",
+        "wallSeconds": 0.020726839999952062,
+        "cpuSeconds": 0.001977,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n12-P49999991",
+        "wallSeconds": 0.02068869499998982,
+        "cpuSeconds": 0.0017,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n38-P37",
+        "wallSeconds": 0.020859919999907106,
+        "cpuSeconds": 0.003078,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n38-P2801",
+        "wallSeconds": 0.020777729999963412,
+        "cpuSeconds": 0.0025429999999999997,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "signed-dense-n38-P49999991",
+        "wallSeconds": 0.02094154000008075,
+        "cpuSeconds": 0.002297,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "unused-large-B-rows-n38-P37",
+        "wallSeconds": 0.02071002699995006,
+        "cpuSeconds": 0.002956,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "unused-large-B-rows-n38-P49999991",
+        "wallSeconds": 0.02084420299991052,
+        "cpuSeconds": 0.002097,
+        "peakRssKiB": 29388,
+        "timeoutSeconds": 15,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      }
+    ],
+    "pythonMax": [
+      {
+        "case": "dense-cycle-n2800-P37",
+        "wallSeconds": 15.347402038000041,
+        "cpuSeconds": 15.326416,
+        "peakRssKiB": 84268,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-cycle-n2800-P49999991",
+        "wallSeconds": 13.626184330000001,
+        "cpuSeconds": 13.615575,
+        "peakRssKiB": 93328,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-scaled-wide-n2800-P37",
+        "wallSeconds": 22.23377877100006,
+        "cpuSeconds": 22.213898999999998,
+        "peakRssKiB": 86264,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-scaled-wide-n2800-P49999991",
+        "wallSeconds": 20.018243675999997,
+        "cpuSeconds": 20.006327,
+        "peakRssKiB": 90436,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      }
+    ],
+    "cppMax": [
+      {
+        "case": "dense-cycle-n2800-P37",
+        "wallSeconds": 2.8487510580000617,
+        "cpuSeconds": 2.838673,
+        "peakRssKiB": 69052,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-cycle-n2800-P49999991",
+        "wallSeconds": 1.4968577079999932,
+        "cpuSeconds": 1.488634,
+        "peakRssKiB": 66560,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-scaled-wide-n2800-P37",
+        "wallSeconds": 3.3110459600000013,
+        "cpuSeconds": 3.302058,
+        "peakRssKiB": 69492,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-scaled-wide-n2800-P49999991",
+        "wallSeconds": 1.8781558470000164,
+        "cpuSeconds": 1.872781,
+        "peakRssKiB": 66408,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      }
+    ],
+    "finiteLimit": "Independent finite examples and algebraically certified maximum-size constructions are not an exhaustive proof or an empirical validation of a 5e-14 error probability."
+  },
+  "checks": [
+    {
+      "code": "a980",
+      "input": "1\n2 2801\n1402 1400\n4 2799\n1 2\n3 4\n",
+      "output": "1 2 1\n2 1 2799",
+      "reason": "公開範例1；預期輸出另以獨立三層迴圈乘法核對。"
+    },
+    {
+      "code": "a980",
+      "input": "2\n3 65537\n1 1 2\n65536 0 1\n2 3 6\n3 2 65536\n65527 65532 1\n4 2 0\n",
+      "output": "1 1 1\n1 2 1\n2 1 1\n2 3 1\n3 2 1\n3 3 1",
+      "reason": "公開範例2；預期輸出另以獨立三層迴圈乘法核對。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n2 37\n1 0\n0 1\n0 3\n2 0\n",
+      "output": "1 2 3\n2 1 2",
+      "reason": "最小模數、零元素與輸出排序。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n2 37\n1 1\n1 1\n1 36\n36 2\n",
+      "output": "1 2 1\n2 2 1",
+      "reason": "投影可能抵銷；乘積只有第二欄非零。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n4 47\n4 2 2 2\n3 6 3 3\n4 4 8 4\n5 5 5 10\n45 40 45 40\n21 9 21 9\n33 40 33 40\n21 12 21 12\n",
+      "output": "1 1 1\n1 3 1\n2 2 1\n2 4 1\n3 1 1\n3 3 1\n4 2 1\n4 4 1",
+      "reason": "中間模數P=47，獨立乘法核對跨區間非零與縮放矩陣。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n4 73\n4 2 2 2\n3 6 3 3\n4 4 8 4\n5 5 5 10\n4 69 4 69\n40 45 40 45\n22 69 22 69\n40 40 40 40\n",
+      "output": "1 1 1\n1 3 1\n2 2 1\n2 4 1\n3 1 1\n3 3 1\n4 2 1\n4 4 1",
+      "reason": "中間模數P=73，獨立乘法核對跨區間非零與縮放矩陣。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n4 113\n4 2 2 2\n3 6 3 3\n4 4 8 4\n5 5 5 10\n6 24 6 24\n62 62 62 62\n34 24 34 24\n62 92 62 92\n",
+      "output": "1 1 1\n1 3 1\n2 2 1\n2 4 1\n3 1 1\n3 3 1\n4 2 1\n4 4 1",
+      "reason": "中間模數P=113，獨立乘法核對跨區間非零與縮放矩陣。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n4 211\n4 2 2 2\n3 6 3 3\n4 4 8 4\n5 5 5 10\n32 149 32 149\n137 79 137 79\n190 149 190 149\n137 107 137 107\n",
+      "output": "1 1 1\n1 3 1\n2 2 1\n2 4 1\n3 1 1\n3 3 1\n4 2 1\n4 4 1",
+      "reason": "中間模數P=211，獨立乘法核對跨區間非零與縮放矩陣。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n4 997\n4 2 2 2\n3 6 3 3\n4 4 8 4\n5 5 5 10\n449 186 449 186\n947 851 947 851\n698 186 698 186\n947 585 947 585\n",
+      "output": "1 1 1\n1 3 1\n2 2 1\n2 4 1\n3 1 1\n3 3 1\n4 2 1\n4 4 1",
+      "reason": "中間模數P=997，獨立乘法核對跨區間非零與縮放矩陣。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n4 10007\n4 2 2 2\n3 6 3 3\n4 4 8 4\n5 5 5 10\n9507 2535 9507 2535\n4503 5871 4503 5871\n7005 2535 7005 2535\n4503 6538 4503 6538\n",
+      "output": "1 1 1\n1 3 1\n2 2 1\n2 4 1\n3 1 1\n3 3 1\n4 2 1\n4 4 1",
+      "reason": "中間模數P=10007，獨立乘法核對跨區間非零與縮放矩陣。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n38 37\n1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36\n",
+      "output": "1 1 1\n1 38 36\n2 1 2\n2 38 35",
+      "reason": "A僅一個有效欄，B未使用的列很大；打包上界必須涵蓋Bv。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n38 49999991\n1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990 49999990\n",
+      "output": "1 1 1\n1 38 49999990\n2 1 2\n2 38 49999989",
+      "reason": "A僅一個有效欄，B未使用的列很大；打包上界必須涵蓋Bv。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n8 37\n2 1 1 1 1 1 1 1\n1 2 1 1 1 1 1 1\n1 1 2 1 1 1 1 1\n1 1 1 2 1 1 1 1\n1 1 1 1 2 1 1 1\n1 1 1 1 1 2 1 1\n1 1 1 1 1 1 2 1\n1 1 1 1 1 1 1 2\n0 0 0 0 0 0 0 5\n0 0 0 0 0 0 0 4\n0 0 0 0 0 0 0 4\n0 0 0 0 0 0 0 4\n0 0 0 0 0 0 0 4\n0 0 0 0 0 0 0 4\n0 0 0 0 0 0 0 4\n0 0 0 0 0 0 0 4\n",
+      "output": "1 8 1",
+      "reason": "乘積只有1個非零元素，測試空區間剪枝。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n8 37\n2 1 1 1 1 1 1 1\n1 2 1 1 1 1 1 1\n1 1 2 1 1 1 1 1\n1 1 1 2 1 1 1 1\n1 1 1 1 2 1 1 1\n1 1 1 1 1 2 1 1\n1 1 1 1 1 1 2 1\n1 1 1 1 1 1 1 2\n9 9 9 9 9 9 9 9\n9 9 9 9 9 9 9 9\n8 8 8 8 8 8 8 8\n8 8 8 8 8 8 8 8\n8 8 8 8 8 8 8 8\n8 8 8 8 8 8 8 8\n8 8 8 8 8 8 8 8\n8 8 8 8 8 8 8 8\n",
+      "output": "1 1 1\n1 2 1\n1 3 1\n1 4 1\n1 5 1\n1 6 1\n1 7 1\n1 8 1\n2 1 1\n2 2 1\n2 3 1\n2 4 1\n2 5 1\n2 6 1\n2 7 1\n2 8 1",
+      "reason": "恰2n個非零元素集中於兩列。"
+    },
+    {
+      "code": "a980",
+      "input": "3\n8 37\n2 1 1 1 1 1 1 1\n1 2 1 1 1 1 1 1\n1 1 2 1 1 1 1 1\n1 1 1 2 1 1 1 1\n1 1 1 1 2 1 1 1\n1 1 1 1 1 2 1 1\n1 1 1 1 1 1 2 1\n1 1 1 1 1 1 1 2\n33 0 0 0 0 0 0 33\n33 0 0 0 0 0 0 33\n33 0 0 0 0 0 0 33\n33 0 0 0 0 0 0 33\n33 0 0 0 0 0 0 33\n33 0 0 0 0 0 0 33\n33 0 0 0 0 0 0 33\n33 0 0 0 0 0 0 33\n",
+      "output": "1 1 1\n1 8 1\n2 1 1\n2 8 1\n3 1 1\n3 8 1\n4 1 1\n4 8 1\n5 1 1\n5 8 1\n6 1 1\n6 8 1\n7 1 1\n7 8 1\n8 1 1\n8 8 1",
+      "reason": "恰2n個非零元素集中於兩個相距很遠的欄。"
+    }
+  ],
+  "checksProvenance": "每筆皆包含完整input/output/reason，可直接加入既有checks陣列。公開範例預期輸出另以獨立O(n³)整數乘法核對；其他預期輸出完全由該獨立乘法產生，不使用候選程式當oracle。最大測資只在Linux/tmp生成，不嵌入JSON。"
+}

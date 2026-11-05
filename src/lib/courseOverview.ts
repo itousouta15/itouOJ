@@ -1,5 +1,6 @@
 import { apcsPastExamUnits } from "@/lib/apcsPastExamCourse";
 import { getCourseLesson } from "@/lib/courseLessons";
+import { getNewProblemLesson, getNewProblemLessonHref } from "@/lib/newProblemLessons";
 import {
   getToiTopicForProblem,
   toiCourseTopics,
@@ -59,7 +60,7 @@ export const courseDifficultyOptions = [
 
 export function courseEntryLesson(title: string, entry: CourseEntry) {
   return entry.problem.type === "PROGRAMMING" && entry.problem.problemCode
-    ? getCourseLesson(title, entry.problem.problemCode)
+    ? getCourseLesson(title, entry.problem.problemCode) ?? getNewProblemLesson(entry.problem.problemCode)
     : undefined;
 }
 
@@ -71,6 +72,7 @@ export function courseEntryHref(
   const problem = entry.problem;
   if (problem.type === "RECOGNITION") return `/recognition/q/${problem.id}`;
   if (!problem.problemCode) return null;
+  if (problem.type === "PROGRAMMING" && getNewProblemLesson(problem.problemCode)) return getNewProblemLessonHref(problem.problemCode)!;
   return courseEntryLesson(title, entry)
     ? `/courses/${courseId}/lessons/${problem.problemCode}`
     : `/problems/${problem.problemCode}`;
