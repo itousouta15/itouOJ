@@ -4,7 +4,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { format as cppFormat } from "@wasm-fmt/clang-format";
 import { format as pythonFormat } from "@wasm-fmt/ruff_fmt";
 
-const batches = ["competition", "national1", "national2", "practice1", "practice2", "practice3", "practice4"];
+const batches = ["competition", "national1", "national2", "practice1", "practice2", "practice3", "practice4", "nov08-562-607", "nov08-608-653", "nov08-654-699", "nov08-700-745", "nov08-746-790"];
 const selected = process.argv[2];
 if (selected && !batches.includes(selected)) throw new Error("Unknown batch");
 for (const batch of selected ? [selected] : batches) {

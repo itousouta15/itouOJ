@@ -1,0 +1,1278 @@
+{
+  "seed": 562607,
+  "environment": "WSL kali-linux; Linux g++ -std=c++17 -O2; Python3",
+  "authoredCount": 46,
+  "missingCodes": [],
+  "publicCases": 54,
+  "independentCases": 1019,
+  "runs": [
+    {
+      "code": "b562",
+      "cases": 3,
+      "passed": {
+        "cpp": 3,
+        "python": 3
+      },
+      "seconds": {
+        "cpp": 0.026544004999891513,
+        "python": 1.5626289020000286
+      }
+    },
+    {
+      "code": "b563",
+      "cases": 45,
+      "passed": {
+        "cpp": 45,
+        "python": 45
+      },
+      "seconds": {
+        "cpp": 0.09590502599999695,
+        "python": 0.9548976779999521
+      }
+    },
+    {
+      "code": "b564",
+      "cases": 27,
+      "passed": {
+        "cpp": 27,
+        "python": 27
+      },
+      "seconds": {
+        "cpp": 0.058955838000201766,
+        "python": 0.4540122219999603
+      }
+    },
+    {
+      "code": "b565",
+      "cases": 19,
+      "passed": {
+        "cpp": 19,
+        "python": 19
+      },
+      "seconds": {
+        "cpp": 0.039792148000174166,
+        "python": 0.3277849390000256
+      }
+    },
+    {
+      "code": "b566",
+      "cases": 2,
+      "passed": {
+        "cpp": 2,
+        "python": 2
+      },
+      "seconds": {
+        "cpp": 0.004718498999977783,
+        "python": 0.03801591000001281
+      }
+    },
+    {
+      "code": "b567",
+      "cases": 19,
+      "passed": {
+        "cpp": 19,
+        "python": 19
+      },
+      "seconds": {
+        "cpp": 0.053560592999815526,
+        "python": 0.43005172899995614
+      }
+    },
+    {
+      "code": "b568",
+      "cases": 151,
+      "passed": {
+        "cpp": 151,
+        "python": 151
+      },
+      "seconds": {
+        "cpp": 0.34800010599985853,
+        "python": 3.1416192790005653
+      }
+    },
+    {
+      "code": "b569",
+      "cases": 3,
+      "passed": {
+        "cpp": 3,
+        "python": 3
+      },
+      "seconds": {
+        "cpp": 0.011109816000043793,
+        "python": 0.05541234899988012
+      }
+    },
+    {
+      "code": "b570",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.04771349399993596,
+        "python": 0.3921698350002316
+      }
+    },
+    {
+      "code": "b571",
+      "cases": 24,
+      "passed": {
+        "cpp": 24,
+        "python": 24
+      },
+      "seconds": {
+        "cpp": 0.0552115660001391,
+        "python": 0.47321299199984423
+      }
+    },
+    {
+      "code": "b572",
+      "cases": 17,
+      "passed": {
+        "cpp": 17,
+        "python": 17
+      },
+      "seconds": {
+        "cpp": 0.04731151699979819,
+        "python": 0.35331709999957184
+      }
+    },
+    {
+      "code": "b573",
+      "cases": 47,
+      "passed": {
+        "cpp": 47,
+        "python": 47
+      },
+      "seconds": {
+        "cpp": 0.1272790289998511,
+        "python": 0.9851014779998195
+      }
+    },
+    {
+      "code": "b574",
+      "cases": 21,
+      "passed": {
+        "cpp": 21,
+        "python": 21
+      },
+      "seconds": {
+        "cpp": 0.05093698400003177,
+        "python": 0.4826515450001807
+      }
+    },
+    {
+      "code": "b575",
+      "cases": 17,
+      "passed": {
+        "cpp": 17,
+        "python": 17
+      },
+      "seconds": {
+        "cpp": 0.06090227599975151,
+        "python": 0.41134397300004366
+      }
+    },
+    {
+      "code": "b576",
+      "cases": 21,
+      "passed": {
+        "cpp": 21,
+        "python": 21
+      },
+      "seconds": {
+        "cpp": 0.06360272200004147,
+        "python": 0.4265723229999594
+      }
+    },
+    {
+      "code": "b577",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.08827581900015957,
+        "python": 0.5360637869996481
+      }
+    },
+    {
+      "code": "b578",
+      "cases": 47,
+      "passed": {
+        "cpp": 47,
+        "python": 47
+      },
+      "seconds": {
+        "cpp": 0.20160991100021874,
+        "python": 1.417375535999895
+      }
+    },
+    {
+      "code": "b579",
+      "cases": 19,
+      "passed": {
+        "cpp": 19,
+        "python": 19
+      },
+      "seconds": {
+        "cpp": 0.11435653299997739,
+        "python": 0.878375033999987
+      }
+    },
+    {
+      "code": "b580",
+      "cases": 13,
+      "passed": {
+        "cpp": 13,
+        "python": 13
+      },
+      "seconds": {
+        "cpp": 0.11481619400001364,
+        "python": 0.6983272630000101
+      }
+    },
+    {
+      "code": "b581",
+      "cases": 21,
+      "passed": {
+        "cpp": 21,
+        "python": 21
+      },
+      "seconds": {
+        "cpp": 0.160840911000264,
+        "python": 0.9252931870004204
+      }
+    },
+    {
+      "code": "b582",
+      "cases": 26,
+      "passed": {
+        "cpp": 26,
+        "python": 26
+      },
+      "seconds": {
+        "cpp": 0.1468519259999539,
+        "python": 1.1884381410002334
+      }
+    },
+    {
+      "code": "b583",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.21672825200028,
+        "python": 1.1082369569999173
+      }
+    },
+    {
+      "code": "b584",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.07781957299982878,
+        "python": 0.5372594880001316
+      }
+    },
+    {
+      "code": "b585",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.07537913800024398,
+        "python": 0.5193479889999253
+      }
+    },
+    {
+      "code": "b586",
+      "cases": 16,
+      "passed": {
+        "cpp": 16,
+        "python": 16
+      },
+      "seconds": {
+        "cpp": 0.05614601000036146,
+        "python": 0.3674416840001413
+      }
+    },
+    {
+      "code": "b587",
+      "cases": 19,
+      "passed": {
+        "cpp": 19,
+        "python": 19
+      },
+      "seconds": {
+        "cpp": 0.05109435000042595,
+        "python": 0.37204785299979903
+      }
+    },
+    {
+      "code": "b588",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.061824704999821734,
+        "python": 0.4760040419998859
+      }
+    },
+    {
+      "code": "b589",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.07072533800010206,
+        "python": 0.49297144800004844
+      }
+    },
+    {
+      "code": "b590",
+      "cases": 68,
+      "passed": {
+        "cpp": 68,
+        "python": 68
+      },
+      "seconds": {
+        "cpp": 0.16835779499933778,
+        "python": 1.4491137220001065
+      }
+    },
+    {
+      "code": "b591",
+      "cases": 6,
+      "passed": {
+        "cpp": 6,
+        "python": 6
+      },
+      "seconds": {
+        "cpp": 0.014420816999859198,
+        "python": 0.12401294400001461
+      }
+    },
+    {
+      "code": "b592",
+      "cases": 6,
+      "passed": {
+        "cpp": 6,
+        "python": 6
+      },
+      "seconds": {
+        "cpp": 0.0167012600002181,
+        "python": 0.12077459600004659
+      }
+    },
+    {
+      "code": "b593",
+      "cases": 3,
+      "passed": {
+        "cpp": 3,
+        "python": 3
+      },
+      "seconds": {
+        "cpp": 0.006099216999928103,
+        "python": 0.05914782600007129
+      }
+    },
+    {
+      "code": "b594",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.050404795000417835,
+        "python": 0.4725686889996723
+      }
+    },
+    {
+      "code": "b595",
+      "cases": 21,
+      "passed": {
+        "cpp": 21,
+        "python": 21
+      },
+      "seconds": {
+        "cpp": 0.10652476899963403,
+        "python": 0.49871508799992625
+      }
+    },
+    {
+      "code": "b596",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.05417712900020888,
+        "python": 0.4080534080000007
+      }
+    },
+    {
+      "code": "b597",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.04754224999999224,
+        "python": 0.4060642210001788
+      }
+    },
+    {
+      "code": "b598",
+      "cases": 17,
+      "passed": {
+        "cpp": 17,
+        "python": 17
+      },
+      "seconds": {
+        "cpp": 0.03481364199967629,
+        "python": 0.29187612099997295
+      }
+    },
+    {
+      "code": "b599",
+      "cases": 23,
+      "passed": {
+        "cpp": 23,
+        "python": 23
+      },
+      "seconds": {
+        "cpp": 0.05396763100009139,
+        "python": 0.39902480100056437
+      }
+    },
+    {
+      "code": "b600",
+      "cases": 8,
+      "passed": {
+        "cpp": 8,
+        "python": 8
+      },
+      "seconds": {
+        "cpp": 0.016074430999992728,
+        "python": 0.13922090300036416
+      }
+    },
+    {
+      "code": "b601",
+      "cases": 2,
+      "passed": {
+        "cpp": 2,
+        "python": 2
+      },
+      "seconds": {
+        "cpp": 0.004453053000020191,
+        "python": 0.03657581899994966
+      }
+    },
+    {
+      "code": "b602",
+      "cases": 2,
+      "passed": {
+        "cpp": 2,
+        "python": 2
+      },
+      "seconds": {
+        "cpp": 0.003928059999907418,
+        "python": 0.03439458300010756
+      }
+    },
+    {
+      "code": "b603",
+      "cases": 8,
+      "passed": {
+        "cpp": 8,
+        "python": 8
+      },
+      "seconds": {
+        "cpp": 0.01652970899999673,
+        "python": 0.1357618630000843
+      }
+    },
+    {
+      "code": "b604",
+      "cases": 25,
+      "passed": {
+        "cpp": 25,
+        "python": 25
+      },
+      "seconds": {
+        "cpp": 0.06354909599963321,
+        "python": 0.49723466800026017
+      }
+    },
+    {
+      "code": "b605",
+      "cases": 22,
+      "passed": {
+        "cpp": 22,
+        "python": 22
+      },
+      "seconds": {
+        "cpp": 0.05094613900030254,
+        "python": 0.39345603700007814
+      }
+    },
+    {
+      "code": "b606",
+      "cases": 22,
+      "passed": {
+        "cpp": 22,
+        "python": 22
+      },
+      "seconds": {
+        "cpp": 0.12949529400032134,
+        "python": 0.6945569940002088
+      }
+    },
+    {
+      "code": "b607",
+      "cases": 33,
+      "passed": {
+        "cpp": 33,
+        "python": 33
+      },
+      "seconds": {
+        "cpp": 0.0846884500001579,
+        "python": 0.6991638240000384
+      }
+    }
+  ],
+  "failures": [],
+  "benchmarks": [
+    {
+      "code": "b581",
+      "reason": "Full n=20000 even-parity distinct words; prevents all exact early exits and exercises n(n-1)/2 comparisons.",
+      "inputBytes": 620008,
+      "timings": {
+        "cpp": {
+          "seconds": 0.49771764800004803,
+          "returncode": 0,
+          "outputPrefix": "2\n",
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 29.419121696000047,
+          "returncode": 0,
+          "outputPrefix": "2\n",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b603",
+      "reason": "Full n=5000 quadratic Eulerian DP.",
+      "inputBytes": 4,
+      "timings": {
+        "cpp": {
+          "seconds": 0.03382087800002864,
+          "returncode": 0,
+          "outputPrefix": "1\n860187574\n211908655\n425412214\n432109624\n926594048\n832008091\n28060389\n483445683\n205359057\n154485616",
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 3.8126962039999626,
+          "returncode": 0,
+          "outputPrefix": "1\n860187574\n211908655\n425412214\n432109624\n926594048\n832008091\n28060389\n483445683\n205359057\n154485616",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b606",
+      "reason": "Largest allowed odd n; answer binary search with row-count divisions.",
+      "inputBytes": 6,
+      "timings": {
+        "cpp": {
+          "seconds": 0.16090326599999116,
+          "returncode": 0,
+          "outputPrefix": "186682420008\n",
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 4.710091993999981,
+          "returncode": 0,
+          "outputPrefix": "186682420008\n",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b604",
+      "reason": "n=100 with a nontrivial budget below maximum possible cost; tests open-team cost DP rather than Bell shortcut.",
+      "inputBytes": 308,
+      "timings": {
+        "cpp": {
+          "seconds": 0.010125710000011168,
+          "returncode": 0,
+          "outputPrefix": "76306534\n",
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 0.5093559910000067,
+          "returncode": 0,
+          "outputPrefix": "76306534\n",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b588",
+      "reason": "n=999992 balanced uppercase letters exercises fixed-alphabet greedy scan.",
+      "inputBytes": 999992,
+      "timings": {
+        "cpp": {
+          "seconds": 0.04464140899995073,
+          "returncode": 0,
+          "outputPrefix": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 1.4553904619999685,
+          "returncode": 0,
+          "outputPrefix": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b599",
+      "reason": "Full n=200000, all 26 letters, high-dimensional prefix-difference tuple keys.",
+      "inputBytes": 200000,
+      "timings": {
+        "cpp": {
+          "seconds": 0.12740554999993492,
+          "returncode": 0,
+          "outputPrefix": "0\n",
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 0.5776512749999938,
+          "returncode": 0,
+          "outputPrefix": "0\n",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b605",
+      "reason": "Reverse permutation exercises a deep bidirectional BFS.",
+      "inputBytes": 17,
+      "timings": {
+        "cpp": {
+          "seconds": 0.34025998799995705,
+          "returncode": 0,
+          "outputPrefix": "16\n",
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 0.5269329019999986,
+          "returncode": 0,
+          "outputPrefix": "16\n",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b607",
+      "reason": "Full digit budget 10^18 and 128-bit C++ intermediate arithmetic.",
+      "inputBytes": 19,
+      "timings": {
+        "cpp": {
+          "seconds": 0.0023210639999433624,
+          "returncode": 0,
+          "outputPrefix": "524638270000000000\n",
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 0.018604008000011163,
+          "returncode": 0,
+          "outputPrefix": "524638270000000000\n",
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b563",
+      "name": "complete-500",
+      "n": 500,
+      "m": 124750,
+      "inputBytes": 1193619,
+      "branch": "dense",
+      "triangleBytes": 499000,
+      "addressSpaceLimitBytes": 268435456,
+      "expected": "1",
+      "reason": "Every edge weight is 1, or parallel direct roads include weight 1; no path can have bottleneck <1, and a direct path of bottleneck 1 exists. Input file generated and consumed by streaming, never accumulated in memory.",
+      "timings": {
+        "cpp": {
+          "seconds": 0.04929331799999659,
+          "peakRSSKiB": 11008,
+          "returncode": 0,
+          "output": "1",
+          "passed": true,
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 0.15721979099998862,
+          "peakRSSKiB": 10752,
+          "returncode": 0,
+          "output": "1",
+          "passed": true,
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b563",
+      "name": "complete-3000",
+      "n": 3000,
+      "m": 4498500,
+      "inputBytes": 50662120,
+      "branch": "dense",
+      "triangleBytes": 17994000,
+      "addressSpaceLimitBytes": 268435456,
+      "expected": "1",
+      "reason": "Every edge weight is 1, or parallel direct roads include weight 1; no path can have bottleneck <1, and a direct path of bottleneck 1 exists. Input file generated and consumed by streaming, never accumulated in memory.",
+      "timings": {
+        "cpp": {
+          "seconds": 0.5940857120000089,
+          "peakRSSKiB": 20992,
+          "returncode": 0,
+          "output": "1",
+          "passed": true,
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 4.0684304870000005,
+          "peakRSSKiB": 27264,
+          "returncode": 0,
+          "output": "1",
+          "passed": true,
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b563",
+      "name": "max-triangle-10000",
+      "n": 10000,
+      "m": 40001,
+      "inputBytes": 580031,
+      "branch": "dense",
+      "triangleBytes": 199980000,
+      "addressSpaceLimitBytes": 268435456,
+      "expected": "1",
+      "reason": "Every edge weight is 1, or parallel direct roads include weight 1; no path can have bottleneck <1, and a direct path of bottleneck 1 exists. Input file generated and consumed by streaming, never accumulated in memory.",
+      "timings": {
+        "cpp": {
+          "seconds": 0.20754534400001035,
+          "peakRSSKiB": 198656,
+          "returncode": 0,
+          "output": "1",
+          "passed": true,
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 0.2531318400000089,
+          "peakRSSKiB": 205312,
+          "returncode": 0,
+          "output": "1",
+          "passed": true,
+          "stderr": ""
+        }
+      }
+    },
+    {
+      "code": "b563",
+      "name": "sparse-cutoff-10000",
+      "n": 10000,
+      "m": 40000,
+      "inputBytes": 580012,
+      "branch": "sparse",
+      "triangleBytes": 0,
+      "addressSpaceLimitBytes": 268435456,
+      "expected": "1",
+      "reason": "Every edge weight is 1, or parallel direct roads include weight 1; no path can have bottleneck <1, and a direct path of bottleneck 1 exists. Input file generated and consumed by streaming, never accumulated in memory.",
+      "timings": {
+        "cpp": {
+          "seconds": 0.04525237100000368,
+          "peakRSSKiB": 11136,
+          "returncode": 0,
+          "output": "1",
+          "passed": true,
+          "stderr": ""
+        },
+        "python": {
+          "seconds": 0.0904472239999734,
+          "peakRSSKiB": 18068,
+          "returncode": 0,
+          "output": "1",
+          "passed": true,
+          "stderr": ""
+        }
+      }
+    }
+  ],
+  "excludedPublicDuplicates": [
+    {
+      "code": "b578",
+      "input": "2 2\nAA\nAB",
+      "output": "5\n1",
+      "reason": "窮舉小二色方格及全部矩形，直接讀完整邊界。"
+    },
+    {
+      "code": "b573",
+      "input": "2 2\nAB\nBA",
+      "output": "5",
+      "reason": "窮舉小二色方格及全部上下左右界，直接集合字母。"
+    },
+    {
+      "code": "b590",
+      "input": "2\n..\n..",
+      "output": "2",
+      "reason": "全枚舉合法2×2部分方格，獨立枚舉兩排列補法。"
+    },
+    {
+      "code": "b591",
+      "input": "2",
+      "output": "0\n2",
+      "reason": "窮舉所有競賽圖邊方向，以傳遞閉包直接分SCC，完整分布。"
+    },
+    {
+      "code": "b592",
+      "input": "2",
+      "output": "3\n1",
+      "reason": "窮舉 n^n 個函數，以無向並查集計連通分量，完整分布。"
+    }
+  ],
+  "failureCount": 0,
+  "sourcePublicCases": 53,
+  "supplementalPublicCases": [
+    {
+      "code": "b568",
+      "input": "5\nU 2\nR 3\nD 1\nL 5\nU 2\n",
+      "output": "9",
+      "reason": "官方公開範例：獨立單位展開得到9。"
+    }
+  ],
+  "totalCasesPerLanguage": 1073,
+  "passedPerLanguage": {
+    "cpp": 1073,
+    "python": 1073
+  },
+  "independentCasesPerCode": {
+    "b562": 2,
+    "b564": 25,
+    "b565": 16,
+    "b566": 1,
+    "b567": 18,
+    "b570": 21,
+    "b571": 22,
+    "b572": 15,
+    "b574": 20,
+    "b575": 16,
+    "b576": 20,
+    "b577": 22,
+    "b579": 18,
+    "b580": 12,
+    "b581": 20,
+    "b582": 25,
+    "b583": 22,
+    "b584": 22,
+    "b585": 22,
+    "b586": 15,
+    "b587": 18,
+    "b588": 22,
+    "b589": 22,
+    "b593": 2,
+    "b594": 22,
+    "b595": 20,
+    "b596": 22,
+    "b597": 22,
+    "b598": 16,
+    "b599": 22,
+    "b600": 7,
+    "b601": 1,
+    "b602": 1,
+    "b603": 7,
+    "b604": 24,
+    "b605": 21,
+    "b606": 21,
+    "b607": 32,
+    "b568": 149,
+    "b569": 2,
+    "b573": 46,
+    "b578": 46,
+    "b590": 67,
+    "b591": 5,
+    "b592": 5,
+    "b563": 43
+  },
+  "hardSidecarEvidence": {
+    "lessonSHA256": "daae5b7ed843e6aeb1031cec859a7f71f699a4504551c55246b85a68b81c3373",
+    "environment": {
+      "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+      "platform": "linux"
+    },
+    "notes": [
+      "No official judge submissions or database writes.",
+      "All generated C++17 executables are compiled and run inside Linux /tmp.",
+      "Local maximum-case time is not an official 1-second acceptance guarantee; Python performanceNote fields apply.",
+      "Large distribution certificates check totals and selected boundary bins, not every bin independently.",
+      "Grundy finite-range reliance: Flammenkamp 0..2^35, SG zero count42 including0, last1222. Local exact SG recomputation only1..5000.",
+      "Robot reversal is interpreted from the continuous-point wording as zero extra distance; no official hidden test or submission used."
+    ],
+    "sources": [
+      {
+        "code": "b568",
+        "url": "https://cses.fi/problemset/task/1742/",
+        "basis": "Official continuous-point stopping statement; reversal interpretation explicitly identified."
+      },
+      {
+        "code": "b569",
+        "url": "https://wwwhomes.uni-bielefeld.de/achim/grundy.html",
+        "basis": "Author finite computation frequency table through2^35: zero count42, last1222; not an infinite theorem."
+      },
+      {
+        "code": "b592",
+        "url": "https://doi.org/10.1137/0603033",
+        "basis": "All-minors matrix-tree theorem for fixed-root forests."
+      }
+    ],
+    "summary": {
+      "b568": {
+        "sample": 1,
+        "independent": 150,
+        "maximum": 2
+      },
+      "b569": {
+        "sample": 1,
+        "independent": 2,
+        "maximum": 1
+      },
+      "b573": {
+        "sample": 1,
+        "independent": 47,
+        "maximum": 2
+      },
+      "b578": {
+        "sample": 1,
+        "independent": 47,
+        "maximum": 2
+      },
+      "b590": {
+        "sample": 1,
+        "independent": 68,
+        "maximum": 2
+      },
+      "b591": {
+        "sample": 1,
+        "independent": 6,
+        "maximum": 1
+      },
+      "b592": {
+        "sample": 1,
+        "independent": 6,
+        "maximum": 1
+      }
+    },
+    "passed": true,
+    "maximumCases": [
+      {
+        "code": "b568",
+        "language": "C++17",
+        "name": "monotone-100000",
+        "kind": "maximum",
+        "inputBytes": 1000007,
+        "reason": "單調階梯，不重訪；100000指令、每段1000000。",
+        "seconds": 0.064237,
+        "passed": true,
+        "outputSHA256": "68df2a7a62f96b51246c016704185d4868554f431aa9489c8db1e0fbc5acbc4d"
+      },
+      {
+        "code": "b568",
+        "language": "Python",
+        "name": "monotone-100000",
+        "kind": "maximum",
+        "inputBytes": 1000007,
+        "reason": "單調階梯，不重訪；100000指令、每段1000000。",
+        "seconds": 1.013697,
+        "passed": true,
+        "outputSHA256": "68df2a7a62f96b51246c016704185d4868554f431aa9489c8db1e0fbc5acbc4d"
+      },
+      {
+        "code": "b568",
+        "language": "C++17",
+        "name": "late-collision-100000",
+        "kind": "maximum",
+        "inputBytes": 400015,
+        "reason": "49999個單調階梯後沿上界和左界返回原點；最後一段才首碰撞。",
+        "seconds": 0.083424,
+        "passed": true,
+        "outputSHA256": "8d3be6790eade0ca0ca88066313dc759964c98a52a73268788a4b60e3a1e7a8a"
+      },
+      {
+        "code": "b568",
+        "language": "Python",
+        "name": "late-collision-100000",
+        "kind": "maximum",
+        "inputBytes": 400015,
+        "reason": "49999個單調階梯後沿上界和左界返回原點；最後一段才首碰撞。",
+        "seconds": 0.978652,
+        "passed": true,
+        "outputSHA256": "8d3be6790eade0ca0ca88066313dc759964c98a52a73268788a4b60e3a1e7a8a"
+      },
+      {
+        "code": "b573",
+        "language": "C++17",
+        "name": "cyclic-26-500",
+        "kind": "maximum",
+        "inputBytes": 250507,
+        "reason": "每列相同週期26；欄寬至少26才全字母，獨立閉式。",
+        "seconds": 0.226135,
+        "passed": true,
+        "outputSHA256": "956b69f193a3f00800d1f344665a81b1522c9088ec6d3fc0b9d8573ea09d0381"
+      },
+      {
+        "code": "b573",
+        "language": "Python",
+        "name": "cyclic-26-500",
+        "kind": "maximum",
+        "inputBytes": 250507,
+        "reason": "每列相同週期26；欄寬至少26才全字母，獨立閉式。",
+        "seconds": 40.534792,
+        "passed": true,
+        "outputSHA256": "956b69f193a3f00800d1f344665a81b1522c9088ec6d3fc0b9d8573ea09d0381"
+      },
+      {
+        "code": "b573",
+        "language": "C++17",
+        "name": "one-letter-500",
+        "kind": "maximum",
+        "inputBytes": 250506,
+        "reason": "全部矩形都合格；閉式 n²(n+1)²/4。",
+        "seconds": 0.212746,
+        "passed": true,
+        "outputSHA256": "a983020d55db3227d3bae71bfb47f24a1fe397d229fe28620ea87447be4e29a4"
+      },
+      {
+        "code": "b573",
+        "language": "Python",
+        "name": "one-letter-500",
+        "kind": "maximum",
+        "inputBytes": 250506,
+        "reason": "全部矩形都合格；閉式 n²(n+1)²/4。",
+        "seconds": 38.417034,
+        "passed": true,
+        "outputSHA256": "a983020d55db3227d3bae71bfb47f24a1fe397d229fe28620ea87447be4e29a4"
+      },
+      {
+        "code": "b578",
+        "language": "C++17",
+        "name": "one-letter-500",
+        "kind": "maximum",
+        "inputBytes": 250507,
+        "reason": "A的所有矩形都合格，其他字母缺席。",
+        "seconds": 0.13885,
+        "passed": true,
+        "outputSHA256": "ea130b32968a725a44bdc7a7fd84c7813182a87af01ed3f6c3b3ec3e02f77c12"
+      },
+      {
+        "code": "b578",
+        "language": "Python",
+        "name": "one-letter-500",
+        "kind": "maximum",
+        "inputBytes": 250507,
+        "reason": "A的所有矩形都合格，其他字母缺席。",
+        "seconds": 19.920639,
+        "passed": true,
+        "outputSHA256": "ea130b32968a725a44bdc7a7fd84c7813182a87af01ed3f6c3b3ec3e02f77c12"
+      },
+      {
+        "code": "b578",
+        "language": "C++17",
+        "name": "checkerboard-500",
+        "kind": "maximum",
+        "inputBytes": 250506,
+        "reason": "任意高度或寬度大於1的邊界都混色，所以只有單格。",
+        "seconds": 0.056832,
+        "passed": true,
+        "outputSHA256": "12aa6d556032eb210e63a92762accc5823dc7cdb46aa1d56c3bd7c266b528e10"
+      },
+      {
+        "code": "b578",
+        "language": "Python",
+        "name": "checkerboard-500",
+        "kind": "maximum",
+        "inputBytes": 250506,
+        "reason": "任意高度或寬度大於1的邊界都混色，所以只有單格。",
+        "seconds": 12.303607,
+        "passed": true,
+        "outputSHA256": "12aa6d556032eb210e63a92762accc5823dc7cdb46aa1d56c3bd7c266b528e10"
+      },
+      {
+        "code": "b590",
+        "language": "C++17",
+        "name": "empty-500",
+        "kind": "maximum",
+        "inputBytes": 250504,
+        "reason": "A任選排列，B相對A是錯排：500! × !500。",
+        "seconds": 0.002965,
+        "passed": true,
+        "outputSHA256": "5a6f22f84a596a183ba5a5a7a2c087ea0d939122fd28e23a74a70f6964263c30"
+      },
+      {
+        "code": "b590",
+        "language": "Python",
+        "name": "empty-500",
+        "kind": "maximum",
+        "inputBytes": 250504,
+        "reason": "A任選排列，B相對A是錯排：500! × !500。",
+        "seconds": 0.071313,
+        "passed": true,
+        "outputSHA256": "5a6f22f84a596a183ba5a5a7a2c087ea0d939122fd28e23a74a70f6964263c30"
+      },
+      {
+        "code": "b590",
+        "language": "C++17",
+        "name": "partial-A-500",
+        "kind": "maximum",
+        "inputBytes": 250504,
+        "reason": "固定250個A後有250!個A補法；每個補法均有!500個B，亦測非平凡容斥。",
+        "seconds": 0.004547,
+        "passed": true,
+        "outputSHA256": "e0cad3e13b965a7c66f085d6ca3f48be480241da0a2b94400a7d860d0c22656d"
+      },
+      {
+        "code": "b590",
+        "language": "Python",
+        "name": "partial-A-500",
+        "kind": "maximum",
+        "inputBytes": 250504,
+        "reason": "固定250個A後有250!個A補法；每個補法均有!500個B，亦測非平凡容斥。",
+        "seconds": 0.074863,
+        "passed": true,
+        "outputSHA256": "e0cad3e13b965a7c66f085d6ca3f48be480241da0a2b94400a7d860d0c22656d"
+      },
+      {
+        "code": "b591",
+        "language": "C++17",
+        "name": "distribution-500",
+        "kind": "maximum",
+        "inputBytes": 4,
+        "reason": "部分證書：總數2^C(n,2)，n桶=n!，n−1桶=0，n−2桶=2*C(n,3)*(n−2)!；非全桶獨立證明。",
+        "seconds": 0.133616,
+        "passed": true,
+        "outputSHA256": "81badd72dda3ed1cbec479ba49cd72101db3e459d93e315823957cd07305d473"
+      },
+      {
+        "code": "b591",
+        "language": "Python",
+        "name": "distribution-500",
+        "kind": "maximum",
+        "inputBytes": 4,
+        "reason": "部分證書：總數2^C(n,2)，n桶=n!，n−1桶=0，n−2桶=2*C(n,3)*(n−2)!；非全桶獨立證明。",
+        "seconds": 4.036717,
+        "passed": true,
+        "outputSHA256": "81badd72dda3ed1cbec479ba49cd72101db3e459d93e315823957cd07305d473"
+      },
+      {
+        "code": "b592",
+        "language": "C++17",
+        "name": "distribution-5000",
+        "kind": "maximum",
+        "inputBytes": 5,
+        "reason": "部分證書：總數n^n，n桶=1，n−1桶=3*C(n,2)，n−2桶=17*C(n,3)+27*C(n,4)；非全桶獨立證明。",
+        "seconds": 0.044907,
+        "passed": true,
+        "outputSHA256": "e989c775e2a2bd6cb4d9955c3318878d2eac52b84376a61e85991bda17a1fe75"
+      },
+      {
+        "code": "b592",
+        "language": "Python",
+        "name": "distribution-5000",
+        "kind": "maximum",
+        "inputBytes": 5,
+        "reason": "部分證書：總數n^n，n桶=1，n−1桶=3*C(n,2)，n−2桶=17*C(n,3)+27*C(n,4)；非全桶獨立證明。",
+        "seconds": 4.736621,
+        "passed": true,
+        "outputSHA256": "e989c775e2a2bd6cb4d9955c3318878d2eac52b84376a61e85991bda17a1fe75"
+      },
+      {
+        "code": "b569",
+        "language": "C++17",
+        "name": "100000-upper-bound-queries",
+        "kind": "maximum",
+        "inputBytes": 700008,
+        "reason": "依來源有限計算表核對最大t及最大n；不宣稱這100000筆是獨立重算SG。",
+        "seconds": 0.01894,
+        "passed": true,
+        "outputSHA256": "a884e3515818a589f76b28294929d45a97dd4fb363fce5cc0fb85a7bded726ec"
+      },
+      {
+        "code": "b569",
+        "language": "Python",
+        "name": "100000-upper-bound-queries",
+        "kind": "maximum",
+        "inputBytes": 700008,
+        "reason": "依來源有限計算表核對最大t及最大n；不宣稱這100000筆是獨立重算SG。",
+        "seconds": 0.058312,
+        "passed": true,
+        "outputSHA256": "a884e3515818a589f76b28294929d45a97dd4fb363fce5cc0fb85a7bded726ec"
+      }
+    ],
+    "failures": [],
+    "reportFile": "scripts/fixtures/nov08-new-problems/hard-562-607-results.json"
+  },
+  "limitations": [
+    "b569: finite-range winning table relies on the cited Flammenkamp primary computation through 2^35; local independent SG recurrence was recomputed only through 5000. No infinite theorem or full local 10^6 SG recomputation is claimed.",
+    "b568: adjacent reversal means zero additional safe distance under the continuous-point wording; stated explicitly and tested, not validated by a hidden judge submission.",
+    "Python exceeds the stated one-second limit on measured maximum cases b568,b573,b578,b581,b588,b591,b592,b603,b606. Other measured inputs passing one second do not establish all worst-case official acceptance.",
+    "b570: no numeric budget/item-count upper bounds are provided; O(MN) is pseudo-polynomial and not guaranteed feasible for arbitrarily large budgets.",
+    "b564: source omits numeric time bounds; C++ assumes total processing time fits signed 64-bit.",
+    "Large b591/b592 distribution certificates verify totals and selected bins, not all maximum-size bins independently; small complete distributions are exhaustively enumerated.",
+    "b563: dense storage now bounded by a 199980000-byte uint32 triangle plus O(n) state; measured under a 256 MiB address-space cap. Full n=10000,m≈50m runtime was not measured; Python may exceed strict time limits."
+  ],
+  "resolvedDraftIssues": [
+    "Corrected generated-code newline escaping before the complete runtime run.",
+    "Excluded five duplicate fixture samples and reclassified one extra official public sample; all distinct inputs were still executed."
+  ],
+  "b563Revision": {
+    "algorithm": "Sparse m<=4n adjacency minimax Dijkstra; otherwise streaming packed uint32 lower triangle with O(n^2) heap-free minimax Dijkstra.",
+    "correctnessCases": 45,
+    "newDenseOracleCases": 25,
+    "otherLessonSHA256": "9f02c9abeb1731280fed1b730c31dbdfe78c2b3c5c4e25e561cc062708110bbc",
+    "otherCheckSHA256": "4b540b68d7349e1b10ac96bb88d1666f8c2a659379aba576f5d5e1ac63a70d3d",
+    "other45LessonsUnchanged": true,
+    "otherProblemChecksUnchanged": true,
+    "maximumTriangleBytes": 199980000,
+    "memoryProbeCount": 4,
+    "memoryProbeRuns": 8,
+    "peakRSSKiB": {
+      "cpp": 198656,
+      "python": 205312
+    },
+    "failures": []
+  }
+}

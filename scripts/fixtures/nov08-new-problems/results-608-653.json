@@ -1,0 +1,383 @@
+{
+  "tutorials": 46,
+  "publicSamplesPerLanguage": 50,
+  "independentCasesPerLanguage": 1311,
+  "failures": [],
+  "perProblem": [
+    {
+      "code": "b608",
+      "publicSamples": 2,
+      "independentCases": 24,
+      "runs": 52,
+      "failures": 0,
+      "seconds": 2.696
+    },
+    {
+      "code": "b609",
+      "publicSamples": 2,
+      "independentCases": 24,
+      "runs": 52,
+      "failures": 0,
+      "seconds": 2.488
+    },
+    {
+      "code": "b610",
+      "publicSamples": 2,
+      "independentCases": 24,
+      "runs": 52,
+      "failures": 0,
+      "seconds": 2.408
+    },
+    {
+      "code": "b611",
+      "publicSamples": 2,
+      "independentCases": 24,
+      "runs": 52,
+      "failures": 0,
+      "seconds": 2.177
+    },
+    {
+      "code": "b612",
+      "publicSamples": 1,
+      "independentCases": 7,
+      "runs": 16,
+      "failures": 0,
+      "seconds": 1.994
+    },
+    {
+      "code": "b613",
+      "publicSamples": 1,
+      "independentCases": 17,
+      "runs": 36,
+      "failures": 0,
+      "seconds": 2.251
+    },
+    {
+      "code": "b614",
+      "publicSamples": 1,
+      "independentCases": 91,
+      "runs": 184,
+      "failures": 0,
+      "seconds": 3.465
+    },
+    {
+      "code": "b615",
+      "publicSamples": 1,
+      "independentCases": 17,
+      "runs": 36,
+      "failures": 0,
+      "seconds": 2.323
+    },
+    {
+      "code": "b616",
+      "publicSamples": 1,
+      "independentCases": 32,
+      "runs": 66,
+      "failures": 0,
+      "seconds": 2.653
+    },
+    {
+      "code": "b617",
+      "publicSamples": 1,
+      "independentCases": 21,
+      "runs": 44,
+      "failures": 0,
+      "seconds": 2.451
+    },
+    {
+      "code": "b618",
+      "publicSamples": 1,
+      "independentCases": 24,
+      "runs": 50,
+      "failures": 0,
+      "seconds": 2.277
+    },
+    {
+      "code": "b619",
+      "publicSamples": 1,
+      "independentCases": 1,
+      "runs": 4,
+      "failures": 0,
+      "seconds": 1.921
+    },
+    {
+      "code": "b620",
+      "publicSamples": 1,
+      "independentCases": 14,
+      "runs": 30,
+      "failures": 0,
+      "seconds": 1.959
+    },
+    {
+      "code": "b621",
+      "publicSamples": 1,
+      "independentCases": 28,
+      "runs": 58,
+      "failures": 0,
+      "seconds": 2.694
+    },
+    {
+      "code": "b622",
+      "publicSamples": 1,
+      "independentCases": 28,
+      "runs": 58,
+      "failures": 0,
+      "seconds": 2.608
+    },
+    {
+      "code": "b623",
+      "publicSamples": 1,
+      "independentCases": 29,
+      "runs": 60,
+      "failures": 0,
+      "seconds": 2.732
+    },
+    {
+      "code": "b624",
+      "publicSamples": 1,
+      "independentCases": 28,
+      "runs": 58,
+      "failures": 0,
+      "seconds": 2.18
+    },
+    {
+      "code": "b625",
+      "publicSamples": 1,
+      "independentCases": 28,
+      "runs": 58,
+      "failures": 0,
+      "seconds": 2.283
+    },
+    {
+      "code": "b626",
+      "publicSamples": 1,
+      "independentCases": 24,
+      "runs": 50,
+      "failures": 0,
+      "seconds": 2.047
+    },
+    {
+      "code": "b627",
+      "publicSamples": 1,
+      "independentCases": 24,
+      "runs": 50,
+      "failures": 0,
+      "seconds": 2.172
+    },
+    {
+      "code": "b628",
+      "publicSamples": 1,
+      "independentCases": 24,
+      "runs": 50,
+      "failures": 0,
+      "seconds": 2.122
+    },
+    {
+      "code": "b629",
+      "publicSamples": 1,
+      "independentCases": 5,
+      "runs": 12,
+      "failures": 0,
+      "seconds": 2.002
+    },
+    {
+      "code": "b630",
+      "publicSamples": 1,
+      "independentCases": 2,
+      "runs": 6,
+      "failures": 0,
+      "seconds": 1.677
+    },
+    {
+      "code": "b631",
+      "publicSamples": 1,
+      "independentCases": 20,
+      "runs": 42,
+      "failures": 0,
+      "seconds": 2.056
+    },
+    {
+      "code": "b632",
+      "publicSamples": 1,
+      "independentCases": 82,
+      "runs": 166,
+      "failures": 0,
+      "seconds": 3.247
+    },
+    {
+      "code": "b633",
+      "publicSamples": 1,
+      "independentCases": 11,
+      "runs": 24,
+      "failures": 0,
+      "seconds": 1.872
+    },
+    {
+      "code": "b634",
+      "publicSamples": 1,
+      "independentCases": 7,
+      "runs": 16,
+      "failures": 0,
+      "seconds": 1.848
+    },
+    {
+      "code": "b635",
+      "publicSamples": 1,
+      "independentCases": 30,
+      "runs": 62,
+      "failures": 0,
+      "seconds": 2.104
+    },
+    {
+      "code": "b636",
+      "publicSamples": 1,
+      "independentCases": 35,
+      "runs": 72,
+      "failures": 0,
+      "seconds": 2.213
+    },
+    {
+      "code": "b637",
+      "publicSamples": 1,
+      "independentCases": 35,
+      "runs": 72,
+      "failures": 0,
+      "seconds": 2.243
+    },
+    {
+      "code": "b638",
+      "publicSamples": 1,
+      "independentCases": 34,
+      "runs": 70,
+      "failures": 0,
+      "seconds": 2.361
+    },
+    {
+      "code": "b639",
+      "publicSamples": 1,
+      "independentCases": 12,
+      "runs": 26,
+      "failures": 0,
+      "seconds": 2.053
+    },
+    {
+      "code": "b640",
+      "publicSamples": 1,
+      "independentCases": 7,
+      "runs": 16,
+      "failures": 0,
+      "seconds": 1.736
+    },
+    {
+      "code": "b641",
+      "publicSamples": 1,
+      "independentCases": 34,
+      "runs": 70,
+      "failures": 0,
+      "seconds": 2.265
+    },
+    {
+      "code": "b642",
+      "publicSamples": 1,
+      "independentCases": 7,
+      "runs": 16,
+      "failures": 0,
+      "seconds": 1.754
+    },
+    {
+      "code": "b643",
+      "publicSamples": 1,
+      "independentCases": 29,
+      "runs": 60,
+      "failures": 0,
+      "seconds": 4.667
+    },
+    {
+      "code": "b644",
+      "publicSamples": 1,
+      "independentCases": 30,
+      "runs": 62,
+      "failures": 0,
+      "seconds": 2.251
+    },
+    {
+      "code": "b645",
+      "publicSamples": 1,
+      "independentCases": 20,
+      "runs": 42,
+      "failures": 0,
+      "seconds": 2.575
+    },
+    {
+      "code": "b646",
+      "publicSamples": 1,
+      "independentCases": 28,
+      "runs": 58,
+      "failures": 0,
+      "seconds": 2.288
+    },
+    {
+      "code": "b647",
+      "publicSamples": 1,
+      "independentCases": 32,
+      "runs": 66,
+      "failures": 0,
+      "seconds": 13.798
+    },
+    {
+      "code": "b648",
+      "publicSamples": 1,
+      "independentCases": 17,
+      "runs": 36,
+      "failures": 0,
+      "seconds": 2.067
+    },
+    {
+      "code": "b649",
+      "publicSamples": 1,
+      "independentCases": 31,
+      "runs": 64,
+      "failures": 0,
+      "seconds": 7.836
+    },
+    {
+      "code": "b650",
+      "publicSamples": 1,
+      "independentCases": 65,
+      "runs": 132,
+      "failures": 0,
+      "seconds": 14.732
+    },
+    {
+      "code": "b651",
+      "publicSamples": 1,
+      "independentCases": 37,
+      "runs": 76,
+      "failures": 0,
+      "seconds": 4.101
+    },
+    {
+      "code": "b652",
+      "publicSamples": 1,
+      "independentCases": 64,
+      "runs": 130,
+      "failures": 0,
+      "seconds": 7.711
+    },
+    {
+      "code": "b653",
+      "publicSamples": 1,
+      "independentCases": 104,
+      "runs": 210,
+      "failures": 0,
+      "seconds": 4.489
+    }
+  ],
+  "verification": "Linux WSL kali-linux; g++ -std=c++17 -O2; Python 3; independent seeded exhaustive oracles in verify-608-653.py. Timeouts below are harness limits, not original judge time guarantees.",
+  "totalRuns": 2722,
+  "remainingLimitations": [
+    "No official hidden test access; all public samples and seeded independent oracles are run.",
+    "Original judge one-second Python performance is not guaranteed for 10^7-element streams, large triangular scans, or high-order DP; relevant lessons state this explicitly.",
+    "Maximum-size correctness certificates supplement small exhaustive tests but do not establish every problem meets its original time limit."
+  ]
+}

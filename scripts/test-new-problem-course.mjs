@@ -15,7 +15,7 @@ const tempRoot = resolve(tmpdir());
 const directory = mkdtempSync(join(tempRoot, "itouoj-practice-http-"));
 process.env.DATABASE_URL = `file:${join(directory, "test.db").replaceAll("\\", "/")}`;
 process.env.AUTH_SECRET = "practice-disposable-test-secret-not-production";
-const publicCodes = ["a877", "a980", "b001", "b133", "b162", "b376", "b492"];
+const publicCodes = ["a877", "a980", "b001", "b133", "b162", "b376", "b492", "b562", "b608", "b654", "b700", "b746", "b790"];
 let prisma, server, base, adminCookie, logs = "";
 async function request(path, admin = false) {
   return fetch(base + path, { headers: admin ? { Cookie: adminCookie } : {}, redirect: "manual", signal: AbortSignal.timeout(90000) });

@@ -117,7 +117,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        batch: [competition, national1, national2, practice1, practice2, practice3, practice4]
+        batch: [competition, national1, national2, practice1, practice2, practice3, practice4, nov08-562-607, nov08-608-653, nov08-654-699, nov08-700-745, nov08-746-790]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

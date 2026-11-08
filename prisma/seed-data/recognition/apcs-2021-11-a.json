@@ -145,7 +145,7 @@
       "number": 11,
       "category": "C",
       "question": "上述的程式碼透過資料結構Ｘ實作，可以判斷傳入的字串ｓ是不是迴文的結構，以下是資料結構Ｘ支援的功能，請問哪個選項最符合資料結構Ｘ：\n\n- Init(&X): 初始化資料結構Ｘ\n- Clear(&X): 清除資料結構Ｘ\n- Add(X, d): 將資料ｄ放入Ｘ內\n- getFirst(X): 將Ｘ第一個資料回傳並從中移除\n- getLast(X): 將Ｘ最後一個資料回傳並從中移除",
-      "code": "bool isPalindrome(char *s, int len) {\n\tInit(&X);\n\tfor (int i = 0; i < len; i = i + 1)\n\t\tAdd(X, s[i]);\n\t\n\tint n = len;\n\twhile (n > 1) {\n\t\tif (getFirst(X) != getLast(X)))\n\t\t\treturn 0;\n\t\tn = n - 2;\n\t}\n\tClear(&X);\n\treturn 1;\n}",
+      "code": "bool isPalindrome(char *s, int len) {\n\tInit(&X);\n\tfor (int i = 0; i < len; i = i + 1)\n\t\tAdd(X, s[i]);\n\t\n\tint n = len;\n\twhile (n > 1) {\n\t\tif (getFirst(X) != getLast(X))\n\t\t\treturn 0;\n\t\tn = n - 2;\n\t}\n\tClear(&X);\n\treturn 1;\n}",
       "options": [
         "堆疊( stack )",
         "佇列( queue )",
@@ -153,7 +153,7 @@
         "優先佇列( priority_queue )"
       ],
       "answerIndex": 2,
-      "explanation": ""
+      "explanation": "需要從兩端取出資料比較，因此 X 應為雙向佇列。每次比較首尾字元，直到剩下至多一個；這是抽象資料結構片段，Init、Clear、Add、getFirst、getLast 由實作提供，C11 的 bool 需引入 <stdbool.h>。"
     },
     {
       "number": 12,

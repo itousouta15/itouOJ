@@ -145,7 +145,7 @@
       "number": 11,
       "category": "C",
       "question": "為了找到 n 位學生的成績當中成績最好的，先比總分高的，若總分相同時則比照數學成績，數學成績相同時則依照學號較小的為主，下列的判斷式應該如何選擇才能保證達成條件？",
-      "code": "typedef struct student_info{\n    int math, chinese, english ;\n} std[20];\nint main () {\n    int n = 20 ;\n    int best_ID = 0 ;\n    int best_sum = std[0].math + std[0].chinese + std[0].english;\n    for ( int i = 1 ; i < n ; i = i + 1 ) {\n        int sum = std[i].math + std[i].chinese + std[i].english ; \n        if ( sum > best_sum ) {\n            best_ID = i ;\n            best_sum = sum ;\n        }else if ( ___________ ){\n            best_ID = i ;\n        }\n    }\n}",
+      "code": "struct student_info{\n    int math, chinese, english ;\n} std[20];\nint main () {\n    int n = 20 ;\n    int best_ID = 0 ;\n    int best_sum = std[0].math + std[0].chinese + std[0].english;\n    for ( int i = 1 ; i < n ; i = i + 1 ) {\n        int sum = std[i].math + std[i].chinese + std[i].english ; \n        if ( sum > best_sum ) {\n            best_ID = i ;\n            best_sum = sum ;\n        }else if ( ___________ ){\n            best_ID = i ;\n        }\n    }\n}",
       "options": [
         "sum >= best_sum and std[ i ].math >= std[ best_ID ].math",
         "sum >= best_sum and std[ i ].math >  std[ best_ID ].math",
@@ -153,7 +153,7 @@
         "sum > best_sum  and std[ i ].math >= std[ best_ID ].math"
       ],
       "answerIndex": 1,
-      "explanation": ""
+      "explanation": "std 是含 20 位學生的結構陣列變數，不是 typedef 型別別名。總分較高時已在前一分支更新；總分相同時只在數學嚴格較高才換人，數學也相同則保留先掃到、學號較小者，因此選第 2 個判斷式。選項的 and 表示邏輯且，C11 可使用 <iso646.h> 或改寫成 &&。"
     },
     {
       "number": 12,
