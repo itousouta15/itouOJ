@@ -6,6 +6,7 @@ import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { applyRecognitionLegacyCorrections } from "./lib/recognition-legacy-corrections.mjs";
 
 const argv = process.argv.slice(2);
 function flag(name, fallback) {
@@ -63,6 +64,10 @@ if (files.length === 0) {
 
 const db = dryRun ? null : new Database(dbPath);
 if (db) db.pragma("foreign_keys = ON");
+if (db) {
+  const corrected = applyRecognitionLegacyCorrections(db);
+  console.log(`精確舊版更正：${corrected} 題`);
+}
 
 const findCluster = db
   ? db.prepare("SELECT id FROM RecognitionCluster WHERE title = ?")

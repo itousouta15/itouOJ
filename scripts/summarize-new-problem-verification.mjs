@@ -2,17 +2,20 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 
-const batches = ["competition", "national1", "national2", "practice1", "practice2", "practice3", "practice4"];
+const argv = process.argv.slice(2);
+const onlyNov08 = argv.includes("--nov08-only");
+const batches = ["competition", "national1", "national2", "practice1", "practice2", "practice3", "practice4", "nov08-562-607", "nov08-608-653", "nov08-654-699", "nov08-700-745", "nov08-746-790"].filter((batch) => !onlyNov08 || batch.startsWith("nov08-"));
 const read = async (file) => JSON.parse(await readFile(file, "utf8"));
 const hash = (text) => createHash("sha256").update(text).digest("hex");
-const sources = new Map((await read(new URL("./fixtures/new-problem-lessons/source.json", import.meta.url))).problems.map((p) => [p.code, p]));
+const sources = new Map((await read(new URL("./fixtures/new-problem-lessons/source.json", import.meta.url))).problems.filter((p) => !onlyNov08 || /^b\d+$/.test(p.code) && Number(p.code.slice(1)) >= 562 && Number(p.code.slice(1)) <= 790).map((p) => [p.code, p]));
+if (onlyNov08) assert.equal(sources.size, 229, "Expected exactly the Nov8 additions b562-b790");
 const current = new Map();
 for (const batch of batches) {
   const data = await read(new URL(`../src/lib/newProblemLessons/data/${batch}.json`, import.meta.url));
-  const checks = await read(new URL(`./fixtures/new-problem-lessons/${batch}-checks.json`, import.meta.url));
+  const checks = await read(new URL(batch.startsWith("nov08-") ? `./fixtures/nov08-new-problems/checks-${batch.slice(6)}.json` : `./fixtures/new-problem-lessons/${batch}-checks.json`, import.meta.url));
   for (const lesson of data) current.set(lesson.code, { ...lesson, samples: sources.get(lesson.code).samples, checks: checks.filter((c) => c.code === lesson.code) });
 }
-const paths = process.argv.slice(2);
+const paths = argv.filter((arg) => arg !== "--nov08-only");
 assert.ok(paths.length > 0, "Supply per-batch runtime reports and any incremental re-verification reports");
 const verified = new Set();
 let samples = 0, independent = 0, staleEvidenceIgnored = 0;
@@ -45,4 +48,4 @@ for (const path of paths) {
   }
 }
 assert.deepEqual([...verified].sort(), [...sources.keys()].sort(), "Missing runtime verification for a new problem");
-console.log(JSON.stringify({ tutorials: verified.size, publicSamplesPerLanguage: samples, independentCasesPerLanguage: independent, languages: ["C++17", "Python3"], sourceAndCaseHashesMatchCurrentFiles: true, staleEvidenceIgnored }, null, 2));
+console.log(JSON.stringify({ scope: onlyNov08 ? "b562-b790 additions" : "all competition/topic tutorials", tutorials: verified.size, publicSamplesPerLanguage: samples, independentCasesPerLanguage: independent, languages: ["C++17", "Python3"], sourceAndCaseHashesMatchCurrentFiles: true, staleEvidenceIgnored }, null, 2));

@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const batches = ["competition", "national1", "national2", "practice1", "practice2", "practice3", "practice4"];
+const batches = ["competition", "national1", "national2", "practice1", "practice2", "practice3", "practice4", "nov08-562-607", "nov08-608-653", "nov08-654-699", "nov08-700-745", "nov08-746-790"];
 const root = new URL("../", import.meta.url);
 const read = async (path) => JSON.parse(await readFile(new URL(path, root), "utf8"));
 const snapshot = await read("scripts/fixtures/new-problem-lessons/source.json");
@@ -18,8 +18,13 @@ const lessons = [];
 let customCases = 0;
 for (const batch of selected ? [selected] : batches) {
   const data = await read(`src/lib/newProblemLessons/data/${batch}.json`);
-  const checks = await read(`scripts/fixtures/new-problem-lessons/${batch}-checks.json`);
+  const checks = await read(batch.startsWith("nov08-") ? `scripts/fixtures/nov08-new-problems/checks-${batch.slice(6)}.json` : `scripts/fixtures/new-problem-lessons/${batch}-checks.json`);
   assert.ok(Array.isArray(data) && Array.isArray(checks));
+  if (batch.startsWith("nov08-")) {
+    const [, start, end] = /^nov08-(\d+)-(\d+)$/.exec(batch);
+    const expected = Array.from({ length: Number(end) - Number(start) + 1 }, (_, i) => `b${Number(start) + i}`);
+    assert.deepEqual(data.map((lesson) => lesson.code).sort(), expected, `${batch}: incomplete or misassigned range`);
+  }
   for (const lesson of data) {
     const source = sources.get(lesson.code);
     assert.ok(source, `Unknown source ${lesson.code}`);

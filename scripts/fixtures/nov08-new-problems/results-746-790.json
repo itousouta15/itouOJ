@@ -1,0 +1,460 @@
+{
+  "tutorials": 45,
+  "environment": "Linux WSL kali-linux; g++ -std=c++17 -O2; python3",
+  "publicSamplesPerLanguage": 60,
+  "independentCasesPerLanguage": 1028,
+  "failures": [],
+  "perProblem": [
+    {
+      "code": "b746",
+      "publicSamples": 2,
+      "independentCases": 35,
+      "timings": {
+        "cpp": 0.123,
+        "python": 0.948
+      },
+      "failures": []
+    },
+    {
+      "code": "b747",
+      "publicSamples": 2,
+      "independentCases": 26,
+      "timings": {
+        "cpp": 0.14,
+        "python": 1.228
+      },
+      "failures": []
+    },
+    {
+      "code": "b748",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "timings": {
+        "cpp": 0.087,
+        "python": 0.63
+      },
+      "failures": []
+    },
+    {
+      "code": "b749",
+      "publicSamples": 2,
+      "independentCases": 15,
+      "timings": {
+        "cpp": 0.081,
+        "python": 0.59
+      },
+      "failures": []
+    },
+    {
+      "code": "b750",
+      "publicSamples": 1,
+      "independentCases": 30,
+      "timings": {
+        "cpp": 0.132,
+        "python": 0.825
+      },
+      "failures": []
+    },
+    {
+      "code": "b751",
+      "publicSamples": 2,
+      "independentCases": 33,
+      "timings": {
+        "cpp": 0.123,
+        "python": 0.905
+      },
+      "failures": []
+    },
+    {
+      "code": "b752",
+      "publicSamples": 1,
+      "independentCases": 19,
+      "timings": {
+        "cpp": 0.077,
+        "python": 0.527
+      },
+      "failures": []
+    },
+    {
+      "code": "b753",
+      "publicSamples": 2,
+      "independentCases": 21,
+      "timings": {
+        "cpp": 0.118,
+        "python": 1.807
+      },
+      "failures": []
+    },
+    {
+      "code": "b754",
+      "publicSamples": 2,
+      "independentCases": 23,
+      "timings": {
+        "cpp": 0.17,
+        "python": 0.914
+      },
+      "failures": []
+    },
+    {
+      "code": "b755",
+      "publicSamples": 1,
+      "independentCases": 17,
+      "timings": {
+        "cpp": 0.072,
+        "python": 0.531
+      },
+      "failures": []
+    },
+    {
+      "code": "b756",
+      "publicSamples": 2,
+      "independentCases": 25,
+      "timings": {
+        "cpp": 0.171,
+        "python": 0.913
+      },
+      "failures": []
+    },
+    {
+      "code": "b757",
+      "publicSamples": 2,
+      "independentCases": 23,
+      "timings": {
+        "cpp": 0.095,
+        "python": 0.64
+      },
+      "failures": []
+    },
+    {
+      "code": "b758",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "timings": {
+        "cpp": 0.059,
+        "python": 0.508
+      },
+      "failures": []
+    },
+    {
+      "code": "b759",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "timings": {
+        "cpp": 0.082,
+        "python": 0.516
+      },
+      "failures": []
+    },
+    {
+      "code": "b760",
+      "publicSamples": 1,
+      "independentCases": 19,
+      "timings": {
+        "cpp": 0.107,
+        "python": 0.703
+      },
+      "failures": []
+    },
+    {
+      "code": "b761",
+      "publicSamples": 1,
+      "independentCases": 16,
+      "timings": {
+        "cpp": 0.075,
+        "python": 0.692
+      },
+      "failures": []
+    },
+    {
+      "code": "b762",
+      "publicSamples": 2,
+      "independentCases": 33,
+      "timings": {
+        "cpp": 0.151,
+        "python": 1.135
+      },
+      "failures": []
+    },
+    {
+      "code": "b763",
+      "publicSamples": 2,
+      "independentCases": 25,
+      "timings": {
+        "cpp": 0.14,
+        "python": 0.809
+      },
+      "failures": []
+    },
+    {
+      "code": "b764",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "timings": {
+        "cpp": 0.067,
+        "python": 0.483
+      },
+      "failures": []
+    },
+    {
+      "code": "b765",
+      "publicSamples": 1,
+      "independentCases": 26,
+      "timings": {
+        "cpp": 0.131,
+        "python": 0.887
+      },
+      "failures": []
+    },
+    {
+      "code": "b766",
+      "publicSamples": 1,
+      "independentCases": 16,
+      "timings": {
+        "cpp": 0.096,
+        "python": 0.449
+      },
+      "failures": []
+    },
+    {
+      "code": "b767",
+      "publicSamples": 1,
+      "independentCases": 20,
+      "timings": {
+        "cpp": 0.05,
+        "python": 0.488
+      },
+      "failures": []
+    },
+    {
+      "code": "b768",
+      "publicSamples": 2,
+      "independentCases": 3,
+      "timings": {
+        "cpp": 0.093,
+        "python": 6.671
+      },
+      "failures": []
+    },
+    {
+      "code": "b769",
+      "publicSamples": 1,
+      "independentCases": 15,
+      "timings": {
+        "cpp": 0.053,
+        "python": 0.553
+      },
+      "failures": []
+    },
+    {
+      "code": "b770",
+      "publicSamples": 1,
+      "independentCases": 16,
+      "timings": {
+        "cpp": 0.06,
+        "python": 0.4
+      },
+      "failures": []
+    },
+    {
+      "code": "b771",
+      "publicSamples": 1,
+      "independentCases": 17,
+      "timings": {
+        "cpp": 0.051,
+        "python": 0.395
+      },
+      "failures": []
+    },
+    {
+      "code": "b772",
+      "publicSamples": 1,
+      "independentCases": 21,
+      "timings": {
+        "cpp": 0.065,
+        "python": 0.601
+      },
+      "failures": []
+    },
+    {
+      "code": "b773",
+      "publicSamples": 1,
+      "independentCases": 19,
+      "timings": {
+        "cpp": 0.115,
+        "python": 0.623
+      },
+      "failures": []
+    },
+    {
+      "code": "b774",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "timings": {
+        "cpp": 0.069,
+        "python": 0.434
+      },
+      "failures": []
+    },
+    {
+      "code": "b775",
+      "publicSamples": 2,
+      "independentCases": 117,
+      "timings": {
+        "cpp": 0.418,
+        "python": 3.232
+      },
+      "failures": []
+    },
+    {
+      "code": "b776",
+      "publicSamples": 2,
+      "independentCases": 17,
+      "timings": {
+        "cpp": 0.053,
+        "python": 0.532
+      },
+      "failures": []
+    },
+    {
+      "code": "b777",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "timings": {
+        "cpp": 0.074,
+        "python": 0.512
+      },
+      "failures": []
+    },
+    {
+      "code": "b778",
+      "publicSamples": 1,
+      "independentCases": 1,
+      "timings": {
+        "cpp": 0.015,
+        "python": 0.08
+      },
+      "failures": []
+    },
+    {
+      "code": "b779",
+      "publicSamples": 1,
+      "independentCases": 25,
+      "timings": {
+        "cpp": 0.085,
+        "python": 0.61
+      },
+      "failures": []
+    },
+    {
+      "code": "b780",
+      "publicSamples": 1,
+      "independentCases": 19,
+      "timings": {
+        "cpp": 0.073,
+        "python": 0.477
+      },
+      "failures": []
+    },
+    {
+      "code": "b781",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "timings": {
+        "cpp": 0.094,
+        "python": 0.569
+      },
+      "failures": []
+    },
+    {
+      "code": "b782",
+      "publicSamples": 2,
+      "independentCases": 29,
+      "timings": {
+        "cpp": 0.14,
+        "python": 0.814
+      },
+      "failures": []
+    },
+    {
+      "code": "b783",
+      "publicSamples": 1,
+      "independentCases": 15,
+      "timings": {
+        "cpp": 0.054,
+        "python": 1.246
+      },
+      "failures": []
+    },
+    {
+      "code": "b784",
+      "publicSamples": 1,
+      "independentCases": 23,
+      "timings": {
+        "cpp": 0.1,
+        "python": 0.567
+      },
+      "failures": []
+    },
+    {
+      "code": "b785",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "timings": {
+        "cpp": 0.059,
+        "python": 0.473
+      },
+      "failures": []
+    },
+    {
+      "code": "b786",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "timings": {
+        "cpp": 0.063,
+        "python": 0.451
+      },
+      "failures": []
+    },
+    {
+      "code": "b787",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "timings": {
+        "cpp": 0.049,
+        "python": 0.425
+      },
+      "failures": []
+    },
+    {
+      "code": "b788",
+      "publicSamples": 1,
+      "independentCases": 24,
+      "timings": {
+        "cpp": 0.087,
+        "python": 0.557
+      },
+      "failures": []
+    },
+    {
+      "code": "b789",
+      "publicSamples": 2,
+      "independentCases": 34,
+      "timings": {
+        "cpp": 0.138,
+        "python": 1.361
+      },
+      "failures": []
+    },
+    {
+      "code": "b790",
+      "publicSamples": 1,
+      "independentCases": 23,
+      "timings": {
+        "cpp": 0.089,
+        "python": 0.468
+      },
+      "failures": []
+    }
+  ],
+  "elapsedSeconds": 47.18
+}

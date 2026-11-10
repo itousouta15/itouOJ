@@ -91,13 +91,13 @@
       "question": "該程式碼想要計算 $(1\\times2) + (2\\times3) + (3\\times4)\\ +\\ ...\\ + \\ (9\\times10)$， 但程式碼有錯，請問下列除錯方法何者正確？",
       "code": "int sum(int n) {\n    if (n == 1)\n        return 1;\n    return n * (n - 1) + sum(n - 1);\n}\n\nint main() {\n    sum(10);\n}",
       "options": [
-        "第 2 行要改成 return 0;",
-        "第 3 行要改成 return (n - 1) * n + sum(n - 1);",
-        "第 1 行要改成 if (n == 2)",
+        "第 3 行要改成 return 0;",
+        "第 4 行要改成 return (n - 1) * n + sum(n - 1);",
+        "第 2 行要改成 if (n == 2)",
         "程式碼沒有錯"
       ],
       "answerIndex": 0,
-      "explanation": ""
+      "explanation": "行號依畫面完整程式從函式宣告開始計算：第 2 行是 if，第 3 行才是 return 1。目標總和為 Σ(j(j+1)), j=1…9，共 330；原函式 sum(10) 回傳 331，多算了基底的 1。因此將第 3 行改為 return 0;，保留第 2 行的條件，即可回傳 330。若改第 2 行會直接回傳 0。原 main 僅呼叫函式，沒有印出回傳值。"
     },
     {
       "number": 8,

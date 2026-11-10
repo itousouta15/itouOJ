@@ -6,6 +6,7 @@ import { test } from "node:test";
 import Database from "better-sqlite3";
 import { cpeLessons } from "../src/lib/cpeLessons.ts";
 import { toiPotentialLessons } from "../src/lib/toiPotentialLessons.ts";
+import "./test-recognition-nov08-corrections.mjs";
 
 const name = "20261031000000_correct_recognition_audit";
 const root = new URL("../prisma/migrations/", import.meta.url);

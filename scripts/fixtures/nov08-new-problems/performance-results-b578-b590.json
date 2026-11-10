@@ -1,0 +1,71 @@
+{
+  "timingWarning": "Local elapsed time, not formal judge timing. Distribution stress checks selected certificates only; small full differential tests live in batch fixtures.",
+  "cases": [
+    {
+      "code": "b578",
+      "case": "all-one-letter-max",
+      "language": "C++",
+      "inputBytes": 250507,
+      "certificate": "All rectangles have A borders, including single rows/columns; other25 letters contribute0.",
+      "seconds": 0.2134838650000006,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b578",
+      "case": "all-one-letter-max",
+      "language": "Python",
+      "inputBytes": 250507,
+      "certificate": "All rectangles have A borders, including single rows/columns; other25 letters contribute0.",
+      "seconds": 17.294352538,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b590",
+      "case": "empty-grid-max",
+      "language": "C++",
+      "inputBytes": 250504,
+      "certificate": "Choose A permutation500!; B is any derangement relative to A, so500!*D500.",
+      "seconds": 0.0026658950000069126,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b590",
+      "case": "empty-grid-max",
+      "language": "Python",
+      "inputBytes": 250504,
+      "certificate": "Choose A permutation500!; B is any derangement relative to A, so500!*D500.",
+      "seconds": 0.08075204700003269,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b590",
+      "case": "fully-fixed-grid-max",
+      "language": "C++",
+      "inputBytes": 250504,
+      "certificate": "Every row/column already has both letters, so unique completion.",
+      "seconds": 0.002614395999955832,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b590",
+      "case": "fully-fixed-grid-max",
+      "language": "Python",
+      "inputBytes": 250504,
+      "certificate": "Every row/column already has both letters, so unique completion.",
+      "seconds": 0.08008065300003864,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    }
+  ]
+}

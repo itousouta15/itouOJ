@@ -19,7 +19,7 @@
       "number": 13,
       "category": "C",
       "question": "規則：\n+ 40 以下免稅\n+ 40 ~ 100 稅率 0.1\n+ 100 ~ 150 稅率 0.25\n+ 超過部分 稅率 0.3\n\n上方程式碼是錯的，要如何更改？",
-      "code": "int f(int pay) {\n    if (pay <= 40)\n        return 0;\n    if (pay <= 100)\n        return (pay - 40) * 0.1\n    if (pay <= 150)\n        return pay * 0.2;\n    return (pay - 150) * 0.3 + 12.5 + 6;\n}",
+      "code": "int f(int pay) {\n    if (pay <= 40)\n        return 0;\n    if (pay <= 100)\n        return (pay - 40) * 0.1;\n    if (pay <= 150)\n        return pay * 0.2;\n    return (pay - 150) * 0.3 + 12.5 + 6;\n}",
       "options": [
         "第 4 和 6 行要變成 else if",
         "第 7 行為 pay * 0.25 - 19",

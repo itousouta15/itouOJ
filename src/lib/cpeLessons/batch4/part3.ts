@@ -128,9 +128,9 @@ print('\n\n'.join(out))
     goal: "不用斜率，統一處理垂直線、平行線與交點。",
     explanation: [
       "兩線寫成 A+t·u 與 C+s·v，其中 u=B−A、v=D−C。二維叉積 cross(u,v)=ux·vy−uy·vx。若此值為 0，方向平行；再檢查 cross(C−A,u)，也是 0 才表示重合，否則沒有交點。輸入整數座標，可先用整數叉積精確分類。",
-      "若方向叉積不為 0，對等式取與 v 的叉積，得到 t=cross(C−A,v)/cross(u,v)，代回 A+t·u 算交點。最後才使用浮點數，先將各座標格式化為兩位小數，再把恰為 -0.00 的文字改成 0.00，避免負零而不另猜 epsilon。每批先印固定標題，全部案例後印 END OF OUTPUT；本題是直線，不限制 t 在 [0,1]。",
+      "若方向叉積不為 0，對等式取與 v 的叉積，得到 t=cross(C−A,v)/cross(u,v)，代回 A+t·u，座標保持整數分子／分母直到輸出。兩語言統一採精確的四捨六入、正好半分位取偶數（round-nearest ties-to-even），例如 0.005→0.00、0.015→0.02；捨入為零時不印負號，不使用浮點數或 epsilon。公開規格未明定半分位，隱藏評測的 tie 規則不可得，因此這是明示的教學慣例，不能宣稱所有隱藏評測都接受。每批先印固定標題，全部案例後印 END OF OUTPUT；本題是直線，不限制 t 在 [0,1]。",
     ],
-    complexity: "每筆時間與空間 O(1)。",
+    complexity: "固定題目座標範圍下每筆時間與輔助空間 O(1)；Python 另保存整份輸入 O(N)，N 為案例數。",
     pitfall: "用斜率相除會遇到垂直線；平行與重合必須分開判斷。",
     traceLabel: "示意：(0,0)→(4,4) 與 (0,4)→(4,0)",
     trace: [
@@ -157,18 +157,22 @@ print('\n\n'.join(out))
       },
     ],
     cpp: String.raw`#include <iostream>
-#include <iomanip>
-#include <sstream>
 #include <string>
 using namespace std;
 long long cross(long long ax, long long ay, long long bx, long long by) {
     return ax * by - ay * bx;
 }
-string formatCoordinate(long double value) {
-    ostringstream out;
-    out << fixed << setprecision(2) << value;
-    string text = out.str();
-    return text == "-0.00" ? "0.00" : text;
+string formatCoordinate(long long num, long long den) {
+    // Input coordinates lie within +/-1000. The coordinate numerator is
+    // bounded by 2.4e10, so scaling it by100 stays inside long long.
+    bool negative = (num < 0) != (den < 0);
+    long long scaled = (num < 0 ? -num : num) * 100;
+    long long divisor = den < 0 ? -den : den;
+    long long cents = scaled / divisor, rem = scaled % divisor;
+    if (2 * rem > divisor || (2 * rem == divisor && cents % 2))
+        ++cents;
+    return string(negative && cents ? "-" : "") + to_string(cents / 100)
+        + "." + (cents % 100 < 10 ? "0" : "") + to_string(cents % 100);
 }
 int main() {
     int tests;
@@ -182,9 +186,9 @@ int main() {
         if (!den)
             cout << (cross(cx - ax, cy - ay, ux, uy) == 0 ? "LINE\n" : "NONE\n");
         else {
-            long double t = (long double)cross(cx - ax, cy - ay, vx, vy) / den;
-            long double x = ax + t * ux, y = ay + t * uy;
-            cout << "POINT " << formatCoordinate(x) << ' ' << formatCoordinate(y) << '\n';
+            long long num = cross(cx - ax, cy - ay, vx, vy);
+            long long x = ax * den + num * ux, y = ay * den + num * uy;
+            cout << "POINT " << formatCoordinate(x, den) << ' ' << formatCoordinate(y, den) << '\n';
         }
     }
     cout << "END OF OUTPUT\n";
@@ -196,9 +200,13 @@ def cross(ax, ay, bx, by):
     return ax * by - ay * bx
 
 
-def format_coordinate(value):
-    text = f'{value:.2f}'
-    return '0.00' if text == '-0.00' else text
+def format_coordinate(num, den):
+    negative = (num < 0) != (den < 0)
+    cents, rem = divmod(abs(num) * 100, abs(den))
+    if 2 * rem > abs(den) or (2 * rem == abs(den) and cents % 2):
+        cents += 1
+    sign = '-' if negative and cents else ''
+    return f'{sign}{cents // 100}.{cents % 100:02d}'
 
 
 it = iter(map(int, sys.stdin.buffer.read().split()))
@@ -210,9 +218,9 @@ for _ in range(next(it)):
     if den == 0:
         print('LINE' if cross(cx - ax, cy - ay, ux, uy) == 0 else 'NONE')
     else:
-        t = cross(cx - ax, cy - ay, vx, vy) / den
-        x, y = ax + t * ux, ay + t * uy
-        print(f'POINT {format_coordinate(x)} {format_coordinate(y)}')
+        num = cross(cx - ax, cy - ay, vx, vy)
+        x, y = ax * den + num * ux, ay * den + num * uy
+        print(f'POINT {format_coordinate(x, den)} {format_coordinate(y, den)}')
 print('END OF OUTPUT')
 `,
   }),
