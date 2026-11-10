@@ -606,9 +606,9 @@ for m, n, t in zip(it, it, it):
       "將每條無向連線的兩方向殘餘容量都加上 c；多條平行連線需累加。一次從 u 向 v 送 f，便將 residual[u][v] 減 f、residual[v][u] 加 f。這裡反向容量同時代表原本可反向使用的容量與取消既有流的能力，等價於一條容量 c、允許有號淨流的無向邊。",
       "用 BFS 尋找來源到終點的最短增廣路，沿路最小殘餘容量就是本次可增加流量。更新每條邊與其反向邊並累加，直到終點不可達。此時可達與不可達頂點形成飽和割，依最大流最小割定理得到最優總頻寬。n=0結束；輸出 Network k、The bandwidth is B. 以及空白行。",
     ],
-    complexity: "Edmonds–Karp 時間 O(VE²)，容量矩陣空間 O(V²)。",
+    complexity: "設 m 為輸入連線數、E 為合併平行邊後的邊數。時間 O(m+V²+VE²)；C++ 空間 O(V²)，Python 因一次讀取輸入需 O(V²+m) 空間。",
     pitfall:
-      "不能只找最大單一路徑；反向殘餘邊能撤回先前分配，平行邊容量也不可覆蓋掉。",
+      "不能只找最大單一路徑；反向殘餘邊能撤回先前分配，平行邊容量也不可覆蓋掉。即使每條連線容量最多1000，平行邊總和、反向殘餘容量與總流仍可能超過32位元；C++ 的容量、增廣量與答案都使用 long long，Python 整數則可自動擴展。",
     traceLabel: "示意：1−2容量3、2−3容量2、1−3容量1",
     trace: [
       {
@@ -637,6 +637,7 @@ for m, n, t in zip(it, it, it):
 #include <vector>
 #include <queue>
 #include <algorithm>
+#include <limits>
 using namespace std;
 int main() {
     int n, tc = 0;
@@ -645,7 +646,8 @@ int main() {
         cin >> s >> t >> m;
         --s;
         --t;
-        vector<vector<int>> cap(n, vector<int>(n)), g(n);
+        vector<vector<long long>> cap(n, vector<long long>(n));
+        vector<vector<int>> g(n);
         while (m--) {
             int u, v, c;
             cin >> u >> v >> c;
@@ -658,7 +660,7 @@ int main() {
             for (int v = 0; v < n; v++)
                 if (cap[u][v])
                     g[u].push_back(v);
-        int total = 0;
+        long long total = 0;
         while (true) {
             vector<int> parent(n, -1);
             parent[s] = s;
@@ -675,7 +677,7 @@ int main() {
             }
             if (parent[t] < 0)
                 break;
-            int flow = 1000000000;
+            long long flow = numeric_limits<long long>::max();
             for (int v = t; v != s; v = parent[v])
                 flow = min(flow, cap[parent[v]][v]);
             for (int v = t; v != s; v = parent[v]) {
