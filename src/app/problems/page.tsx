@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import { problemListConditions } from "@/lib/problemList";
+import ProblemTagFilter from "@/components/ProblemTagFilter";
 import TagBadge from "@/components/TagBadge";
 
 export const metadata: Metadata = {
@@ -187,26 +188,17 @@ export default async function ProblemListPage({
         {query && <Link href={problemsHref({ tag, sort })} className="btn-secondary">清除搜尋</Link>}
       </form>
       {query && <p className="mb-4 text-sm text-dim">「{query}」共找到 {totalProblems} 題</p>}
-      {allTags.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          <Link
-            href={problemsHref({ query, sort })}
-            className={`pill ${!tag ? "pill-active" : ""}`}
-          >
-            全部
-          </Link>
-          {allTags.map((t) => (
-            <Link
-              key={t.id}
-              href={problemsHref({ query, tag: t.name, sort })}
-              className={`pill ${tag === t.name ? "pill-active" : ""}`}
-            >
-              {t.name}
-            </Link>
-          ))}
-        </div>
-      )}
       <div className="mb-4 flex flex-wrap gap-2 text-sm">
+        {(allTags.length > 0 || tag) && (
+          <ProblemTagFilter
+            selectedTag={tag}
+            clearHref={problemsHref({ query, sort })}
+            options={allTags.map(({ name }) => ({
+              name,
+              href: problemsHref({ query, tag: name, sort }),
+            }))}
+          />
+        )}
         <span className="self-center text-dim">排序：</span>
         <Link
           href={problemsHref({ query, tag, sort: "order" })}
