@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 
 export interface SiteWideRankRow {
@@ -14,7 +15,7 @@ export interface SiteWideRankRow {
 
 // Keep distinct counts and ordering in SQLite so public ranking reads do not
 // materialize every accepted user/problem pair in the Next.js process.
-export async function getSiteWideRanking(limit: number): Promise<SiteWideRankRow[]> {
+async function querySiteWideRanking(limit: number): Promise<SiteWideRankRow[]> {
   return prisma.$queryRaw<SiteWideRankRow[]>`
     WITH solved AS (
       SELECT s."userId", COUNT(DISTINCT s."problemId") AS solved
@@ -75,4 +76,29 @@ export async function getTopSolvedUsers(limit: number) {
     ORDER BY solved DESC, username ASC
     LIMIT ${limit}
   `;
+}
+
+// 排行榜要掃整張 Submission／RecognitionAnswer／CtfSolve 表，原本每次請求
+// （含首頁）都重算一次。改成 60 秒共用快取；SQLite 回傳的 COUNT 可能是 BigInt，
+// 無法 JSON 序列化進快取，所以先統一轉成 number。
+const cachedSiteWideRanking = unstable_cache(
+  async (limit: number): Promise<SiteWideRankRow[]> => {
+    const rows = await querySiteWideRanking(limit);
+    return rows.map((row) => ({
+      ...row,
+      solved: Number(row.solved),
+      submissions: Number(row.submissions),
+      recognitionCorrect: Number(row.recognitionCorrect),
+      recognitionAnswered: Number(row.recognitionAnswered),
+      ctfSolved: Number(row.ctfSolved),
+      ctfPoints: Number(row.ctfPoints),
+      score: Number(row.score),
+    }));
+  },
+  ["site-wide-ranking"],
+  { revalidate: 60 },
+);
+
+export function getSiteWideRanking(limit: number): Promise<SiteWideRankRow[]> {
+  return cachedSiteWideRanking(limit);
 }

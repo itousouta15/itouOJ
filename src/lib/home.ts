@@ -1,6 +1,7 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import type { NavInfo } from "@/lib/nav";
-import { getDailyProblem } from "@/lib/dailyProblem";
+import { getDailyProblem, taipeiDateString } from "@/lib/dailyProblem";
 import { getNextLearningAction } from "@/lib/nextLearningAction";
 import { getActivityFeed } from "@/lib/activityFeed";
 import { getCtfStats } from "@/lib/ctf";
@@ -17,14 +18,35 @@ async function homeFeed(userId?: string) {
   return { title: "社群動態", items: await getActivityFeed(null, 5) };
 }
 
+// 公開題庫統計對所有人都一樣，不需要每次請求都跑 4 個 COUNT。
+const getPublicCounts = unstable_cache(
+  async () => {
+    const [programmingCount, recognitionCount, ctfCount, userCount] = await Promise.all([
+      prisma.problem.count({ where: { isPublic: true, type: "PROGRAMMING" } }),
+      prisma.problem.count({ where: { isPublic: true, type: "RECOGNITION" } }),
+      prisma.ctfChallenge.count({ where: { isPublic: true } }),
+      prisma.user.count(),
+    ]);
+    return { programmingCount, recognitionCount, ctfCount, userCount };
+  },
+  ["home-public-counts"],
+  { revalidate: 60 },
+);
+
+// 每日一題整天不變（以台北日期為 key），快取 5 分鐘即可。
+const getCachedDaily = unstable_cache(
+  // date 只用來當快取 key（換日自動換題），函式本身不需要它。
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async (_date: string) => getDailyProblem(),
+  ["home-daily-problem"],
+  { revalidate: 300 },
+);
+
 export async function getHomeData(nav: NavInfo) {
   const userId = nav.session?.userId;
-  const [programmingCount, recognitionCount, ctfCount, userCount, latestCtf,
+  const [{ programmingCount, recognitionCount, ctfCount, userCount }, latestCtf,
     latestProblems, ranking, announcements, daily, nextAction, ctfStats, feed] = await Promise.all([
-    prisma.problem.count({ where: { isPublic: true, type: "PROGRAMMING" } }),
-    prisma.problem.count({ where: { isPublic: true, type: "RECOGNITION" } }),
-    prisma.ctfChallenge.count({ where: { isPublic: true } }),
-    prisma.user.count(),
+    getPublicCounts(),
     prisma.ctfChallenge.findMany({
       where: { isPublic: true }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 3,
       select: {
@@ -39,7 +61,7 @@ export async function getHomeData(nav: NavInfo) {
     }),
     getSiteWideRanking(5),
     prisma.announcement.findMany({ orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }], take: 2, select: { id: true, title: true, isPinned: true, createdAt: true } }),
-    getDailyProblem(),
+    getCachedDaily(taipeiDateString()),
     userId ? getNextLearningAction(userId) : Promise.resolve(null),
     userId ? getCtfStats(userId) : Promise.resolve(null),
     homeFeed(userId),
