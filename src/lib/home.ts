@@ -5,7 +5,7 @@ import { getDailyProblem, taipeiDateString } from "@/lib/dailyProblem";
 import { getNextLearningAction } from "@/lib/nextLearningAction";
 import { getActivityFeed } from "@/lib/activityFeed";
 import { getCtfStats } from "@/lib/ctf";
-import { getSiteWideRanking } from "@/lib/ranking";
+import { getCachedSiteWideRanking } from "@/lib/ranking";
 
 async function homeFeed(userId?: string) {
   if (userId) {
@@ -59,7 +59,7 @@ export async function getHomeData(nav: NavInfo) {
       where: { isPublic: true, type: "PROGRAMMING" }, orderBy: { id: "desc" }, take: 4,
       select: { id: true, problemCode: true, title: true, difficulty: true },
     }),
-    getSiteWideRanking(5),
+    getCachedSiteWideRanking(5),
     prisma.announcement.findMany({ orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }], take: 2, select: { id: true, title: true, isPinned: true, createdAt: true } }),
     getCachedDaily(taipeiDateString()),
     userId ? getNextLearningAction(userId) : Promise.resolve(null),

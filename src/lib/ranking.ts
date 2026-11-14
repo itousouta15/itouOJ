@@ -15,7 +15,7 @@ export interface SiteWideRankRow {
 
 // Keep distinct counts and ordering in SQLite so public ranking reads do not
 // materialize every accepted user/problem pair in the Next.js process.
-async function querySiteWideRanking(limit: number): Promise<SiteWideRankRow[]> {
+export async function getSiteWideRanking(limit: number): Promise<SiteWideRankRow[]> {
   return prisma.$queryRaw<SiteWideRankRow[]>`
     WITH solved AS (
       SELECT s."userId", COUNT(DISTINCT s."problemId") AS solved
@@ -83,7 +83,7 @@ export async function getTopSolvedUsers(limit: number) {
 // 無法 JSON 序列化進快取，所以先統一轉成 number。
 const cachedSiteWideRanking = unstable_cache(
   async (limit: number): Promise<SiteWideRankRow[]> => {
-    const rows = await querySiteWideRanking(limit);
+    const rows = await getSiteWideRanking(limit);
     return rows.map((row) => ({
       ...row,
       solved: Number(row.solved),
@@ -99,6 +99,8 @@ const cachedSiteWideRanking = unstable_cache(
   { revalidate: 60 },
 );
 
-export function getSiteWideRanking(limit: number): Promise<SiteWideRankRow[]> {
+// 網頁請求用這個；getSiteWideRanking 維持即時查詢（測試與腳本在 Next 執行環境外呼叫，
+// unstable_cache 需要 Next 的 incrementalCache）。
+export function getCachedSiteWideRanking(limit: number): Promise<SiteWideRankRow[]> {
   return cachedSiteWideRanking(limit);
 }
