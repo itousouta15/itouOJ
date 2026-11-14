@@ -5,25 +5,12 @@ import { lockBodyScroll } from "@/lib/bodyScrollLock";
 
 // 同 itousouta.me 的 SiteLoader：window load 前用全頁模糊遮罩蓋住，
 // 載入完成後往上滑出，再讓 header 播放進場動畫（body.site-revealed）。
-const MAX_WAIT_MS = 4000;
-const SLIDE_MS = 600;
+const MAX_WAIT_MS = 1500;
+const SLIDE_MS = 250;
 
 export default function SiteLoader() {
   const [hiding, setHiding] = useState(false);
   const [gone, setGone] = useState(false);
-  const [blurred, setBlurred] = useState(false);
-
-  useEffect(() => {
-    let raf1 = 0;
-    let raf2 = 0;
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => setBlurred(true));
-    });
-    return () => {
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
-    };
-  }, []);
 
   useEffect(() => {
     const unlock = lockBodyScroll();
@@ -48,7 +35,7 @@ export default function SiteLoader() {
     // The page is server-rendered, so waiting for every font and image makes
     // the loader hide useful content during slow or offline connections.
     const revealAfterDom = () => {
-      hideTimer = setTimeout(startHide, 120);
+      hideTimer = setTimeout(startHide, 0);
     };
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", revealAfterDom, { once: true });
@@ -85,7 +72,7 @@ export default function SiteLoader() {
         `}</style>
       </noscript>
       <div
-        className={`site-loader${hiding ? " site-loader--hide" : ""}${blurred ? " site-loader--blurred" : ""}`}
+        className={`site-loader${hiding ? " site-loader--hide" : ""}`}
         role="status"
         aria-live="polite"
         aria-label="頁面載入中"
