@@ -284,12 +284,13 @@ echo '== Sync and validate OJ nginx upload limit =='
 # Normalize the staged script too: git archive on Windows can produce CRLF.
 tr -d '\r' < "$SOURCE/deploy/sync-nginx-upload-limit.sh" | bash -s -- "$SOURCE/deploy/nginx-oj.conf"
 touch "$BACKUP/deploy-success"
-# Retain the newest three successful rollback points. Old failed attempts can be
-# removed once they are older than the third successful backup.
+# Retain only the newest successful rollback point: each backup contains a full copy
+# of the multi-GB SQLite database, so keeping several exhausts the disk. Old failed
+# attempts are removed once they are older than that backup.
 mapfile -t successful < <(find /opt/oj-deploy-backups -mindepth 2 -maxdepth 2 -name deploy-success \
   -printf '%h\n' | sort -r)
-if (( ${#successful[@]} > 3 )); then
-  cutoff=${successful[2]}
+if (( ${#successful[@]} > 1 )); then
+  cutoff=${successful[0]}
   for old in /opt/oj-deploy-backups/[0-9]*; do
     [[ -d "$old" && ! -L "$old" && "${old##*/}" =~ ^[0-9]{8}-[0-9]{6}$ ]] || continue
     if [[ "$old" < "$cutoff" ]]; then rm -rf -- "$old" || echo "Could not prune $old" >&2; fi
