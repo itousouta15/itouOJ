@@ -64,14 +64,13 @@ export default async function CoursePage({
       prisma.courseMember.findUnique({
         where: { courseId_userId: { courseId, userId: session.userId } },
       }),
-      prisma.submission.findMany({
+      prisma.submission.groupBy({
+        by: ["problemId"],
         where: {
           userId: session.userId,
           status: "AC",
           problemId: { in: entries.map((e) => e.problemId) },
         },
-        distinct: ["problemId"],
-        select: { problemId: true },
       }),
     ]);
     joined = membership !== null;
@@ -97,14 +96,13 @@ export default async function CoursePage({
     const memberIds = members.map((m) => m.user.id);
     const problemIds = entries.map((e) => e.problemId);
     const [acPairs, subCounts] = await Promise.all([
-      prisma.submission.findMany({
+      prisma.submission.groupBy({
+        by: ["userId", "problemId"],
         where: {
           userId: { in: memberIds },
           problemId: { in: problemIds },
           status: "AC",
         },
-        distinct: ["userId", "problemId"],
-        select: { userId: true },
       }),
       prisma.submission.groupBy({
         by: ["userId"],

@@ -78,11 +78,15 @@ export default function AdminProblemTable({
   type,
   users,
   tags,
+  reorderMode = false,
 }: {
   problems: AdminProblemRow[];
   type: "PROGRAMMING" | "RECOGNITION";
   users: { username: string; displayName: string | null }[];
   tags: TagPickerTag[];
+  // true = 已載入完整清單，才允許拖曳排序（排序 API 會重編整份清單的代碼）。
+  // false = 伺服器端分頁的瀏覽模式，搜尋由外層表單交給伺服器處理。
+  reorderMode?: boolean;
 }) {
   const router = useRouter();
   const [reorderedIds, setReorderedIds] = useState<number[] | null>(null);
@@ -226,22 +230,24 @@ export default function AdminProblemTable({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-3 p-4">
-        <input
-          type="search"
-          className="input min-w-0 flex-1"
-          placeholder="搜尋題號或題目名稱"
-          aria-label="搜尋管理題目的題號或名稱"
-          value={query}
-          disabled={saving}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setSelectedIds([]);
-            setError("");
-          }}
-        />
-        <span className="text-sm text-dim">{visibleRows.length} / {rows.length} 題</span>
-      </div>
+      {reorderMode && (
+        <div className="flex flex-wrap items-center gap-3 p-4">
+          <input
+            type="search"
+            className="input min-w-0 flex-1"
+            placeholder="搜尋題號或題目名稱"
+            aria-label="搜尋管理題目的題號或名稱"
+            value={query}
+            disabled={saving}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelectedIds([]);
+              setError("");
+            }}
+          />
+          <span className="text-sm text-dim">{visibleRows.length} / {rows.length} 題</span>
+        </div>
+      )}
       {success && <p className="mb-3 px-4 text-sm text-dim" role="status">{success}</p>}
       {dirty && (
         <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-blue/40 bg-panel2 px-4 py-3">
@@ -389,7 +395,7 @@ export default function AdminProblemTable({
                   ? "border-t-2 border-t-blue"
                   : ""
               }`}
-              draggable={!saving && selectedIds.length === 0 && !search}
+              draggable={reorderMode && !saving && selectedIds.length === 0 && !search}
               onDragStart={() => setDragIndex(i)}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -417,12 +423,14 @@ export default function AdminProblemTable({
               </td>
               <td className="table-cell text-dim">
                 <div className="flex items-center gap-2">
-                  <span
-                    className="mono cursor-grab select-none text-mute active:cursor-grabbing"
-                    aria-hidden
-                  >
-                    ⠿
-                  </span>
+                  {reorderMode && (
+                    <span
+                      className="mono cursor-grab select-none text-mute active:cursor-grabbing"
+                      aria-hidden
+                    >
+                      ⠿
+                    </span>
+                  )}
                   {p.problemCode ?? p.order}
                 </div>
               </td>

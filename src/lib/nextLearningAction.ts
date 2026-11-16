@@ -28,10 +28,9 @@ export async function getNextLearningAction(userId: string): Promise<NextLearnin
   });
   if (membership?.course.problems.length) {
     const problemIds = membership.course.problems.map((item) => item.problemId);
-    const solved = await prisma.submission.findMany({
+    const solved = await prisma.submission.groupBy({
+      by: ["problemId"],
       where: { userId, status: "AC", problemId: { in: problemIds } },
-      distinct: ["problemId"],
-      select: { problemId: true },
     });
     const solvedIds = new Set(solved.map((item) => item.problemId));
     const next = membership.course.problems.find((item) => !solvedIds.has(item.problemId));

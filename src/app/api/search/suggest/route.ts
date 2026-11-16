@@ -85,8 +85,12 @@ export async function GET(request: Request) {
     },
   });
 
-  return Response.json({
-    tags: matchedTags.map((t) => t.name),
-    problems,
-  });
+  // 同樣的關鍵字短時間內常重複輸入（退格、重打）；private 避免管理員看到的未公開題被共用快取。
+  return Response.json(
+    {
+      tags: matchedTags.map((t) => t.name),
+      problems,
+    },
+    { headers: { "Cache-Control": "private, max-age=30" } },
+  );
 }

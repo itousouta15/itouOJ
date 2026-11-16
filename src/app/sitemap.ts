@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getNewProblemLessonHref } from "@/lib/newProblemLessons";
 
@@ -6,24 +7,37 @@ import { getNewProblemLessonHref } from "@/lib/newProblemLessons";
 // allows release builds before the additive CTF migration reaches the live DB.
 export const dynamic = "force-dynamic";
 
+// 爬蟲每次抓 sitemap 都會載入全部公開題目；快取 10 分鐘，可見性變更最多延遲這麼久。
+// 日期經過 JSON 快取會變成字串，下面重新轉回 Date。
+const getSitemapEntries = unstable_cache(
+  () =>
+    Promise.all([
+      prisma.problem.findMany({
+        where: { isPublic: true, type: "PROGRAMMING" },
+        select: { problemCode: true, createdAt: true },
+        orderBy: { problemCode: "asc" },
+      }),
+      prisma.announcement.findMany({
+        select: { id: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.ctfChallenge.findMany({
+        where: { isPublic: true }, select: { id: true, updatedAt: true }, orderBy: { id: "asc" },
+      }),
+    ]),
+  ["sitemap-entries"],
+  { revalidate: 600, tags: ["sitemap"] },
+);
+
 // 列出公開內容入口；個人頁、提交紀錄與需要登入的動態頁不放進 sitemap。
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.APP_URL ?? "https://oj.itousouta.me";
 
-  const [problems, announcements, ctfChallenges] = await Promise.all([
-    prisma.problem.findMany({
-      where: { isPublic: true, type: "PROGRAMMING" },
-      select: { problemCode: true, createdAt: true },
-      orderBy: { problemCode: "asc" },
-    }),
-    prisma.announcement.findMany({
-      select: { id: true, createdAt: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.ctfChallenge.findMany({
-      where: { isPublic: true }, select: { id: true, updatedAt: true }, orderBy: { id: "asc" },
-    }),
-  ]);
+  const [cachedProblems, cachedAnnouncements, cachedCtf] = await getSitemapEntries();
+  const problems = cachedProblems.map((p) => ({ ...p, createdAt: new Date(p.createdAt) }));
+  const announcements = cachedAnnouncements.map((a) => ({ ...a, createdAt: new Date(a.createdAt) }));
+  const ctfChallenges = cachedCtf.map((c) => ({ ...c, updatedAt: new Date(c.updatedAt) }));
+
 
   return [
     { url: base, changeFrequency: "daily", priority: 1 },

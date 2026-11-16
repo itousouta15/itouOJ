@@ -38,10 +38,14 @@ export default async function SubmissionsPage({
     },
     orderBy: { id: "desc" },
     take: pageSize + 1,
+    // 列表只顯示狀態與統計，不載入每筆提交的原始碼與 contest 的整列資料。
+    omit: { code: true, compileError: true },
     include: {
       user: { select: { username: true, displayName: true } },
       problem: { select: { id: true, problemCode: true, title: true, type: true } },
-      contest: true,
+      contest: {
+        select: { startTime: true, endTime: true, freezeMinutes: true, revealedAt: true },
+      },
     },
   });
   const hasNextPage = submissions.length > pageSize;

@@ -29,14 +29,13 @@ export default async function CpeCoursePage({
   const session = await getSession();
   const problems = await getCpeCourseProblems(session?.role === "ADMIN");
   const solved = session
-    ? await prisma.submission.findMany({
+    ? await prisma.submission.groupBy({
+        by: ["problemId"],
         where: {
           userId: session.userId,
           status: "AC",
           problemId: { in: problems.map((item) => item.id) },
         },
-        distinct: ["problemId"],
-        select: { problemId: true },
       })
     : [];
   const solvedSet = new Set(solved.map((entry) => entry.problemId));

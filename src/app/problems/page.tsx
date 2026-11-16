@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
+
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
@@ -16,6 +18,43 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 30;
+
+// 標籤清單變動頻率低，快取 5 分鐘，避免每次請求都對 ProblemTag 做存在性掃描。
+const getListTags = (isAdmin: boolean) =>
+  unstable_cache(
+    () =>
+      prisma.tag.findMany({
+        where: {
+          problems: {
+            some: {
+              problem: {
+                type: "PROGRAMMING",
+                ...(isAdmin ? {} : { isPublic: true }),
+              },
+            },
+          },
+        },
+        orderBy: { name: "asc" },
+      }),
+    ["problem-list-tags", isAdmin ? "admin" : "public"],
+    { revalidate: 300, tags: ["problem-list-tags"] },
+  )();
+
+// 頁碼只顯示首尾與目前頁附近；null 代表省略號。
+function pageWindow(current: number, total: number): (number | null)[] {
+  const pages = new Set<number>([1, total]);
+  for (let p = current - 2; p <= current + 2; p++) {
+    if (p >= 1 && p <= total) pages.add(p);
+  }
+  const sorted = [...pages].sort((a, b) => a - b);
+  const result: (number | null)[] = [];
+  sorted.forEach((page, index) => {
+    if (index > 0 && page - sorted[index - 1] > 1) result.push(null);
+    result.push(page);
+  });
+  return result;
+}
+
 
 function problemsHref({
   query,
@@ -51,19 +90,7 @@ export default async function ProblemListPage({
   const conditions = problemListConditions({ isAdmin, tag, query });
 
   // 篩選列只列出（公開）實作題實際用到的標籤，不混入識讀群集專用的標籤
-  const allTags = await prisma.tag.findMany({
-    where: {
-      problems: {
-        some: {
-          problem: {
-            type: "PROGRAMMING",
-            ...(isAdmin ? {} : { isPublic: true }),
-          },
-        },
-      },
-    },
-    orderBy: { name: "asc" },
-  });
+  const allTags = await getListTags(isAdmin);
 
   const [countRow] = await prisma.$queryRaw<{ count: bigint | number }[]>`
     SELECT COUNT(*) AS count FROM "Problem" p WHERE ${conditions}
@@ -100,8 +127,14 @@ export default async function ProblemListPage({
   const pageProblemIds = pageRows.map((p) => p.id);
   const pageProblems = await prisma.problem.findMany({
     where: { id: { in: pageProblemIds } },
-    omit: { pdfData: true },
-    include: { tags: { include: { tag: true } } },
+    select: {
+      id: true,
+      problemCode: true,
+      title: true,
+      isPublic: true,
+      difficulty: true,
+      tags: { select: { tagId: true, tag: { select: { name: true } } } },
+    },
   });
   const byId = new Map(pageProblems.map((problem) => [problem.id, problem]));
   const problems = pageProblemIds.flatMap((id) => {
@@ -109,28 +142,28 @@ export default async function ProblemListPage({
     return problem ? [problem] : [];
   });
   const problemIds = problems.map((p) => p.id);
-  const acCounts = await prisma.submission.groupBy({
-    by: ["problemId"],
-    where: { status: "AC", problemId: { in: problemIds } },
-    _count: { _all: true },
-  });
-  const allCounts = await prisma.submission.groupBy({
-    by: ["problemId"],
-    where: { problemId: { in: problemIds } },
-    _count: { _all: true },
-  });
-  const acMap = new Map(acCounts.map((g) => [g.problemId, g._count._all]));
-  const allMap = new Map(allCounts.map((g) => [g.problemId, g._count._all]));
-
-  const solvedSet = new Set<number>();
-  if (session) {
-    const solved = await prisma.submission.findMany({
-      where: { userId: session.userId, status: "AC" },
-      distinct: ["problemId"],
-      select: { problemId: true },
-    });
-    for (const s of solved) solvedSet.add(s.problemId);
+  // 一次 groupBy（problemId, status）同時取得通過數與提交數，
+  // 並只查本頁題目的 solved 狀態，避免載入使用者全部 AC 紀錄。
+  const [statusCounts, solved] = await Promise.all([
+    prisma.submission.groupBy({
+      by: ["problemId", "status"],
+      where: { problemId: { in: problemIds } },
+      _count: { _all: true },
+    }),
+    session && problemIds.length > 0
+      ? prisma.submission.groupBy({
+          by: ["problemId"],
+          where: { userId: session.userId, status: "AC", problemId: { in: problemIds } },
+        })
+      : Promise.resolve([] as { problemId: number }[]),
+  ]);
+  const acMap = new Map<number, number>();
+  const allMap = new Map<number, number>();
+  for (const g of statusCounts) {
+    allMap.set(g.problemId, (allMap.get(g.problemId) ?? 0) + g._count._all);
+    if (g.status === "AC") acMap.set(g.problemId, g._count._all);
   }
+  const solvedSet = new Set<number>(solved.map((s) => s.problemId));
   const itemListStructuredData = !isAdmin && problems.length > 0
     ? JSON.stringify({
         "@context": "https://schema.org",
@@ -303,16 +336,22 @@ export default async function ProblemListPage({
           ) : (
             <span className="btn-secondary cursor-not-allowed opacity-50">上一頁</span>
           )}
-          {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-            <Link
-              key={page}
-              href={problemsHref({ query, tag, sort, page })}
-              aria-current={page === currentPage ? "page" : undefined}
-              className={`pill ${page === currentPage ? "pill-active" : ""}`}
-            >
-              {page}
-            </Link>
-          ))}
+          {pageWindow(currentPage, totalPages).map((page, index) =>
+            page === null ? (
+              <span key={`gap-${index}`} className="text-mute" aria-hidden="true">
+                …
+              </span>
+            ) : (
+              <Link
+                key={page}
+                href={problemsHref({ query, tag, sort, page })}
+                aria-current={page === currentPage ? "page" : undefined}
+                className={`pill ${page === currentPage ? "pill-active" : ""}`}
+              >
+                {page}
+              </Link>
+            ),
+          )}
           {currentPage < totalPages ? (
             <Link
               href={problemsHref({ query, tag, sort, page: currentPage + 1 })}

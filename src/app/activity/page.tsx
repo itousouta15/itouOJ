@@ -35,19 +35,17 @@ export default async function ActivityPage() {
     solved: number;
   }[] = [];
   if (followingIds.length === 0) {
-    const acPairs = await prisma.submission.findMany({
-      where: { status: "AC", userId: { not: session.userId } },
-      distinct: ["userId", "problemId"],
-      select: { userId: true },
-    });
     const solvedByUser = new Map<string, number>();
-    for (const { userId } of acPairs) {
-      solvedByUser.set(userId, (solvedByUser.get(userId) ?? 0) + 1);
-    }
-    const topIds = [...solvedByUser.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([id]) => id);
+    const top = await prisma.$queryRaw<{ userId: string; solved: bigint | number }[]>`
+      SELECT "userId", COUNT(DISTINCT "problemId") AS solved
+      FROM "Submission"
+      WHERE "status" = 'AC' AND "userId" <> ${session.userId}
+      GROUP BY "userId"
+      ORDER BY solved DESC
+      LIMIT 5
+    `;
+    for (const row of top) solvedByUser.set(row.userId, Number(row.solved));
+    const topIds = top.map((row) => row.userId);
     const users = await prisma.user.findMany({
       where: { id: { in: topIds } },
       select: { id: true, username: true, displayName: true },

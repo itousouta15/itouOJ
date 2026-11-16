@@ -28,26 +28,24 @@ export default async function CoursesPage() {
       }),
       prisma.problem.count({ where: cpeProblemWhere(isAdmin) }),
       session
-        ? prisma.submission.findMany({
+        ? prisma.submission.groupBy({
+            by: ["problemId"],
             where: {
               userId: session.userId,
               status: "AC",
               problem: cpeProblemWhere(isAdmin),
             },
-            distinct: ["problemId"],
-            select: { problemId: true },
           })
         : Promise.resolve([]),
       prisma.problem.count({ where: toiPotentialProblemWhere(isAdmin) }),
       session
-        ? prisma.submission.findMany({
+        ? prisma.submission.groupBy({
+            by: ["problemId"],
             where: {
               userId: session.userId,
               status: "AC",
               problem: toiPotentialProblemWhere(isAdmin),
             },
-            distinct: ["problemId"],
-            select: { problemId: true },
           })
         : Promise.resolve([]),
     ]);
@@ -65,17 +63,18 @@ export default async function CoursesPage() {
     for (const m of memberships) joinedSet.add(m.courseId);
 
     if (joinedSet.size > 0) {
-      const [courseProblems, solved] = await Promise.all([
-        prisma.courseProblem.findMany({
-          where: { courseId: { in: [...joinedSet] } },
-          select: { courseId: true, problemId: true },
-        }),
-        prisma.submission.findMany({
-          where: { userId: session.userId, status: "AC" },
-          distinct: ["problemId"],
-          select: { problemId: true },
-        }),
-      ]);
+      const courseProblems = await prisma.courseProblem.findMany({
+        where: { courseId: { in: [...joinedSet] } },
+        select: { courseId: true, problemId: true },
+      });
+      const solved = await prisma.submission.groupBy({
+        by: ["problemId"],
+        where: {
+          userId: session.userId,
+          status: "AC",
+          problemId: { in: [...new Set(courseProblems.map((cp) => cp.problemId))] },
+        },
+      });
       const solvedSet = new Set(solved.map((s) => s.problemId));
       for (const cp of courseProblems) {
         if (solvedSet.has(cp.problemId)) {

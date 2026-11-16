@@ -63,7 +63,14 @@ export default async function SearchPage({
         },
         orderBy: [{ type: "asc" }, { problemCode: "asc" }, { id: "asc" }],
         take: MAX_RESULTS,
-        omit: { pdfData: true },
+        // 結果頁只用到片段，不載入 explanation / options / pdf 等大欄位。
+        omit: {
+          pdfData: true,
+          pdfPassword: true,
+          explanation: true,
+          options: true,
+          code: true,
+        },
         include: {
           tags: { include: { tag: true } },
           cluster: { select: { title: true } },

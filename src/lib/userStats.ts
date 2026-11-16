@@ -40,11 +40,14 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     recognitionTotal,
     ctf,
   ] = await Promise.all([
-    prisma.submission.findMany({
-      where: { userId, status: "AC", problem: { type: "PROGRAMMING" } },
-      distinct: ["problemId"],
-      select: { problem: { select: { difficulty: true } } },
-    }),
+    // SQL 端做 DISTINCT：Prisma 的 findMany({ distinct }) 會把全部 AC 列載入再去重。
+    prisma.$queryRaw<{ difficulty: string; count: bigint | number }[]>`
+      SELECT p."difficulty" AS difficulty, COUNT(DISTINCT s."problemId") AS count
+      FROM "Submission" s
+      INNER JOIN "Problem" p ON p."id" = s."problemId"
+      WHERE s."userId" = ${userId} AND s."status" = 'AC' AND p."type" = 'PROGRAMMING'
+      GROUP BY p."difficulty"
+    `,
     prisma.submission.count({ where: { userId, problem: { type: "PROGRAMMING" } } }),
     prisma.submission.count({ where: { userId, status: "AC", problem: { type: "PROGRAMMING" } } }),
     prisma.problem.groupBy({
@@ -67,18 +70,18 @@ export async function getUserStats(userId: string): Promise<UserStats> {
   ]);
 
   const solvedByDifficulty = new Map<string, number>();
-  for (const s of acDistinct) {
-    solvedByDifficulty.set(
-      s.problem.difficulty,
-      (solvedByDifficulty.get(s.problem.difficulty) ?? 0) + 1
-    );
+  let solvedCount = 0;
+  for (const row of acDistinct) {
+    const count = Number(row.count);
+    solvedCount += count;
+    solvedByDifficulty.set(row.difficulty, (solvedByDifficulty.get(row.difficulty) ?? 0) + count);
   }
   const totalByDifficulty = new Map(
     publicTotals.map((g) => [g.difficulty, g._count._all])
   );
 
   return {
-    solvedCount: acDistinct.length,
+    solvedCount,
     totalSubmissions,
     acSubmissions,
     acRate:

@@ -222,6 +222,8 @@ model Problem {
   @@unique([type, problemCode])
   @@index([clusterId])
   @@index([authorId])
+  @@index([type, isPublic, problemCode])
+  @@index([type, isPublic, difficulty])
 }
 
 // 識讀群集：一組識別題（例如「APCS 2021/01」）。
@@ -372,6 +374,7 @@ model ProblemTag {
   tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([problemId, tagId])
+  @@index([tagId])
 }
 
 // 子題：把一題的測資分組並各自配分，用於部分給分。
@@ -415,6 +418,7 @@ model CourseProblem {
   order     Int     @default(0)
 
   @@unique([courseId, problemId])
+  @@index([problemId])
 }
 
 model CourseMember {
@@ -471,6 +475,7 @@ model ContestProblem {
 
   @@unique([contestId, problemId])
   @@unique([contestId, label])
+  @@index([problemId])
 }
 
 model ContestParticipant {
