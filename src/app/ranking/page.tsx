@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getSiteWideRanking } from "@/lib/ranking";
+import { getCachedSiteWideRanking } from "@/lib/ranking";
 
 export const metadata: Metadata = { title: "排行" };
 export const dynamic = "force-dynamic";
 
 export default async function RankingPage() {
-  const combinedRows = await getSiteWideRanking(100);
+  const combinedRows = await getCachedSiteWideRanking(100);
 
   return (
     <div>

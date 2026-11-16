@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 
 export interface SiteWideRankRow {
@@ -75,4 +76,31 @@ export async function getTopSolvedUsers(limit: number) {
     ORDER BY solved DESC, username ASC
     LIMIT ${limit}
   `;
+}
+
+// 排行榜要掃整張 Submission／RecognitionAnswer／CtfSolve 表，原本每次請求
+// （含首頁）都重算一次。改成 60 秒共用快取；SQLite 回傳的 COUNT 可能是 BigInt，
+// 無法 JSON 序列化進快取，所以先統一轉成 number。
+const cachedSiteWideRanking = unstable_cache(
+  async (limit: number): Promise<SiteWideRankRow[]> => {
+    const rows = await getSiteWideRanking(limit);
+    return rows.map((row) => ({
+      ...row,
+      solved: Number(row.solved),
+      submissions: Number(row.submissions),
+      recognitionCorrect: Number(row.recognitionCorrect),
+      recognitionAnswered: Number(row.recognitionAnswered),
+      ctfSolved: Number(row.ctfSolved),
+      ctfPoints: Number(row.ctfPoints),
+      score: Number(row.score),
+    }));
+  },
+  ["site-wide-ranking"],
+  { revalidate: 60 },
+);
+
+// 網頁請求用這個；getSiteWideRanking 維持即時查詢（測試與腳本在 Next 執行環境外呼叫，
+// unstable_cache 需要 Next 的 incrementalCache）。
+export function getCachedSiteWideRanking(limit: number): Promise<SiteWideRankRow[]> {
+  return cachedSiteWideRanking(limit);
 }

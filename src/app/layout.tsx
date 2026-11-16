@@ -72,14 +72,17 @@ const appInit = `(function(){try{
 }catch(e){}})();`;
 
 // 辰宇落雁體只用在品牌字樣，等瀏覽器閒置後再載入，不阻塞主要內容。
-const EMFONT_CSS = "https://font.emtech.cc/css/ChenYuLuoYan";
-const fontApply = `(function(){
-  function apply(){var l=document.createElement('link');l.rel='stylesheet';l.href='${EMFONT_CSS}';document.head.appendChild(l);}
-  if('requestIdleCallback' in window) requestIdleCallback(apply); else setTimeout(apply,0);
-})();`;
-
 const GOOGLE_FONTS_CSS =
   "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&family=Shippori+Mincho:wght@400;600;700&display=swap";
+const EMFONT_CSS = "https://font.emtech.cc/css/ChenYuLuoYan";
+// Google Fonts 的 CSS 原本是 render-blocking <link>（4 個字族），慢網路下整頁
+// 空白等字型；改成首繪後才注入（font-display: swap，先用系統字體顯示）。
+const fontApply = `(function(){
+  function add(h){var l=document.createElement('link');l.rel='stylesheet';l.href=h;document.head.appendChild(l);}
+  function apply(){add('${GOOGLE_FONTS_CSS}');add('${EMFONT_CSS}');}
+  if('requestIdleCallback' in window) requestIdleCallback(apply,{timeout:1500}); else setTimeout(apply,0);
+})();`;
+
 
 export default function RootLayout({
   children,
@@ -101,10 +104,10 @@ export default function RootLayout({
               href="https://fonts.gstatic.com"
               crossOrigin=""
             />
-            <link rel="stylesheet" href={GOOGLE_FONTS_CSS} />
             <link rel="preconnect" href="https://font.emtech.cc" />
             <script dangerouslySetInnerHTML={{ __html: fontApply }} />
             <noscript>
+              <link rel="stylesheet" href={GOOGLE_FONTS_CSS} />
               <link rel="stylesheet" href={EMFONT_CSS} />
             </noscript>
           </>
