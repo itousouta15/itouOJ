@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { getCpeCourseProblems } from "@/lib/cpeCourseData";
 import { cpeTopics } from "@/lib/cpeLessonTypes";
 import DifficultyBadge from "@/components/DifficultyBadge";
+import ListPagination from "@/components/ListPagination";
+import { paginate } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -16,7 +18,7 @@ export const metadata: Metadata = {
 export default async function CpeCoursePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; topic?: string; level?: string }>;
+  searchParams: Promise<{ q?: string; topic?: string; level?: string; page?: string }>;
 }) {
   const filters = await searchParams;
   const query = filters.q?.trim() ?? "";
@@ -49,13 +51,25 @@ export default async function CpeCoursePage({
           .toLocaleLowerCase()
           .includes(needle)),
   );
+  // 每頁只渲染一部分教學題；各主題的總數與已完成數仍以過濾後的全部資料計算。
+  const { pageItems, currentPage, totalPages } = paginate(filtered, filters.page);
   const units = cpeTopics
     .map((unit) => ({
       ...unit,
-      entries: filtered.filter((entry) => entry.lesson.topic === unit.id),
+      all: filtered.filter((entry) => entry.lesson.topic === unit.id),
+      entries: pageItems.filter((entry) => entry.lesson.topic === unit.id),
     }))
     .filter((unit) => unit.entries.length > 0);
   const activeFilter = Boolean(query || topic || level);
+  const hrefFor = (page: number) => {
+    const next = new URLSearchParams();
+    if (query) next.set("q", query);
+    if (topic) next.set("topic", topic);
+    if (level) next.set("level", level);
+    if (page > 1) next.set("page", String(page));
+    const qs = next.toString();
+    return qs ? `/courses/cpe?${qs}` : "/courses/cpe";
+  };
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6">
@@ -158,9 +172,9 @@ export default async function CpeCoursePage({
               <summary className="cursor-pointer px-5 py-4 hover:bg-panel2">
                 <span className="font-semibold">{unit.title}</span>
                 <span className="mono ml-3 text-xs text-mute">
-                  {unit.entries.length} 堂 ·{" "}
+                  {unit.all.length} 堂 ·{" "}
                   {
-                    unit.entries.filter((entry) => solvedSet.has(entry.id))
+                    unit.all.filter((entry) => solvedSet.has(entry.id))
                       .length
                   }{" "}
                   題已完成
@@ -199,6 +213,7 @@ export default async function CpeCoursePage({
           ))}
         </div>
       )}
+      <ListPagination currentPage={currentPage} totalPages={totalPages} label="CPE 教學清單分頁" hrefFor={hrefFor} />
       <p className="text-center text-sm text-mute">
         <Link href="/problems?tag=CPE" className="text-blue hover:underline">
           回到 CPE 題庫

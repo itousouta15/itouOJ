@@ -4,12 +4,14 @@ import { getSession } from "@/lib/auth";
 import { getNewProblemCourseProblems } from "@/lib/newProblemCourseData";
 import { newProblemTopics } from "@/lib/newProblemLessons";
 import DifficultyBadge from "@/components/DifficultyBadge";
+import ListPagination from "@/components/ListPagination";
+import { paginate } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "競賽與專題逐題教學" };
 
 export default async function PracticeCoursePage({ searchParams }: {
-  searchParams: Promise<{ q?: string | string[]; topic?: string | string[]; level?: string | string[] }>;
+  searchParams: Promise<{ q?: string | string[]; topic?: string | string[]; level?: string | string[]; page?: string | string[] }>;
 }) {
   const session = await getSession();
   const problems = await getNewProblemCourseProblems(session?.role === "ADMIN");
@@ -23,6 +25,17 @@ export default async function PracticeCoursePage({ searchParams }: {
     (!newProblemTopics.some((item) => item.id === topic) || entry.lesson.topic === topic)
     && (!["easy", "medium", "hard"].includes(level) || entry.lesson.level === level)
     && (!needle || `${entry.problemCode} ${entry.title} ${entry.lesson.concept}`.toLocaleLowerCase().includes(needle)));
+  // 每頁只渲染一部分教學題，避免一次送出數百題的卡片。
+  const { pageItems, currentPage, totalPages } = paginate(filtered, params.page);
+  const hrefFor = (page: number) => {
+    const next = new URLSearchParams();
+    if (query) next.set("q", query);
+    if (topic) next.set("topic", topic);
+    if (level) next.set("level", level);
+    if (page > 1) next.set("page", String(page));
+    const qs = next.toString();
+    return qs ? `/courses/practice?${qs}` : "/courses/practice";
+  };
   return <main className="mx-auto w-full max-w-6xl space-y-6">
     <Link href="/courses" className="text-sm text-blue hover:underline">← 所有課程</Link>
     <header className="space-y-3">
@@ -50,10 +63,11 @@ export default async function PracticeCoursePage({ searchParams }: {
     </form>
     {!filtered.length && <p className="card p-6 text-mute">沒有符合條件的教學，請調整搜尋條件。</p>}
     {newProblemTopics.map((unit) => {
-      const entries = filtered.filter((entry) => entry.lesson.topic === unit.id);
+      const entries = pageItems.filter((entry) => entry.lesson.topic === unit.id);
       if (!entries.length) return null;
+      const topicTotal = filtered.filter((entry) => entry.lesson.topic === unit.id).length;
       return <section key={unit.id} className="space-y-3">
-        <h2 className="section-title">{unit.title} <span className="text-sm text-mute">{entries.length} 題</span></h2>
+        <h2 className="section-title">{unit.title} <span className="text-sm text-mute">{topicTotal} 題</span></h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {entries.map((entry) => <Link key={entry.id} href={`/courses/practice/lessons/${entry.problemCode}`} className="card block space-y-2 p-4 hover:bg-panel2">
             <div className="flex flex-wrap items-center gap-2"><span className="mono text-xs text-mute">{entry.problemCode}</span><DifficultyBadge difficulty={entry.lesson.level} />{!entry.isPublic && <span className="vbadge vbadge-gray">未公開</span>}</div>
@@ -63,5 +77,6 @@ export default async function PracticeCoursePage({ searchParams }: {
         </div>
       </section>;
     })}
+    <ListPagination currentPage={currentPage} totalPages={totalPages} label="教學清單分頁" hrefFor={hrefFor} />
   </main>;
 }

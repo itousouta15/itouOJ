@@ -1,12 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { unstable_cache } from "next/cache";
-
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import DifficultyBadge from "@/components/DifficultyBadge";
 import { problemListConditions } from "@/lib/problemList";
+import { problemsHref } from "@/lib/problemsHref";
+import { pageWindow } from "@/lib/pagination";
 import ProblemTagFilter from "@/components/ProblemTagFilter";
 import TagBadge from "@/components/TagBadge";
 
@@ -18,63 +18,6 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 30;
-
-// 標籤清單變動頻率低，快取 5 分鐘，避免每次請求都對 ProblemTag 做存在性掃描。
-const getListTags = (isAdmin: boolean) =>
-  unstable_cache(
-    () =>
-      prisma.tag.findMany({
-        where: {
-          problems: {
-            some: {
-              problem: {
-                type: "PROGRAMMING",
-                ...(isAdmin ? {} : { isPublic: true }),
-              },
-            },
-          },
-        },
-        orderBy: { name: "asc" },
-      }),
-    ["problem-list-tags", isAdmin ? "admin" : "public"],
-    { revalidate: 300, tags: ["problem-list-tags"] },
-  )();
-
-// 頁碼只顯示首尾與目前頁附近；null 代表省略號。
-function pageWindow(current: number, total: number): (number | null)[] {
-  const pages = new Set<number>([1, total]);
-  for (let p = current - 2; p <= current + 2; p++) {
-    if (p >= 1 && p <= total) pages.add(p);
-  }
-  const sorted = [...pages].sort((a, b) => a - b);
-  const result: (number | null)[] = [];
-  sorted.forEach((page, index) => {
-    if (index > 0 && page - sorted[index - 1] > 1) result.push(null);
-    result.push(page);
-  });
-  return result;
-}
-
-
-function problemsHref({
-  query,
-  tag,
-  sort,
-  page,
-}: {
-  query?: string;
-  tag?: string;
-  sort: "order" | "difficulty";
-  page?: number;
-}) {
-  const params = new URLSearchParams();
-  if (query) params.set("q", query);
-  if (tag) params.set("tag", tag);
-  if (sort === "difficulty") params.set("sort", sort);
-  if (page && page > 1) params.set("page", String(page));
-  const queryString = params.toString();
-  return queryString ? `/problems?${queryString}` : "/problems";
-}
 
 export default async function ProblemListPage({
   searchParams,
@@ -88,9 +31,6 @@ export default async function ProblemListPage({
   const session = await getSession();
   const isAdmin = session?.role === "ADMIN";
   const conditions = problemListConditions({ isAdmin, tag, query });
-
-  // 篩選列只列出（公開）實作題實際用到的標籤，不混入識讀群集專用的標籤
-  const allTags = await getListTags(isAdmin);
 
   const [countRow] = await prisma.$queryRaw<{ count: bigint | number }[]>`
     SELECT COUNT(*) AS count FROM "Problem" p WHERE ${conditions}
@@ -222,16 +162,7 @@ export default async function ProblemListPage({
       </form>
       {query && <p className="mb-4 text-sm text-dim">「{query}」共找到 {totalProblems} 題</p>}
       <div className="mb-4 flex flex-wrap gap-2 text-sm">
-        {(allTags.length > 0 || tag) && (
-          <ProblemTagFilter
-            selectedTag={tag}
-            clearHref={problemsHref({ query, sort })}
-            options={allTags.map(({ name }) => ({
-              name,
-              href: problemsHref({ query, tag: name, sort }),
-            }))}
-          />
-        )}
+        <ProblemTagFilter selectedTag={tag} query={query} sort={sort} />
         <span className="self-center text-dim">排序：</span>
         <Link
           href={problemsHref({ query, tag, sort: "order" })}
