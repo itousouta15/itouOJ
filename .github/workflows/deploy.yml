@@ -30,7 +30,18 @@ jobs:
           printf '%s\n' "$KEY" > ~/.ssh/oj-deploy
           printf '%s\n' "$HOST_KEYS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/oj-deploy ~/.ssh/known_hosts
-          printf 'Host deploy-target\n  HostName %s\n  User root\n  IdentityFile ~/.ssh/oj-deploy\n  IdentitiesOnly yes\n  BatchMode yes\n  StrictHostKeyChecking yes\n' "$DEPLOY_HOST" > ~/.ssh/config
+          printf 'Host deploy-target\n  HostName %s\n  User root\n  IdentityFile ~/.ssh/oj-deploy\n  IdentitiesOnly yes\n  BatchMode yes\n  StrictHostKeyChecking yes\n  ConnectTimeout 15\n  ConnectionAttempts 3\n  ServerAliveInterval 30\n  ServerAliveCountMax 4\n' "$DEPLOY_HOST" > ~/.ssh/config
+
+      - name: Wait for deploy host SSH
+        run: |
+          # Side-effect-free probe so transient sshd resets do not fail the poll.
+          for attempt in 1 2 3 4 5 6; do
+            if ssh -o ConnectTimeout=15 deploy-target true; then exit 0; fi
+            echo "SSH probe $attempt failed; retrying in 20s"
+            sleep 20
+          done
+          echo "::error::Deploy host SSH unreachable after retries"
+          exit 1
 
       - name: Claim one admin-requested revision
         id: claim
