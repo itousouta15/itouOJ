@@ -63,7 +63,7 @@ const processor = unified()
   .use(remarkGfm)
   .use(remarkMath)
   .use(remarkRehype)
-  .use(rehypeKatex);
+  .use(rehypeKatex, { strict: "ignore" });
 
 async function markdownToHtml(md: string): Promise<string> {
   const tree = await processor.run(processor.parse(md ?? ""));

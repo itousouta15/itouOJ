@@ -16,7 +16,7 @@ export default function Markdown({
     <div className={`prose-oj${className ? ` ${className}` : ""}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        rehypePlugins={[[rehypeKatex, { strict: "ignore" }]]}
         components={{
           a: ({ href, children, title }) => {
             const isWebLink = !!href && !/^(?:#|mailto:|tel:)/i.test(href);
