@@ -1,32 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { SERVER_NOTICE } from "@/lib/serverNotice";
 
 const STORAGE_KEY = "server-notice-dismissed";
+const CHANGE_EVENT = "server-notice-dismissed-change";
+
+function subscribe(callback: () => void) {
+  window.addEventListener(CHANGE_EVENT, callback);
+  return () => window.removeEventListener(CHANGE_EVENT, callback);
+}
+
+// 回傳使用者已關閉的公告 id；讀不到（隱私模式等）視為沒關閉。
+function getDismissedId(): string | null {
+  try {
+    return sessionStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
 export default function ServerNoticeBanner() {
-  // 先假設已關閉，避免 SSR／水合時閃一下；mount 後再依 sessionStorage 決定。
-  const [visible, setVisible] = useState(false);
+  // 伺服器端先當作「已關閉」，避免水合時閃一下；客戶端再讀 sessionStorage。
+  const dismissedId = useSyncExternalStore(subscribe, getDismissedId, () => SERVER_NOTICE.id);
 
-  useEffect(() => {
-    if (!SERVER_NOTICE.enabled) return;
-    try {
-      setVisible(sessionStorage.getItem(STORAGE_KEY) !== SERVER_NOTICE.id);
-    } catch {
-      setVisible(true);
-    }
-  }, []);
-
-  if (!SERVER_NOTICE.enabled || !visible) return null;
+  if (!SERVER_NOTICE.enabled || dismissedId === SERVER_NOTICE.id) return null;
 
   const dismiss = () => {
-    setVisible(false);
     try {
       sessionStorage.setItem(STORAGE_KEY, SERVER_NOTICE.id);
     } catch {
       /* 隱私模式下無法儲存，只關閉這次 */
     }
+    window.dispatchEvent(new Event(CHANGE_EVENT));
   };
 
   return (
