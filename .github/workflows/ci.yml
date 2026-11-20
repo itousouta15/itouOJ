@@ -221,16 +221,22 @@ jobs:
       - run: npm run generate
       - run: npx prisma migrate deploy
       - name: Problem management and proposals
+        if: always()
         run: npm run test:problems
       - name: Judge queue, remote and monitor
+        if: always()
         run: npm run test:judge
       - name: Service admin
+        if: always()
         run: npm run test:services
       - name: Managed hosts and host agent
+        if: always()
         run: npm run test:hosts
       - name: Deployment admin
+        if: always()
         run: npm run test:deployment
       - name: Password reset
+        if: always()
         run: npm run test:password-reset
 
   itoulang:
