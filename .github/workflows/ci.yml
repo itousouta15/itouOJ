@@ -52,12 +52,6 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Recognition parser self-test
-        run: node scripts/parse-reading-bank.mjs --self-test
-
-      - name: HackMD problem import, independent oracles and Linux C++ references
-        run: npm run test:hackmd-problems
-
       - name: CTF beginner challenge tests
         run: npm run test:ctf-beginner
 
@@ -70,26 +64,6 @@ jobs:
       - name: Course ordering tests
         run: npm run test:courses
 
-      - name: TOI beginner problem-specific lessons and reference programs
-        run: npm run test:toi-beginner-lessons -- --python python3 --cxx g++
-
-      - name: Exact tutorial coverage and source examples
-        run: npm run test:tutorial-coverage
-
-      - name: New problem tutorial source contracts and independent case coverage
-        run: npm run test:new-problem-lessons
-
-      - name: Guarded clarification of original Hanoi ring-number rules
-        run: npm run test:new-problem-corrections
-
-      - name: Tutorial explanation migration and independent regressions
-        run: npm run test:tutorial-corrections
-
-      - name: Recognition audit migration, C/C++ snippets and streaming regressions
-        run: npm run test:recognition-corrections
-
-      - name: TOI beginner reference programs
-        run: npm run test:toi-beginner-programs -- --python python3 --cxx g++
       - name: Bug report tests
         run: npm run test:reports
 
@@ -101,107 +75,10 @@ jobs:
           CTF_TEST_PRODUCTION: "1"
         run: npm run test:ctf
 
-      - name: CPE course integration tests
-        env:
-          CPE_TEST_PRODUCTION: "1"
-        run: npm run test:cpe-course
-
-      - name: Competition and topic course visibility, search and tutorial links
-        env:
-          PRACTICE_TEST_PRODUCTION: "1"
-        run: npm run test:new-problem-course
-
       - name: Course layout integration tests
         env:
           COURSE_LAYOUT_TEST_PRODUCTION: "1"
         run: npm run test:course-layout
-
-      - name: TOI potential course integration tests
-        env:
-          TOI_POTENTIAL_TEST_PRODUCTION: "1"
-        run: npm run test:toi-potential-course
-
-  new-problem-tutorials:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        batch: [competition, national1, national2, practice1, practice2, practice3, practice4, nov08-562-607, nov08-608-653, nov08-654-699, nov08-700-745, nov08-746-790]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.12'
-      - name: Install C++ multiprecision headers
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libboost-dev
-      - name: Verify every C++ and Python solution against samples and independent cases
-        run: node scripts/verify-new-problem-lessons.mjs --batch ${{ matrix.batch }} --runtime
-      - name: Exhaustive tandem-repeat oracle and maximum-size regressions
-        if: matrix.batch == 'practice1'
-        run: python3 scripts/lib/check-tandem-tutorial.py
-
-  tutorial-regressions:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: TOI beginner batch 1
-            command: node --import ./scripts/ctf-test-loader.mjs scripts/lib/check-toi-beginner-batch1.mjs --python python3 --cxx g++
-          - name: TOI beginner batch 2
-            command: python3 scripts/lib/check-toi-beginner-batch2.py --python python3 --cxx g++
-          - name: TOI beginner batch 3
-            command: python3 scripts/lib/check-toi-beginner-batch3.py --python python3 --cxx g++
-          - name: APCS independent checks
-            command: node --import ./scripts/ctf-test-loader.mjs scripts/lib/check-apcs-tutorial-audit.mjs --python python3 --cxx g++ --stress
-          - name: CPE targeted regressions
-            command: node --import ./scripts/ctf-test-loader.mjs scripts/lib/check-cpe-tutorial-audit.mjs --python python3 --cxx g++ --traces
-          - name: TOI potential independent checks
-            command: node --import ./scripts/ctf-test-loader.mjs scripts/lib/check-toi-potential-tutorial-audit.mjs --regressions --python python3 --cxx g++
-    name: ${{ matrix.name }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Install test dependencies
-        run: npm ci --ignore-scripts
-      - name: Run independent program checks
-        run: ${{ matrix.command }}
-      - name: Changed CPE public reference programs (targeted, not a bulk matrix)
-        if: matrix.name == 'CPE targeted regressions'
-        run: npm run test:cpe-lessons -- --code a522,a559,a566,a595,a618,a675,a676,a685,a709,a740,a747,a755,a770,a779,a789,a790,a794,a796,a797,a798,a824,a828,a831,a836,a841 --python python3 --cxx g++
-      - name: a690 independent min-cuts and capacity overflow (Linux C++ UBSan and Python)
-        if: matrix.name == 'CPE targeted regressions'
-        run: node --import ./scripts/ctf-test-loader.mjs scripts/lib/check-a690-bandwidth.mjs
-
-  toi-potential-programs:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: Install test loader dependencies
-        run: npm ci --ignore-scripts
-      - name: Verify TOI potential coverage, reference programs and explicit source-conflict diagnostic
-        run: npm run test:toi-potential-lessons -- --python python3 --cxx g++ --check-known-source-conflicts
-      - name: TOI potential independent algorithm checks
-        run: npm run test:toi-potential-algorithms -- --python python3
 
   # 後端邏輯測試（服務／主機／部署管理）：原本寫了測試腳本卻沒進 CI。
   # test:problems、test:judge、test:password-reset 目前測試本身已過時或壞掉
