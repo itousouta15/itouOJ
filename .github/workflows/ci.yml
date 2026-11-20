@@ -3,7 +3,18 @@ name: CI
 on:
   push:
     branches: [master]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
   pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -12,6 +23,7 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       # CI 用拋棄式資料庫；build 期間的頁面收集只會讀到空資料庫
       DATABASE_URL: file:./ci.db
@@ -129,16 +141,10 @@ jobs:
       - name: Install C++ multiprecision headers
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libboost-dev
       - name: Verify every C++ and Python solution against samples and independent cases
-        run: node scripts/verify-new-problem-lessons.mjs --batch ${{ matrix.batch }} --runtime --report new-problem-${{ matrix.batch }}-verification.json
+        run: node scripts/verify-new-problem-lessons.mjs --batch ${{ matrix.batch }} --runtime
       - name: Exhaustive tandem-repeat oracle and maximum-size regressions
         if: matrix.batch == 'practice1'
         run: python3 scripts/lib/check-tandem-tutorial.py
-      - name: Keep per-program results and source hashes
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: new-problem-${{ matrix.batch }}-verification
-          path: new-problem-${{ matrix.batch }}-verification.json
 
   tutorial-regressions:
     runs-on: ubuntu-latest
@@ -181,6 +187,7 @@ jobs:
 
   toi-potential-programs:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -196,8 +203,39 @@ jobs:
       - name: TOI potential independent algorithm checks
         run: npm run test:toi-potential-algorithms -- --python python3
 
+  # 後端邏輯測試（題目管理、評測佇列、服務／主機／部署管理、重設密碼）：
+  # 原本寫了測試腳本卻沒進 CI。獨立成一個 job，失敗時不會擋住其他檢查，也方便單獨移除。
+  server-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: file:./ci.db
+      AUTH_SECRET: ci-secret-not-used-in-production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run generate
+      - run: npx prisma migrate deploy
+      - name: Problem management and proposals
+        run: npm run test:problems
+      - name: Judge queue, remote and monitor
+        run: npm run test:judge
+      - name: Service admin
+        run: npm run test:services
+      - name: Managed hosts and host agent
+        run: npm run test:hosts
+      - name: Deployment admin
+        run: npm run test:deployment
+      - name: Password reset
+        run: npm run test:password-reset
+
   itoulang:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
