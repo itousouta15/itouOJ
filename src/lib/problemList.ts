@@ -26,6 +26,11 @@ export function problemListConditions({
     conditions.push(Prisma.sql`(
       instr(lower(p."problemCode"), lower(${text})) > 0
       OR instr(lower(p."title"), lower(${text})) > 0
+      OR EXISTS (
+        SELECT 1 FROM "ProblemTag" qpt
+        INNER JOIN "Tag" qt ON qt."id" = qpt."tagId"
+        WHERE qpt."problemId" = p."id" AND instr(lower(qt."name"), lower(${text})) > 0
+      )
     )`);
   }
   return Prisma.join(conditions, " AND ");
