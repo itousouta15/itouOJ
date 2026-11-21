@@ -1,0 +1,5821 @@
+[
+  {
+    "code": "d630",
+    "title": "離散對數的最小解",
+    "topic": "number-theory",
+    "level": "hard",
+    "concept": "小步大步（Baby-step Giant-step）求離散對數",
+    "goal": "把 x 拆成 m·i − j，用雜湊表在 O(√p) 內找出 g^x ≡ h (mod p) 的最小非負解。",
+    "explanation": [
+      "先處理 x = 0：若 h = 1 則 g^0 = 1，答案就是 0。其餘情形 x ≥ 1。g 的次序（order）整除 p−1，所以 g^x 以 p−1 為週期重複，若有解，最小解必落在 [1, p−2]。直接枚舉 x 要 O(p)，p 到 10^9+7 太慢，需要折衷。",
+      "令 m = ⌈√p⌉，把 x 寫成 x = m·i − j，其中 1 ≤ i ≤ m、0 ≤ j < m（任何 1 ≤ x ≤ m² 都有唯一表示：i = ⌈x/m⌉，j = m·i − x）。式子 g^(m·i − j) ≡ h 等價於 g^(m·i) ≡ h·g^j (mod p)，因為 g 與 p 互質所以可以乘 g^j 兩邊。於是先做「小步」：對 j = 0..m−1 算 h·g^j mod p 存進雜湊表（同一個值保留最大的 j，因為 x = m·i − j，j 越大 x 越小）；再做「大步」：令 G = g^m，對 i = 1..m 依序算 G^i，第一次出現在表中就停止，答案 x = m·i − j。i 由小到大保證 i 最小，同一 i 下 j 最大，所以 x 最小。",
+      "m² ≥ p > p−2，已涵蓋所有可能的最小解；若全部 i 都找不到就輸出 −1（例如 g 的生成子群不含 h）。乘法最大 (10^9+6)² ≈ 10^18，C++ 要用 unsigned long long 或 long long（< 9.2×10^18 安全）再取模。"
+    ],
+    "complexity": "每組詢問小步與大步各 m ≈ √p ≈ 31623 次模乘與雜湊操作，時間 O(√p)，空間 O(√p)；T ≤ 3，總計約 20 萬次運算，遠低於 1 秒。",
+    "pitfall": "忘記單獨處理 h = 1（答案 0）會被 i ≥ 1 的搜尋漏掉；雜湊表若保留最小的 j 而不是最大的 j，會得到不是最小的 x；乘法要先轉成 64 位元再取模，否則 10^9 量級相乘會溢位。",
+    "sampleInput": "3\n7 3 2\n7 2 3\n11 2 1\n",
+    "sampleOutput": "2\n-1\n0\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：決定區塊大小",
+        "description": "第一組 p=7、g=3、h=2。h≠1 所以 x≥1；m=⌈√7⌉=3。",
+        "cells": [
+          "7",
+          "3",
+          "2",
+          "3"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "p",
+            "7"
+          ],
+          [
+            "g",
+            "3"
+          ],
+          [
+            "h",
+            "2"
+          ],
+          [
+            "m",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：小步建表",
+        "description": "對 j=0,1,2 計算 h·g^j mod 7 得 2、6、4，表為 {2→0, 6→1, 4→2}。",
+        "cells": [
+          "2",
+          "6",
+          "4"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "h·g^0",
+            "2"
+          ],
+          [
+            "h·g^1",
+            "6"
+          ],
+          [
+            "h·g^2",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：算大步底數",
+        "description": "G = g^m = 3^3 = 27 ≡ 6 (mod 7)。",
+        "cells": [
+          "6"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "G",
+            "6"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：第一次大步命中",
+        "description": "i=1：G^1=6，在表中對應 j=1，命中。x = m·i − j = 3·1 − 1 = 2。",
+        "cells": [
+          "6",
+          "i=1",
+          "j=1",
+          "x=2"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "i",
+            "1"
+          ],
+          [
+            "j",
+            "1"
+          ],
+          [
+            "x",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 5：驗證",
+        "description": "3^2 = 9 ≡ 2 (mod 7)，確實等於 h，輸出 2。",
+        "cells": [
+          "3^2",
+          "9",
+          "2"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "3^2 mod 7",
+            "2"
+          ],
+          [
+            "答案",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom math import isqrt\n\n\ndef discrete_log(p, g, h):\n    if h == 1:\n        return 0\n    m = isqrt(p) + 1          # m*m > p，足以涵蓋所有 x\n    # 小步：table[h * g^j] = j（相同值保留較大的 j，使 x = m*i - j 最小）\n    table = {}\n    cur = h % p\n    for j in range(m):\n        table[cur] = j\n        cur = cur * g % p\n    # 大步：G = g^m，依序檢查 G^i\n    big = pow(g, m, p)\n    cur = 1\n    for i in range(1, m + 1):\n        cur = cur * big % p\n        if cur in table:\n            return m * i - table[cur]\n    return -1\n\n\ndef main():\n    data = sys.stdin.read().split()\n    t = int(data[0])\n    out = []\n    for k in range(t):\n        p, g, h = int(data[1 + 3 * k]), int(data[2 + 3 * k]), int(data[3 + 3 * k])\n        out.append(str(discrete_log(p, g, h)))\n    print(\"\\n\".join(out))\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\ntypedef unsigned long long ull;\n\null power(ull b, ull e, ull mod) {\n    ull r = 1;\n    b %= mod;\n    while (e) {\n        if (e & 1) r = r * b % mod;\n        b = b * b % mod;\n        e >>= 1;\n    }\n    return r;\n}\n\nlong long discreteLog(ull p, ull g, ull h) {\n    if (h == 1) return 0;\n    ull m = (ull)sqrtl((long double)p) + 1;   // m*m > p\n    unordered_map<ull, ull> table;\n    table.reserve(m * 2);\n    ull cur = h % p;\n    for (ull j = 0; j < m; j++) {             // 小步：相同值保留較大的 j\n        table[cur] = j;\n        cur = cur * g % p;\n    }\n    ull big = power(g, m, p);\n    cur = 1;\n    for (ull i = 1; i <= m; i++) {            // 大步\n        cur = cur * big % p;\n        auto it = table.find(cur);\n        if (it != table.end()) return (long long)(m * i - it->second);\n    }\n    return -1;\n}\n\nint main() {\n    int t;\n    cin >> t;\n    while (t--) {\n        ull p, g, h;\n        cin >> p >> g >> h;\n        cout << discreteLog(p, g, h) << '\\n';\n    }\n    return 0;\n}\n"
+  },
+  {
+    "code": "d631",
+    "title": "名次公佈",
+    "topic": "sorting",
+    "level": "easy",
+    "concept": "名次 = 分數嚴格較高的人數 + 1（並列同名次）",
+    "goal": "對每個人數一數有幾人分數比他高，直接得到並列同名次的排名。",
+    "explanation": [
+      "題目把名次定義成「分數嚴格高於他的人數」加 1，所以不必真的排序再處理並列：對每位選手 i，只要數 a_j > a_i 的 j 有幾個，加 1 就是答案。分數相同的人嚴格高於他們的人數相同，自然得到同名次，而下一個名次會跳號（例如兩人並列第 1，下一位是第 3），與題目範例 1 3 1 5 3 吻合。",
+      "n ≤ 1000，雙層迴圈 n² = 10^6 次比較即可，不需更複雜的資料結構。也可利用 a_i ≤ 100 先做計數陣列再做後綴和（cnt 大於某分數者的總數），複雜度降為 O(n+101)，但雙層迴圈已足夠且最不易出錯。邊界：n = 1 時名次為 1；全部同分時每個人都是第 1 名。"
+    ],
+    "complexity": "雙層迴圈時間 O(n²)，n ≤ 1000 約 10^6 次比較；空間 O(n)。",
+    "pitfall": "把名次當成「排序後的位置」會讓並列者拿到不同名次；並列名次之後要跳號，不能連號。輸出是同一行以空白分隔，不是一人一行。",
+    "sampleInput": "5\n90 85 90 70 85\n",
+    "sampleOutput": "1 3 1 5 3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：讀入分數",
+        "description": "分數依序為 90、85、90、70、85。",
+        "cells": [
+          "90",
+          "85",
+          "90",
+          "70",
+          "85"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "n",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：第 1 位（90）",
+        "description": "沒有人高於 90，名次 = 0+1 = 1。",
+        "cells": [
+          "90",
+          "85",
+          "90",
+          "70",
+          "85"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "高於 90 的人數",
+            "0"
+          ],
+          [
+            "名次",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：第 2 位（85）",
+        "description": "兩個 90 高於 85，名次 = 2+1 = 3。",
+        "cells": [
+          "90",
+          "85",
+          "90",
+          "70",
+          "85"
+        ],
+        "active": [
+          1,
+          0,
+          2
+        ],
+        "variables": [
+          [
+            "高於 85 的人數",
+            "2"
+          ],
+          [
+            "名次",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：第 4 位（70）",
+        "description": "90、85、90、85 共 4 人高於 70，名次 = 5。",
+        "cells": [
+          "90",
+          "85",
+          "90",
+          "70",
+          "85"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "高於 70 的人數",
+            "4"
+          ],
+          [
+            "名次",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 5：全部名次",
+        "description": "第 3 位同 90 → 1，第 5 位同 85 → 3，輸出 1 3 1 5 3。",
+        "cells": [
+          "1",
+          "3",
+          "1",
+          "5",
+          "3"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "輸出",
+            "1 3 1 5 3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    a = list(map(int, data[1:1 + n]))\n    ranks = []\n    for x in a:\n        higher = sum(1 for y in a if y > x)   # 嚴格高於 x 的人數\n        ranks.append(higher + 1)\n    print(\" \".join(map(str, ranks)))\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    for (int &x : a) cin >> x;\n    for (int i = 0; i < n; i++) {\n        int higher = 0;\n        for (int j = 0; j < n; j++)\n            if (a[j] > a[i]) higher++;       // 嚴格高於 a[i]\n        cout << higher + 1 << (i + 1 < n ? ' ' : '\\n');\n    }\n    return 0;\n}\n"
+  },
+  {
+    "code": "d632",
+    "title": "班級身高中位數",
+    "topic": "sorting",
+    "level": "easy",
+    "concept": "排序後取第 ⌈n/2⌉ 個（偏下中位數）",
+    "goal": "排序身高後用 (n+1)//2 的 1 起算位置取出偏小的中位數。",
+    "explanation": [
+      "中位數在這題被定義為排序後第 ⌈n/2⌉ 個數（1 起算）。n 為奇數時 ⌈n/2⌉ = (n+1)/2，正中間那個；n 為偶數時 ⌈n/2⌉ = n/2，是中間兩數較小者。兩種情形可統一寫成整數式 (n+1)//2，因為奇數時 (n+1)/2 整除，偶數時 (n+1)//2 = n/2。",
+      "轉成 0 起算的陣列索引要再減 1：sorted_h[(n+1)//2 − 1]。例如 n=6 時取第 3 個、索引 2；n=1 時取第 1 個、索引 0。身高範圍 100 到 250 且 n ≤ 1000，普通排序即可。也可用計數排序，但沒必要。"
+    ],
+    "complexity": "排序時間 O(n log n)，n ≤ 1000；空間 O(n)。",
+    "pitfall": "偶數個時要取「較小的中間值」，不是兩數平均也不是較大者；索引要 1 起算轉 0 起算，容易差一。",
+    "sampleInput": "6\n160 172 155 168 180 165\n",
+    "sampleOutput": "165\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：讀入身高",
+        "description": "n=6，身高 160 172 155 168 180 165。",
+        "cells": [
+          "160",
+          "172",
+          "155",
+          "168",
+          "180",
+          "165"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "n",
+            "6"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：排序",
+        "description": "由小到大排成 155 160 165 168 172 180。",
+        "cells": [
+          "155",
+          "160",
+          "165",
+          "168",
+          "172",
+          "180"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "排序後",
+            "155 160 165 168 172 180"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：算位置",
+        "description": "⌈6/2⌉ = 3，也就是 (6+1)//2 = 3，1 起算第 3 個，索引 2。",
+        "cells": [
+          "155",
+          "160",
+          "165",
+          "168",
+          "172",
+          "180"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "k = (n+1)//2",
+            "3"
+          ],
+          [
+            "索引",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：輸出",
+        "description": "第 3 個是 165，輸出 165。",
+        "cells": [
+          "165"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "中位數",
+            "165"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    h = sorted(map(int, data[1:1 + n]))\n    k = (n + 1) // 2          # 1 起算的位置 = ceil(n/2)\n    print(h[k - 1])\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> h(n);\n    for (int &x : h) cin >> x;\n    sort(h.begin(), h.end());\n    int k = (n + 1) / 2;       // 1 起算的位置 = ceil(n/2)\n    cout << h[k - 1] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d633",
+    "title": "社區年齡分佈表",
+    "topic": "data-structures",
+    "level": "easy",
+    "concept": "計數陣列／字典統計次數",
+    "goal": "用長度 121 的計數陣列（或字典）統計各年齡人數，並依年齡順序輸出非零項。",
+    "explanation": [
+      "年齡只有 0 到 120 共 121 種可能，所以開一個 cnt[0..120]，讀到年齡 a 就 cnt[a] += 1。之後由 0 掃到 120，cnt[a] > 0 的才輸出「a cnt[a]」。因為掃描順序本身就是由小到大，不需要另外排序，也自然略過沒有人的年齡。",
+      "這是「值域小就直接用陣列當雜湊表」的典型做法：統計正確的不變量是所有 cnt 之和等於 n。邊界：年齡 0 也要輸出（嬰兒），n = 1 時只有一行；全部同年齡時只有一行，人數為 n。"
+    ],
+    "complexity": "時間 O(n + 121)，空間 O(121)，n ≤ 2000。",
+    "pitfall": "掃描範圍要含 0 與 120（陣列大小至少 121）；人數為 0 的年齡不能輸出；每行是「年齡 人數」，順序別寫反。",
+    "sampleInput": "8\n20 18 20 35 18 20 60 35\n",
+    "sampleOutput": "18 2\n20 3\n35 2\n60 1\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：初始化計數",
+        "description": "cnt[0..120] 全為 0，讀入 8 個年齡 20 18 20 35 18 20 60 35。",
+        "cells": [
+          "20",
+          "18",
+          "20",
+          "35",
+          "18",
+          "20",
+          "60",
+          "35"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "variables": [
+          [
+            "n",
+            "8"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：累加次數",
+        "description": "逐一累加：cnt[18]=2、cnt[20]=3、cnt[35]=2、cnt[60]=1。",
+        "cells": [
+          "18:2",
+          "20:3",
+          "35:2",
+          "60:1"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "cnt[18]",
+            "2"
+          ],
+          [
+            "cnt[20]",
+            "3"
+          ],
+          [
+            "cnt[35]",
+            "2"
+          ],
+          [
+            "cnt[60]",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：由小到大掃描",
+        "description": "從 0 掃到 120，遇到 cnt>0 才輸出，依序為 18、20、35、60。",
+        "cells": [
+          "18",
+          "20",
+          "35",
+          "60"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "非零年齡數",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：輸出",
+        "description": "輸出 18 2／20 3／35 2／60 1，共四行。",
+        "cells": [
+          "18 2",
+          "20 3",
+          "35 2",
+          "60 1"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "輸出行數",
+            "4"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    cnt = [0] * 121\n    for tok in data[1:1 + n]:\n        cnt[int(tok)] += 1\n    out = []\n    for age in range(121):\n        if cnt[age] > 0:\n            out.append(f\"{age} {cnt[age]}\")\n    print(\"\\n\".join(out))\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> cnt(121, 0);\n    for (int i = 0; i < n; i++) {\n        int a;\n        cin >> a;\n        cnt[a]++;\n    }\n    for (int age = 0; age <= 120; age++)\n        if (cnt[age] > 0)\n            cout << age << ' ' << cnt[age] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d634",
+    "title": "剛好湊滿預算的雙人組",
+    "topic": "data-structures",
+    "level": "easy",
+    "concept": "雜湊表計數配對（兩數之和計數）",
+    "goal": "邊掃描邊用雜湊表記錄已出現的值次數，統計滿足 a_i + a_j = K 的 (i<j) 組數。",
+    "explanation": [
+      "固定右邊的編號 j，所有 i<j 且 a_i = K − a_j 的 i 都能與 j 配成一組。因此由左到右掃描，維護 cnt[v] = 目前已掃過的值為 v 的個數；處理 a_j 時先把答案加上 cnt[K − a_j]，再把 cnt[a_j] += 1。每一組 (i,j) 恰在 j 被處理時被計入一次，因為 i<j 保證 a_i 已在表中，不會重複也不會漏。",
+      "「先查再加入」的順序很重要：若先加入再查，a_j 可能與自己配對（例如 K = 2a_j），但題目要求 i≠j。值相同但編號不同要分別計算，所以 cnt 記的是次數，不是存在與否；例如 1000 個相同的 10^9、K = 2×10^9，答案是 C(1000,2) = 499500。K 可達 2×10^9、a_i 可為負，因此答案與 K − a_j 都要用 64 位元整數；組數最多 C(1000,2) 約 5×10^5，可放進 int，但仍用 long long 保險。"
+    ],
+    "complexity": "時間期望 O(n)（雜湊表），也可用 O(n²) 暴力；空間 O(n)。n ≤ 1000。",
+    "pitfall": "K − a_j 可超過 32 位元整數範圍（|K| ≤ 2×10^9、|a_j| ≤ 10^9），C++ 必須用 long long；要先查再把自己放進表，避免自己配自己；相同值的多個編號各自成組，不能只算一次。",
+    "sampleInput": "6 10\n3 7 5 5 2 8\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：初始狀態",
+        "description": "K=10，序列 3 7 5 5 2 8，cnt 為空，答案 0。",
+        "cells": [
+          "3",
+          "7",
+          "5",
+          "5",
+          "2",
+          "8"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "K",
+            "10"
+          ],
+          [
+            "答案",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：處理 3 與 7",
+        "description": "3：需要 7，cnt[7]=0，加入 3。7：需要 3，cnt[3]=1，答案變 1，再加入 7。",
+        "cells": [
+          "3",
+          "7",
+          "5",
+          "5",
+          "2",
+          "8"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "處理 7 時 cnt[3]",
+            "1"
+          ],
+          [
+            "答案",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：處理第一個 5",
+        "description": "需要 5，cnt[5]=0，不計；加入 5，cnt[5]=1。",
+        "cells": [
+          "3",
+          "7",
+          "5",
+          "5",
+          "2",
+          "8"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "需要的值",
+            "5"
+          ],
+          [
+            "cnt[5]",
+            "1"
+          ],
+          [
+            "答案",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：處理第二個 5",
+        "description": "需要 5，cnt[5]=1，答案變 2（編號 3 與 4）。",
+        "cells": [
+          "3",
+          "7",
+          "5",
+          "5",
+          "2",
+          "8"
+        ],
+        "active": [
+          3,
+          2
+        ],
+        "variables": [
+          [
+            "cnt[5]",
+            "1"
+          ],
+          [
+            "答案",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 5：處理 2 與 8",
+        "description": "2：需要 8，cnt[8]=0。8：需要 2，cnt[2]=1，答案變 3（編號 5 與 6）。",
+        "cells": [
+          "3",
+          "7",
+          "5",
+          "5",
+          "2",
+          "8"
+        ],
+        "active": [
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "處理 8 時 cnt[2]",
+            "1"
+          ],
+          [
+            "答案",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n, k = int(data[0]), int(data[1])\n    a = list(map(int, data[2:2 + n]))\n    seen = {}          # 值 -> 已掃過的個數\n    ans = 0\n    for x in a:\n        ans += seen.get(k - x, 0)      # 先配對（只會配到左邊的編號）\n        seen[x] = seen.get(x, 0) + 1   # 再把自己放進去\n    print(ans)\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    long long k;\n    cin >> n >> k;\n    unordered_map<long long, long long> seen;   // 值 -> 已掃過的個數\n    long long ans = 0;\n    for (int j = 0; j < n; j++) {\n        long long x;\n        cin >> x;\n        auto it = seen.find(k - x);             // 先配對\n        if (it != seen.end()) ans += it->second;\n        seen[x]++;                              // 再加入自己\n    }\n    cout << ans << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d635",
+    "title": "擂台第 k 低分",
+    "topic": "sorting",
+    "level": "easy",
+    "concept": "排序後取第 k 小（重複值分別計算）",
+    "goal": "把戰力值排序，直接取索引 k−1 的元素得到第 k 小。",
+    "explanation": [
+      "第 k 小的定義是「排序後第 k 個位置」，而且重複值各佔一個位置。例如 2,2,5 排序後第 1、2 位都是 2、第 3 位是 5，正好符合題意，所以只要由小到大排序，取 1 起算第 k 個即可，不需要去除重複。",
+      "正確性：排序後序列單調不減，位置 k 之前恰有 k−1 個元素不大於它、之後的元素不小於它，這就是第 k 小的定義。1 ≤ k ≤ n 保證索引 k−1 合法。a_i 最大 10^9 在 32 位元整數內，n ≤ 1000，排序成本可忽略。"
+    ],
+    "complexity": "排序時間 O(n log n)，空間 O(n)；n ≤ 1000。",
+    "pitfall": "k 是 1 起算，陣列索引要用 k−1；不要先去重（重複值各占一個名額）；輸入的第一行是 n 與 k，順序別弄反。",
+    "sampleInput": "5 3\n7 2 9 2 5\n",
+    "sampleOutput": "5\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：讀入",
+        "description": "n=5，k=3，戰力 7 2 9 2 5。",
+        "cells": [
+          "7",
+          "2",
+          "9",
+          "2",
+          "5"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "n",
+            "5"
+          ],
+          [
+            "k",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：排序",
+        "description": "排序成 2 2 5 7 9，重複的 2 各占一位。",
+        "cells": [
+          "2",
+          "2",
+          "5",
+          "7",
+          "9"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "排序後",
+            "2 2 5 7 9"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：取第 k 個",
+        "description": "k=3，索引 k−1=2，對應值 5。",
+        "cells": [
+          "2",
+          "2",
+          "5",
+          "7",
+          "9"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "索引",
+            "2"
+          ],
+          [
+            "第 3 小",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：輸出",
+        "description": "輸出 5。",
+        "cells": [
+          "5"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "答案",
+            "5"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n, k = int(data[0]), int(data[1])\n    a = sorted(map(int, data[2:2 + n]))\n    print(a[k - 1])      # 第 k 小（1 起算）對應索引 k-1\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, k;\n    cin >> n >> k;\n    vector<long long> a(n);\n    for (auto &x : a) cin >> x;\n    sort(a.begin(), a.end());\n    cout << a[k - 1] << '\\n';   // 第 k 小（1 起算）對應索引 k-1\n    return 0;\n}\n"
+  },
+  {
+    "code": "d636",
+    "title": "地磚正方形邊長",
+    "topic": "number-theory",
+    "level": "easy",
+    "concept": "整數平方根 floor(√x)",
+    "goal": "求最大的 s 使 s² ≤ x，並處理 10^18 等級浮點誤差。",
+    "explanation": [
+      "所求 s 就是 ⌊√x⌋：s² ≤ x 成立的整數 s 形成 0..⌊√x⌋ 的前綴，所以答案是這個性質成立的最後一個 s，也可用二分搜尋。x 最大 10^18，s 最大 10^9，s² 最大 10^18 仍在 64 位元有號整數範圍內（約 9.22×10^18），不會溢位。",
+      "Python 內建 math.isqrt 是精確的整數平方根，直接使用即可。C++ 用 sqrtl 取得近似值後必須修正：double 只有 53 位元尾數，x 接近 10^18 時 sqrt 結果可能差 1。修正方法是 while (s·s > x) s−−，再 while ((s+1)·(s+1) ≤ x) s++，保證最後 s² ≤ x < (s+1)²。邊界：x = 0 答案 0；x = 1 答案 1；完全平方數與其減 1（如 16 與 15）要分得出來。"
+    ],
+    "complexity": "每筆詢問 O(1)（isqrt 或 sqrtl 加常數次修正），共 O(q)，q ≤ 500；空間 O(1)。",
+    "pitfall": "直接用 int(x ** 0.5) 或 C++ 的 (long long)sqrt(x) 在 10^18 附近會因浮點誤差差 1；C++ 要用 long long（x 超過 32 位元），並在 sqrtl 後修正；修正時 (s+1)*(s+1) 仍不會溢位。",
+    "sampleInput": "4\n0\n1\n15\n16\n",
+    "sampleOutput": "0\n1\n3\n4\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：讀入四筆詢問",
+        "description": "q=4，x 依序為 0、1、15、16。",
+        "cells": [
+          "0",
+          "1",
+          "15",
+          "16"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "q",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：x=0 與 x=1",
+        "description": "0² = 0 ≤ 0 且 1² = 1 > 0，答案 0；1² = 1 ≤ 1 且 2² = 4 > 1，答案 1。",
+        "cells": [
+          "0",
+          "1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "s(0)",
+            "0"
+          ],
+          [
+            "s(1)",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：x=15",
+        "description": "sqrt(15) ≈ 3.87，取整得 3；3²=9 ≤ 15 且 4²=16 > 15，答案 3。",
+        "cells": [
+          "15",
+          "3",
+          "9",
+          "16"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "s",
+            "3"
+          ],
+          [
+            "s²",
+            "9"
+          ],
+          [
+            "(s+1)²",
+            "16"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：x=16",
+        "description": "sqrt(16)=4；4²=16 ≤ 16 且 5²=25 > 16，答案 4。輸出 0 1 3 4。",
+        "cells": [
+          "16",
+          "4",
+          "16",
+          "25"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "s",
+            "4"
+          ],
+          [
+            "s²",
+            "16"
+          ],
+          [
+            "(s+1)²",
+            "25"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom math import isqrt\n\n\ndef main():\n    data = sys.stdin.read().split()\n    q = int(data[0])\n    out = []\n    for i in range(1, q + 1):\n        x = int(data[i])\n        out.append(str(isqrt(x)))   # 精確的 floor(sqrt(x))\n    print(\"\\n\".join(out))\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\ntypedef long long ll;\n\nint main() {\n    int q;\n    cin >> q;\n    while (q--) {\n        ll x;\n        cin >> x;\n        ll s = (ll)sqrtl((long double)x);       // 近似值，可能差 1\n        while (s * s > x) s--;                  // 往下修正\n        while ((s + 1) * (s + 1) <= x) s++;     // 往上修正\n        cout << s << '\\n';\n    }\n    return 0;\n}\n"
+  },
+  {
+    "code": "d637",
+    "title": "社團分組成績表",
+    "topic": "data-structures",
+    "level": "easy",
+    "concept": "依鍵分組統計（次數、總和、最大值）",
+    "goal": "用字典（map）依社團代號累積出賽次數、總得分與最高分，再依字典序輸出。",
+    "explanation": [
+      "對每個社團代號維護三個值：出賽次數 c、總得分 s、最高分 m。讀到一筆 (name, v) 時：若 name 第一次出現就建立 (1, v, v)；否則 c += 1、s += v、m = max(m, v)。三個統計量都可以一邊讀一邊更新，不需要保存所有紀錄。",
+      "輸出要求依代號字典序由小到大：Python 對字典鍵 sorted，C++ 用 std::map 本身就是依字串字典序排列。比較是逐字元的字典序（例如 \"ab\" < \"b\"，\"a\" < \"ab\"），與長度無關，這正是兩種語言字串預設比較的方式。v 最大 1000、n ≤ 1000，總和最大 10^6，int 足夠。得分可為 0，所以最大值直接以該社團第一筆得分初始化最安全。"
+    ],
+    "complexity": "時間 O(n log n)（map 插入或排序，字串長度 ≤ 10 視為常數），空間 O(不同社團數)；n ≤ 1000。",
+    "pitfall": "最高分要用第一筆的值初始化（或初始化為 −1），因為得分可能為 0；輸出必須依字串字典序而非輸入出現順序；同一社團的次數、總和、最大值要在同一次讀入時一起更新。",
+    "sampleInput": "5\nb 80\na 90\nb 70\na 60\nc 100\n",
+    "sampleOutput": "a 2 150 90\nb 2 150 80\nc 1 100 100\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：讀入 5 筆紀錄",
+        "description": "紀錄為 b 80、a 90、b 70、a 60、c 100。",
+        "cells": [
+          "b 80",
+          "a 90",
+          "b 70",
+          "a 60",
+          "c 100"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "n",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：累積 b",
+        "description": "b 先 80，再 70：次數 2、總分 150、最高 80。",
+        "cells": [
+          "b 80",
+          "a 90",
+          "b 70",
+          "a 60",
+          "c 100"
+        ],
+        "active": [
+          0,
+          2
+        ],
+        "variables": [
+          [
+            "b 次數",
+            "2"
+          ],
+          [
+            "b 總分",
+            "150"
+          ],
+          [
+            "b 最高",
+            "80"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：累積 a 與 c",
+        "description": "a：90、60 → 2 次、150、最高 90。c：100 → 1 次、100、最高 100。",
+        "cells": [
+          "b 80",
+          "a 90",
+          "b 70",
+          "a 60",
+          "c 100"
+        ],
+        "active": [
+          1,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "a",
+            "2 150 90"
+          ],
+          [
+            "c",
+            "1 100 100"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：依字典序輸出",
+        "description": "代號排序 a < b < c，輸出 a 2 150 90／b 2 150 80／c 1 100 100。",
+        "cells": [
+          "a",
+          "b",
+          "c"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "輸出行數",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    stats = {}   # 代號 -> [次數, 總分, 最高分]\n    for i in range(n):\n        name = data[1 + 2 * i]\n        v = int(data[2 + 2 * i])\n        if name not in stats:\n            stats[name] = [1, v, v]\n        else:\n            rec = stats[name]\n            rec[0] += 1\n            rec[1] += v\n            rec[2] = max(rec[2], v)\n    out = []\n    for name in sorted(stats):\n        c, s, m = stats[name]\n        out.append(f\"{name} {c} {s} {m}\")\n    print(\"\\n\".join(out))\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nstruct Stat {\n    int count, total, best;\n};\n\nint main() {\n    int n;\n    cin >> n;\n    map<string, Stat> stats;   // map 依字串字典序排列\n    for (int i = 0; i < n; i++) {\n        string name;\n        int v;\n        cin >> name >> v;\n        auto it = stats.find(name);\n        if (it == stats.end()) {\n            stats[name] = {1, v, v};\n        } else {\n            it->second.count++;\n            it->second.total += v;\n            it->second.best = max(it->second.best, v);\n        }\n    }\n    for (auto &kv : stats)\n        cout << kv.first << ' ' << kv.second.count << ' ' << kv.second.total << ' ' << kv.second.best << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d638",
+    "title": "排隊階梯的最大斷層",
+    "topic": "sorting",
+    "level": "easy",
+    "concept": "排序後相鄰差的最大值",
+    "goal": "先排序，再掃描相鄰兩項差取最大值（最大斷層）。",
+    "explanation": [
+      "「由低到高排好後相鄰兩站的差」只在排序後才有意義，所以先排序，再計算 d_i = a_(i+1) − a_i 並取最大。排序後序列單調不減，所有差都 ≥ 0，重複海拔的差為 0，符合題目對相同海拔的規定。",
+      "為什麼只看相鄰：題目的斷層就是定義為排序後相鄰的差，不需要比較任意兩點（任意兩點差的最大值是 max − min，那是另一個問題）。範例 3 10 1 8 20 排序成 1 3 8 10 20，差為 2、5、2、10，最大為 10。n ≥ 2 保證至少有一個差；a_i 最大 10^9，差不超過 10^9，32 位元整數足夠，C++ 仍使用 long long 以保險。"
+    ],
+    "complexity": "排序 O(n log n)，掃描 O(n)，空間 O(n)；n ≤ 1000。",
+    "pitfall": "必須先排序再算相鄰差，直接用輸入順序的相鄰差會錯；答案不是 max − min；全部相同時答案是 0，最大值初始化為 0 即可。",
+    "sampleInput": "5\n3 10 1 8 20\n",
+    "sampleOutput": "10\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：讀入",
+        "description": "海拔 3 10 1 8 20，順序未排好。",
+        "cells": [
+          "3",
+          "10",
+          "1",
+          "8",
+          "20"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "n",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：排序",
+        "description": "排序成 1 3 8 10 20。",
+        "cells": [
+          "1",
+          "3",
+          "8",
+          "10",
+          "20"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "排序後",
+            "1 3 8 10 20"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：前兩個斷層",
+        "description": "3−1 = 2，8−3 = 5，最大暫為 5。",
+        "cells": [
+          "1",
+          "3",
+          "8",
+          "10",
+          "20"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "差",
+            "2, 5"
+          ],
+          [
+            "目前最大",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：後兩個斷層",
+        "description": "10−8 = 2，20−10 = 10，最大更新為 10。",
+        "cells": [
+          "1",
+          "3",
+          "8",
+          "10",
+          "20"
+        ],
+        "active": [
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "差",
+            "2, 10"
+          ],
+          [
+            "最大斷層",
+            "10"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 5：輸出",
+        "description": "輸出 10。",
+        "cells": [
+          "10"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "答案",
+            "10"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    a = sorted(map(int, data[1:1 + n]))\n    best = 0\n    for i in range(1, n):\n        best = max(best, a[i] - a[i - 1])   # 排序後相鄰差\n    print(best)\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<long long> a(n);\n    for (auto &x : a) cin >> x;\n    sort(a.begin(), a.end());\n    long long best = 0;\n    for (int i = 1; i < n; i++)\n        best = max(best, a[i] - a[i - 1]);   // 排序後相鄰差\n    cout << best << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d639",
+    "title": "廣告檔期合併",
+    "topic": "greedy",
+    "level": "medium",
+    "concept": "區間排序後掃描合併（間距容忍 d）",
+    "goal": "依左端點排序，維持目前合併區間的右端點，若下一段左端點 − R ≤ d 就併入，否則另起新區間。",
+    "explanation": [
+      "把區間依左端點由小到大排序後，掃描時只需維護目前合併區間 [L, R]。對下一個區間 [l, r]：若 l − R ≤ d（包含 l ≤ R 的重疊情形，此時差為非正數）就併入，R = max(R, r)；否則輸出 [L, R]，以 [l, r] 作為新的目前區間。因為已依左端點排序，之後所有區間的左端點都 ≥ l，若 l 與 R 的差已超過 d，後面更不可能接到目前這段，所以放入新區間是安全的；反之併入後 R 只會變大，不會讓先前已確定的結果失效。",
+      "R 必須取最大值：後面的區間可能被前面一個很長的區間完全包住（r 較小），此時 R 不能縮小。注意題目規定的是 l − R ≤ d 才合併，因此 d = 0 時只有真正重疊或共用端點（l ≤ R）才會合併；相鄰整數如 [1,2] 與 [3,4] 的差為 1 > 0，不合併，與範例及測資一致。輸出時先印區間數，再依序印各區間。n ≤ 500，座標 ≤ 10^6，皆在 32 位元範圍內。"
+    ],
+    "complexity": "排序 O(n log n)，掃描 O(n)，空間 O(n)；n ≤ 500。",
+    "pitfall": "一定要先依左端點排序；更新右端點要取 max（區間可能被包含）；合併條件是 l − R ≤ d 而不是 l ≤ R + d − 1，d=0 時相鄰但不相接的整數區間（如 [1,2] 與 [3,4]）不能合併；輸出第一行是合併後的區間數。",
+    "sampleInput": "5 2\n6 8\n1 3\n20 21\n5 5\n10 12\n",
+    "sampleOutput": "2\n1 12\n20 21\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：讀入並排序",
+        "description": "d=2。排序後為 (1,3)、(5,5)、(6,8)、(10,12)、(20,21)。",
+        "cells": [
+          "1-3",
+          "5-5",
+          "6-8",
+          "10-12",
+          "20-21"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "d",
+            "2"
+          ],
+          [
+            "目前區間",
+            "[1,3]"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：併入 (5,5)",
+        "description": "l−R = 5−3 = 2 ≤ 2，併入；R = max(3,5) = 5，目前區間 [1,5]。",
+        "cells": [
+          "1-3",
+          "5-5",
+          "6-8",
+          "10-12",
+          "20-21"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "l−R",
+            "2"
+          ],
+          [
+            "目前區間",
+            "[1,5]"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：併入 (6,8)",
+        "description": "l−R = 6−5 = 1 ≤ 2，併入；R = 8，目前區間 [1,8]。",
+        "cells": [
+          "1-3",
+          "5-5",
+          "6-8",
+          "10-12",
+          "20-21"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "l−R",
+            "1"
+          ],
+          [
+            "目前區間",
+            "[1,8]"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：併入 (10,12)",
+        "description": "l−R = 10−8 = 2 ≤ 2，併入；R = 12，目前區間 [1,12]。",
+        "cells": [
+          "1-3",
+          "5-5",
+          "6-8",
+          "10-12",
+          "20-21"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "l−R",
+            "2"
+          ],
+          [
+            "目前區間",
+            "[1,12]"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 5：遇到 (20,21)",
+        "description": "l−R = 20−12 = 8 > 2，輸出 [1,12]，另起新區間 [20,21]。",
+        "cells": [
+          "1-12",
+          "20-21"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "l−R",
+            "8"
+          ],
+          [
+            "合併數",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 6：輸出",
+        "description": "輸出 2，接著 1 12 與 20 21。",
+        "cells": [
+          "2",
+          "1 12",
+          "20 21"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "m",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n, d = int(data[0]), int(data[1])\n    segs = []\n    for i in range(n):\n        segs.append((int(data[2 + 2 * i]), int(data[3 + 2 * i])))\n    segs.sort()                      # 依左端點排序\n    merged = []\n    left, right = segs[0]\n    for l, r in segs[1:]:\n        if l - right <= d:           # 重疊或間距不超過 d：併入\n            right = max(right, r)\n        else:                        # 否則結算目前區間，另起新區間\n            merged.append((left, right))\n            left, right = l, r\n    merged.append((left, right))\n    out = [str(len(merged))]\n    for l, r in merged:\n        out.append(f\"{l} {r}\")\n    print(\"\\n\".join(out))\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    long long d;\n    cin >> n >> d;\n    vector<pair<long long, long long>> segs(n);\n    for (auto &s : segs) cin >> s.first >> s.second;\n    sort(segs.begin(), segs.end());          // 依左端點排序\n    vector<pair<long long, long long>> merged;\n    long long left = segs[0].first, right = segs[0].second;\n    for (int i = 1; i < n; i++) {\n        long long l = segs[i].first, r = segs[i].second;\n        if (l - right <= d) {                // 重疊或間距不超過 d：併入\n            right = max(right, r);\n        } else {                             // 結算目前區間，另起新區間\n            merged.push_back({left, right});\n            left = l;\n            right = r;\n        }\n    }\n    merged.push_back({left, right});\n    cout << merged.size() << '\\n';\n    for (auto &m : merged) cout << m.first << ' ' << m.second << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d640",
+    "title": "彩帶裁切",
+    "topic": "search",
+    "level": "medium",
+    "concept": "對答案二分搜尋：長度越短、可剪段數越多（單調）",
+    "goal": "能寫出 count(L)=Σ⌊a_i/L⌋ 並用二分搜尋找最大的可行長度。",
+    "explanation": [
+      "設裝飾帶長度為 L，每條彩帶 a_i 最多剪出 ⌊a_i/L⌋ 段（零頭不能拼接），所以總段數 f(L)=Σ⌊a_i/L⌋。L 變大時每一項都不會增加，f(L) 單調不增，因此「f(L)≥k」的 L 形成一段前綴 1..L*，要找的就是最大的 L*，可以二分搜尋。",
+      "搜尋範圍 [1, max(a)]：L>max(a) 時 f=0<k（k≥1），不可能成立。若 f(1)=Σa_i<k，連長度 1 都不夠，答案為 0，所以令 lo=0 作為「保證可行」的哨兵：維持 f(lo)≥k 或 lo=0，用 mid=(lo+hi+1)//2 向上取整避免死迴圈。k 最大 10^9、Σa_i 最大 10^12，Python 無溢位問題，C++ 必須用 long long。"
+    ],
+    "complexity": "n≤1000，二分約 30 次、每次 O(n)，時間 O(n log max(a))，空間 O(n)。",
+    "pitfall": "總段數 Σ⌊a_i/L⌋ 可達 10^12，C++ 用 int 會溢位；另外 f(1)<k 時要輸出 0，而不是 1。",
+    "sampleInput": "3 7\n10 15 20\n",
+    "sampleOutput": "5\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：檢查 L=5",
+        "description": "L=5 時三條彩帶可剪 2、3、4 段，共 9 段，≥7，可行",
+        "cells": [
+          "2",
+          "3",
+          "4"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "L",
+            "5"
+          ],
+          [
+            "段數 f(L)",
+            "9"
+          ],
+          [
+            "k",
+            "7"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：檢查 L=6",
+        "description": "L=6 時各剪 1、2、3 段，共 6 段，<7，不可行",
+        "cells": [
+          "1",
+          "2",
+          "3"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "L",
+            "6"
+          ],
+          [
+            "段數 f(L)",
+            "6"
+          ],
+          [
+            "k",
+            "7"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：得到答案",
+        "description": "f(5)≥7 而 f(6)<7，單調性保證最大可行長度為 5",
+        "cells": [
+          "5",
+          "6"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最大可行 L",
+            "5"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn, k = int(data[0]), int(data[1])\na = list(map(int, data[2:2 + n]))\n\n\ndef pieces(length):\n    # 長度為 length 時，所有彩帶總共能剪出幾段\n    return sum(x // length for x in a)\n\n\nlo, hi = 0, max(a)  # lo 是保證可行的哨兵（0 代表完全不可行）\nwhile lo < hi:\n    mid = (lo + hi + 1) // 2\n    if pieces(mid) >= k:\n        lo = mid\n    else:\n        hi = mid - 1\nprint(lo)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint main() {\n    int n;\n    ll k;\n    cin >> n >> k;\n    vector<ll> a(n);\n    ll mx = 0;\n    for (auto &x : a) {\n        cin >> x;\n        mx = max(mx, x);\n    }\n    auto pieces = [&](ll len) {\n        ll s = 0;\n        for (ll x : a) s += x / len;\n        return s;\n    };\n    ll lo = 0, hi = mx;  // lo 為保證可行的哨兵\n    while (lo < hi) {\n        ll mid = (lo + hi + 1) / 2;\n        if (pieces(mid) >= k) lo = mid;\n        else hi = mid - 1;\n    }\n    cout << lo << '\\n';\n}\n"
+  },
+  {
+    "code": "d641",
+    "title": "營地帳篷間距",
+    "topic": "search",
+    "level": "medium",
+    "concept": "最大化最小距離：二分距離＋貪心放置",
+    "goal": "能判斷「最近距離至少 D」是否可行，並對 D 二分搜尋。",
+    "explanation": [
+      "先把座標排序。若要求任兩帳篷距離至少 D，貪心策略是：第一頂放在最左邊的座標，之後每次放在「距離上一頂至少 D 的最左座標」。交換論證：任何可行方案中，把第一頂左移到最左點、之後每頂盡量左移，都不會違反間距限制，也只會讓後面的選擇更寬鬆，所以貪心能放出的帳篷數是最大值，若它≥m 就可行。",
+      "D 越大限制越嚴格，可行性單調（D 可行則更小的 D 也可行），因此對 D 二分：範圍 [1, (p_max−p_min)]，因為 m≥2，答案至少 1（座標互不相同、整數）。取 mid=(lo+hi+1)//2 向上取整，可行就 lo=mid，否則 hi=mid−1。每次檢查 O(n)，n≤1000 極為充裕。座標不保證有序，一定要先排序。"
+    ],
+    "complexity": "排序 O(n log n)，二分約 30 次、每次貪心 O(n)，總 O(n log n + n log C)，空間 O(n)。",
+    "pitfall": "忘記排序（座標不按順序給）；以及貪心計數時，第一頂也要算進去，否則會少算 1。",
+    "sampleInput": "5 3\n1 2 8 4 9\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：排序座標",
+        "description": "把 1 2 8 4 9 排序成 1 2 4 8 9",
+        "cells": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "9"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "m",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：檢查 D=3",
+        "description": "貪心選 1，下一個距離≥3 的是 4，再下一個≥3 的是 8，共 3 頂≥m，可行",
+        "cells": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "9"
+        ],
+        "active": [
+          0,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "D",
+            "3"
+          ],
+          [
+            "放置數",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：檢查 D=4",
+        "description": "選 1，之後 2、4 距離不足，選 8，9 又不足，只有 2 頂<3，不可行，答案為 3",
+        "cells": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "9"
+        ],
+        "active": [
+          0,
+          3
+        ],
+        "variables": [
+          [
+            "D",
+            "4"
+          ],
+          [
+            "放置數",
+            "2"
+          ],
+          [
+            "答案",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn, m = int(data[0]), int(data[1])\np = sorted(map(int, data[2:2 + n]))\n\n\ndef can(d):\n    # 最近距離至少 d 時，貪心最多能放幾頂帳篷\n    count = 1\n    last = p[0]\n    for x in p[1:]:\n        if x - last >= d:\n            count += 1\n            last = x\n    return count >= m\n\n\nlo, hi = 1, p[-1] - p[0]\nwhile lo < hi:\n    mid = (lo + hi + 1) // 2\n    if can(mid):\n        lo = mid\n    else:\n        hi = mid - 1\nprint(lo)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint main() {\n    int n, m;\n    cin >> n >> m;\n    vector<ll> p(n);\n    for (auto &x : p) cin >> x;\n    sort(p.begin(), p.end());\n    auto can = [&](ll d) {\n        int count = 1;\n        ll last = p[0];\n        for (int i = 1; i < n; i++) {\n            if (p[i] - last >= d) {\n                count++;\n                last = p[i];\n            }\n        }\n        return count >= m;\n    };\n    ll lo = 1, hi = p[n - 1] - p[0];\n    while (lo < hi) {\n        ll mid = (lo + hi + 1) / 2;\n        if (can(mid)) lo = mid;\n        else hi = mid - 1;\n    }\n    cout << lo << '\\n';\n}\n"
+  },
+  {
+    "code": "d642",
+    "title": "混亂的隊伍",
+    "topic": "sorting",
+    "level": "medium",
+    "concept": "逆序對計數：對每個位置統計前面比它大的個數",
+    "goal": "能用雙層迴圈（或歸併排序）正確計算嚴格逆序對數量。",
+    "explanation": [
+      "逆序對是位置 i<j 且 a_i>a_j。固定右端 j，則以 j 為右端的逆序對數量恰為「j 之前嚴格大於 a_j 的元素個數」。每個逆序對只有唯一的右端，所以把所有 j 的個數加總就是總數，不重不漏。",
+      "n≤1000，直接 O(n²) 雙層迴圈最多約 5×10^5 次比較，足夠快；更大規模則可用歸併排序在合併時計數。相等的身高不算逆序，比較必須用嚴格大於。答案最大為 n(n−1)/2≈5×10^5，不會溢位，但一般習慣仍用 64 位整數保存。"
+    ],
+    "complexity": "n≤1000，雙層迴圈時間 O(n²)，空間 O(n)。",
+    "pitfall": "把相等身高也算成逆序（要用 > 而不是 ≥）；或把 i<j 方向寫反。",
+    "sampleInput": "5\n3 1 2 5 4\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：處理 3、1",
+        "description": "元素 1 前面有 3 比它大，貢獻 1",
+        "cells": [
+          "3",
+          "1",
+          "2",
+          "5",
+          "4"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "處理到",
+            "a2=1"
+          ],
+          [
+            "逆序對累計",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：處理 2",
+        "description": "元素 2 前面的 3 比它大（1 不大），貢獻 1，累計 2",
+        "cells": [
+          "3",
+          "1",
+          "2",
+          "5",
+          "4"
+        ],
+        "active": [
+          0,
+          2
+        ],
+        "variables": [
+          [
+            "處理到",
+            "a3=2"
+          ],
+          [
+            "逆序對累計",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：處理 5 與 4",
+        "description": "5 前面沒有更大者貢獻 0；4 前面的 5 比它大，貢獻 1，累計 3",
+        "cells": [
+          "3",
+          "1",
+          "2",
+          "5",
+          "4"
+        ],
+        "active": [
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "處理到",
+            "a5=4"
+          ],
+          [
+            "逆序對累計",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn = int(data[0])\na = list(map(int, data[1:1 + n]))\n\ntotal = 0\nfor j in range(n):\n    # 以 j 為右端的逆序對：前面嚴格比 a[j] 大的個數\n    for i in range(j):\n        if a[i] > a[j]:\n            total += 1\nprint(total)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<ll> a(n);\n    for (auto &x : a) cin >> x;\n    ll total = 0;\n    for (int j = 0; j < n; j++)\n        for (int i = 0; i < j; i++)\n            if (a[i] > a[j]) total++;\n    cout << total << '\\n';\n}\n"
+  },
+  {
+    "code": "d643",
+    "title": "離散化座標編號",
+    "topic": "sorting",
+    "level": "medium",
+    "concept": "座標離散化：排序去重後用二分查名次",
+    "goal": "能把任意範圍的整數映射成 1..K 的名次，並保持相對大小。",
+    "explanation": [
+      "離散化只在乎大小關係，不在乎實際數值。把所有值排序並去重得到 u_1<u_2<…<u_K，則值 v 的編號就是 v 在 u 中的位置（從 1 起算）。因為 u 嚴格遞增，編號與數值的大小順序一致，相同座標也必然得到相同編號。",
+      "查詢編號用二分搜尋（Python bisect_left、C++ lower_bound），每次 O(log K)；也可以用字典預先建表。座標可為負、可達 ±10^9，去重一定要先做，否則相同座標會佔用多個名次。輸出為單行、以空白分隔。"
+    ],
+    "complexity": "排序去重 O(n log n)，逐一二分查詢 O(n log n)，空間 O(n)。",
+    "pitfall": "忘記去重（相同座標編號會錯開）、編號從 0 而非 1 起算，或負數被當成非法。",
+    "sampleInput": "6\n100 -5 100 7 -5 42\n",
+    "sampleOutput": "4 1 4 2 1 3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：排序去重",
+        "description": "原座標 100 -5 100 7 -5 42，相異值排序後為 -5 7 42 100",
+        "cells": [
+          "-5",
+          "7",
+          "42",
+          "100"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "相異個數",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：查 100 與 -5",
+        "description": "100 在第 4 位，-5 在第 1 位；第三個 100 同樣是 4",
+        "cells": [
+          "-5",
+          "7",
+          "42",
+          "100"
+        ],
+        "active": [
+          3,
+          0
+        ],
+        "variables": [
+          [
+            "100→",
+            "4"
+          ],
+          [
+            "-5→",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：查其餘",
+        "description": "7 在第 2 位，42 在第 3 位，最後輸出 4 1 4 2 1 3",
+        "cells": [
+          "-5",
+          "7",
+          "42",
+          "100"
+        ],
+        "active": [
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "7→",
+            "2"
+          ],
+          [
+            "42→",
+            "3"
+          ],
+          [
+            "輸出",
+            "4 1 4 2 1 3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom bisect import bisect_left\n\ndata = sys.stdin.read().split()\nn = int(data[0])\na = list(map(int, data[1:1 + n]))\n\nuniq = sorted(set(a))  # 排序並去重\nprint(' '.join(str(bisect_left(uniq, x) + 1) for x in a))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<ll> a(n);\n    for (auto &x : a) cin >> x;\n    vector<ll> u = a;\n    sort(u.begin(), u.end());\n    u.erase(unique(u.begin(), u.end()), u.end());\n    for (int i = 0; i < n; i++) {\n        int id = lower_bound(u.begin(), u.end(), a[i]) - u.begin() + 1;\n        cout << id << (i + 1 < n ? ' ' : '\\n');\n    }\n}\n"
+  },
+  {
+    "code": "d644",
+    "title": "身高相近的舞伴",
+    "topic": "sorting",
+    "level": "medium",
+    "concept": "排序後雙指標：差 ≤ K 的區間連續",
+    "goal": "能利用排序讓「可配對」條件變成連續區間並累加配對數。",
+    "explanation": [
+      "配對只看身高差，與原本編號順序無關，所以計算「組合數」時可以先把身高排序。排序後固定右端 j，所有滿足 a_j−a_i≤K 的 i<j 恰為一段連續區間 [l_j, j−1]，因為 a_i 遞增時差值遞減；且 j 變大時 a_j 變大，l_j 不會往左退，可用雙指標。",
+      "對每個 j，貢獻 j−l_j 個配對，累計即為答案；每個無序配對只會在較大（排序後較後）的一端被計一次，不重複。n≤1000 也可 O(n²) 暴力，但雙指標更直接。K 可到 10^9 而 a 差最大 10^9，差值不會溢位 32 位元但仍建議用 long long；K=0 時等值的人才能配對。"
+    ],
+    "complexity": "排序 O(n log n)，雙指標 O(n)，空間 O(n)。",
+    "pitfall": "忘記先排序而直接用雙指標；或把 i<j 的組合數算成有序對而多算一倍。",
+    "sampleInput": "5 2\n1 4 2 8 3\n",
+    "sampleOutput": "5\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：排序",
+        "description": "身高排序為 1 2 3 4 8，K=2",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "8"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "K",
+            "2"
+          ],
+          [
+            "累計",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：j 為 2 與 3",
+        "description": "j=2 的左側僅 1 差 1，貢獻 1；j=3 左側 1、2 差 2、1，貢獻 2，累計 3",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "8"
+        ],
+        "active": [
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "貢獻",
+            "1+2"
+          ],
+          [
+            "累計",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：j 為 4 與 8",
+        "description": "j=4 左側 2、3 可配（差 2、1），貢獻 2；8 與其餘差皆>2，貢獻 0，累計 5",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "8"
+        ],
+        "active": [
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "貢獻",
+            "2+0"
+          ],
+          [
+            "累計",
+            "5"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn, K = int(data[0]), int(data[1])\na = sorted(map(int, data[2:2 + n]))\n\ntotal = 0\nleft = 0\nfor j in range(n):\n    # left 是最小的 i，使得 a[j] - a[i] <= K\n    while a[j] - a[left] > K:\n        left += 1\n    total += j - left  # i 取 left..j-1\nprint(total)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint main() {\n    int n;\n    ll K;\n    cin >> n >> K;\n    vector<ll> a(n);\n    for (auto &x : a) cin >> x;\n    sort(a.begin(), a.end());\n    ll total = 0;\n    int left = 0;\n    for (int j = 0; j < n; j++) {\n        while (a[j] - a[left] > K) left++;\n        total += j - left;\n    }\n    cout << total << '\\n';\n}\n"
+  },
+  {
+    "code": "d645",
+    "title": "三人組合的總和",
+    "topic": "search",
+    "level": "medium",
+    "concept": "三數和計數：固定中間，用雜湊表統計左側",
+    "goal": "能把三重迴圈降為 O(n²)，並正確處理重複值的計數。",
+    "explanation": [
+      "要數滿足 i<j<k 且 a_i+a_j+a_k=T 的三元組。把 j 當中間，從左到右掃描並維護 cnt：記錄「索引小於 j 的元素值」的出現次數。對每個 k>j，需要的 a_i 為 T−a_j−a_k，貢獻 cnt[T−a_j−a_k]。每個三元組唯一對應其中間 j，所以不重不漏；相同能力值但不同編號各自累加在 cnt 裡，自然視為不同的卡。",
+      "掃完 j 的所有 k 後，才把 a_j 加入 cnt，保證 cnt 內只含 i<j 的元素。總操作量約 n²/2=3.2×10^5。答案最多 C(800,3)≈8.5×10^7，仍在 32 位元內，但 C++ 用 long long 較安全；T、a 為負或零時字典照樣成立，不需要特殊處理。"
+    ],
+    "complexity": "n≤800，時間 O(n²)（雜湊表平均 O(1)），空間 O(n)。",
+    "pitfall": "有重複值時不能先去重或用集合；也不能在處理 j 之前就把 a_j 放進計數表，否則會用到 i=j 或 i>j 的元素。",
+    "sampleInput": "6 10\n1 2 3 4 5 5\n",
+    "sampleOutput": "4\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：j=2（值 2）",
+        "description": "左側只有 1，需要的第三個值皆不是 1，貢獻 0",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "5"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "左側計數",
+            "{1:1}"
+          ],
+          [
+            "貢獻",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：j=3（值 3）",
+        "description": "左側 {1,2}：k 取 4 需 3 無，k 取兩個 5 需 2 有，各貢獻 1，共 2（組合 2,3,5）",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "5"
+        ],
+        "active": [
+          2,
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "貢獻",
+            "2"
+          ],
+          [
+            "累計",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：j=4（值 4）",
+        "description": "左側 {1,2,3}：k 取兩個 5 需 1 有，貢獻 2（組合 1,4,5）；j=5 無貢獻，總數 4",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "5"
+        ],
+        "active": [
+          3,
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "貢獻",
+            "2"
+          ],
+          [
+            "累計",
+            "4"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom collections import defaultdict\n\ndata = sys.stdin.read().split()\nn, T = int(data[0]), int(data[1])\na = list(map(int, data[2:2 + n]))\n\ncnt = defaultdict(int)  # 索引小於 j 的元素值出現次數\ntotal = 0\nfor j in range(n):\n    need_base = T - a[j]\n    for k in range(j + 1, n):\n        total += cnt.get(need_base - a[k], 0)\n    cnt[a[j]] += 1  # 處理完 j 才加入\nprint(total)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint main() {\n    int n;\n    ll T;\n    cin >> n >> T;\n    vector<ll> a(n);\n    for (auto &x : a) cin >> x;\n    map<ll, int> cnt;  // 索引小於 j 的元素值出現次數\n    ll total = 0;\n    for (int j = 0; j < n; j++) {\n        ll base = T - a[j];\n        for (int k = j + 1; k < n; k++) {\n            auto it = cnt.find(base - a[k]);\n            if (it != cnt.end()) total += it->second;\n        }\n        cnt[a[j]]++;\n    }\n    cout << total << '\\n';\n}\n"
+  },
+  {
+    "code": "d646",
+    "title": "滑動視窗的中位數和",
+    "topic": "sorting",
+    "level": "medium",
+    "concept": "每個視窗排序取第 ⌈w/2⌉ 小",
+    "goal": "能正確計算中位數索引並累加所有視窗的中位數。",
+    "explanation": [
+      "題目定義的中位數是視窗排序後第 ⌈w/2⌉ 個（從 1 起算），轉成 0 起算的索引為 ⌈w/2⌉−1=(w+1)//2−1。w 為奇數時它是正中間，w 為偶數時是中間兩數中較小者，一條公式涵蓋兩種情況。",
+      "共有 n−w+1 個視窗，每個視窗複製後排序，取該索引的元素加總。最壞情況 n=1000、w=500，每個視窗排序 O(w log w)，總量約 500×500×9≈2×10^6，遠低於時限，不需要複雜的雙堆或平衡樹。總和最多 10^3×10^9=10^12，C++ 必須用 long long。"
+    ],
+    "complexity": "n≤1000，時間 O((n−w+1)·w log w)≤約 O(n² log n)，空間 O(w)。",
+    "pitfall": "偶數視窗要取較小的中位數而非平均或較大者；總和會超過 32 位元整數。",
+    "sampleInput": "5 3\n1 3 2 6 4\n",
+    "sampleOutput": "9\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：第 1 個視窗",
+        "description": "[1,3,2] 排序為 1 2 3，取第 2 個，中位數 2",
+        "cells": [
+          "1",
+          "2",
+          "3"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "視窗",
+            "[1,3,2]"
+          ],
+          [
+            "中位數",
+            "2"
+          ],
+          [
+            "總和",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：第 2 個視窗",
+        "description": "[3,2,6] 排序為 2 3 6，中位數 3，總和 5",
+        "cells": [
+          "2",
+          "3",
+          "6"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "視窗",
+            "[3,2,6]"
+          ],
+          [
+            "中位數",
+            "3"
+          ],
+          [
+            "總和",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：第 3 個視窗",
+        "description": "[2,6,4] 排序為 2 4 6，中位數 4，總和 9",
+        "cells": [
+          "2",
+          "4",
+          "6"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "視窗",
+            "[2,6,4]"
+          ],
+          [
+            "中位數",
+            "4"
+          ],
+          [
+            "總和",
+            "9"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn, w = int(data[0]), int(data[1])\na = list(map(int, data[2:2 + n]))\n\nidx = (w + 1) // 2 - 1  # 第 ceil(w/2) 小，轉成 0 起算索引\ntotal = 0\nfor start in range(n - w + 1):\n    window = sorted(a[start:start + w])\n    total += window[idx]\nprint(total)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint main() {\n    int n, w;\n    cin >> n >> w;\n    vector<ll> a(n);\n    for (auto &x : a) cin >> x;\n    int idx = (w + 1) / 2 - 1;  // 第 ceil(w/2) 小，0 起算\n    ll total = 0;\n    for (int s = 0; s + w <= n; s++) {\n        vector<ll> win(a.begin() + s, a.begin() + s + w);\n        sort(win.begin(), win.end());\n        total += win[idx];\n    }\n    cout << total << '\\n';\n}\n"
+  },
+  {
+    "code": "d647",
+    "title": "海報門牌拼最大號",
+    "topic": "greedy",
+    "level": "medium",
+    "concept": "自訂比較器：a+b 與 b+a 比大小",
+    "goal": "能證明並使用「a 在 b 前面當 a+b>b+a」的排序來拼出最大數。",
+    "explanation": [
+      "把數字當字串，兩張牌 x、y 相鄰時有兩種接法 xy 與 yx，由於長度相同（都是 |x|+|y|），字典序等同數值大小。定義 x ≺ y 當 xy>yx，這個關係可證明具傳遞性（等價於比較 x/(10^|x|−1) 與 y/(10^|y|−1) 這兩個實數大小），因此是合法的全序，可用來排序。",
+      "交換論證：若最佳排列中存在相鄰一對 (x,y) 滿足 yx>xy，交換它們整體只會變大（前後綴不變、中間兩段長度總和不變），矛盾，所以最佳排列必須相鄰兩兩滿足 xy≥yx，排序後即為最大。特判：若排序後第一個是 \"0\"，代表所有牌都是 0，輸出 \"0\" 而不是 \"000\"。數字要以字串處理，不要轉成整數再拼接。"
+    ],
+    "complexity": "n≤500，排序 O(n log n) 次比較、每次比較 O(長度≤20)，空間 O(n)。",
+    "pitfall": "直接按字典序或數值排序（30 與 3 會錯）；全是 0 時要輸出單個 0。",
+    "sampleInput": "4\n3 30 34 5\n",
+    "sampleOutput": "534330\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：比較 5 與 34",
+        "description": "\"534\" > \"345\"，所以 5 排在 34 前面",
+        "cells": [
+          "3",
+          "30",
+          "34",
+          "5"
+        ],
+        "active": [
+          3,
+          2
+        ],
+        "variables": [
+          [
+            "534 vs 345",
+            "534 較大"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：比較 34 與 3",
+        "description": "\"343\" > \"334\"，34 排在 3 前面",
+        "cells": [
+          "3",
+          "30",
+          "34",
+          "5"
+        ],
+        "active": [
+          2,
+          0
+        ],
+        "variables": [
+          [
+            "343 vs 334",
+            "343 較大"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：比較 3 與 30",
+        "description": "\"330\" > \"303\"，3 排在 30 前面，最終順序 5 34 3 30，拼成 534330",
+        "cells": [
+          "5",
+          "34",
+          "3",
+          "30"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "結果",
+            "534330"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom functools import cmp_to_key\n\ndata = sys.stdin.read().split()\nn = int(data[0])\nnums = data[1:1 + n]  # 以字串處理\n\n\ndef compare(x, y):\n    # x 應排在 y 前面：x+y 比 y+x 大\n    if x + y > y + x:\n        return -1\n    if x + y < y + x:\n        return 1\n    return 0\n\n\nnums.sort(key=cmp_to_key(compare))\nresult = ''.join(nums)\nif result[0] == '0':  # 最大者為 0，代表全部是 0\n    result = '0'\nprint(result)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<string> s(n);\n    for (auto &x : s) cin >> x;\n    sort(s.begin(), s.end(), [](const string &x, const string &y) {\n        return x + y > y + x;  // x 排在 y 前面\n    });\n    string result;\n    for (auto &x : s) result += x;\n    if (result[0] == '0') result = \"0\";  // 全部是 0\n    cout << result << '\\n';\n}\n"
+  },
+  {
+    "code": "d648",
+    "title": "整理書架的最少交換",
+    "topic": "sorting",
+    "level": "medium",
+    "concept": "排列環分解：最少交換次數 = n − 環數",
+    "goal": "能把排序目標轉成置換，並用環的個數算出最少任意位置交換次數。",
+    "explanation": [
+      "元素互不相同，排序後每個元素有唯一的目標位置，於是得到一個置換：位置 i 的書應去 p[i]。置換會分解成互不相交的環。長度為 c 的環恰好需要 c−1 次交換才能全部歸位：每次交換可以把一本書放到正確位置，最後一次交換會同時放好兩本。",
+      "下界：每次交換最多使環數增加 1（拆開一個環），完成排序時環數為 n（每個元素自成一環），所以至少需要 n−(目前環數) 次；上述方法達到此值，故答案為 n−cycles。實作用排序後的名次當作目標位置，再以 visited 陣列遍歷環。長度 1 的環（已在正確位置）貢獻 0。"
+    ],
+    "complexity": "排序 O(n log n)，環遍歷 O(n)，空間 O(n)。",
+    "pitfall": "把答案算成逆序對數（那是相鄰交換的答案）；或把已就位元素也算成需要交換的環。",
+    "sampleInput": "5\n4 3 2 1 5\n",
+    "sampleOutput": "2\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：建立目標位置",
+        "description": "排序後 4 的位置是 3（0 起算），3→2，2→1，1→0，5→4，得置換 [3,2,1,0,4]",
+        "cells": [
+          "4",
+          "3",
+          "2",
+          "1",
+          "5"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "n",
+            "5"
+          ],
+          [
+            "環數",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：找出兩個二元環",
+        "description": "0→3→0 是長度 2 的環，1→2→1 也是長度 2 的環，各需 1 次交換",
+        "cells": [
+          "4",
+          "3",
+          "2",
+          "1",
+          "5"
+        ],
+        "active": [
+          0,
+          3,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "環數",
+            "2"
+          ],
+          [
+            "環長",
+            "2,2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：位置 4 自成一環",
+        "description": "5 已在正確位置，環數 3，答案 5−3=2",
+        "cells": [
+          "4",
+          "3",
+          "2",
+          "1",
+          "5"
+        ],
+        "active": [
+          4
+        ],
+        "variables": [
+          [
+            "環數",
+            "3"
+          ],
+          [
+            "答案",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn = int(data[0])\na = list(map(int, data[1:1 + n]))\n\n# 每個元素排序後的位置（元素互不相同）\norder = sorted(range(n), key=lambda i: a[i])\ntarget = [0] * n\nfor rank, i in enumerate(order):\n    target[i] = rank  # 位置 i 的書應移到 rank\n\nvisited = [False] * n\ncycles = 0\nfor i in range(n):\n    if not visited[i]:\n        cycles += 1\n        j = i\n        while not visited[j]:\n            visited[j] = True\n            j = target[j]\nprint(n - cycles)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<long long> a(n);\n    for (auto &x : a) cin >> x;\n    vector<int> order(n), target(n);\n    iota(order.begin(), order.end(), 0);\n    sort(order.begin(), order.end(), [&](int x, int y) { return a[x] < a[y]; });\n    for (int rank = 0; rank < n; rank++) target[order[rank]] = rank;\n    vector<bool> visited(n, false);\n    int cycles = 0;\n    for (int i = 0; i < n; i++) {\n        if (!visited[i]) {\n            cycles++;\n            int j = i;\n            while (!visited[j]) {\n                visited[j] = true;\n                j = target[j];\n            }\n        }\n    }\n    cout << n - cycles << '\\n';\n}\n"
+  },
+  {
+    "code": "d649",
+    "title": "九九乘法表第 k 小",
+    "topic": "search",
+    "level": "medium",
+    "concept": "對答案二分：每列計數 min(m, ⌊x/i⌋)",
+    "goal": "能不建立整張表，只靠逐列計數判斷「≤x 的格子數」並二分出第 k 小。",
+    "explanation": [
+      "n×m 最多 4×10^8 格，無法直接排序。改用計數函數 cnt(x)=「≤x 的格子數」。第 i 列的值為 i,2i,…,mi，其中 ≤x 的有 ⌊x/i⌋ 個，但最多 m 個，所以 cnt(x)=Σ_{i=1..n} min(m, ⌊x/i⌋)。cnt 隨 x 單調不減。",
+      "第 k 小的數就是最小的 x 使 cnt(x)≥k：此 x 一定出現在表中（cnt 在該點跳升，代表有格子等於 x），且前一個值 cnt(x−1)<k。對 x 在 [1, n·m] 二分，每次 O(n)，約 log₂(4×10^8)≈29 次，共 6×10^5 次運算。n·m 可達 4×10^8，C++ 的求和與上界用 long long 以策安全。"
+    ],
+    "complexity": "時間 O(n log(nm))，空間 O(1)。",
+    "pitfall": "二分後得到的是最小滿足 cnt(x)≥k 的 x，上界要取 n×m；忘記對 ⌊x/i⌋ 取 min(m, ·) 會讓計數過大。",
+    "sampleInput": "3 3 5\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：檢查 x=5",
+        "description": "各列 ≤5 的個數 min(3,5)=3、5//2=2、5//3=1，共 6≥5，往小找",
+        "cells": [
+          "3",
+          "2",
+          "1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "x",
+            "5"
+          ],
+          [
+            "cnt(x)",
+            "6"
+          ],
+          [
+            "k",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：檢查 x=3",
+        "description": "各列個數 3、1、1，共 5≥5，仍可行，再往小找",
+        "cells": [
+          "3",
+          "1",
+          "1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "x",
+            "3"
+          ],
+          [
+            "cnt(x)",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：檢查 x=2",
+        "description": "各列個數 2、1、0，共 3<5 不可行，因此最小可行 x 為 3",
+        "cells": [
+          "2",
+          "1",
+          "0"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "x",
+            "2"
+          ],
+          [
+            "cnt(x)",
+            "3"
+          ],
+          [
+            "答案",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nn, m, k = map(int, sys.stdin.read().split())\n\n\ndef count_le(x):\n    # 乘法表中 <= x 的格子數\n    return sum(min(m, x // i) for i in range(1, n + 1))\n\n\nlo, hi = 1, n * m\nwhile lo < hi:\n    mid = (lo + hi) // 2\n    if count_le(mid) >= k:\n        hi = mid\n    else:\n        lo = mid + 1\nprint(lo)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint main() {\n    ll n, m, k;\n    cin >> n >> m >> k;\n    auto count_le = [&](ll x) {\n        ll s = 0;\n        for (ll i = 1; i <= n; i++) s += min(m, x / i);\n        return s;\n    };\n    ll lo = 1, hi = n * m;\n    while (lo < hi) {\n        ll mid = (lo + hi) / 2;\n        if (count_le(mid) >= k) hi = mid;\n        else lo = mid + 1;\n    }\n    cout << lo << '\\n';\n}\n"
+  },
+  {
+    "code": "d650",
+    "title": "只需重排一段",
+    "topic": "sorting",
+    "level": "medium",
+    "concept": "排序後比對第一個與最後一個不同的位置",
+    "goal": "判斷只重排一段就能排好的最短區間，並處理本來就已排序的情況。",
+    "explanation": [
+      "把原序列複製一份排序得到 b。最終排好的序列必定就是 b（非遞減排列且元素多重集合不變）。位置 i 若 a[i]=b[i]，不必動它；若 a[i]≠b[i]，這個位置的值非變不可，所以被選的區間必須覆蓋所有 a[i]≠b[i] 的位置。",
+      "設 l 為第一個不同的位置、r 為最後一個不同的位置，區間 [l,r] 就是下界。它同時也夠用：l 之前與 r 之後都已與 b 相同，而 [l,r] 內的元素集合與 b 在 [l,r] 的集合相同（整體多重集合相同，兩端又相等），重排即可變成 b。所以答案是 r−l+1；若找不到任何不同位置，輸出 0。n≤1000，排序與掃描都綽綽有餘。"
+    ],
+    "complexity": "n≤1000，時間 O(n log n)（排序）、空間 O(n)。",
+    "pitfall": "有重複值時不能比較排名或位置，只能比較排序後的值；已排序（含全相等）要輸出 0 而不是 1。",
+    "sampleInput": "7\n1 2 6 4 5 7 9\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：排序得到目標",
+        "description": "原序列 1 2 6 4 5 7 9 排序後為 1 2 4 5 6 7 9",
+        "cells": [
+          "1",
+          "2",
+          "6",
+          "4",
+          "5",
+          "7",
+          "9"
+        ],
+        "active": [
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "排序後",
+            "1 2 4 5 6 7 9"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：由左找第一個不同",
+        "description": "索引 0、1 相同，索引 2 時 6≠4，所以 l=2",
+        "cells": [
+          "1",
+          "2",
+          "6",
+          "4",
+          "5",
+          "7",
+          "9"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "l",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：由右找最後一個不同",
+        "description": "索引 6、5 相同，索引 4 時 5≠6，所以 r=4",
+        "cells": [
+          "1",
+          "2",
+          "6",
+          "4",
+          "5",
+          "7",
+          "9"
+        ],
+        "active": [
+          4
+        ],
+        "variables": [
+          [
+            "l",
+            "2"
+          ],
+          [
+            "r",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：計算長度",
+        "description": "r−l+1=4−2+1=3",
+        "cells": [
+          "1",
+          "2",
+          "6",
+          "4",
+          "5",
+          "7",
+          "9"
+        ],
+        "active": [
+          2,
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "答案",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn = int(data[0])\na = list(map(int, data[1:1 + n]))\nb = sorted(a)\n\ndiff = [i for i in range(n) if a[i] != b[i]]\nif not diff:\n    print(0)\nelse:\n    print(diff[-1] - diff[0] + 1)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<long long> a(n);\n    for (auto &x : a) cin >> x;\n    vector<long long> b = a;\n    sort(b.begin(), b.end());\n    int l = -1, r = -1;\n    for (int i = 0; i < n; i++) {\n        if (a[i] != b[i]) {\n            if (l == -1) l = i;\n            r = i;\n        }\n    }\n    cout << (l == -1 ? 0 : r - l + 1) << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d651",
+    "title": "雙項評分的嚴格壓制",
+    "topic": "basics",
+    "level": "hard",
+    "concept": "枚舉所有有序對並計數嚴格雙維支配",
+    "goal": "用雙重迴圈判斷兩項皆嚴格較小的關係，並注意相同分數與總數的範圍。",
+    "explanation": [
+      "對每個有序對 (i,j) 檢查 x_i<x_j 且 y_i<y_j。n≤1000 時只有約一百萬對，直接 O(n²) 枚舉即可。條件是嚴格不等式，所以只要有一項相等就不算壓制；完全相同的選手兩項都相等，自然互不壓制，i=j 也不會被計入，因此不需要特別排除自身。",
+      "嚴格壓制具有反對稱性：若 j 壓制 i，則 i 不可能同時壓制 j，所以每個無序對最多貢獻一次，總數最多 n(n−1)/2 ≈ 5×10⁵，int 已足夠，但用 64 位元更保險。也可以固定 j，統計有多少 i 滿足條件再加總，與逐對枚舉結果相同，便於教學追蹤。"
+    ],
+    "complexity": "n≤1000，時間 O(n²)≈10⁶ 次比較、空間 O(n)。",
+    "pitfall": "必須兩項都嚴格小於；只要一項相等（例如 (2,2) 與 (2,3)）就不算。不要把 ≤ 寫成 <=。",
+    "sampleInput": "4\n1 1\n2 2\n3 1\n2 3\n",
+    "sampleOutput": "2\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：選手 (1,1)",
+        "description": "沒有任何選手兩項都比 (1,1) 小，壓制數 0",
+        "cells": [
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "目前 j",
+            "(1,1)"
+          ],
+          [
+            "累計",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：選手 (2,2)",
+        "description": "(1,1) 兩項都小於 (2,2)，貢獻 1",
+        "cells": [
+          "0",
+          "1",
+          "0",
+          "0"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "目前 j",
+            "(2,2)"
+          ],
+          [
+            "累計",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：選手 (3,1)",
+        "description": "(1,1) 的 y 相等，(2,2) 的 y 較大，都不算，貢獻 0",
+        "cells": [
+          "0",
+          "1",
+          "0",
+          "0"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "目前 j",
+            "(3,1)"
+          ],
+          [
+            "累計",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：選手 (2,3)",
+        "description": "(1,1) 兩項皆小；(2,2) 的 x 相等不算；(3,1) 的 x 較大不算，貢獻 1",
+        "cells": [
+          "0",
+          "1",
+          "0",
+          "1"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "目前 j",
+            "(2,3)"
+          ],
+          [
+            "累計",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn = int(data[0])\npts = [(int(data[1 + 2 * i]), int(data[2 + 2 * i])) for i in range(n)]\n\ntotal = 0\nfor xj, yj in pts:\n    for xi, yi in pts:\n        if xi < xj and yi < yj:\n            total += 1\nprint(total)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<long long> x(n), y(n);\n    for (int i = 0; i < n; i++) cin >> x[i] >> y[i];\n    long long total = 0;\n    for (int j = 0; j < n; j++)\n        for (int i = 0; i < n; i++)\n            if (x[i] < x[j] && y[i] < y[j]) total++;\n    cout << total << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d652",
+    "title": "不短於 k 天的最佳中位數",
+    "topic": "search",
+    "level": "hard",
+    "concept": "二分答案加上 ±1 前綴和判斷中位數",
+    "goal": "把「中位數至少為 x」轉成 ±1 序列上「長度至少 k 且總和為正」的判定，再對 x 二分。",
+    "explanation": [
+      "中位數是排序後第 ceil(L/2) 個。中位數 ≥ x 等價於「小於 x 的元素個數 ≤ ceil(L/2)−1」，也就是「不小於 x 的個數 ≥ floor(L/2)+1，嚴格超過一半」。把 a_i≥x 記為 +1、否則 −1，條件就變成區間和 > 0（L 為偶數時和需 ≥2 而和必為偶數，所以 >0 即 ≥2，正好吻合取較小中位數的定義）。",
+      "x 越大越難滿足，判定具單調性，因此可對排序後的不同數值二分，答案必為某個 a_i。判定時令前綴和 P，對每個右端 r≥k，維護 min(P[0..r−k]) 作為最佳左端，若 P[r]−min>0 則可行。每次判定 O(n)，共 O(n log n)。"
+    ],
+    "complexity": "n≤1000，二分約 10 次，每次 O(n)，總時間 O(n log n)（含排序）、空間 O(n)。",
+    "pitfall": "偶數長度取的是兩個中間值中較小者，所以條件是和 > 0 而不是 ≥ 0；左端的最小前綴只能取到 r−k 之前，才能保證長度至少 k。",
+    "sampleInput": "5 2\n1 5 2 9 3\n",
+    "sampleOutput": "5\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：排序候選答案",
+        "description": "a=1 5 2 9 3，排序後候選為 1 2 3 5 9，在索引上二分",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "5",
+          "9"
+        ],
+        "active": [
+          0,
+          4
+        ],
+        "variables": [
+          [
+            "lo",
+            "0"
+          ],
+          [
+            "hi",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：測試 x=3",
+        "description": "b=-1,+1,-1,+1,+1，區間 [5,2,9,3] 和為 2>0 可行，lo=2",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "5",
+          "9"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "x",
+            "3"
+          ],
+          [
+            "可行",
+            "是"
+          ],
+          [
+            "lo",
+            "2"
+          ],
+          [
+            "hi",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：測試 x=5",
+        "description": "b=-1,+1,-1,+1,-1，區間 [5,2,9] 和為 1>0 可行，lo=3",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "5",
+          "9"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "x",
+            "5"
+          ],
+          [
+            "可行",
+            "是"
+          ],
+          [
+            "lo",
+            "3"
+          ],
+          [
+            "hi",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：測試 x=9",
+        "description": "b=-1,-1,-1,+1,-1，任何長度至少 2 的區間和都不為正，不可行，hi=3，答案為 5",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "5",
+          "9"
+        ],
+        "active": [
+          4
+        ],
+        "variables": [
+          [
+            "x",
+            "9"
+          ],
+          [
+            "可行",
+            "否"
+          ],
+          [
+            "lo",
+            "3"
+          ],
+          [
+            "hi",
+            "3"
+          ],
+          [
+            "答案",
+            "5"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn, k = int(data[0]), int(data[1])\na = list(map(int, data[2:2 + n]))\n\n\ndef feasible(x):\n    # b_i = +1 若 a_i >= x，否則 -1；找長度至少 k 且和 > 0 的區間\n    pre = [0] * (n + 1)\n    for i in range(n):\n        pre[i + 1] = pre[i] + (1 if a[i] >= x else -1)\n    best_left = 10 ** 9\n    for r in range(k, n + 1):\n        best_left = min(best_left, pre[r - k])\n        if pre[r] - best_left > 0:\n            return True\n    return False\n\n\nvals = sorted(set(a))\nlo, hi = 0, len(vals) - 1  # vals[lo] 一定可行（x 為最小值時全 +1）\nwhile lo < hi:\n    mid = (lo + hi + 1) // 2\n    if feasible(vals[mid]):\n        lo = mid\n    else:\n        hi = mid - 1\nprint(vals[lo])\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint n, k;\nvector<long long> a;\n\nbool feasible(long long x) {\n    vector<int> pre(n + 1, 0);\n    for (int i = 0; i < n; i++) pre[i + 1] = pre[i] + (a[i] >= x ? 1 : -1);\n    int bestLeft = INT_MAX;\n    for (int r = k; r <= n; r++) {\n        bestLeft = min(bestLeft, pre[r - k]);\n        if (pre[r] - bestLeft > 0) return true;\n    }\n    return false;\n}\n\nint main() {\n    cin >> n >> k;\n    a.resize(n);\n    for (auto &x : a) cin >> x;\n    vector<long long> vals = a;\n    sort(vals.begin(), vals.end());\n    vals.erase(unique(vals.begin(), vals.end()), vals.end());\n    int lo = 0, hi = (int)vals.size() - 1;\n    while (lo < hi) {\n        int mid = (lo + hi + 1) / 2;\n        if (feasible(vals[mid])) lo = mid;\n        else hi = mid - 1;\n    }\n    cout << vals[lo] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d653",
+    "title": "預算區間內的連續帳目",
+    "topic": "basics",
+    "level": "hard",
+    "concept": "前綴和差值與範圍計數",
+    "goal": "把區間和改寫成兩個前綴和相減，並處理 64 位元範圍。",
+    "explanation": [
+      "令 P[0]=0、P[i]=a_1+…+a_i，則區間 [l,r] 的和是 P[r]−P[l−1]。問題變成：數有多少對 0≤i<j≤n 使 L ≤ P[j]−P[i] ≤ R。每一對 (i,j) 對應唯一的區間 (l,r)=(i+1,j)，因此相同總和的不同區間自然被分別計數。",
+      "n≤1000 時 O(n²) 枚舉所有 (i,j) 即可，約 50 萬對。數值上 |a_i|≤10⁹、n≤1000，前綴和絕對值最多 10¹²，差值最多 2×10¹²，L、R 也到 10¹²，都超出 32 位元，必須使用 64 位元整數（C++ 用 long long；Python 無此問題）。"
+    ],
+    "complexity": "n≤1000，時間 O(n²)、空間 O(n)。",
+    "pitfall": "前綴和與 L、R 都可達 10¹²，C++ 用 int 會溢位；也別忘了 P[0]=0，否則會漏掉從第一天開始的區間。",
+    "sampleInput": "5 2 5\n1 -2 3 4 -1\n",
+    "sampleOutput": "7\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：建立前綴和",
+        "description": "a=1 -2 3 4 -1，P=0 1 -1 2 6 5，目標區間為 [2,5]",
+        "cells": [
+          "0",
+          "1",
+          "-1",
+          "2",
+          "6",
+          "5"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "L",
+            "2"
+          ],
+          [
+            "R",
+            "5"
+          ],
+          [
+            "累計",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：右端 j=3 (P=2)",
+        "description": "與 P[0]=0 差 2 合格，與 P[1]=1 差 1 不合，與 P[2]=-1 差 3 合格，共 2 個",
+        "cells": [
+          "0",
+          "1",
+          "-1",
+          "2",
+          "6",
+          "5"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "j",
+            "3"
+          ],
+          [
+            "本步新增",
+            "2"
+          ],
+          [
+            "累計",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：右端 j=4 (P=6)",
+        "description": "與 P[1] 差 5 合格，與 P[3] 差 4 合格，其餘 6、7 超出，共 2 個",
+        "cells": [
+          "0",
+          "1",
+          "-1",
+          "2",
+          "6",
+          "5"
+        ],
+        "active": [
+          4
+        ],
+        "variables": [
+          [
+            "j",
+            "4"
+          ],
+          [
+            "本步新增",
+            "2"
+          ],
+          [
+            "累計",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：右端 j=5 (P=5)",
+        "description": "與 P[0] 差 5、P[1] 差 4、P[3] 差 3 合格，共 3 個，總計 7",
+        "cells": [
+          "0",
+          "1",
+          "-1",
+          "2",
+          "6",
+          "5"
+        ],
+        "active": [
+          5
+        ],
+        "variables": [
+          [
+            "j",
+            "5"
+          ],
+          [
+            "本步新增",
+            "3"
+          ],
+          [
+            "累計",
+            "7"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn, L, R = int(data[0]), int(data[1]), int(data[2])\na = list(map(int, data[3:3 + n]))\n\npre = [0] * (n + 1)\nfor i in range(n):\n    pre[i + 1] = pre[i] + a[i]\n\ncount = 0\nfor j in range(1, n + 1):\n    for i in range(j):\n        if L <= pre[j] - pre[i] <= R:\n            count += 1\nprint(count)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint main() {\n    int n;\n    ll L, R;\n    cin >> n >> L >> R;\n    vector<ll> pre(n + 1, 0);\n    for (int i = 1; i <= n; i++) {\n        ll x;\n        cin >> x;\n        pre[i] = pre[i - 1] + x;\n    }\n    ll count = 0;\n    for (int j = 1; j <= n; j++)\n        for (int i = 0; i < j; i++) {\n            ll s = pre[j] - pre[i];\n            if (L <= s && s <= R) count++;\n        }\n    cout << count << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d654",
+    "title": "舞者隊形換位",
+    "topic": "sorting",
+    "level": "hard",
+    "concept": "同色依序配對後計算逆序數",
+    "goal": "把重複顏色轉成唯一排列，再用逆序數求最少相鄰交換次數。",
+    "explanation": [
+      "若所有顏色相異，把 A 的每個元素換成它在 B 中的位置得到排列 p，最少相鄰交換次數就是 p 的逆序數：每次相鄰交換最多消除一個逆序，而氣泡排序恰好每次消除一個。",
+      "顏色重複時，同色舞者不可區分，最佳策略是不讓同色互相越過：把 A 中第 t 個出現的某色對應到 B 中第 t 個出現的同色。若兩個同色越過對方，交換它們沒有意義，可直接省略，因此這樣的配對最優。配對後得到一個真正的排列 p，答案就是 p 的逆序數。n≤1000，O(n²) 數逆序即可；最多約 5×10⁵，仍建議用 64 位元。"
+    ],
+    "complexity": "n≤1000，時間 O(n²)（配對 O(n log n) 或 O(n)），空間 O(n)。",
+    "pitfall": "同色必須按出現順序配對（第 t 個對第 t 個），不能隨便對應；否則會多算不必要的交換。",
+    "sampleInput": "3\n1 2 3\n3 2 1\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：同色依序配對",
+        "description": "A=1 2 3，B=3 2 1；A 的 1 在 B 位置 3，2 在位置 2，3 在位置 1，得排列 p=[3,2,1]",
+        "cells": [
+          "3",
+          "2",
+          "1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "p",
+            "3 2 1"
+          ],
+          [
+            "逆序",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：以 3 為前者",
+        "description": "3 後面的 2、1 都比它小，產生 2 個逆序",
+        "cells": [
+          "3",
+          "2",
+          "1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "i",
+            "0"
+          ],
+          [
+            "本步新增",
+            "2"
+          ],
+          [
+            "逆序",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：以 2 為前者",
+        "description": "2 後面的 1 比它小，產生 1 個逆序",
+        "cells": [
+          "3",
+          "2",
+          "1"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "i",
+            "1"
+          ],
+          [
+            "本步新增",
+            "1"
+          ],
+          [
+            "逆序",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：最後一個元素",
+        "description": "1 後面沒有元素，總逆序為 3，即答案",
+        "cells": [
+          "3",
+          "2",
+          "1"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "i",
+            "2"
+          ],
+          [
+            "本步新增",
+            "0"
+          ],
+          [
+            "答案",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom collections import defaultdict\n\ndata = sys.stdin.read().split()\nn = int(data[0])\nA = data[1:1 + n]\nB = data[1 + n:1 + 2 * n]\n\n# 每種顏色在 B 中的位置（由左到右）\npos = defaultdict(list)\nfor idx, c in enumerate(B):\n    pos[c].append(idx)\n\n# A 中第 t 個出現的顏色，對應 B 中第 t 個出現的同色\nused = defaultdict(int)\np = []\nfor c in A:\n    p.append(pos[c][used[c]])\n    used[c] += 1\n\ninv = 0\nfor i in range(n):\n    for j in range(i + 1, n):\n        if p[i] > p[j]:\n            inv += 1\nprint(inv)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> A(n), B(n);\n    for (auto &x : A) cin >> x;\n    for (auto &x : B) cin >> x;\n    map<int, vector<int>> pos;\n    for (int i = 0; i < n; i++) pos[B[i]].push_back(i);\n    map<int, int> used;\n    vector<int> p(n);\n    for (int i = 0; i < n; i++) p[i] = pos[A[i]][used[A[i]]++];\n    long long inv = 0;\n    for (int i = 0; i < n; i++)\n        for (int j = i + 1; j < n; j++)\n            if (p[i] > p[j]) inv++;\n    cout << inv << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d655",
+    "title": "第 k 近的兩棵樹",
+    "topic": "search",
+    "level": "hard",
+    "concept": "對距離二分答案，用雙指標計算不超過 d 的樹對數",
+    "goal": "把「第 k 小」轉成「距離 ≤ d 的對數是否 ≥ k」的單調判定。",
+    "explanation": [
+      "先把位置排序。對任意 d，令 cnt(d) 為距離 ≤ d 的樹對數；d 增大時 cnt(d) 不會減少，所以第 k 小距離就是最小的 d 使 cnt(d) ≥ k。這個最小 d 一定是某個實際距離，因為 cnt 只在實際距離處上升。",
+      "計算 cnt(d)：排序後，對每個右端 j，維護最左的 l 使 a[j]−a[l] ≤ d，則 l..j−1 全部都能與 j 配成距離 ≤ d 的對，貢獻 j−l。因為 a 已排序，j 增加時 l 只會往右，所以雙指標總共 O(n)。在 [0, max−min] 上二分，約 30 次，每次 O(n)。相同位置的樹距離為 0，會被自然計入。"
+    ],
+    "complexity": "n≤1000，值域 10⁹ 約二分 30 次，每次 O(n)，加排序共 O(n log n + n log V)、空間 O(n)。",
+    "pitfall": "距離相同要分別計算（cnt 是對數而非相異距離數）；k 的最大值約 5×10⁵，比較時別把 k 誤當索引；二分下界要含 0。",
+    "sampleInput": "4 3\n1 3 7 8\n",
+    "sampleOutput": "4\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：排序並設定範圍",
+        "description": "位置 1 3 7 8，距離範圍 [0,7]，目標是第 3 小",
+        "cells": [
+          "1",
+          "3",
+          "7",
+          "8"
+        ],
+        "active": [
+          0,
+          3
+        ],
+        "variables": [
+          [
+            "lo",
+            "0"
+          ],
+          [
+            "hi",
+            "7"
+          ],
+          [
+            "k",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：測試 d=3",
+        "description": "距離 ≤3 的對有 (1,3) 與 (7,8)，cnt=2<3，答案較大，lo=4",
+        "cells": [
+          "1",
+          "3",
+          "7",
+          "8"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "mid",
+            "3"
+          ],
+          [
+            "cnt",
+            "2"
+          ],
+          [
+            "lo",
+            "4"
+          ],
+          [
+            "hi",
+            "7"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：測試 d=5",
+        "description": "距離 ≤5 的對為 2、1、4、5 四個，cnt=4≥3，hi=5",
+        "cells": [
+          "1",
+          "3",
+          "7",
+          "8"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "mid",
+            "5"
+          ],
+          [
+            "cnt",
+            "4"
+          ],
+          [
+            "lo",
+            "4"
+          ],
+          [
+            "hi",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：測試 d=4",
+        "description": "距離 ≤4 的對為 1、2、4，cnt=3≥3，hi=4，此時 lo=hi=4，答案為 4",
+        "cells": [
+          "1",
+          "3",
+          "7",
+          "8"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "mid",
+            "4"
+          ],
+          [
+            "cnt",
+            "3"
+          ],
+          [
+            "lo",
+            "4"
+          ],
+          [
+            "hi",
+            "4"
+          ],
+          [
+            "答案",
+            "4"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nn, k = int(data[0]), int(data[1])\na = sorted(map(int, data[2:2 + n]))\n\n\ndef count_le(d):\n    \"\"\"距離不超過 d 的樹對數（a 已排序，雙指標）\"\"\"\n    cnt = 0\n    left = 0\n    for j in range(n):\n        while a[j] - a[left] > d:\n            left += 1\n        cnt += j - left\n    return cnt\n\n\nlo, hi = 0, a[-1] - a[0]\nwhile lo < hi:\n    mid = (lo + hi) // 2\n    if count_le(mid) >= k:\n        hi = mid\n    else:\n        lo = mid + 1\nprint(lo)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint n;\nll k;\nvector<ll> a;\n\nll countLE(ll d) {\n    ll cnt = 0;\n    int left = 0;\n    for (int j = 0; j < n; j++) {\n        while (a[j] - a[left] > d) left++;\n        cnt += j - left;\n    }\n    return cnt;\n}\n\nint main() {\n    cin >> n >> k;\n    a.resize(n);\n    for (auto &x : a) cin >> x;\n    sort(a.begin(), a.end());\n    ll lo = 0, hi = a[n - 1] - a[0];\n    while (lo < hi) {\n        ll mid = (lo + hi) / 2;\n        if (countLE(mid) >= k) hi = mid;\n        else lo = mid + 1;\n    }\n    cout << lo << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d656",
+    "title": "積木階梯跳法",
+    "topic": "dp",
+    "level": "easy",
+    "concept": "避開損壞階的 1/2/3 步走法計數 DP",
+    "goal": "定義 dp[i] 為到達第 i 階的方法數，並讓損壞階的值固定為 0。",
+    "explanation": [
+      "令 dp[i] 為恰好走到第 i 階的方法數，dp[0]=1。到達第 i 階的最後一步可能是 1、2、3 階，來自 i−1、i−2、i−3，且這三種最後一步互斥並涵蓋所有情形，所以 dp[i]=dp[i−1]+dp[i−2]+dp[i−3]（下標小於 0 的項視為 0）。",
+      "損壞的階不能踩，所以 dp[i]=0；跨過它的走法仍會由更遠的階從 dp[i−2]、dp[i−3] 自然累加，因此不必另外處理。若第 N 階損壞，dp[N]=0 即為答案。每次加法後取模 10⁹+7。M=0 時第二行是空行，用「讀取全部 token」的方式讀入就不會出問題。"
+    ],
+    "complexity": "N≤1000，時間 O(N)、空間 O(N)。",
+    "pitfall": "損壞階要把 dp 設為 0（而不是跳過不更新）；M=0 時第二行為空行，逐行讀取容易錯；每步都要取模。",
+    "sampleInput": "5 1\n3\n",
+    "sampleOutput": "5\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：起點",
+        "description": "dp[0]=1，損壞階為第 3 階",
+        "cells": [
+          "1",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "i",
+            "0"
+          ],
+          [
+            "dp[i]",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：計算 dp[1]、dp[2]",
+        "description": "dp[1]=dp[0]=1；dp[2]=dp[1]+dp[0]=2",
+        "cells": [
+          "1",
+          "1",
+          "2",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "dp[1]",
+            "1"
+          ],
+          [
+            "dp[2]",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：第 3 階損壞",
+        "description": "第 3 階不能踩，dp[3]=0",
+        "cells": [
+          "1",
+          "1",
+          "2",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "i",
+            "3"
+          ],
+          [
+            "dp[3]",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：跨過損壞階",
+        "description": "dp[4]=dp[3]+dp[2]+dp[1]=0+2+1=3；dp[5]=dp[4]+dp[3]+dp[2]=3+0+2=5",
+        "cells": [
+          "1",
+          "1",
+          "2",
+          "0",
+          "3",
+          "5"
+        ],
+        "active": [
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "dp[4]",
+            "3"
+          ],
+          [
+            "dp[5]",
+            "5"
+          ],
+          [
+            "答案",
+            "5"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nMOD = 10 ** 9 + 7\n\ndata = sys.stdin.read().split()\nN, M = int(data[0]), int(data[1])\nbroken = set(int(x) for x in data[2:2 + M])\n\ndp = [0] * (N + 1)\ndp[0] = 1\nfor i in range(1, N + 1):\n    if i in broken:\n        dp[i] = 0\n        continue\n    total = 0\n    for step in (1, 2, 3):\n        if i - step >= 0:\n            total += dp[i - step]\n    dp[i] = total % MOD\nprint(dp[N] % MOD)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\n\nint main() {\n    int N, M;\n    cin >> N >> M;\n    vector<bool> broken(N + 1, false);\n    for (int i = 0; i < M; i++) {\n        int x;\n        cin >> x;\n        broken[x] = true;\n    }\n    vector<ll> dp(N + 1, 0);\n    dp[0] = 1;\n    for (int i = 1; i <= N; i++) {\n        if (broken[i]) continue;\n        for (int step = 1; step <= 3; step++)\n            if (i - step >= 0) dp[i] = (dp[i] + dp[i - step]) % MOD;\n    }\n    cout << dp[N] % MOD << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d657",
+    "title": "行李箱最大價值",
+    "topic": "dp",
+    "level": "easy",
+    "concept": "0/1 背包的一維滾動 DP",
+    "goal": "用 dp[c] 表示容量 c 的最大價值，並以由大到小的順序更新以避免重複使用物品。",
+    "explanation": [
+      "令 dp[c] 為重量上限 c 時的最大價值，初始全為 0（什麼都不帶也合法，所以答案至少為 0）。處理第 i 件物品 (w,v) 時，對每個容量 c≥w，可選擇不帶（維持 dp[c]）或帶它（dp[c−w]+v，前提是 dp[c−w] 只使用前 i−1 件物品），取較大者。",
+      "一維陣列要讓 c 由大到小更新：此時 dp[c−w] 尚未被第 i 件物品改過，代表前 i−1 件的結果，物品就不會被重複選取；若由小到大則變成每件可無限取的完全背包。答案是 dp[W]（dp 對容量單調不減）。N≤100、W≤1000，只需約 10⁵ 次運算。"
+    ],
+    "complexity": "N≤100、W≤1000，時間 O(NW)≈10⁵、空間 O(W)。",
+    "pitfall": "容量迴圈必須由大到小，否則同一件物品會被重複計算；物品重量可能大於 W，這種物品直接略過。",
+    "sampleInput": "3 50\n10 60\n20 100\n30 120\n",
+    "sampleOutput": "220\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：初始化",
+        "description": "W=50，只看容量 0、10、20、30、40、50，全部價值為 0",
+        "cells": [
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "物品",
+            "無"
+          ],
+          [
+            "dp[50]",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：放入 (10,60)",
+        "description": "容量 ≥10 都能帶它，價值變 60",
+        "cells": [
+          "0",
+          "60",
+          "60",
+          "60",
+          "60",
+          "60"
+        ],
+        "active": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "物品",
+            "(10,60)"
+          ],
+          [
+            "dp[50]",
+            "60"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：放入 (20,100)",
+        "description": "容量 20 為 max(60,100)=100，容量 30 為 dp[10]+100=160，之後維持 160",
+        "cells": [
+          "0",
+          "60",
+          "100",
+          "160",
+          "160",
+          "160"
+        ],
+        "active": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "物品",
+            "(20,100)"
+          ],
+          [
+            "dp[50]",
+            "160"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：放入 (30,120)",
+        "description": "容量 40 為 dp[10]+120=180，容量 50 為 dp[20]+120=220，答案 220",
+        "cells": [
+          "0",
+          "60",
+          "100",
+          "160",
+          "180",
+          "220"
+        ],
+        "active": [
+          3,
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "物品",
+            "(30,120)"
+          ],
+          [
+            "dp[50]",
+            "220"
+          ],
+          [
+            "答案",
+            "220"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nN, W = int(data[0]), int(data[1])\n\ndp = [0] * (W + 1)\nfor i in range(N):\n    w = int(data[2 + 2 * i])\n    v = int(data[3 + 2 * i])\n    # 由大到小，確保每件物品只用一次\n    for c in range(W, w - 1, -1):\n        if dp[c - w] + v > dp[c]:\n            dp[c] = dp[c - w] + v\nprint(dp[W])\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int N, W;\n    cin >> N >> W;\n    vector<int> dp(W + 1, 0);\n    for (int i = 0; i < N; i++) {\n        int w, v;\n        cin >> w >> v;\n        for (int c = W; c >= w; c--)\n            dp[c] = max(dp[c], dp[c - w] + v);\n    }\n    cout << dp[W] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d658",
+    "title": "展示櫃由矮到高",
+    "topic": "dp",
+    "level": "easy",
+    "concept": "最長嚴格遞增子序列（tails 陣列加二分）",
+    "goal": "維護「各長度遞增子序列的最小結尾」，並用 bisect_left 處理嚴格遞增。",
+    "explanation": [
+      "令 tails[t] 為所有長度 t+1 的嚴格遞增子序列中最小的結尾值。tails 一定嚴格遞增：若長度 t+2 的序列結尾為 x，去掉最後一個元素得到長度 t+1 且結尾小於 x，所以 tails[t] < tails[t+1]。",
+      "讀入新元素 x 時，找 tails 中第一個 ≥ x 的位置（bisect_left）並覆蓋它；若不存在就接到尾端，使最長長度加一。用 bisect_left 而非 bisect_right，是因為嚴格遞增下相等的值不能接在後面，只能取代同值。覆蓋只會讓某長度的結尾變小，對後續只有好處。最後 tails 的長度即答案。N≤1000，O(N log N) 或 O(N²) 皆可。"
+    ],
+    "complexity": "N≤1000，時間 O(N log N)、空間 O(N)。",
+    "pitfall": "嚴格遞增要用 bisect_left（相等的值要覆蓋而非延伸）；tails 陣列本身不一定是實際的子序列，只有長度有意義。",
+    "sampleInput": "8\n10 9 2 5 3 7 101 18\n",
+    "sampleOutput": "4\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：處理 10、9、2",
+        "description": "10 放入；9 取代 10；2 取代 9，tails 仍只有一個元素",
+        "cells": [
+          "2"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "x",
+            "2"
+          ],
+          [
+            "長度",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：處理 5",
+        "description": "5 大於所有 tails，接在尾端，長度變 2",
+        "cells": [
+          "2",
+          "5"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "x",
+            "5"
+          ],
+          [
+            "長度",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：處理 3",
+        "description": "3 取代第一個 ≥3 的 5，結尾更小、對後面更有利",
+        "cells": [
+          "2",
+          "3"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "x",
+            "3"
+          ],
+          [
+            "長度",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：處理 7、101",
+        "description": "7、101 依序接在尾端，tails=[2,3,7,101]，長度 4",
+        "cells": [
+          "2",
+          "3",
+          "7",
+          "101"
+        ],
+        "active": [
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "x",
+            "101"
+          ],
+          [
+            "長度",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 5：處理 18",
+        "description": "18 取代 101，tails=[2,3,7,18]，最終長度 4",
+        "cells": [
+          "2",
+          "3",
+          "7",
+          "18"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "x",
+            "18"
+          ],
+          [
+            "答案",
+            "4"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom bisect import bisect_left\n\ndata = sys.stdin.read().split()\nn = int(data[0])\na = list(map(int, data[1:1 + n]))\n\ntails = []  # tails[t] = 長度 t+1 的遞增子序列最小結尾\nfor x in a:\n    pos = bisect_left(tails, x)\n    if pos == len(tails):\n        tails.append(x)\n    else:\n        tails[pos] = x\nprint(len(tails))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> tails;\n    for (int i = 0; i < n; i++) {\n        int x;\n        cin >> x;\n        auto it = lower_bound(tails.begin(), tails.end(), x);\n        if (it == tails.end()) tails.push_back(x);\n        else *it = x;\n    }\n    cout << tails.size() << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d659",
+    "title": "雙人歌單共同曲目",
+    "topic": "dp",
+    "level": "easy",
+    "concept": "最長共同子序列 LCS 的二維 DP",
+    "goal": "用前綴狀態 dp[i][j] 比較字元相等與不相等兩種轉移。",
+    "explanation": [
+      "令 dp[i][j] 為 A 前 i 個字元與 B 前 j 個字元的 LCS 長度，dp[0][*]=dp[*][0]=0。若 A[i]=B[j]，這兩個字元配對必不吃虧（可以交換論證：最佳解中若 A[i] 與 B[j] 都在尾端，把它們配在一起不會變差），所以 dp[i][j]=dp[i−1][j−1]+1。",
+      "若 A[i]≠B[j]，兩者不可能同時作為共同序列的最後一個字元，至少有一個不被使用，所以 dp[i][j]=max(dp[i−1][j], dp[i][j−1])。答案為 dp[|A|][|B|]。字串長度各 ≤1000，表大小約 10⁶ 格，Python 與 C++ 都能在 1 秒內完成。"
+    ],
+    "complexity": "|A|、|B|≤1000，時間 O(|A||B|)≈10⁶、空間 O(|A||B|)。",
+    "pitfall": "子序列不要求連續，與最長共同子字串不同；dp 表要開 (|A|+1)×(|B|+1) 並留出第 0 列與第 0 行。",
+    "sampleInput": "abcde\nace\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：初始化",
+        "description": "A=abcde，B=ace，dp 第 0 列（A 為空）全為 0",
+        "cells": [
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "i",
+            "0"
+          ],
+          [
+            "dp 列",
+            "0 0 0 0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：處理 A 的 a",
+        "description": "a 與 B 的 a 相等：dp[1][1]=dp[0][0]+1=1，後面沿用 1",
+        "cells": [
+          "0",
+          "1",
+          "1",
+          "1"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "i",
+            "1"
+          ],
+          [
+            "字元",
+            "a"
+          ],
+          [
+            "dp 列",
+            "0 1 1 1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：處理 A 的 c",
+        "description": "c 與 B 的 c 相等：dp[3][2]=dp[2][1]+1=2",
+        "cells": [
+          "0",
+          "1",
+          "2",
+          "2"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "i",
+            "3"
+          ],
+          [
+            "字元",
+            "c"
+          ],
+          [
+            "dp 列",
+            "0 1 2 2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：處理 A 的 e",
+        "description": "e 與 B 的 e 相等：dp[5][3]=dp[4][2]+1=3，答案 3",
+        "cells": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "i",
+            "5"
+          ],
+          [
+            "字元",
+            "e"
+          ],
+          [
+            "dp 列",
+            "0 1 2 3"
+          ],
+          [
+            "答案",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\ndata = sys.stdin.read().split()\nA, B = data[0], data[1]\nn, m = len(A), len(B)\n\ndp = [[0] * (m + 1) for _ in range(n + 1)]\nfor i in range(1, n + 1):\n    for j in range(1, m + 1):\n        if A[i - 1] == B[j - 1]:\n            dp[i][j] = dp[i - 1][j - 1] + 1\n        else:\n            dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])\nprint(dp[n][m])\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    string A, B;\n    cin >> A >> B;\n    int n = A.size(), m = B.size();\n    vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));\n    for (int i = 1; i <= n; i++)\n        for (int j = 1; j <= m; j++) {\n            if (A[i - 1] == B[j - 1]) dp[i][j] = dp[i - 1][j - 1] + 1;\n            else dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);\n        }\n    cout << dp[n][m] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d660",
+    "title": "山谷網格最小通行費",
+    "topic": "dp",
+    "level": "easy",
+    "concept": "網格路徑的最小花費 DP",
+    "goal": "用 dp[i][j] 表示走到 (i,j) 的最小花費，由上方與左方轉移出右下角答案。",
+    "explanation": [
+      "令 dp[i][j] 為從 (1,1) 走到 (i,j) 的最小花費（含這一格）。因為只能向右或向下，抵達 (i,j) 的上一步一定來自 (i−1,j) 或 (i,j−1)，所以 dp[i][j] = g[i][j] + min(dp[i−1][j], dp[i][j−1])。兩個前驅各自已是最小花費，而最後一格的費用與前驅無關，因此取較小者即最優（最優子結構）。",
+      "邊界：dp[1][1]=g[1][1]；第一列只有左邊前驅，第一行只有上方前驅，所以分別是連續累加。只有一列或一行時答案就是整條路徑總和。花費是非負整數且最大 60+60−1 個格子乘 99，遠小於 int 上限。"
+    ],
+    "complexity": "N、M≤60，時間 O(NM)、空間 O(NM)（可滾動成 O(M)）。",
+    "pitfall": "第一列與第一行不能直接套用 min(上, 左)，否則會讀到不存在的格子或把 0 當成合法前驅；也要記得起點與終點的花費都要算進去。",
+    "sampleInput": "3 3\n1 3 1\n1 5 1\n4 2 1\n",
+    "sampleOutput": "7\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：第一列只能一路向右",
+        "description": "第一列每格只有從左邊來的唯一路徑，累加得 1、4、5",
+        "cells": [
+          "1",
+          "4",
+          "5"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "dp[1][1]",
+            "1"
+          ],
+          [
+            "dp[1][3]",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：第二列取上方或左方較小者",
+        "description": "dp[2][1]=1+1=2；dp[2][2]=5+min(4,2)=7；dp[2][3]=1+min(5,7)=6",
+        "cells": [
+          "1",
+          "4",
+          "5",
+          "2",
+          "7",
+          "6"
+        ],
+        "active": [
+          3,
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "dp[2][2]",
+            "7"
+          ],
+          [
+            "dp[2][3]",
+            "6"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：第三列同樣取較小者",
+        "description": "dp[3][1]=6；dp[3][2]=2+min(7,6)=8；dp[3][3]=1+min(6,8)=7",
+        "cells": [
+          "1",
+          "4",
+          "5",
+          "2",
+          "7",
+          "6",
+          "6",
+          "8",
+          "7"
+        ],
+        "active": [
+          6,
+          7,
+          8
+        ],
+        "variables": [
+          [
+            "dp[3][3]",
+            "7"
+          ],
+          [
+            "答案",
+            "7"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n, m = int(data[0]), int(data[1])\n    g = [[int(data[2 + i * m + j]) for j in range(m)] for i in range(n)]\n    dp = [[0] * m for _ in range(n)]\n    for i in range(n):\n        for j in range(m):\n            if i == 0 and j == 0:\n                dp[i][j] = g[i][j]\n            elif i == 0:\n                dp[i][j] = dp[i][j - 1] + g[i][j]\n            elif j == 0:\n                dp[i][j] = dp[i - 1][j] + g[i][j]\n            else:\n                dp[i][j] = min(dp[i - 1][j], dp[i][j - 1]) + g[i][j]\n    print(dp[n - 1][m - 1])\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, m;\n    cin >> n >> m;\n    vector<vector<int>> g(n, vector<int>(m)), dp(n, vector<int>(m, 0));\n    for (auto &row : g)\n        for (int &x : row)\n            cin >> x;\n    for (int i = 0; i < n; i++) {\n        for (int j = 0; j < m; j++) {\n            if (i == 0 && j == 0)\n                dp[i][j] = g[i][j];\n            else if (i == 0)\n                dp[i][j] = dp[i][j - 1] + g[i][j];\n            else if (j == 0)\n                dp[i][j] = dp[i - 1][j] + g[i][j];\n            else\n                dp[i][j] = min(dp[i - 1][j], dp[i][j - 1]) + g[i][j];\n        }\n    }\n    cout << dp[n - 1][m - 1] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d661",
+    "title": "不相鄰的盆栽",
+    "topic": "dp",
+    "level": "easy",
+    "concept": "不相鄰選取的線性 DP",
+    "goal": "用 f[i] 表示前 i 盆的最大分數，依「選或不選第 i 盆」轉移。",
+    "explanation": [
+      "令 f[i] 為只考慮前 i 盆時的最大總分。第 i 盆若不選，最佳值就是 f[i−1]；若選第 i 盆，第 i−1 盆就不能選，剩下的部分是前 i−2 盆的任意合法選法，最佳為 f[i−2]，再加上 a[i]。兩種情況窮盡所有方案，所以 f[i] = max(f[i−1], f[i−2]+a[i])。",
+      "邊界：f[0]=0（一盆都不選，題目允許）、f[1]=a[1]。分數皆非負，所以不選任何盆栽的 0 不會比別的方案大，不需特別處理負數。N=1 時答案就是 a[1]。這個 DP 只看前兩個狀態，可以只用兩個變數完成。"
+    ],
+    "complexity": "N≤1000，時間 O(N)、空間 O(N)（可壓縮成 O(1)）。",
+    "pitfall": "把 f[i] 寫成 f[i−1]+a[i] 會選到相鄰盆栽；另外 N=1 時若直接讀 f[i−2] 要注意索引不要越界。",
+    "sampleInput": "5\n2 7 9 3 1\n",
+    "sampleOutput": "12\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：前 1 盆與前 2 盆",
+        "description": "f[1]=2；f[2]=max(f[1], f[0]+7)=7，選第 2 盆比選第 1 盆好",
+        "cells": [
+          "0",
+          "2",
+          "7"
+        ],
+        "active": [
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "f[1]",
+            "2"
+          ],
+          [
+            "f[2]",
+            "7"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：處理第 3、4 盆",
+        "description": "f[3]=max(7, 2+9)=11；f[4]=max(11, 7+3)=11，第 4 盆不值得選",
+        "cells": [
+          "0",
+          "2",
+          "7",
+          "11",
+          "11"
+        ],
+        "active": [
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "f[3]",
+            "11"
+          ],
+          [
+            "f[4]",
+            "11"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：處理第 5 盆",
+        "description": "f[5]=max(f[4], f[3]+1)=max(11,12)=12，對應選第 1、3、5 盆",
+        "cells": [
+          "0",
+          "2",
+          "7",
+          "11",
+          "11",
+          "12"
+        ],
+        "active": [
+          5
+        ],
+        "variables": [
+          [
+            "f[5]",
+            "12"
+          ],
+          [
+            "答案",
+            "12"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    a = [int(x) for x in data[1:1 + n]]\n    f = [0] * (n + 1)\n    f[1] = a[0]\n    for i in range(2, n + 1):\n        f[i] = max(f[i - 1], f[i - 2] + a[i - 1])\n    print(f[n])\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n + 1), f(n + 1, 0);\n    for (int i = 1; i <= n; i++)\n        cin >> a[i];\n    f[1] = a[1];\n    for (int i = 2; i <= n; i++)\n        f[i] = max(f[i - 1], f[i - 2] + a[i]);\n    cout << f[n] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d662",
+    "title": "倉庫貨物有限裝載",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "有限件數背包（多重背包）",
+    "goal": "把 c 件相同貨物拆成 c 個 0/1 物品，用一維 dp 由大到小更新。",
+    "explanation": [
+      "令 dp[x] 為載重上限 x 時的最大價值。有 c 件的貨物等價於 c 個重量 w、價值 v 的 0/1 物品，每個可選或不選，選 k 件正好對應「c 個中挑 k 個」，因此可以逐件做 0/1 背包。0/1 背包的轉移是 dp[x] = max(dp[x], dp[x−w]+v)，x 必須從 W 往下遞減，這樣 dp[x−w] 還是「尚未使用這一件」的舊值，不會同一件被重複使用。",
+      "dp 全部初始為 0 且定義為「重量不超過 x」，所以最後 dp[W] 就是答案，不必另外找最大格。總物品件數最多 50×30=1500，每件掃 W≤1000，共約 150 萬次運算，Python 與 C++ 都綽綽有餘，不需要二進位拆分。"
+    ],
+    "complexity": "N≤50、c≤30、W≤1000，時間 O(W·Σc_i)≈1.5×10^6、空間 O(W)。",
+    "pitfall": "x 若由小到大更新會變成無限件的完全背包，導致超過 c_i 件；另外每件貨物要各自重複整個由大到小的迴圈，而不是只對整個貨物做一次。",
+    "sampleInput": "2 10\n3 5 2\n4 9 3\n",
+    "sampleOutput": "19\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：初始 dp",
+        "description": "dp[x] 表示載重上限 x 時的最大價值，一開始都是 0",
+        "cells": [
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          10
+        ],
+        "variables": [
+          [
+            "已處理貨物",
+            "0"
+          ],
+          [
+            "dp[10]",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：處理貨物 1（重 3、值 5、共 2 件）",
+        "description": "把它當成 2 個獨立的 0/1 物品，各做一次由大到小更新，重量 6 以上可拿兩件得 10",
+        "cells": [
+          "0",
+          "0",
+          "0",
+          "5",
+          "5",
+          "5",
+          "10",
+          "10",
+          "10",
+          "10",
+          "10"
+        ],
+        "active": [
+          3,
+          6
+        ],
+        "variables": [
+          [
+            "已處理貨物",
+            "1"
+          ],
+          [
+            "dp[10]",
+            "10"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：處理貨物 2（重 4、值 9、共 3 件）",
+        "description": "同樣拆成 3 個 0/1 物品；dp[10]=max(10, dp[6]+9, dp[2]+18)=max(10,19,18)=19",
+        "cells": [
+          "0",
+          "0",
+          "0",
+          "5",
+          "9",
+          "9",
+          "10",
+          "14",
+          "18",
+          "18",
+          "19"
+        ],
+        "active": [
+          10
+        ],
+        "variables": [
+          [
+            "已處理貨物",
+            "2"
+          ],
+          [
+            "答案 dp[10]",
+            "19"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n, cap = int(data[0]), int(data[1])\n    dp = [0] * (cap + 1)\n    pos = 2\n    for _ in range(n):\n        w, v, c = int(data[pos]), int(data[pos + 1]), int(data[pos + 2])\n        pos += 3\n        for _ in range(c):\n            for x in range(cap, w - 1, -1):\n                cand = dp[x - w] + v\n                if cand > dp[x]:\n                    dp[x] = cand\n    print(dp[cap])\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, cap;\n    cin >> n >> cap;\n    vector<int> dp(cap + 1, 0);\n    for (int k = 0; k < n; k++) {\n        int w, v, c;\n        cin >> w >> v >> c;\n        for (int t = 0; t < c; t++) {\n            for (int x = cap; x >= w; x--)\n                dp[x] = max(dp[x], dp[x - w] + v);\n        }\n    }\n    cout << dp[cap] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d663",
+    "title": "文字修訂計價器",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "加權編輯距離",
+    "goal": "用 D[i][j] 比較插入、刪除、替換三種最後操作的成本，得到 A 變成 B 的最小花費。",
+    "explanation": [
+      "令 D[i][j] 為把 A 的前 i 個字元變成 B 的前 j 個字元的最小花費。看最後一步：刪除 A[i] 成本 D[i−1][j]+c_d；在尾端插入 B[j] 成本 D[i][j−1]+c_i；若 A[i]=B[j] 則免費對齊 D[i−1][j−1]，否則替換 D[i−1][j−1]+c_r。這三種情況涵蓋所有可能的最後一步，取最小值即可。",
+      "邊界：D[i][0]=i·c_d（全部刪掉）、D[0][j]=j·c_i（全部插入）。三種花費不對稱，所以不能像標準編輯距離那樣交換 A、B，方向必須固定為 A→B。替換若比刪除加插入還貴（c_r > c_i+c_d），DP 會自然改走刪除＋插入，不需特別判斷。"
+    ],
+    "complexity": "|A|,|B|≤200，時間 O(|A||B|)≈4×10^4、空間 O(|A||B|)。",
+    "pitfall": "插入與刪除成本不同，刪除用 c_d、插入用 c_i 不能對調；兩字元相同時替換成本是 0 而不是 c_r；第一列與第一欄要用 c_i、c_d 的倍數初始化。",
+    "sampleInput": "horse\nros\n1 1 1\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：第 0 列（來源為空）",
+        "description": "空字串變成 r、ro、ros 只能全部插入，成本 0、1、2、3",
+        "cells": [
+          "0",
+          "1",
+          "2",
+          "3"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "i",
+            "0"
+          ],
+          [
+            "D[0][3]",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：來源 ho 變成 ros",
+        "description": "第 2 列 = [2, 2, 1, 2]；例如 D[2][2]：o 與 o 相同，繼承 D[1][1]=1",
+        "cells": [
+          "2",
+          "2",
+          "1",
+          "2"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "i",
+            "2"
+          ],
+          [
+            "D[2][3]",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：來源 hors 變成 ros",
+        "description": "第 4 列 = [4, 3, 3, 2]；s 與 s 相同時沿對角線繼承 D[3][2]",
+        "cells": [
+          "4",
+          "3",
+          "3",
+          "2"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "i",
+            "4"
+          ],
+          [
+            "D[4][3]",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：來源 horse 變成 ros",
+        "description": "第 5 列 = [5, 4, 4, 3]；D[5][3]=min(刪 e: D[4][3]+1, 替換: D[4][2]+1, 插入: D[5][2]+1)=3",
+        "cells": [
+          "5",
+          "4",
+          "4",
+          "3"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "i",
+            "5"
+          ],
+          [
+            "答案 D[5][3]",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    a, b = data[0], data[1]\n    ci, cd, cr = int(data[2]), int(data[3]), int(data[4])\n    n, m = len(a), len(b)\n    d = [[0] * (m + 1) for _ in range(n + 1)]\n    for i in range(1, n + 1):\n        d[i][0] = i * cd\n    for j in range(1, m + 1):\n        d[0][j] = j * ci\n    for i in range(1, n + 1):\n        for j in range(1, m + 1):\n            sub = d[i - 1][j - 1] + (0 if a[i - 1] == b[j - 1] else cr)\n            d[i][j] = min(d[i - 1][j] + cd, d[i][j - 1] + ci, sub)\n    print(d[n][m])\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    string a, b;\n    int ci, cd, cr;\n    cin >> a >> b >> ci >> cd >> cr;\n    int n = a.size(), m = b.size();\n    vector<vector<int>> d(n + 1, vector<int>(m + 1, 0));\n    for (int i = 1; i <= n; i++)\n        d[i][0] = i * cd;\n    for (int j = 1; j <= m; j++)\n        d[0][j] = j * ci;\n    for (int i = 1; i <= n; i++) {\n        for (int j = 1; j <= m; j++) {\n            int sub = d[i - 1][j - 1] + (a[i - 1] == b[j - 1] ? 0 : cr);\n            d[i][j] = min({d[i - 1][j] + cd, d[i][j - 1] + ci, sub});\n        }\n    }\n    cout << d[n][m] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d664",
+    "title": "矩陣連乘最少次數",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "區間 DP：矩陣連乘",
+    "goal": "用 m[i][j] 表示相乘第 i 到第 j 個矩陣的最少次數，枚舉最後一次相乘的切點。",
+    "explanation": [
+      "令 m[i][j] 為計算 M_i…M_j 的最少純量乘法次數。任何括號方式都有「最後一次相乘」，它把區間切成 M_i…M_k 與 M_{k+1}…M_j 兩段，兩段結果分別是 d_{i−1}×d_k 與 d_k×d_j 的矩陣，合併花費 d_{i−1}·d_k·d_j。因為左右兩段互不影響，各自取最小即可：m[i][j] = min_{i≤k<j}(m[i][k]+m[k+1][j]+d_{i−1}·d_k·d_j)。",
+      "邊界：m[i][i]=0，所以 N=1 輸出 0。必須依區間長度由短到長計算，確保轉移用到的子區間都已完成。數值方面，最壞約 100 個矩陣、每次 10^6 的乘積，總和仍在 10^8 量級，遠低於 long long，也在 int 範圍內。"
+    ],
+    "complexity": "N≤100，時間 O(N^3)≈1.7×10^5 次轉移、空間 O(N^2)。",
+    "pitfall": "d 陣列有 N+1 個數，M_i 的尺寸是 d[i−1]×d[i]，索引很容易錯一位；迴圈必須先枚舉區間長度，而不是直接 i、j 兩層由小到大。",
+    "sampleInput": "3\n10 30 5 60\n",
+    "sampleOutput": "4500\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：長度 1 的區間",
+        "description": "單一矩陣不需要乘法，m[1][1]=m[2][2]=m[3][3]=0",
+        "cells": [
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "尺寸 d",
+            "10,30,5,60"
+          ],
+          [
+            "區間長度",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：長度 2 的區間",
+        "description": "m[1][2]=10·30·5=1500；m[2][3]=30·5·60=9000",
+        "cells": [
+          "1500",
+          "9000"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "m[1][2]",
+            "1500"
+          ],
+          [
+            "m[2][3]",
+            "9000"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：長度 3，枚舉切點 k",
+        "description": "k=1：0+9000+10·30·60=27000；k=2：1500+0+10·5·60=4500；取較小者",
+        "cells": [
+          "27000",
+          "4500"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "m[1][3]",
+            "4500"
+          ],
+          [
+            "最佳切點 k",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    d = [int(x) for x in data[1:2 + n]]\n    m = [[0] * (n + 1) for _ in range(n + 1)]\n    for length in range(2, n + 1):\n        for i in range(1, n - length + 2):\n            j = i + length - 1\n            best = None\n            for k in range(i, j):\n                cost = m[i][k] + m[k + 1][j] + d[i - 1] * d[k] * d[j]\n                if best is None or cost < best:\n                    best = cost\n            m[i][j] = best\n    print(m[1][n])\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<ll> d(n + 1);\n    for (auto &x : d)\n        cin >> x;\n    vector<vector<ll>> m(n + 2, vector<ll>(n + 2, 0));\n    for (int len = 2; len <= n; len++) {\n        for (int i = 1; i + len - 1 <= n; i++) {\n            int j = i + len - 1;\n            ll best = LLONG_MAX;\n            for (int k = i; k < j; k++)\n                best = min(best, m[i][k] + m[k + 1][j] + d[i - 1] * d[k] * d[j]);\n            m[i][j] = best;\n        }\n    }\n    cout << m[1][n] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d665",
+    "title": "最少切成迴文",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "迴文判定表加切割 DP",
+    "goal": "先用區間 DP 預處理所有子字串是否為迴文，再用 g[j] 表示前 j 字元最少片數。",
+    "explanation": [
+      "先預處理 pal[i][j]：子字串 S[i..j] 是迴文，若且唯若 S[i]=S[j] 且內部 S[i+1..j−1] 是迴文（長度≤2 時內部視為空）。i 由大到小、j 由小到大填表，內部區間已先算好。接著令 g[j] 為前 j 個字元最少能分成幾片迴文：枚舉最後一片 S[i..j−1]，若它是迴文，則 g[j]=min(g[i]+1)。g[0]=0。",
+      "答案是切刀數 = g[n]−1，因為 k 片只需要 k−1 刀。單一字元一定是迴文，所以每個 g[j] 都有合法值（最差是逐字元切開）。若整個字串是迴文，枚舉 i=0 時 g[n]=1，答案 0，符合題意。"
+    ],
+    "complexity": "|S|≤1000，預處理 O(n^2) 與 DP O(n^2)，各約 10^6 以內，空間 O(n^2)。",
+    "pitfall": "答案是片數減 1 而不是片數；迴文表必須先填好內層（i 由大到小）才能用，否則會讀到尚未計算的值；長度 1、2 的子字串要特判。",
+    "sampleInput": "aab\n",
+    "sampleOutput": "1\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：前 1 個字元 a",
+        "description": "a 本身是迴文，g[1]=g[0]+1=1 片",
+        "cells": [
+          "0",
+          "1"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "g[1]",
+            "1"
+          ],
+          [
+            "最少刀數",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：前 2 個字元 aa",
+        "description": "最後片段取 aa（迴文）：g[0]+1=1；取 a：g[1]+1=2；最小 1 片",
+        "cells": [
+          "0",
+          "1",
+          "1"
+        ],
+        "active": [
+          2
+        ],
+        "variables": [
+          [
+            "g[2]",
+            "1"
+          ],
+          [
+            "最少刀數",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：前 3 個字元 aab",
+        "description": "最後片段 b：g[2]+1=2；ab、aab 都不是迴文；所以 g[3]=2 片，刀數=2−1=1",
+        "cells": [
+          "0",
+          "1",
+          "1",
+          "2"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "g[3]",
+            "2"
+          ],
+          [
+            "答案 g[3]−1",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    s = sys.stdin.read().split()[0]\n    n = len(s)\n    pal = [[False] * n for _ in range(n)]\n    for i in range(n - 1, -1, -1):\n        for j in range(i, n):\n            if s[i] == s[j] and (j - i < 2 or pal[i + 1][j - 1]):\n                pal[i][j] = True\n    g = [0] * (n + 1)\n    for j in range(1, n + 1):\n        best = j\n        for i in range(j):\n            if pal[i][j - 1] and g[i] + 1 < best:\n                best = g[i] + 1\n        g[j] = best\n    print(g[n] - 1)\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    string s;\n    cin >> s;\n    int n = s.size();\n    vector<vector<char>> pal(n, vector<char>(n, 0));\n    for (int i = n - 1; i >= 0; i--) {\n        for (int j = i; j < n; j++) {\n            if (s[i] == s[j] && (j - i < 2 || pal[i + 1][j - 1]))\n                pal[i][j] = 1;\n        }\n    }\n    vector<int> g(n + 1, 0);\n    for (int j = 1; j <= n; j++) {\n        g[j] = j;\n        for (int i = 0; i < j; i++)\n            if (pal[i][j - 1])\n                g[j] = min(g[j], g[i] + 1);\n    }\n    cout << g[n] - 1 << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d666",
+    "title": "子序列出現方式數",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "子序列計數 DP",
+    "goal": "用 dp[j] 記錄 T 前 j 個字元的出現方式數，依 S 的字元由後往前累加。",
+    "explanation": [
+      "令 dp[j] 為目前已掃過的 S 前綴中，選出位置組成 T 前 j 個字元的方式數，dp[0]=1（空字串有一種方式）。讀入新字元 c 時，每個 j 的方式分兩類：不使用這個 c（保留原 dp[j]），或讓這個 c 當作 T[j] 的配對（僅當 T[j]=c），此時前面要由 dp[j−1] 提供方式。故 dp[j] += dp[j−1]，只在 T[j]=c 時進行。",
+      "j 必須由大到小更新，使 dp[j−1] 還是處理這個字元「之前」的值，否則同一個 S 位置會被用兩次。範例 rabbbit：三個 b 中選兩個去配 T 的 bb，共 C(3,2)=3 種，與 DP 結果一致。每次加法都對 10^9+7 取餘數；因為方式數可達組合數等級（例如全 a 的字串），不取餘會爆 long long。"
+    ],
+    "complexity": "|S|,|T|≤1000，時間 O(|S||T|)≈10^6、空間 O(|T|)。",
+    "pitfall": "忘記取模、更新順序由小到大（會重複使用同一位置）、把相同字串視為同一種方式（題目以位置區分）。",
+    "sampleInput": "rabbbit\nrabbit\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：讀入 S 的第 1 個字元 r",
+        "description": "dp[j] 表示目前已讀的 S 前綴中，T 前 j 個字元作為子序列的方式數；字元相符的 j 由大到小累加 dp[j−1]",
+        "cells": [
+          "1",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "已讀字元數",
+            "1"
+          ],
+          [
+            "dp[6]",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：讀入 S 的第 3 個字元 b",
+        "description": "dp[j] 表示目前已讀的 S 前綴中，T 前 j 個字元作為子序列的方式數；字元相符的 j 由大到小累加 dp[j−1]",
+        "cells": [
+          "1",
+          "1",
+          "1",
+          "1",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "已讀字元數",
+            "3"
+          ],
+          [
+            "dp[6]",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：讀入 S 的第 5 個字元 b",
+        "description": "dp[j] 表示目前已讀的 S 前綴中，T 前 j 個字元作為子序列的方式數；字元相符的 j 由大到小累加 dp[j−1]",
+        "cells": [
+          "1",
+          "1",
+          "1",
+          "3",
+          "3",
+          "0",
+          "0"
+        ],
+        "active": [
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "已讀字元數",
+            "5"
+          ],
+          [
+            "dp[6]",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：讀入 S 的第 7 個字元 t",
+        "description": "dp[j] 表示目前已讀的 S 前綴中，T 前 j 個字元作為子序列的方式數；字元相符的 j 由大到小累加 dp[j−1]",
+        "cells": [
+          "1",
+          "1",
+          "1",
+          "3",
+          "3",
+          "3",
+          "3"
+        ],
+        "active": [
+          6
+        ],
+        "variables": [
+          [
+            "已讀字元數",
+            "7"
+          ],
+          [
+            "dp[6]",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nMOD = 10**9 + 7\n\n\ndef main():\n    data = sys.stdin.read().split()\n    s, t = data[0], data[1]\n    m = len(t)\n    dp = [0] * (m + 1)\n    dp[0] = 1\n    for c in s:\n        for j in range(m, 0, -1):\n            if t[j - 1] == c:\n                dp[j] = (dp[j] + dp[j - 1]) % MOD\n    print(dp[m] % MOD)\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\n\nint main() {\n    string s, t;\n    cin >> s >> t;\n    int m = t.size();\n    vector<ll> dp(m + 1, 0);\n    dp[0] = 1;\n    for (char c : s) {\n        for (int j = m; j >= 1; j--)\n            if (t[j - 1] == c)\n                dp[j] = (dp[j] + dp[j - 1]) % MOD;\n    }\n    cout << dp[m] % MOD << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d667",
+    "title": "最大全一正方形",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "最大正方形 DP",
+    "goal": "用 dp[i][j] 表示以 (i,j) 為右下角的最大全 1 正方形邊長，由三個鄰格取最小。",
+    "explanation": [
+      "令 dp[i][j] 為以 (i,j) 為右下角的最大全 1 正方形邊長。若該格是 0 則為 0；若是 1，則邊長 k 的正方形需要上方 (i−1,j)、左方 (i,j−1)、左上 (i−1,j−1) 三格各自能撐起邊長 k−1 的正方形，所以 dp[i][j] = min(上, 左, 左上) + 1。取最小值是因為任何一個方向較短，就會在該方向出現 0。",
+      "邊界：第一列或第一行的 1 邊長只能是 1。答案是所有 dp 的最大值 best 的平方（面積）；若沒有 1，best=0，答案 0。輸入每列是不含空白的字串，要以字串讀取而非逐數字，並以字元 '1' 判斷。"
+    ],
+    "complexity": "N、M≤100，時間 O(NM)、空間 O(NM)。",
+    "pitfall": "輸出的是面積（邊長平方）而不是邊長；dp 取三鄰格最小值，漏掉左上格會高估；每列是連續字串，不能用整數讀入。",
+    "sampleInput": "4 5\n10100\n10111\n11111\n10010\n",
+    "sampleOutput": "4\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：第一列",
+        "description": "第一列的 1 邊長最多為 1，dp 為 [1, 0, 1, 0, 0]",
+        "cells": [
+          "1",
+          "0",
+          "1",
+          "0",
+          "0"
+        ],
+        "active": [
+          0,
+          2
+        ],
+        "variables": [
+          [
+            "目前最大邊長",
+            "1"
+          ],
+          [
+            "面積",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：第二、三列",
+        "description": "dp[3][4]：左 1、上 1、左上 1 取最小再 +1 = 2，dp[3][5] 亦同；第 3 列為 [1, 1, 1, 2, 2]",
+        "cells": [
+          "1",
+          "0",
+          "1",
+          "0",
+          "0",
+          "1",
+          "0",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "2",
+          "2"
+        ],
+        "active": [
+          13,
+          14
+        ],
+        "variables": [
+          [
+            "目前最大邊長",
+            "2"
+          ],
+          [
+            "面積",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：第四列",
+        "description": "第四列的 1 邊長都只有 1，最大邊長仍為 2，面積 4",
+        "cells": [
+          "1",
+          "0",
+          "1",
+          "0",
+          "0",
+          "1",
+          "0",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "2",
+          "2",
+          "1",
+          "0",
+          "0",
+          "1",
+          "0"
+        ],
+        "active": [
+          15,
+          18
+        ],
+        "variables": [
+          [
+            "最大邊長",
+            "2"
+          ],
+          [
+            "答案（面積）",
+            "4"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n, m = int(data[0]), int(data[1])\n    grid = data[2:2 + n]\n    dp = [[0] * m for _ in range(n)]\n    best = 0\n    for i in range(n):\n        for j in range(m):\n            if grid[i][j] == '1':\n                if i == 0 or j == 0:\n                    dp[i][j] = 1\n                else:\n                    dp[i][j] = min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]) + 1\n                best = max(best, dp[i][j])\n    print(best * best)\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, m;\n    cin >> n >> m;\n    vector<string> grid(n);\n    for (auto &row : grid)\n        cin >> row;\n    vector<vector<int>> dp(n, vector<int>(m, 0));\n    int best = 0;\n    for (int i = 0; i < n; i++) {\n        for (int j = 0; j < m; j++) {\n            if (grid[i][j] == '1') {\n                if (i == 0 || j == 0)\n                    dp[i][j] = 1;\n                else\n                    dp[i][j] = min({dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]}) + 1;\n                best = max(best, dp[i][j]);\n            }\n        }\n    }\n    cout << best * best << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d668",
+    "title": "快遞員巡迴路線",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "旅行推銷員的狀態壓縮 DP",
+    "goal": "用 dp[mask][j] 記錄已拜訪集合與目前所在城市，最後加上回到起點的邊。",
+    "explanation": [
+      "令 dp[mask][j] 為從城市 1 出發、剛好拜訪 mask 集合內的城市、目前停在 j 的最小花費（mask 必須含城市 1 與 j）。轉移枚舉下一個尚未拜訪的城市 k：dp[mask|{k}][k] = min(dp[mask][j] + d[j][k])。起點 dp[{1}][1]=0。因為圖不對稱且不能借道，只能直接使用 d[j][k] 這條邊，不可用最短路取代。",
+      "答案是 min over j≠1 of dp[全集][j] + d[j][1]，即走完所有城市再回起點。N=1 時沒有任何邊，答案為 0，需特判。狀態數 2^N·N，每個狀態轉移 N 次，共 N²·2^N，N=12 時約 59 萬次運算。"
+    ],
+    "complexity": "N≤12，時間 O(N²·2^N)≈5.9×10^5、空間 O(N·2^N)。",
+    "pitfall": "N=1 時沒有 j≠1，不特判會取到空的 min；dp 起點的 mask 要含城市 1；忘了加回到城市 1 的最後一段；用 INF 相加時要避免溢位。",
+    "sampleInput": "4\n0 10 15 20\n10 0 35 25\n15 35 0 30\n20 25 30 0\n",
+    "sampleOutput": "80\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：只拜訪城市 1",
+        "description": "mask=0001，dp[0001][城市1]=0，其他都不可達（∞）",
+        "cells": [
+          "0",
+          "∞",
+          "∞",
+          "∞"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "mask",
+            "0001"
+          ],
+          [
+            "起點花費",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：加入城市 2 與 3",
+        "description": "mask=0111 時 dp[0111][城市3]=min(10+35, 15+35)=45，dp[0111][城市2]=min(15+35,...)=50；格子為各結尾城市的最小花費",
+        "cells": [
+          "∞",
+          "50",
+          "45",
+          "∞"
+        ],
+        "active": [
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "mask",
+            "0111"
+          ],
+          [
+            "dp[0111][城市3]",
+            "45"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：四個城市都拜訪完",
+        "description": "mask=1111 各結尾城市為 ['∞', 70, 65, 75]；再加回城市 1 的邊後取最小",
+        "cells": [
+          "∞",
+          "70",
+          "65",
+          "75"
+        ],
+        "active": [
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "結尾城市2＋回程",
+            "80"
+          ],
+          [
+            "結尾城市3＋回程",
+            "80"
+          ],
+          [
+            "結尾城市4＋回程",
+            "95"
+          ],
+          [
+            "答案",
+            "80"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    d = [[int(data[1 + i * n + j]) for j in range(n)] for i in range(n)]\n    if n == 1:\n        print(0)\n        return\n    INF = float('inf')\n    full = (1 << n) - 1\n    dp = [[INF] * n for _ in range(1 << n)]\n    dp[1][0] = 0\n    for mask in range(1, 1 << n):\n        if not mask & 1:\n            continue\n        for j in range(n):\n            cur = dp[mask][j]\n            if cur == INF:\n                continue\n            for k in range(n):\n                if mask >> k & 1:\n                    continue\n                nm = mask | (1 << k)\n                v = cur + d[j][k]\n                if v < dp[nm][k]:\n                    dp[nm][k] = v\n    print(min(dp[full][j] + d[j][0] for j in range(1, n)))\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<vector<int>> d(n, vector<int>(n));\n    for (auto &row : d)\n        for (int &x : row)\n            cin >> x;\n    if (n == 1) {\n        cout << 0 << '\\n';\n        return 0;\n    }\n    const int INF = 1e9;\n    int full = (1 << n) - 1;\n    vector<vector<int>> dp(1 << n, vector<int>(n, INF));\n    dp[1][0] = 0;\n    for (int mask = 1; mask <= full; mask++) {\n        if (!(mask & 1))\n            continue;\n        for (int j = 0; j < n; j++) {\n            if (dp[mask][j] >= INF)\n                continue;\n            for (int k = 0; k < n; k++) {\n                if (mask >> k & 1)\n                    continue;\n                int nm = mask | (1 << k);\n                dp[nm][k] = min(dp[nm][k], dp[mask][j] + d[j][k]);\n            }\n        }\n    }\n    int ans = INF;\n    for (int j = 1; j < n; j++)\n        ans = min(ans, dp[full][j] + d[j][0]);\n    cout << ans << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d669",
+    "title": "員工工作指派",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "指派問題的狀態壓縮 DP",
+    "goal": "用 dp[mask] 表示已用掉的工作集合，員工依序處理，由 mask 的 1 個數推出目前員工。",
+    "explanation": [
+      "令 dp[mask] 為前 popcount(mask) 位員工，恰好分到 mask 這些工作時的最小總成本。因為每位員工恰好一項工作，處理第 i 位員工（i=popcount(mask)）時，枚舉一個不在 mask 內的工作 j：dp[mask|{j}] = min(dp[mask] + c[i][j])。員工順序固定、工作集合決定狀態，所以不必另外記錄員工是誰。",
+      "dp[0]=0，答案為 dp[全集]。不同員工配不同工作的方案共 N!，但相同 mask 的部分指派只需保留最小者，將 12! 約 4.8 億降到 2^12·12 約 5 萬次轉移。成本皆為正整數，總和最大 12×100，不會溢位。"
+    ],
+    "complexity": "N≤12，時間 O(N·2^N)≈5×10^4、空間 O(2^N)。",
+    "pitfall": "員工編號要用 mask 的 1 的個數推得，若 mask 已滿（i=N）就不能再轉移，否則會讀到 c[N][*] 越界；每項工作只能指派一次，轉移時須檢查工作不在 mask 內。",
+    "sampleInput": "3\n9 2 7\n6 4 3\n5 8 1\n",
+    "sampleOutput": "9\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：員工 1 選工作",
+        "description": "mask 只有一個 1 的狀態：dp[001]=9、dp[010]=2、dp[100]=7（其餘尚未到達）",
+        "cells": [
+          "0",
+          "9",
+          "2",
+          "∞",
+          "7",
+          "∞",
+          "∞",
+          "∞"
+        ],
+        "active": [
+          1,
+          2,
+          4
+        ],
+        "variables": [
+          [
+            "已指派員工數",
+            "1"
+          ],
+          [
+            "dp[010]",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：員工 2 選工作",
+        "description": "dp[011]=min(dp[010]+6, dp[001]+4)=8；dp[101]=min(dp[100]+6, dp[001]+3)=12；dp[110]=min(dp[100]+4, dp[010]+3)=5",
+        "cells": [
+          "0",
+          "9",
+          "2",
+          "8",
+          "7",
+          "12",
+          "5",
+          "∞"
+        ],
+        "active": [
+          3,
+          5,
+          6
+        ],
+        "variables": [
+          [
+            "已指派員工數",
+            "2"
+          ],
+          [
+            "dp[110]",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：員工 3 選工作",
+        "description": "dp[111]=min(dp[110]+5, dp[101]+8, dp[011]+1)=min(10,20,9)=9",
+        "cells": [
+          "0",
+          "9",
+          "2",
+          "8",
+          "7",
+          "12",
+          "5",
+          "9"
+        ],
+        "active": [
+          7
+        ],
+        "variables": [
+          [
+            "已指派員工數",
+            "3"
+          ],
+          [
+            "答案 dp[111]",
+            "9"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    c = [[int(data[1 + i * n + j]) for j in range(n)] for i in range(n)]\n    INF = float('inf')\n    dp = [INF] * (1 << n)\n    dp[0] = 0\n    for mask in range(1 << n):\n        if dp[mask] == INF:\n            continue\n        i = bin(mask).count('1')\n        if i >= n:\n            continue\n        for j in range(n):\n            if not mask >> j & 1:\n                nm = mask | (1 << j)\n                v = dp[mask] + c[i][j]\n                if v < dp[nm]:\n                    dp[nm] = v\n    print(dp[(1 << n) - 1])\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<vector<int>> c(n, vector<int>(n));\n    for (auto &row : c)\n        for (int &x : row)\n            cin >> x;\n    const int INF = 1e9;\n    vector<int> dp(1 << n, INF);\n    dp[0] = 0;\n    for (int mask = 0; mask < (1 << n); mask++) {\n        if (dp[mask] >= INF)\n            continue;\n        int i = __builtin_popcount(mask);\n        if (i >= n)\n            continue;\n        for (int j = 0; j < n; j++) {\n            if (mask >> j & 1)\n                continue;\n            int nm = mask | (1 << j);\n            dp[nm] = min(dp[nm], dp[mask] + c[i][j]);\n        }\n    }\n    cout << dp[(1 << n) - 1] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d670",
+    "title": "數列切段最小極差",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "分段 DP：最後一段的起點決定轉移",
+    "goal": "能定義 dp[i][j] 為前 i 個數切成 j 段的最小成本，並在往前延伸最後一段時順便維護 max/min。",
+    "explanation": [
+      "令 dp[i][j] 表示前 i 個數切成恰好 j 段的最小總成本。任何合法切法的最後一段都是 a[t+1..i]，其前面必然是把前 t 個數切成 j-1 段，且兩部分成本可加，所以 dp[i][j]=min_t(dp[t][j-1]+max(a[t+1..i])-min(a[t+1..i]))。因為每種切法恰有一個最後一段起點 t，窮舉 t 就涵蓋所有情形，子問題取最優不會損失全域最優（最優子結構）。",
+      "實作時讓 t 從 i-1 往下遞減，同時維護目前區間的最大與最小值，每一步 O(1) 就能得到極差，不需重新掃描。邊界：dp[0][0]=0，其餘為無窮大；t 必須至少為 j-1，否則前面不夠分成 j-1 個非空段。因為每段必須非空，K≤N 保證有解。"
+    ],
+    "complexity": "N≤100：狀態 N·K 個，每個轉移 O(N)，時間 O(N²K)≈10⁶，空間 O(NK)。",
+    "pitfall": "忘了每段必須非空（t 的下限是 j-1），或用 0 當作無窮大導致把不可能的狀態當成成本 0。",
+    "sampleInput": "6 3\n1 5 2 8 9 3\n",
+    "sampleOutput": "5\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：切成 1 段的成本",
+        "description": "dp[i][1] 就是前 i 個數的 max-min：0,4,4,7,8,8。",
+        "cells": [
+          "0",
+          "4",
+          "4",
+          "7",
+          "8",
+          "8"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "j",
+            "1"
+          ],
+          [
+            "dp[6][1]",
+            "8"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：切成 2 段",
+        "description": "dp[i][2]=min(dp[t][1]+區間 t+1..i 的極差)。例如 dp[3][2]：[1][5 2] 成本 0+3=3，[1 5][2] 成本 4+0=4，取 3。",
+        "cells": [
+          "∞",
+          "0",
+          "3",
+          "4",
+          "5",
+          "7"
+        ],
+        "active": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "variables": [
+          [
+            "j",
+            "2"
+          ],
+          [
+            "dp[3][2]",
+            "3"
+          ],
+          [
+            "dp[6][2]",
+            "7"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：切成 3 段",
+        "description": "dp[i][3] 由 dp[t][2] 轉移。dp[6][3]：[1 5 2][8 9][3] 或 [1][5 2][8 9 3] 等都試過，最小為 5。",
+        "cells": [
+          "∞",
+          "∞",
+          "0",
+          "3",
+          "4",
+          "5"
+        ],
+        "active": [
+          5
+        ],
+        "variables": [
+          [
+            "j",
+            "3"
+          ],
+          [
+            "dp[6][3]",
+            "5"
+          ],
+          [
+            "答案",
+            "5"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n, k = int(data[0]), int(data[1])\n    a = list(map(int, data[2:2 + n]))\n    INF = 10 ** 9\n    # dp[i][j]：前 i 個數切成恰好 j 段的最小總成本\n    dp = [[INF] * (k + 1) for _ in range(n + 1)]\n    dp[0][0] = 0\n    for i in range(1, n + 1):\n        for j in range(1, min(i, k) + 1):\n            lo, hi = INF, 0\n            # 最後一段是 a[t..i-1]，前面 t 個數切成 j-1 段，所以 t >= j-1\n            for t in range(i - 1, j - 2, -1):\n                lo = min(lo, a[t])\n                hi = max(hi, a[t])\n                cand = dp[t][j - 1] + hi - lo\n                if cand < dp[i][j]:\n                    dp[i][j] = cand\n    print(dp[n][k])\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, k;\n    cin >> n >> k;\n    vector<int> a(n);\n    for (int &x : a) cin >> x;\n    const int INF = 1000000000;\n    // dp[i][j]：前 i 個數切成恰好 j 段的最小總成本\n    vector<vector<int>> dp(n + 1, vector<int>(k + 1, INF));\n    dp[0][0] = 0;\n    for (int i = 1; i <= n; i++) {\n        for (int j = 1; j <= min(i, k); j++) {\n            int lo = INF, hi = 0;\n            // 最後一段是 a[t..i-1]，前面 t 個數切成 j-1 段，所以 t >= j-1\n            for (int t = i - 1; t >= j - 1; t--) {\n                lo = min(lo, a[t]);\n                hi = max(hi, a[t]);\n                if (dp[t][j - 1] < INF)\n                    dp[i][j] = min(dp[i][j], dp[t][j - 1] + hi - lo);\n            }\n        }\n    }\n    cout << dp[n][k] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d671",
+    "title": "最長遞增序列的個數",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "LIS 同時記錄長度與方法數",
+    "goal": "能用 O(N²) DP 對每個結尾位置同時維護最長長度與達到該長度的子序列個數。",
+    "explanation": [
+      "對每個位置 i 維護 len[i]（以 i 結尾的最長嚴格遞增子序列長度）與 cnt[i]（達到該長度的子序列個數）。枚舉 j<i 且 a[j]<a[i]：若 len[j]+1 比目前的 len[i] 大，表示找到更長的，覆蓋成 len[j]+1、cnt[j]；若相等，表示另一批同樣長的來源，cnt[i]+=cnt[j]。以 i 結尾的最長序列倒數第二個元素一定是某個 j，且前面部分本身必須也是以 j 結尾的最長者，否則可換成更長者，因此只需累加 len[j]+1 恰等於 len[i] 的 j。",
+      "最後全域最長長度為 max len，答案是所有 len[i] 等於它的 cnt[i] 之和（不同結尾位置的序列位置集合必不同，不會重複計算）。位置集合不同才算不同，所以值相同的兩個元素各自獨立計數；a[j]<a[i] 用嚴格小於，相等值不可相接。每次加法都取模。"
+    ],
+    "complexity": "N≤1000：時間 O(N²)≈10⁶，空間 O(N)。",
+    "pitfall": "把相等數值當成可遞增而多算；或忘記只在 len[j]+1 恰等於 len[i] 時累加、以及最後只加總達到全域最長的結尾位置。",
+    "sampleInput": "5\n1 3 5 4 7\n",
+    "sampleOutput": "2\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：前三項",
+        "description": "a=1,3,5：1 前面沒有更小者，len=1,cnt=1；3 接在 1 後，len=2,cnt=1；5 接在 3 後，len=3,cnt=1。",
+        "cells": [
+          "1",
+          "3",
+          "5",
+          "4",
+          "7"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "len",
+            "1,2,3"
+          ],
+          [
+            "cnt",
+            "1,1,1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：處理 a4=4",
+        "description": "4 前面比它小的有 1、3：以 3 結尾 len=2 最長，所以 len=3，cnt 取 cnt[3]=1（接 1 的長度只有 2，不計）。",
+        "cells": [
+          "1",
+          "3",
+          "5",
+          "4",
+          "7"
+        ],
+        "active": [
+          3
+        ],
+        "variables": [
+          [
+            "len[4]",
+            "3"
+          ],
+          [
+            "cnt[4]",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：處理 a5=7",
+        "description": "比 7 小者 5 與 4 的 len 都是 3，同為最長，len=4，cnt=cnt[3]+cnt[4]=1+1=2。",
+        "cells": [
+          "1",
+          "3",
+          "5",
+          "4",
+          "7"
+        ],
+        "active": [
+          4
+        ],
+        "variables": [
+          [
+            "len[5]",
+            "4"
+          ],
+          [
+            "cnt[5]",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：合計",
+        "description": "全域最大 len=4，只有位置 5 達到，答案=cnt[5]=2。",
+        "cells": [
+          "1",
+          "1",
+          "1",
+          "1",
+          "2"
+        ],
+        "active": [
+          4
+        ],
+        "variables": [
+          [
+            "最大長度",
+            "4"
+          ],
+          [
+            "答案",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    MOD = 10 ** 9 + 7\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    a = list(map(int, data[1:1 + n]))\n    length = [1] * n  # length[i]：以 i 結尾的最長嚴格遞增子序列長度\n    count = [1] * n   # count[i]：以 i 結尾且達到該長度的子序列個數\n    for i in range(n):\n        for j in range(i):\n            if a[j] < a[i]:\n                if length[j] + 1 > length[i]:\n                    length[i] = length[j] + 1\n                    count[i] = count[j]\n                elif length[j] + 1 == length[i]:\n                    count[i] = (count[i] + count[j]) % MOD\n    best = max(length)\n    ans = sum(count[i] for i in range(n) if length[i] == best) % MOD\n    print(ans)\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nconst long long MOD = 1000000007LL;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    for (int &x : a) cin >> x;\n    vector<int> len(n, 1);        // 以 i 結尾的最長長度\n    vector<long long> cnt(n, 1);  // 以 i 結尾且達到該長度的個數\n    for (int i = 0; i < n; i++) {\n        for (int j = 0; j < i; j++) {\n            if (a[j] < a[i]) {\n                if (len[j] + 1 > len[i]) {\n                    len[i] = len[j] + 1;\n                    cnt[i] = cnt[j];\n                } else if (len[j] + 1 == len[i]) {\n                    cnt[i] = (cnt[i] + cnt[j]) % MOD;\n                }\n            }\n        }\n    }\n    int best = *max_element(len.begin(), len.end());\n    long long ans = 0;\n    for (int i = 0; i < n; i++)\n        if (len[i] == best) ans = (ans + cnt[i]) % MOD;\n    cout << ans << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d672",
+    "title": "恰好 K 個逆序對",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "逐一插入最大數與前綴和優化",
+    "goal": "能推導 f[i][j]=sum f[i-1][j-t]（t=0..i-1），並用前綴和把轉移降到 O(1)。",
+    "explanation": [
+      "把排列看成依序插入 1,2,…,i：第 i 個數（目前最大）插到長度 i-1 的排列中，若插在由右數來第 t 個空隙（t=0..i-1），它前面的數都比它小、後面 t 個數都比它小，恰好新增 t 個逆序對，且原有逆序對不變。每個 i 排列恰由唯一的 (i-1 排列, t) 產生，所以 f[i][j]=f[i-1][j]+f[i-1][j-1]+…+f[i-1][j-(i-1)]。",
+      "這個和是長度最多 i 的滑動窗口，用前綴和 pre 可得 f[i][j]=pre[j+1]-pre[max(0,j-i+1)]，每格 O(1)。只需要保留上一列所以空間 O(K)。邊界：f[1][0]=1；當 K 超過 N(N-1)/2 時自然得到 0。相減後可能為負，取模時要補 MOD。"
+    ],
+    "complexity": "N,K≤1000：共 N 列、每列 K 格，時間 O(NK)≈10⁶，空間 O(K)。",
+    "pitfall": "前綴和相減後出現負數沒補 MOD；或窗口下界忘了與 0 取 max 而索引越界。",
+    "sampleInput": "3 1\n",
+    "sampleOutput": "2\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：i=1",
+        "description": "只有排列 (1)，逆序對 0 個：f=[1,0,0,0]（索引為逆序對數 j=0..3）。",
+        "cells": [
+          "1",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "i",
+            "1"
+          ],
+          [
+            "f[1]",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：插入第 2 個數",
+        "description": "新數可放在最後 i 個位置之一，增加 0..1 個逆序對：f[j]=f[j]+f[j-1]，得 [1,1,0,0]。",
+        "cells": [
+          "1",
+          "1",
+          "0",
+          "0"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "i",
+            "2"
+          ],
+          [
+            "f[1]",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：插入第 3 個數",
+        "description": "f[j]=f[j]+f[j-1]+f[j-2]：f[1]=1+1=2，f[2]=0+1+1=2，f[3]=0+0+1=1。K=1 取 f[1]=2。",
+        "cells": [
+          "1",
+          "2",
+          "2",
+          "1"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "i",
+            "3"
+          ],
+          [
+            "答案 f[1]",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    MOD = 10 ** 9 + 7\n    n, k = map(int, sys.stdin.read().split())\n    f = [0] * (k + 1)\n    f[0] = 1  # n=1：只有一個排列，逆序對 0\n    for i in range(2, n + 1):\n        # pre[x] = f[0] + ... + f[x-1]\n        pre = [0] * (k + 2)\n        for j in range(k + 1):\n            pre[j + 1] = (pre[j] + f[j]) % MOD\n        # 新值 g[j] = f[j-i+1] + ... + f[j]\n        f = [(pre[j + 1] - pre[max(0, j - i + 1)]) % MOD for j in range(k + 1)]\n    print(f[k] % MOD)\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nconst long long MOD = 1000000007LL;\n\nint main() {\n    int n, k;\n    cin >> n >> k;\n    vector<long long> f(k + 1, 0), pre(k + 2, 0);\n    f[0] = 1;  // n=1\n    for (int i = 2; i <= n; i++) {\n        // pre[x] = f[0] + ... + f[x-1]\n        for (int j = 0; j <= k; j++) pre[j + 1] = (pre[j] + f[j]) % MOD;\n        for (int j = 0; j <= k; j++) {\n            int lo = max(0, j - i + 1);\n            f[j] = ((pre[j + 1] - pre[lo]) % MOD + MOD) % MOD;\n        }\n    }\n    cout << f[k] % MOD << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d673",
+    "title": "兩堆石頭最小差",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "子集合和（0/1 背包）接近總和一半",
+    "goal": "能把分兩堆轉成『可達子集合和』，並用 bitset 或布林背包求最接近 total/2 的和。",
+    "explanation": [
+      "設總重 T，其中一堆重 s，另一堆 T-s，差為 |T-2s|。因此問題等價於：在所有可由子集合湊出的和 s 中，找使 |T-2s| 最小者。由對稱性（s 與 T-s 互補）只需考慮 s≤T/2，其中最大的可達 s 讓差 T-2s 最小。",
+      "可達和集合用 0/1 背包維護：處理石頭 x 後，S 變成 S∪(S+x)。以位元集合表示，就是 bits |= bits<<x，一行完成整個轉移（每塊石頭只用一次，因為是用舊 bits 左移一次）。最後從 T/2 往下找第一個可達的 s，輸出 T-2s。一堆可為空對應 s=0，n=1 時答案就是該石頭重量。"
+    ],
+    "complexity": "N≤100、a≤100，總和≤10⁴：時間 O(N·T/64)（Python 大整數同理），空間 O(T)。",
+    "pitfall": "背包若用一維陣列由小到大更新會讓同一顆石頭被重複使用；用 bitset 左移或由大到小更新才正確。",
+    "sampleInput": "5\n2 7 4 1 8\n",
+    "sampleOutput": "0\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：初始",
+        "description": "還沒放任何石頭，只有和 0 可達（cells 索引 0..11 表示和，1 代表可達）。",
+        "cells": [
+          "1",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "總和",
+            "22"
+          ],
+          [
+            "目標 ≤",
+            "11"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：加入 2、7",
+        "description": "可達和：0,2,7,9。每塊石頭讓集合 S 變成 S ∪ (S+x)。",
+        "cells": [
+          "1",
+          "0",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0",
+          "1",
+          "0",
+          "1",
+          "0",
+          "0"
+        ],
+        "active": [
+          0,
+          2,
+          7,
+          9
+        ],
+        "variables": [
+          [
+            "已處理",
+            "2,7"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：加入 4、1、8",
+        "description": "全部處理後可達的和有 0,1,2,3,4,5,6,7,8,9,10,11（皆≤11）。",
+        "cells": [
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "variables": [
+          [
+            "已處理",
+            "全部"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：找最接近一半的和",
+        "description": "最大的可達和 s=11，差=22-2·11=0。",
+        "cells": [
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1",
+          "1"
+        ],
+        "active": [
+          11
+        ],
+        "variables": [
+          [
+            "s",
+            "11"
+          ],
+          [
+            "答案",
+            "0"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    a = list(map(int, data[1:1 + n]))\n    total = sum(a)\n    # bits 的第 s 位為 1，表示存在一種選法，總和恰為 s\n    bits = 1\n    for x in a:\n        bits |= bits << x\n    for s in range(total // 2, -1, -1):\n        if (bits >> s) & 1:\n            print(total - 2 * s)\n            return\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> a(n);\n    int total = 0;\n    for (int &x : a) {\n        cin >> x;\n        total += x;\n    }\n    // can[s] = 存在一種選法總和恰為 s\n    bitset<10001> can;\n    can[0] = 1;\n    for (int x : a) can |= can << x;\n    for (int s = total / 2; s >= 0; s--) {\n        if (can[s]) {\n            cout << total - 2 * s << '\\n';\n            return 0;\n        }\n    }\n    return 0;\n}\n"
+  },
+  {
+    "code": "d674",
+    "title": "兩串公共遞增序列",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "最長公共遞增子序列（LCIS）O(NM)",
+    "goal": "能用單一陣列 dp[j]（以 b[j] 結尾）配合滾動的 cur 在 O(NM) 求 LCIS。",
+    "explanation": [
+      "令 dp[j] 為目前已處理的 A 前綴與 B 之間、以 B[j] 結尾的最長公共嚴格遞增序列長度。處理 A 的下一個元素 x：若 B[j]==x，x 可作為新結尾，前一個元素必須是 B 中某個位置 k<j 且 B[k]<x，其 dp[k] 已代表 A 前綴中以 B[k] 結尾的最優值，所以 dp[j]=max(dp[j], 1+max dp[k])。",
+      "由左到右掃 j 時，用變數 cur 動態記錄『掃過且 B[k]<x』中最大的 dp[k]，於是不需要再開一層迴圈，總時間 O(NM)。注意這裡 dp 在處理 x 的同一輪中，只有 B[j]==x 的格子會被改動，而 cur 只讀 B[j]<x 的格子，兩者不重疊，所以同一個 x 不會被重複使用。答案是 max dp，若沒有公共元素則為 0。"
+    ],
+    "complexity": "N,M≤500：時間 O(NM)≈2.5×10⁵，空間 O(M)。",
+    "pitfall": "把 cur 的條件寫成 B[j]<=x 會讓相等元素接在自己後面，違反『嚴格遞增』；另外無公共元素要輸出 0（dp 初值 0）。",
+    "sampleInput": "5 5\n1 4 2 5 3\n2 1 4 3 5\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：處理 A 的 1、4",
+        "description": "dp[j] 表示以 B[j] 結尾的最長公共遞增序列。x=1 命中 B[1]：dp[1]=1；x=4 命中 B[2]：cur=max(dp 中 B 值<4 者)=1，dp[2]=2。",
+        "cells": [
+          "0",
+          "1",
+          "2",
+          "0",
+          "0"
+        ],
+        "active": [
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "x",
+            "4"
+          ],
+          [
+            "dp[B=4]",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：處理 A 的 2、5",
+        "description": "x=2 命中 B[0]：dp[0]=1。x=5 命中 B[4]：cur 取 B 中小於 5 的最大 dp=2，dp[4]=3。",
+        "cells": [
+          "1",
+          "1",
+          "2",
+          "0",
+          "3"
+        ],
+        "active": [
+          0,
+          4
+        ],
+        "variables": [
+          [
+            "x",
+            "5"
+          ],
+          [
+            "dp[B=5]",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：處理 A 的 3",
+        "description": "x=3 命中 B[3]：B 中小於 3 的有 2、1，最大 dp=1，dp[3]=2。最後 max(dp)=3。",
+        "cells": [
+          "1",
+          "1",
+          "2",
+          "2",
+          "3"
+        ],
+        "active": [
+          4
+        ],
+        "variables": [
+          [
+            "x",
+            "3"
+          ],
+          [
+            "答案",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n, m = int(data[0]), int(data[1])\n    a = list(map(int, data[2:2 + n]))\n    b = list(map(int, data[2 + n:2 + n + m]))\n    # dp[j]：以 b[j] 結尾的最長公共嚴格遞增子序列長度\n    dp = [0] * m\n    for x in a:\n        cur = 0  # 目前掃過的 b[k]<x 中最大的 dp[k]\n        for j in range(m):\n            if b[j] == x:\n                if cur + 1 > dp[j]:\n                    dp[j] = cur + 1\n            elif b[j] < x:\n                if dp[j] > cur:\n                    cur = dp[j]\n    print(max(dp))\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n, m;\n    cin >> n >> m;\n    vector<int> a(n), b(m);\n    for (int &x : a) cin >> x;\n    for (int &x : b) cin >> x;\n    vector<int> dp(m, 0);  // 以 b[j] 結尾的最長公共嚴格遞增子序列\n    for (int x : a) {\n        int cur = 0;  // 掃過的 b[k]<x 中最大的 dp[k]\n        for (int j = 0; j < m; j++) {\n            if (b[j] == x) dp[j] = max(dp[j], cur + 1);\n            else if (b[j] < x) cur = max(cur, dp[j]);\n        }\n    }\n    cout << *max_element(dp.begin(), dp.end()) << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d675",
+    "title": "連環戳氣球",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "區間 DP：枚舉『最後』被戳破的氣球",
+    "goal": "能理解為何要反過來枚舉最後戳破者，使左右子區間互相獨立並寫出區間 DP。",
+    "explanation": [
+      "直接考慮『先戳哪一顆』會讓剩下的氣球鄰接關係改變，子問題互相牽連。改成枚舉區間 (l,r) 內『最後』被戳破的氣球 k：此時 l 與 r 仍在場，k 戳破時左右鄰居必為 v[l]、v[r]，獲得 v[l]·v[k]·v[r]；而 (l,k) 與 (k,r) 內的氣球在 k 被戳破前就已清光，兩側彼此獨立，且各自的邊界永遠是 l,k 或 k,r，所以 dp[l][r]=max_k(dp[l][k]+dp[k][r]+v[l]v[k]v[r])。",
+      "兩端補上值為 1 的哨兵 v[0]=v[n+1]=1，對應題目『某側沒有氣球視為 1』。區間長度由小到大計算，相鄰（內部無氣球）的 dp 為 0，答案為 dp[0][n+1]。a_i 可以是 0，這不需特判，DP 會自然處理（先戳零並不一定最優，也不會出錯）。"
+    ],
+    "complexity": "N≤200：O(N³)≈ N³/6 ≈ 1.3×10⁶ 次轉移，空間 O(N²)。最大值約 100³·200=2×10⁸，建議 C++ 用 long long。",
+    "pitfall": "把 k 當成『第一個』被戳破的而非『最後一個』，子問題不獨立；以及忘了補兩端的 1 哨兵。",
+    "sampleInput": "4\n3 1 5 8\n",
+    "sampleOutput": "167\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：補上哨兵",
+        "description": "在兩端各補一個 1，v=[1,3,1,5,8,1]。dp[l][r] 表示戳光 l 與 r 之間（不含端點）所有氣球的最大金幣，且 l、r 最後才被戳。",
+        "cells": [
+          "1",
+          "3",
+          "1",
+          "5",
+          "8",
+          "1"
+        ],
+        "active": [
+          0,
+          5
+        ],
+        "variables": [
+          [
+            "N",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：區間內只有 1 顆",
+        "description": "dp[l][l+2]=v[l]·v[l+1]·v[l+2]：1·3·1=3、3·1·5=15、1·5·8=40、5·8·1=40。",
+        "cells": [
+          "3",
+          "15",
+          "40",
+          "40"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "長度",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：區間內 2 顆",
+        "description": "dp[l][r]=max_k(dp[l][k]+dp[k][r]+v[l]v[k]v[r])，k 是最後戳破的那顆。得 dp[0][3]=30、dp[1][4]=135、dp[2][5]=48。",
+        "cells": [
+          "30",
+          "135",
+          "48"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "長度",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：區間內 3 顆",
+        "description": "區間內 3 顆：dp[0][4]=159、dp[1][5]=159，各取最佳的最後一顆 k。",
+        "cells": [
+          "159",
+          "159"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "長度",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 5：整段",
+        "description": "dp[0][5]：枚舉最後戳破的氣球 k，最佳為 167。",
+        "cells": [
+          "167"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "答案",
+            "167"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    v = [1] + list(map(int, data[1:1 + n])) + [1]\n    # dp[l][r]：把 l 與 r 之間（不含）的氣球全部戳破的最大金幣，l、r 仍在\n    dp = [[0] * (n + 2) for _ in range(n + 2)]\n    for length in range(2, n + 2):\n        for l in range(0, n + 2 - length):\n            r = l + length\n            best = 0\n            for k in range(l + 1, r):  # k 是區間內「最後」被戳破的氣球\n                val = dp[l][k] + dp[k][r] + v[l] * v[k] * v[r]\n                if val > best:\n                    best = val\n            dp[l][r] = best\n    print(dp[0][n + 1])\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n;\n    cin >> n;\n    vector<int> v(n + 2, 1);\n    for (int i = 1; i <= n; i++) cin >> v[i];\n    // dp[l][r]：戳破 l 與 r 之間（不含）所有氣球的最大金幣\n    vector<vector<long long>> dp(n + 2, vector<long long>(n + 2, 0));\n    for (int len = 2; len <= n + 1; len++) {\n        for (int l = 0; l + len <= n + 1; l++) {\n            int r = l + len;\n            long long best = 0;\n            for (int k = l + 1; k < r; k++) {  // k 是最後被戳破的\n                best = max(best, dp[l][k] + dp[k][r] + (long long)v[l] * v[k] * v[r]);\n            }\n            dp[l][r] = best;\n        }\n    }\n    cout << dp[0][n + 1] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d676",
+    "title": "跳躍數區間計數",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "數位 DP：前綴上界、前一位與前導零",
+    "goal": "能用 (位置, 上一位, 是否貼著上界, 是否已開始) 作狀態計算 1..x 內滿足相鄰條件的數，再用差分得區間。",
+    "explanation": [
+      "區間計數用差分：答案 = f(R) - f(L-1)，其中 f(x) 為 1..x 中跳躍數的個數。f(x) 用數位 DP 由高位往低位逐位決定數字：狀態 (pos, prev, tight, started)。tight 表示目前已填的前綴與 x 的前綴完全相同，此時下一位最多填 x 的該位數字，否則可填 0..9；started 表示是否已經出現第一個非零數字，用來處理前導零（前導零不參與相鄰差的限制，單一位數視為合法）。",
+      "已開始時，下一位 d 必須滿足 |d-prev|≥2 才能轉移；尚未開始時填 0 仍是未開始、填非零則開始。走到最後一位若 started 為真就代表一個合法數字（數字 0 不算，因為要求正整數）。狀態數僅 19·11·2·2，每個轉移 10 個選擇，極小。L=1 時 f(0)=0 須特判。"
+    ],
+    "complexity": "位數≤19：狀態 19·11·4，每狀態 O(10)，時間約 10⁴，空間同階。",
+    "pitfall": "忘了處理前導零（把 0 當成真正的數字去比較差），或 L-1=0 時沒有回傳 0；範圍到 10^18 需用 64 位元。",
+    "sampleInput": "1 20\n",
+    "sampleOutput": "17\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：把答案寫成 f(R)-f(L-1)",
+        "description": "f(x)=1..x 中跳躍數個數。本例 L=1,R=20，f(0)=0，只需算 f(20)。",
+        "cells": [
+          "2",
+          "0"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "x",
+            "20"
+          ],
+          [
+            "位數",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：不足兩位的數",
+        "description": "1..9 都是跳躍數（單一位數），共 9 個，對應『尚未開始/已開始』狀態的前導位處理。",
+        "cells": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "variables": [
+          [
+            "個數",
+            "9"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：十位是 1 的 10..19",
+        "description": "個位 d 要滿足 |d-1|≥2，只有 d=3..9 共 7 個（cells 為個位數字 0..9，active 為合法者）。",
+        "cells": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ],
+        "active": [
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
+        "variables": [
+          [
+            "合法",
+            "7"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：最後的 20",
+        "description": "|2-0|=2≥2，合法，加 1。總計 9+7+1=17。",
+        "cells": [
+          "2",
+          "0"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "f(20)",
+            "17"
+          ],
+          [
+            "答案",
+            "17"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom functools import lru_cache\n\n\ndef count_upto(x):\n    \"\"\"回傳 1..x 中的跳躍數個數。\"\"\"\n    if x <= 0:\n        return 0\n    digits = list(map(int, str(x)))\n    n = len(digits)\n\n    @lru_cache(maxsize=None)\n    def go(pos, prev, tight, started):\n        # prev：上一位數字（尚未開始時為 -1）；tight：前面是否與 x 完全相同\n        if pos == n:\n            return 1 if started else 0\n        limit = digits[pos] if tight else 9\n        total = 0\n        for d in range(limit + 1):\n            nt = tight and d == limit\n            if not started:\n                if d == 0:\n                    total += go(pos + 1, -1, nt, False)  # 仍是前導零\n                else:\n                    total += go(pos + 1, d, nt, True)\n            elif abs(d - prev) >= 2:\n                total += go(pos + 1, d, nt, True)\n        return total\n\n    return go(0, -1, True, False)\n\n\ndef main():\n    lo, hi = map(int, sys.stdin.read().split())\n    print(count_upto(hi) - count_upto(lo - 1))\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\ntypedef long long ll;\n\nstring s;\nll memo[20][11][2][2];  // pos, prev+1, tight, started\n\nll go(int pos, int prev, bool tight, bool started) {\n    if (pos == (int)s.size()) return started ? 1 : 0;\n    ll &res = memo[pos][prev + 1][tight][started];\n    if (res != -1) return res;\n    res = 0;\n    int limit = tight ? s[pos] - '0' : 9;\n    for (int d = 0; d <= limit; d++) {\n        bool nt = tight && d == limit;\n        if (!started) {\n            if (d == 0) res += go(pos + 1, -1, nt, false);  // 前導零\n            else res += go(pos + 1, d, nt, true);\n        } else if (abs(d - prev) >= 2) {\n            res += go(pos + 1, d, nt, true);\n        }\n    }\n    return res;\n}\n\nll countUpto(ll x) {\n    if (x <= 0) return 0;\n    s = to_string(x);\n    memset(memo, -1, sizeof(memo));\n    return go(0, -1, true, false);\n}\n\nint main() {\n    ll l, r;\n    cin >> l >> r;\n    cout << countUpto(r) - countUpto(l - 1) << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d677",
+    "title": "障礙地板的骨牌鋪法",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "插頭（broken profile）DP 計算骨牌鋪法",
+    "goal": "能用逐格處理加 mask 記錄『已被蓋住的格子』，在有障礙的格子上計數骨牌鋪法。",
+    "explanation": [
+      "由上而下、由左而右逐格處理，每格最多決定『以此格為左上端點放哪塊磚』。mask 的第 j 位表示游標附近第 j 欄的格子是否已被之前放的磚蓋住：處理 (i,j) 時，若第 j 位為 1，表示它已被上一列的直放磚或左邊的橫放磚蓋住，直接清除該位（下一列同欄尚未被蓋）；若為 0 就必須在這格開頭放一塊磚，否則之後再也沒有機會蓋它（掃描順序保證往後不會有磚的左上端點在它之前），這保證每種鋪法恰被計一次。",
+      "放磚有兩種：直放需要 (i+1,j) 存在且為空格，並把第 j 位設 1；橫放需要 (i,j+1) 存在、為空格且尚未被蓋，並把第 j+1 位設 1（此時第 j 位自然為 0，因為 (i,j) 已處理完且下一列同欄未被蓋）。障礙格不得被蓋，若第 j 位為 1 則該狀態作廢；障礙格處理後第 j 位保持 0。最後 mask=0 的方法數即答案；全是障礙時只剩空擺法，結果為 1。"
+    ],
+    "complexity": "N,M≤12：狀態 N·M·2^M≈144·4096≈6×10⁵，每狀態 O(1) 轉移；時間 O(NM·2^M)，空間 O(2^M)。",
+    "pitfall": "橫放時忘了檢查右邊格子是否已被蓋、或最後一欄越界；障礙格上要拒絕 mask 為 1 的狀態；全障礙（0 個空格）答案是 1。",
+    "sampleInput": "2 3\n...\n...\n",
+    "sampleOutput": "3\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：初始",
+        "description": "狀態 mask 的第 j 位為 1 代表『目前處理位置附近、那一格已被先前的磚蓋住』。起始只有 mask=000 一種，方法數 1。cells 為 mask=0..7 的方法數。",
+        "cells": [
+          "1",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "處理格",
+            "(0,0)"
+          ],
+          [
+            "mask",
+            "000"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：處理 (0,0)",
+        "description": "空格且未被蓋：可直放（蓋住下方 (1,0)，mask=001），或橫放（蓋住 (0,1)，mask=010）。",
+        "cells": [
+          "0",
+          "1",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "處理格",
+            "(0,0)"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：處理完第一列",
+        "description": "再處理 (0,1)、(0,2)。第一列結束後 mask 表示第二列已被蓋住的格子：cells 為各 mask 的方法數。",
+        "cells": [
+          "0",
+          "1",
+          "0",
+          "0",
+          "1",
+          "0",
+          "0",
+          "1"
+        ],
+        "active": [
+          1,
+          4,
+          7
+        ],
+        "variables": [
+          [
+            "處理格",
+            "(0,2)"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：全部處理完",
+        "description": "第二列把剩下的格子橫放補滿；最後 mask=000 的方法數即答案 3。",
+        "cells": [
+          "3",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "答案",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    MOD = 10 ** 9 + 7\n    data = sys.stdin.read().split()\n    n, m = int(data[0]), int(data[1])\n    grid = data[2:2 + n]\n    # 逐格處理（broken profile）。mask 第 j 位 = 1 表示目前「游標」所指的\n    # 那個位置（第 j 欄）已經被先前放的磚蓋住。\n    dp = {0: 1}\n    for i in range(n):\n        for j in range(m):\n            nd = {}\n            for mask, w in dp.items():\n                if grid[i][j] == '#':\n                    if (mask >> j) & 1:\n                        continue  # 障礙不可被蓋\n                    nd[mask] = (nd.get(mask, 0) + w) % MOD\n                elif (mask >> j) & 1:\n                    # 此格已被蓋，下一列的這一格不受影響\n                    nm = mask & ~(1 << j)\n                    nd[nm] = (nd.get(nm, 0) + w) % MOD\n                else:\n                    # 直放：蓋住下一列的同一欄\n                    if i + 1 < n and grid[i + 1][j] == '.':\n                        nm = mask | (1 << j)\n                        nd[nm] = (nd.get(nm, 0) + w) % MOD\n                    # 橫放：蓋住右邊那格\n                    if j + 1 < m and grid[i][j + 1] == '.' and not (mask >> (j + 1)) & 1:\n                        nm = mask | (1 << (j + 1))\n                        nd[nm] = (nd.get(nm, 0) + w) % MOD\n            dp = nd\n    print(dp.get(0, 0) % MOD)\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nconst int MOD = 1000000007;\n\nint main() {\n    int n, m;\n    cin >> n >> m;\n    vector<string> g(n);\n    for (auto &row : g) cin >> row;\n    int S = 1 << m;\n    // mask 第 j 位 = 1：游標所指位置（第 j 欄）已被先前的磚蓋住\n    vector<int> dp(S, 0), nd(S, 0);\n    dp[0] = 1;\n    for (int i = 0; i < n; i++) {\n        for (int j = 0; j < m; j++) {\n            fill(nd.begin(), nd.end(), 0);\n            for (int mask = 0; mask < S; mask++) {\n                int w = dp[mask];\n                if (!w) continue;\n                if (g[i][j] == '#') {\n                    if ((mask >> j) & 1) continue;  // 障礙不可被蓋\n                    nd[mask] = (nd[mask] + w) % MOD;\n                } else if ((mask >> j) & 1) {\n                    int nm = mask & ~(1 << j);\n                    nd[nm] = (nd[nm] + w) % MOD;\n                } else {\n                    if (i + 1 < n && g[i + 1][j] == '.') {  // 直放\n                        int nm = mask | (1 << j);\n                        nd[nm] = (nd[nm] + w) % MOD;\n                    }\n                    if (j + 1 < m && g[i][j + 1] == '.' && !((mask >> (j + 1)) & 1)) {  // 橫放\n                        int nm = mask | (1 << (j + 1));\n                        nd[nm] = (nd[nm] + w) % MOD;\n                    }\n                }\n            }\n            swap(dp, nd);\n        }\n    }\n    cout << dp[0] % MOD << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d678",
+    "title": "分組運輸最小總運費",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "斜率優化（凸包技巧）處理平方成本分組",
+    "goal": "能把 dp[i]=min(dp[j]+(S[i]-S[j])²+M) 拆成直線形式，並用單調凸包在 O(N) 轉移。",
+    "explanation": [
+      "令 S 為前綴和，dp[i] 為運完前 i 件的最小運費。最後一組是第 j+1..i 件，運費 (S[i]-S[j])²+M，所以 dp[i]=min_{j<i}(dp[j]+(S[i]-S[j])²+M)。展開得 dp[i]=S[i]²+M+min_j(-2·S[j]·S[i]+dp[j]+S[j]²)：對固定 j，括號內是以 S[i] 為變數的直線，斜率 -2S[j]、截距 dp[j]+S[j]²。",
+      "因為 a_i≥1，S 嚴格遞增：加入直線的斜率嚴格遞減，查詢的 x=S[i] 嚴格遞增。在這種單調情況下，用佇列維護『下包絡』：加入新線時，若倒數第二條線被前後兩條夾住（交點判斷）就彈掉；查詢時由隊首往後移，只要下一條線在 x 處不比當前差就前進。每條線進出各一次，整體 O(N)。交點判斷用交叉相乘避免除法，數值最大約 4×10¹⁰×4×10⁵=1.6×10¹⁶，仍在 64 位元內。"
+    ],
+    "complexity": "N≤4000：CHT 時間 O(N)、空間 O(N)（樸素 O(N²)=1.6×10⁷ 也可行，但 Python 較慢）。",
+    "pitfall": "交叉相乘的方向或不等號寫反會得到錯的包絡；也要用 64 位元（S² 可達 4×10¹⁰）。M=0 時分組仍有效。",
+    "sampleInput": "5 10\n1 2 3 4 5\n",
+    "sampleOutput": "99\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：前綴和",
+        "description": "S=0,1,3,6,10,15。dp[i]=min_{j<i}(dp[j]+(S[i]-S[j])²+M)，dp[0]=0。",
+        "cells": [
+          "0",
+          "1",
+          "3",
+          "6",
+          "10",
+          "15"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "M",
+            "10"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：dp[1]、dp[2]",
+        "description": "dp[1]=0+1+10=11；dp[2]=min(0+9+10, 11+4+10)=19。",
+        "cells": [
+          "0",
+          "11",
+          "19"
+        ],
+        "active": [
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "dp[1]",
+            "11"
+          ],
+          [
+            "dp[2]",
+            "19"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：dp[3]、dp[4]",
+        "description": "dp[3]=min(0+36+10, 11+25+10, 19+9+10)=38；dp[4]=64。",
+        "cells": [
+          "0",
+          "11",
+          "19",
+          "38",
+          "64"
+        ],
+        "active": [
+          3,
+          4
+        ],
+        "variables": [
+          [
+            "dp[3]",
+            "38"
+          ],
+          [
+            "dp[4]",
+            "64"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：dp[5]",
+        "description": "dp[5]=99（最後一組只取 {5}，其前 dp[4]=64，加 25+10）。CHT 做的就是不逐一枚舉 j，而是維護下凸包直接找最小值。",
+        "cells": [
+          "0",
+          "11",
+          "19",
+          "38",
+          "64",
+          "99"
+        ],
+        "active": [
+          5
+        ],
+        "variables": [
+          [
+            "答案",
+            "99"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    data = sys.stdin.read().split()\n    n, M = int(data[0]), int(data[1])\n    a = list(map(int, data[2:2 + n]))\n    S = [0] * (n + 1)\n    for i in range(n):\n        S[i + 1] = S[i] + a[i]\n    # dp[i] = min_j dp[j] + (S[i]-S[j])^2 + M\n    #       = S[i]^2 + M + min_j ( -2*S[j]*S[i] + dp[j] + S[j]^2 )\n    # 每個 j 是一條直線 y = m*x + b，m=-2*S[j]（嚴格遞減），查詢 x=S[i]（嚴格遞增）\n    ms = [0]\n    bs = [0]\n    head = 0\n    dp = [0] * (n + 1)\n    for i in range(1, n + 1):\n        x = S[i]\n        while head + 1 < len(ms) and ms[head + 1] * x + bs[head + 1] <= ms[head] * x + bs[head]:\n            head += 1\n        dp[i] = ms[head] * x + bs[head] + x * x + M\n        m3, b3 = -2 * S[i], dp[i] + S[i] * S[i]\n        # 若倒數第二條線不再可能是最小，就丟掉\n        while len(ms) - head >= 2:\n            m1, b1 = ms[-2], bs[-2]\n            m2, b2 = ms[-1], bs[-1]\n            if (b3 - b1) * (m1 - m2) <= (b2 - b1) * (m1 - m3):\n                ms.pop()\n                bs.pop()\n            else:\n                break\n        ms.append(m3)\n        bs.append(b3)\n    print(dp[n])\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\ntypedef long long ll;\n\nint main() {\n    int n;\n    ll M;\n    cin >> n >> M;\n    vector<ll> S(n + 1, 0);\n    for (int i = 1; i <= n; i++) {\n        ll x;\n        cin >> x;\n        S[i] = S[i - 1] + x;\n    }\n    // 直線 y = m*x + b，m = -2*S[j]（嚴格遞減），查詢 x = S[i]（嚴格遞增）\n    vector<ll> ms{0}, bs{0};\n    size_t head = 0;\n    vector<ll> dp(n + 1, 0);\n    for (int i = 1; i <= n; i++) {\n        ll x = S[i];\n        while (head + 1 < ms.size() && ms[head + 1] * x + bs[head + 1] <= ms[head] * x + bs[head]) head++;\n        dp[i] = ms[head] * x + bs[head] + x * x + M;\n        ll m3 = -2 * S[i], b3 = dp[i] + S[i] * S[i];\n        while (ms.size() - head >= 2) {\n            size_t t = ms.size();\n            ll m1 = ms[t - 2], b1 = bs[t - 2], m2 = ms[t - 1], b2 = bs[t - 1];\n            // 以 long long 做交叉相乘，數值最大約 1.6e16，不會溢位\n            if ((b3 - b1) * (m1 - m2) <= (b2 - b1) * (m1 - m3)) {\n                ms.pop_back();\n                bs.pop_back();\n            } else break;\n        }\n        ms.push_back(m3);\n        bs.push_back(b3);\n    }\n    cout << dp[n] << '\\n';\n    return 0;\n}\n"
+  },
+  {
+    "code": "d679",
+    "title": "升降序列的排列數",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "以相對名次為狀態的 DI 排列計數",
+    "goal": "能用『最後一個數的相對名次』當狀態，並以前綴和處理升降限制，得到 O(N²) 計數。",
+    "explanation": [
+      "直接記錄用了哪些數字太大，改記相對名次：dp[i][j] 表示前 i+1 個位置排成的相對順序中，最後一個數在這 i+1 個數裡排第 j 小（0 起算）的方法數。新增第 i+1 個位置時，把新數的名次插在 j，原本名次 ≥j 的數整體後移，這樣相對順序與一個真實的 0..N 排列一一對應。",
+      "若 s_i='I'，要求前一個數小於新數，也就是前一個數的（舊）名次 k 滿足 k<j，所以 dp[i][j]=sum_{k<j}dp[i-1][k]；若為 'D'，前一個數要大於新數，舊名次 k≥j（k 到 i-1），所以 dp[i][j]=sum_{k≥j}dp[i-1][k]。兩者都是前綴和差，每格 O(1)。起點 dp[0][0]=1，答案為最後一列總和。檢驗 IDI：[1]→[0,1]→[1,1,0]→[0,1,2,2]，和為 5。"
+    ],
+    "complexity": "N≤1000：共 N 列，第 i 列 i+1 格，時間 O(N²)≈5×10⁵，空間 O(N)。",
+    "pitfall": "名次的範圍與前綴和邊界容易差一：I 用 k<j（pre[j]），D 用 k≥j（pre[總]−pre[j]）；相減後要補 MOD。",
+    "sampleInput": "3\nIDI\n",
+    "sampleOutput": "5\n",
+    "traceLabel": "依公開範例追蹤",
+    "trace": [
+      {
+        "title": "步驟 1：起點",
+        "description": "dp[i][j]：前 i+1 個數（相對大小）中，最後一個數排第 j（由小到大，從 0 起）的排列數。起始 dp[0]=[1]。",
+        "cells": [
+          "1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "i",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 2：s1=I",
+        "description": "要遞增：新數的名次 j 大於前一個的名次 k，k<j。dp[1][j]=sum_{k<j}dp[0][k]，得 [0,1]。",
+        "cells": [
+          "0",
+          "1"
+        ],
+        "active": [
+          1
+        ],
+        "variables": [
+          [
+            "i",
+            "1"
+          ],
+          [
+            "符號",
+            "I"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 3：s2=D",
+        "description": "要遞減：k≥j。dp[2][j]=sum_{k≥j}dp[1][k]，得 [1,1,0]。",
+        "cells": [
+          "1",
+          "1",
+          "0"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "i",
+            "2"
+          ],
+          [
+            "符號",
+            "D"
+          ]
+        ]
+      },
+      {
+        "title": "步驟 4：s3=I 並加總",
+        "description": "dp[3]=[0,1,2,2]，總和 5 即答案。",
+        "cells": [
+          "0",
+          "1",
+          "2",
+          "2"
+        ],
+        "active": [
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "i",
+            "3"
+          ],
+          [
+            "答案",
+            "5"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef main():\n    MOD = 10 ** 9 + 7\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    s = data[1]\n    # dp[j]：目前這些數字中，最後一個數在由小到大排序下名次為 j（0 起算）的方法數\n    dp = [1]\n    for i in range(1, n + 1):\n        size = len(dp)  # 上一輪有 i 個數，名次 0..i-1\n        pre = [0] * (size + 1)\n        for k in range(size):\n            pre[k + 1] = (pre[k] + dp[k]) % MOD\n        if s[i - 1] == 'I':\n            # 新的最後一個數名次 j，上一個數的名次 k<j\n            dp = [pre[j] for j in range(size + 1)]\n        else:\n            # 上一個數名次 k>=j\n            dp = [(pre[size] - pre[j]) % MOD for j in range(size + 1)]\n    print(sum(dp) % MOD)\n\n\nmain()\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nconst long long MOD = 1000000007LL;\n\nint main() {\n    int n;\n    string s;\n    cin >> n >> s;\n    // dp[j]：最後一個數在目前所有數中名次為 j（0 起算）的方法數\n    vector<long long> dp(1, 1);\n    for (int i = 1; i <= n; i++) {\n        int size = dp.size();\n        vector<long long> pre(size + 1, 0);\n        for (int k = 0; k < size; k++) pre[k + 1] = (pre[k] + dp[k]) % MOD;\n        vector<long long> nd(size + 1, 0);\n        for (int j = 0; j <= size; j++) {\n            if (s[i - 1] == 'I') nd[j] = pre[j];                      // 上一個名次 k < j\n            else nd[j] = ((pre[size] - pre[j]) % MOD + MOD) % MOD;    // 上一個名次 k >= j\n        }\n        dp = nd;\n    }\n    long long ans = 0;\n    for (long long v : dp) ans = (ans + v) % MOD;\n    cout << ans << '\\n';\n    return 0;\n}\n"
+  }
+]
