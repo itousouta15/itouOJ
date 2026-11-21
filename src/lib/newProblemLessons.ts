@@ -15,6 +15,7 @@ import nov08746 from "./newProblemLessons/data/nov08-746-790.json" with { type: 
 import nov19d504 from "./newProblemLessons/data/nov19-d504-d529.json" with { type: "json" };
 import nov19d530 from "./newProblemLessons/data/nov19-d530-d579.json" with { type: "json" };
 import nov19d580 from "./newProblemLessons/data/nov19-d580-d629.json" with { type: "json" };
+import nov19d630 from "./newProblemLessons/data/nov19-d630-d679.json" with { type: "json" };
 
 export const newProblemTopics = [
   { id: "basics", title: "輸入、判斷與統計" },
@@ -39,7 +40,7 @@ export type NewProblemLesson = ApcsLesson & {
   performanceNote?: string;
 };
 
-const authored = [competition, national1, national2, practice1, practice2, practice3, practice4, nov08562, nov08608, nov08654, nov08700, nov08746, nov19d504, nov19d530, nov19d580].flat();
+const authored = [competition, national1, national2, practice1, practice2, practice3, practice4, nov08562, nov08608, nov08654, nov08700, nov08746, nov19d504, nov19d530, nov19d580, nov19d630].flat();
 export const newProblemLessons: Readonly<Record<string, NewProblemLesson>> =
   Object.fromEntries(authored.map((lesson) => [lesson.code, lesson as NewProblemLesson]));
 
