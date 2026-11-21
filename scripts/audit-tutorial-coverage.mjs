@@ -29,7 +29,7 @@ const archiveCatalog = Object.entries(apcsPastExamSamples).map(
   ([code, samples]) => ({ code, samples }),
 );
 const groups = [
-  { name: "Competition and topic practice", lessons: newProblemLessons, catalog: newProblemSource.problems, count: 901 },
+  { name: "Competition and topic practice", lessons: newProblemLessons, catalog: newProblemSource.problems, count: 951 },
   {
     name: "APCS introductory",
     title: "APCS 實作題：由簡到難",
@@ -180,8 +180,8 @@ for (const group of groups) {
 }
 assert.equal(
   allCodes.size,
-  1672,
-  "Expected 1672 distinct known tutorial problems; update coverage baseline explicitly for additions",
+  1722,
+  "Expected 1722 distinct known tutorial problems; update coverage baseline explicitly for additions",
 );
 console.log(
   `Source example matches: ${sourceMatches}/${publicExamples} (${live ? "fresh live snapshot" : "recorded public catalogs"}); ${constructedExamples} explicitly labeled teaching examples for questions without public examples. This checks coverage/contracts, not a proof of algorithm correctness.`,
