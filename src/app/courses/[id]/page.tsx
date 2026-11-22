@@ -135,9 +135,6 @@ export default async function CoursePage({
         <Link href="/courses" className="text-sm text-mute hover:text-blue">
           ← 所有課程
         </Link>
-        <p className="mono text-xs uppercase tracking-[0.2em] text-mute">
-          Learning path · Guided practice
-        </p>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="page-title break-words">{course.title}</h1>
           {!course.isPublic && (
