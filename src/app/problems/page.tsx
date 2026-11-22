@@ -153,8 +153,8 @@ export default async function ProblemListPage({
           type="search"
           name="q"
           defaultValue={query}
-          placeholder="搜尋題號或題目名稱，例如 a001、加法"
-          aria-label="搜尋題號或題目名稱"
+          placeholder="搜尋題號、題目名稱或標籤，例如 a001、加法、BFS"
+          aria-label="搜尋題號、題目名稱或標籤"
           className="input min-w-0 flex-1"
         />
         <button type="submit" className="btn-primary">搜尋</button>
