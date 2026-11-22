@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { problemsHref } from "@/lib/problemsHref";
 
-// 標籤有數千筆，不隨頁面一次送出；開啟選單與輸入時才向 /api/problems/tags 查詢（每次最多 30 筆）。
+// 標籤有數千筆，不隨頁面一次送出；開啟選單時才向 /api/problems/tags 查詢（每次最多 30 筆）。
 export default function ProblemTagFilter({
   selectedTag,
   query,
@@ -15,12 +15,11 @@ export default function ProblemTagFilter({
   sort: "order" | "difficulty";
 }) {
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const [results, setResults] = useState<{ key: string; tags: string[] } | null>(null);
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panelId = useId();
-  const term = search.trim();
+  const term = "";
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +48,6 @@ export default function ProblemTagFilter({
 
   function close() {
     setOpen(false);
-    setSearch("");
     trigger.current?.focus();
   }
 
@@ -79,14 +77,6 @@ export default function ProblemTagFilter({
           id={panelId}
           className="absolute left-0 top-full z-20 mt-1 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-bd bg-panel p-2 shadow-lg"
         >
-          <input
-            type="search"
-            className="input mb-2 w-full"
-            placeholder="搜尋標籤"
-            aria-label="搜尋標籤"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
           <ul className="max-h-56 space-y-1 overflow-y-auto">
             <li>
               <Link
