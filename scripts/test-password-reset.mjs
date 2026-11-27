@@ -17,9 +17,9 @@ let sent;
 let configured;
 let sendSuccess;
 let ipSequence = 0;
-mock.module(new URL("../src/lib/db.ts", import.meta.url).href, { exports: { prisma: db } });
+mock.module(new URL("../src/lib/db.ts", import.meta.url).href, { namedExports: { prisma: db } });
 mock.module(new URL("../src/lib/passwordReset.ts", import.meta.url).href, {
-  exports: {
+  namedExports: {
     createPasswordResetToken,
     passwordResetConfigured: () => configured,
     sendPasswordResetEmail: async (message) => { sent.push(message); return sendSuccess; },

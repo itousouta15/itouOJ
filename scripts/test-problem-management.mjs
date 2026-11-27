@@ -25,8 +25,8 @@ after(async () => {
 });
 
 let session;
-mock.module(new URL("../src/lib/db.ts", import.meta.url).href, { exports: { prisma: db } });
-mock.module(new URL("../src/lib/auth.ts", import.meta.url).href, { exports: { getSession: async () => session } });
+mock.module(new URL("../src/lib/db.ts", import.meta.url).href, { namedExports: { prisma: db } });
+mock.module(new URL("../src/lib/auth.ts", import.meta.url).href, { namedExports: { getSession: async () => session } });
 const { PUT: bulkEdit } = await import("../src/app/api/admin/problems/bulk/route.ts");
 const { POST: propose } = await import("../src/app/api/problems/proposals/route.ts");
 const { PUT: editProposal, DELETE: withdrawProposal } = await import("../src/app/api/problems/proposals/[id]/route.ts");
