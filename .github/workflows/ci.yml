@@ -29,9 +29,9 @@ jobs:
       DATABASE_URL: file:./ci.db
       AUTH_SECRET: ci-secret-not-used-in-production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -90,8 +90,8 @@ jobs:
       DATABASE_URL: file:./ci.db
       AUTH_SECRET: ci-secret-not-used-in-production
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -121,19 +121,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - uses: mymindstorm/setup-emsdk@v14
+      - uses: mymindstorm/setup-emsdk@v16
         with:
           version: '4.0.23'
       - run: npm ci
       - run: npm run build:itoulang
       # Match sandbox-runner's interpreter after installing the app's dependencies.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '20.11.1'
       - run: npm run test:itoulang
