@@ -37,52 +37,50 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: scripts/ci-step.sh CI-101 npm ci
 
       - name: Generate Prisma Client
-        run: npm run generate
+        run: scripts/ci-step.sh CI-102 npm run generate
 
       # 從空資料庫套用所有 migration，順便驗證 migration 本身能從零跑完
       - name: Apply migrations
-        run: npx prisma migrate deploy
+        run: scripts/ci-step.sh CI-103 npx prisma migrate deploy
 
       - name: Type check
-        run: npx tsc --noEmit
+        run: scripts/ci-step.sh CI-104 npx tsc --noEmit
 
       - name: Lint
-        run: npm run lint
+        run: scripts/ci-step.sh CI-105 npm run lint
 
       - name: CTF beginner challenge tests
-        run: npm run test:ctf-beginner
+        run: scripts/ci-step.sh CI-111 npm run test:ctf-beginner
 
       - name: CTF Web Lab tests
-        run: npm run test:ctf-web-labs
+        run: scripts/ci-step.sh CI-112 npm run test:ctf-web-labs
 
       - name: Playground execution tests
-        run: npm run test:playground
+        run: scripts/ci-step.sh CI-113 npm run test:playground
 
       - name: Course ordering tests
-        run: npm run test:courses
+        run: scripts/ci-step.sh CI-114 npm run test:courses
 
       - name: Bug report tests
-        run: npm run test:reports
+        run: scripts/ci-step.sh CI-115 npm run test:reports
 
       - name: Build
-        run: npm run build
+        run: scripts/ci-step.sh CI-106 npm run build
 
       - name: CTF integration tests
         env:
           CTF_TEST_PRODUCTION: "1"
-        run: npm run test:ctf
+        run: scripts/ci-step.sh CI-116 npm run test:ctf
 
       - name: Course layout integration tests
         env:
           COURSE_LAYOUT_TEST_PRODUCTION: "1"
-        run: npm run test:course-layout
+        run: scripts/ci-step.sh CI-117 npm run test:course-layout
 
-  # 後端邏輯測試（服務／主機／部署管理）：原本寫了測試腳本卻沒進 CI。
-  # test:problems、test:judge、test:password-reset 目前測試本身已過時或壞掉
-  # （例如 mock 了已不存在的 getSession），修好之前先不放進來。
+  # 後端邏輯測試（服務／主機／部署／題目管理／評測佇列／密碼重設）。
   server-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -95,27 +93,27 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run generate
-      - run: npx prisma migrate deploy
+      - run: scripts/ci-step.sh CI-101 npm ci
+      - run: scripts/ci-step.sh CI-102 npm run generate
+      - run: scripts/ci-step.sh CI-103 npx prisma migrate deploy
       - name: Service admin
         if: always()
-        run: npm run test:services
+        run: scripts/ci-step.sh CI-201 npm run test:services
       - name: Managed hosts and host agent
         if: always()
-        run: npm run test:hosts
+        run: scripts/ci-step.sh CI-202 npm run test:hosts
       - name: Deployment admin
         if: always()
-        run: npm run test:deployment
+        run: scripts/ci-step.sh CI-203 npm run test:deployment
       - name: Problem management
         if: always()
-        run: npm run test:problems
+        run: scripts/ci-step.sh CI-204 npm run test:problems
       - name: Judge queue
         if: always()
-        run: npm run test:judge
+        run: scripts/ci-step.sh CI-205 npm run test:judge
       - name: Password reset
         if: always()
-        run: npm run test:password-reset
+        run: scripts/ci-step.sh CI-206 npm run test:password-reset
 
   itoulang:
     runs-on: ubuntu-latest
@@ -130,11 +128,11 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v16
         with:
           version: '4.0.23'
-      - run: npm ci
-      - run: npm run build:itoulang
+      - run: scripts/ci-step.sh CI-101 npm ci
+      - run: scripts/ci-step.sh CI-301 npm run build:itoulang
       # Match sandbox-runner's interpreter after installing the app's dependencies.
       - uses: actions/setup-node@v7
         with:
           node-version: '20.11.1'
-      - run: npm run test:itoulang
-      - run: npm run package:itoulang
+      - run: scripts/ci-step.sh CI-302 npm run test:itoulang
+      - run: scripts/ci-step.sh CI-303 npm run package:itoulang
