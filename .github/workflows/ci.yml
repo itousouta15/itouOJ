@@ -107,6 +107,15 @@ jobs:
       - name: Deployment admin
         if: always()
         run: npm run test:deployment
+      - name: Problem management
+        if: always()
+        run: npm run test:problems
+      - name: Judge queue
+        if: always()
+        run: npm run test:judge
+      - name: Password reset
+        if: always()
+        run: npm run test:password-reset
 
   itoulang:
     runs-on: ubuntu-latest

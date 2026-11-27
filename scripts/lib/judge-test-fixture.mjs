@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
@@ -7,6 +7,7 @@ import { PrismaClient } from "../../src/generated/prisma/client.ts";
 import { createJudgeQueue } from "../../src/lib/judgeQueue.ts";
 
 export async function judgeFixture(t, count = 1, options = {}) {
+  await mkdir(join(tmpdir(), "opencode"), { recursive: true });
   const dir = await mkdtemp(join(tmpdir(), "opencode", "itouoj-judge-"));
   const url = `file:${join(dir, "queue.db")}`;
   const sql = new Database(join(dir, "queue.db"));
