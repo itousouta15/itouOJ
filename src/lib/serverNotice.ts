@@ -5,4 +5,6 @@ export const SERVER_NOTICE = {
   message: "目前 itouOJ 伺服器發生異常，部分功能（登入、提交、評測）可能變慢或暫時無法使用。我們正在處理，造成不便敬請見諒。",
   // 內容改變時換新 id，之前按過「關閉」的使用者會重新看到公告。
   id: "server-issue-1",
+  // 對應 docs/error-codes.md 的代碼，使用者回報時用。
+  code: "OJ-SRV-001",
 } as const;

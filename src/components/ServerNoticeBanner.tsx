@@ -42,7 +42,10 @@ export default function ServerNoticeBanner() {
     >
       <div className="mx-auto flex w-full max-w-5xl items-start gap-3">
         <span aria-hidden="true">⚠</span>
-        <p className="flex-1 leading-6">{SERVER_NOTICE.message}</p>
+        <p className="flex-1 leading-6">
+          {SERVER_NOTICE.message}{" "}
+          <span className="opacity-70">（錯誤代碼 {SERVER_NOTICE.code}）</span>
+        </p>
         <button
           type="button"
           onClick={dismiss}

@@ -97,3 +97,7 @@ jobs:
         env:
           TARGET: ${{ steps.claim.outputs.sha }}
         run: ssh deploy-target "/usr/bin/node /usr/local/sbin/oj-deploy-job.mjs fail $TARGET" || true
+
+      - name: Annotate failure code
+        if: failure()
+        run: echo "::error title=[DEPLOY-001] 部署失敗::請對照 docs/error-codes.md 的 DEPLOY-001，並查看上方失敗的步驟"
