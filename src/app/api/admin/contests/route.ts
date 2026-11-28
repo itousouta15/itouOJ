@@ -2,6 +2,26 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { contestSchema } from "@/lib/contestSchema";
 
+// 管理後台（itouOJ-admin）讀取比賽列表。
+export async function GET() {
+  if ((await getSession())?.role !== "ADMIN") {
+    return Response.json({ error: "需要管理員權限" }, { status: 403 });
+  }
+  const contests = await prisma.contest.findMany({
+    orderBy: { id: "desc" },
+    select: {
+      id: true,
+      title: true,
+      joinCode: true,
+      startTime: true,
+      endTime: true,
+      freezeMinutes: true,
+      _count: { select: { problems: true, participants: true } },
+    },
+  });
+  return Response.json({ contests }, { headers: { "Cache-Control": "private, no-store" } });
+}
+
 export async function POST(request: Request) {
   const session = await getSession();
   if (session?.role !== "ADMIN") {
