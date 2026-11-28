@@ -2,6 +2,20 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { announcementSchema } from "@/lib/announcementSchema";
 
+export async function GET() {
+  if ((await getSession())?.role !== "ADMIN") {
+    return Response.json({ error: "需要管理員權限" }, { status: 403 });
+  }
+
+  const announcements = await prisma.announcement.findMany({
+    orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+    select: { id: true, title: true, isPinned: true, createdAt: true },
+  });
+  return Response.json({ announcements }, {
+    headers: { "Cache-Control": "private, no-store" },
+  });
+}
+
 export async function POST(request: Request) {
   const session = await getSession();
   if (session?.role !== "ADMIN") {

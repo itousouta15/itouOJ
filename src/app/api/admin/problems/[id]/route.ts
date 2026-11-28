@@ -4,6 +4,17 @@ import { problemSchema } from "@/lib/problemSchema";
 import { pdfUpdateData, PdfUploadError } from "@/lib/problemPdf";
 import { resolveAuthorId } from "@/lib/problemAuthor";
 import { nextProblemCode } from "@/lib/problemCode";
+import { readAdminProblem } from "@/lib/adminProblemData";
+
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if ((await getSession())?.role !== "ADMIN") {
+    return Response.json({ error: "需要管理員權限" }, { status: 403 });
+  }
+  const id = Number((await params).id);
+  const data = Number.isSafeInteger(id) && id > 0 ? await readAdminProblem(id) : null;
+  if (!data) return Response.json({ error: "題目不存在" }, { status: 404 });
+  return Response.json(data, { headers: { "Cache-Control": "private, no-store" } });
+}
 
 async function requireAdmin() {
   const session = await getSession();

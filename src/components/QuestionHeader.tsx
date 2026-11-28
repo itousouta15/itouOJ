@@ -46,12 +46,12 @@ export default function QuestionHeader({
         )}
         {!compact && <ReportLink category="PROBLEM" title={`${title}：題目問題`} />}
         {adminHref && (
-          <Link
+          <a
             href={adminHref}
             className="text-sm text-blue hover:underline"
           >
             編輯題目
-          </Link>
+          </a>
         )}
       </div>
       {sub && <p className="mt-1 text-sm text-dim">{sub}</p>}

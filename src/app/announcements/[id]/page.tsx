@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
@@ -80,12 +79,12 @@ export default async function AnnouncementPage({
           )}
           <h1 className="page-title">{announcement.title}</h1>
           {session?.role === "ADMIN" && (
-            <Link
+            <a
               href={`/admin/announcements/${announcement.id}/edit`}
               className="text-sm text-blue hover:underline"
             >
               編輯公告
-            </Link>
+            </a>
           )}
         </div>
         <p className="mono mt-1 text-xs text-mute">

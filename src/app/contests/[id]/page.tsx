@@ -57,7 +57,7 @@ export default async function ContestPage({
           {!contest.isPublic && <span className="vbadge vbadge-gray">未公開</span>}
           {canManage && (
             <Link
-              href={`/admin/contests/${contest.id}/edit`}
+              href={`/contests/${contest.id}/manage/edit`}
               className="text-sm text-blue hover:underline"
             >
               編輯比賽
@@ -65,7 +65,7 @@ export default async function ContestPage({
           )}
           {canManage && (
             <Link
-              href={`/admin/contests/${contest.id}/status`}
+              href={`/contests/${contest.id}/manage/status`}
               className="text-sm text-blue hover:underline"
             >
               參賽者狀態

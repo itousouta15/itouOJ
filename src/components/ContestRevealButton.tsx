@@ -14,7 +14,7 @@ export default function ContestRevealButton({ contestId }: { contestId: number }
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/contests/${contestId}/reveal`, {
+      const res = await fetch(`/api/contests/${contestId}/manage/reveal`, {
         method: "POST",
       });
       const data = await res.json();

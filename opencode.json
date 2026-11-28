@@ -1,0 +1,28 @@
+
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "ciallo/gpt-6.2-sol",
+  "provider": {
+    "ciallo": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ciallo API",
+      "options": {
+        "baseURL": "https://ciallo.bar/v1"
+      },
+      "models": {
+        "gpt-6.2-sol": {
+          "name": "GPT-6.2 Sol"
+        },
+        "gpt-6.1-terra": {
+          "name": "GPT-6.1 Terra"
+        },
+        "gpt-6-luna": {
+          "name": "GPT-6 Luna"
+        },
+        "gpt-6.1-sol": {
+          "name": "GPT-6.1 Sol"
+        }
+      }
+    }
+  }
+}

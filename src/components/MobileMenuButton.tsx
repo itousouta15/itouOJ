@@ -89,8 +89,9 @@ export default function MobileMenuButton({
               ))}
             </div>
             <nav className="nav-overlay-links" aria-label="主要導覽">
-              {links.map((link, index) => (
-                <Link
+              {links.map((link, index) => {
+                const NavItem = link.href.startsWith("/admin/") ? "a" : Link;
+                return <NavItem
                   key={link.href}
                   href={link.href}
                   className={`nav-overlay-link${isNavActive(pathname, link.href) ? " active" : ""}`}
@@ -102,8 +103,8 @@ export default function MobileMenuButton({
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   {link.label}
-                </Link>
-              ))}
+                </NavItem>;
+              })}
             </nav>
           </div>,
           document.body

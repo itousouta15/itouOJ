@@ -98,11 +98,12 @@ export default function AccountMenu({
             <p className="nav-menu-heading">{group.label}</p>
             {group.links.map((link) => {
               const index = itemIndex++;
-              return <Link key={link.href} href={link.href} className="menu-item" role="menuitem"
+              const NavItem = link.href.startsWith("/admin/") ? "a" : Link;
+              return <NavItem key={link.href} href={link.href} className="menu-item" role="menuitem"
                 ref={(node) => { itemRefs.current[index] = node; }} onKeyDown={(event) => itemKeys(event, index)} onClick={() => setOpen(false)}>
                 <span aria-hidden="true">{link.glyph}</span><span className="flex-1">{link.label}</span>
                 {link.href === "/messages" && unread > 0 && <span className="rounded-full bg-[#ff6b6b] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">{unread > 99 ? "99+" : unread}</span>}
-              </Link>;
+              </NavItem>;
             })}
           </div>)}
           <div className="menu-sep" />

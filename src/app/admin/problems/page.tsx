@@ -167,12 +167,12 @@ export default async function AdminProblemsPage({
         >
           課程管理 →
         </Link>
-        <Link
+        <a
           href="/admin/announcements"
           className="text-sm text-blue hover:underline"
         >
           公告管理 →
-        </Link>
+        </a>
         <Link
           href="/admin/contests"
           className="text-sm text-blue hover:underline"

@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return ["edit", "status"].map((page) => ({
+      source: `/admin/contests/:id/${page}`,
+      destination: `/contests/:id/manage/${page}`,
+      permanent: false,
+    }));
+  },
   async headers() {
     return [
       {

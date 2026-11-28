@@ -202,12 +202,12 @@ export default async function ProblemListPage({
                   {isAdmin && !tag && !query && (
                     <>
                       ，
-                      <Link
+                      <a
                         href="/admin/problems/new"
                         className="text-blue hover:underline"
                       >
                         來出第一題
-                      </Link>
+                      </a>
                     </>
                   )}
                 </td>

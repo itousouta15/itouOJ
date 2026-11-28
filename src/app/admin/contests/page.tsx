@@ -28,9 +28,9 @@ export default async function AdminContestsPage() {
           <Link href="/admin/courses" className="text-sm text-blue hover:underline">
             課程管理 →
           </Link>
-          <Link href="/admin/announcements" className="text-sm text-blue hover:underline">
+          <a href="/admin/announcements" className="text-sm text-blue hover:underline">
             公告管理 →
-          </Link>
+          </a>
         </div>
         <Link href="/admin/contests/new" className="btn-primary">
           ＋ 新增比賽
@@ -90,14 +90,14 @@ export default async function AdminContestsPage() {
                 <td className="table-cell">
                   <div className="flex gap-3">
                     <Link
-                      href={`/admin/contests/${c.id}/status`}
+                      href={`/contests/${c.id}/manage/status`}
                       className="text-sm text-blue hover:underline"
                       title="開賽前確認每台選手機是否設定好"
                     >
                       狀態
                     </Link>
                     <Link
-                      href={`/admin/contests/${c.id}/edit`}
+                      href={`/contests/${c.id}/manage/edit`}
                       className="text-sm text-blue hover:underline"
                     >
                       編輯

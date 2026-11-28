@@ -79,6 +79,7 @@ export default function ContestForm({
 }) {
   const router = useRouter();
   const editing = initial?.id != null;
+  const updateEndpoint = `/api/contests/${initial?.id}/manage`;
   const [form, setForm] = useState<ContestFormInitial>(() => {
     const value = initial ?? EMPTY;
     return {
@@ -139,7 +140,7 @@ export default function ContestForm({
     setError("");
     try {
       const res = await fetch(
-        editing ? `/api/admin/contests/${initial!.id}` : createEndpoint,
+        editing ? updateEndpoint : createEndpoint,
         {
           method: editing ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -174,7 +175,7 @@ export default function ContestForm({
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/admin/contests/${initial!.id}`, { method: "DELETE" });
+      const res = await fetch(updateEndpoint, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
         setError(data.error ?? "刪除失敗");

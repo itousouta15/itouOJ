@@ -135,8 +135,7 @@ export default function AuthForm({
           });
           const result = await done.json();
           if (done.ok) {
-            router.push(next ?? "/");
-            router.refresh();
+            finishSignIn();
           } else {
             setError(result.error ?? "登入未完成，請再試一次");
           }
@@ -152,6 +151,16 @@ export default function AuthForm({
     } finally {
       setOauthBusy(false);
     }
+  }
+
+  function finishSignIn() {
+    // /admin may be served by a different Next.js app behind the same origin.
+    if (next === "/admin" || next?.startsWith("/admin/")) {
+      window.location.assign(next);
+      return;
+    }
+    router.push(next ?? "/");
+    router.refresh();
   }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -180,8 +189,7 @@ export default function AuthForm({
         setLoading(false);
         return;
       }
-      router.push(next ?? "/");
-      router.refresh();
+      finishSignIn();
     } catch {
       setError("發生錯誤，請稍後再試");
       resetTurnstile();

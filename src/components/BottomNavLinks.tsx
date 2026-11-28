@@ -188,11 +188,14 @@ export default function BottomNavLinks({
           <nav aria-label="更多功能" className="app-more-links">
             {groups.map((group) => <section key={group.label} aria-label={group.label}>
               <h3 className="nav-menu-heading">{group.label}</h3>
-              <div className="app-more-group-links">{group.links.map((link) => <Link key={link.href} href={link.href} onClick={closeMore}
+              <div className="app-more-group-links">{group.links.map((link) => {
+                const NavItem = link.href.startsWith("/admin/") ? "a" : Link;
+                return <NavItem key={link.href} href={link.href} onClick={closeMore}
                 className={`app-more-link${isNavActive(pathname, link.href) ? " active" : ""}`}>
                 <span aria-hidden="true">{link.glyph}</span>{link.label}
                 {link.href === "/messages" && unread > 0 && <span className="app-more-unread">{unread > 99 ? "99+" : unread}</span>}
-              </Link>)}</div>
+                </NavItem>;
+              })}</div>
             </section>)}
           </nav>
         </div>

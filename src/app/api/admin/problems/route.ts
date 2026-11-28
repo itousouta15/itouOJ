@@ -4,6 +4,21 @@ import { problemSchema } from "@/lib/problemSchema";
 import { pdfUpdateData, PdfUploadError } from "@/lib/problemPdf";
 import { resolveAuthorId } from "@/lib/problemAuthor";
 import { nextProblemCode } from "@/lib/problemCode";
+import { listAdminProblems } from "@/lib/adminProblemData";
+
+export async function GET(request: Request) {
+  if ((await getSession())?.role !== "ADMIN") {
+    return Response.json({ error: "需要管理員權限" }, { status: 403 });
+  }
+  const params = new URL(request.url).searchParams;
+  const data = await listAdminProblems({
+    type: params.get("type") ?? undefined,
+    page: params.get("page") ?? undefined,
+    q: params.get("q") ?? undefined,
+    reorder: params.get("reorder") ?? undefined,
+  });
+  return Response.json(data, { headers: { "Cache-Control": "private, no-store" } });
+}
 
 export async function POST(request: Request) {
   const session = await getSession();

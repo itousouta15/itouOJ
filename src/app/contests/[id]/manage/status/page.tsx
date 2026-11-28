@@ -79,10 +79,10 @@ export default async function ContestStatusPage({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <Link
-          href={session.role === "ADMIN" ? "/admin/contests" : `/contests/${contest.id}`}
+          href={`/contests/${contest.id}`}
           className="text-sm text-blue hover:underline"
         >
-          ← {session.role === "ADMIN" ? "比賽管理" : "返回比賽"}
+          ← 返回比賽
         </Link>
         <ContestStatusBadge contest={contest} />
       </div>

@@ -63,7 +63,7 @@ export default async function ContestScoreboardPage({
             ? "，比賽結束後由主辦者公開最終成績"
             : `，最後 ${contest.freezeMinutes} 分鐘的結果暫不公開`}
           {canManage && (
-            <Link href={`/admin/contests/${contest.id}/edit`} className="ml-2 underline">
+            <Link href={`/contests/${contest.id}/manage/edit`} className="ml-2 underline">
               前往公開
             </Link>
           )}
