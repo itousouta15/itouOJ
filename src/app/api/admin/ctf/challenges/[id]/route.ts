@@ -7,6 +7,23 @@ import { CTF_METADATA_MAX_BYTES, readCtfJson, ctfErrorResponse } from "@/lib/ctf
 
 type Context = { params: Promise<{ id: string }> };
 
+// 管理後台（itouOJ-admin）讀取單一 CTF 題目（編輯表單用；不含 flag）。
+export async function GET(_request: Request, { params }: Context) {
+  if ((await getSession())?.role !== "ADMIN") return Response.json({ error: "需要管理員權限" }, { status: 403 });
+  const id = ctfIdSchema.safeParse((await params).id);
+  if (!id.success) return Response.json({ error: "找不到題目" }, { status: 404 });
+  const challenge = await prisma.ctfChallenge.findUnique({
+    where: { id: id.data },
+    select: {
+      id: true, title: true, description: true, category: true, difficulty: true,
+      points: true, isPublic: true, order: true, labType: true,
+      attachments: { select: { id: true, filename: true, sizeBytes: true }, orderBy: { id: "asc" } },
+    },
+  });
+  if (!challenge) return Response.json({ error: "找不到題目" }, { status: 404 });
+  return Response.json({ challenge }, { headers: { "Cache-Control": "private, no-store" } });
+}
+
 export async function PUT(request: Request, { params }: Context) {
   if ((await getSession())?.role !== "ADMIN") return Response.json({ error: "需要管理員權限" }, { status: 403 });
   const id = ctfIdSchema.safeParse((await params).id);
