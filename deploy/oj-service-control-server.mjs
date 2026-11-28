@@ -18,6 +18,33 @@ const allowed = new Set([
   "remote:start", "remote:restart",
 ]);
 
+const logUnits = Object.freeze({
+  website: "online-judge.service", admin: "online-judge-admin.service",
+  proxy: "nginx.service", worker: "online-judge-worker.service",
+  sandbox: "sandbox-server.service", interactive: "sandbox-interactive.service",
+  control: "online-judge-control.service",
+});
+
+export async function readServiceLog(service, execute = run) {
+  if (!Object.hasOwn(logUnits, service)) throw new Error("Invalid log source");
+  const { stdout } = await execute("/usr/bin/journalctl", ["--no-pager", "--quiet", "--output=json",
+    "--output-fields=MESSAGE,PRIORITY", "--lines=100", `--unit=${logUnits[service]}`],
+  { timeout: 4000, maxBuffer: 512 * 1024 });
+  return stdout.split("\n").filter(Boolean).map((line) => {
+    const record = JSON.parse(line);
+    const timestamp = Math.trunc(Number(record.__REALTIME_TIMESTAMP) / 1000);
+    if (!Number.isSafeInteger(timestamp) || timestamp <= 0) return null;
+    const message = typeof record.MESSAGE === "string" ? record.MESSAGE : "[非文字或過長的紀錄]";
+    return {
+      timestamp,
+      priority: /^[0-7]$/.test(record.PRIORITY) ? Number(record.PRIORITY) : null,
+      message: /authorization|cookie|secret|token|passwd|password|api[_-]?key|credential|private[_ -]?key|\b(?:bearer|basic)\s+\S+|[a-z][\w+.-]*:\/\/[^\s/@]+@/i.test(message)
+        ? "[已隱藏可能包含憑證的紀錄]"
+        : message.replace(/[\x00-\x08\x0B-\x1F\x7F-\x9F]/g, "").slice(0, 2000),
+    };
+  }).filter(Boolean);
+}
+
 export function readDeployLogTail(path, limit = 32 * 1024) {
   let fd;
   try {
@@ -59,12 +86,23 @@ export async function dispatchDeployment(token, fetcher = fetch) {
   await response.body?.cancel();
 }
 
-export function createControlServer(perform, deployment) {
+export function createControlServer(perform, deployment, getLogs) {
+  let readingLog = false;
   return createServer(async (request, response) => {
     const reply = (status, body) => {
       response.writeHead(status, { "Cache-Control": "no-store", "Content-Type": "application/json" });
       response.end(JSON.stringify(body ?? {}));
     };
+    if (request.url?.startsWith("/logs/")) {
+      if (request.method !== "GET") return reply(405);
+      const service = request.url.slice("/logs/".length);
+      if (!getLogs || !Object.hasOwn(logUnits, service)) return reply(404);
+      if (readingLog) return reply(503);
+      readingLog = true;
+      try { return reply(200, { entries: await getLogs(service) }); }
+      catch { return reply(503, { error: "Service logs unavailable" }); }
+      finally { readingLog = false; }
+    }
     if (request.url === "/deployment") {
       if (!deployment) return reply(404);
       try {
@@ -169,7 +207,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   };
   const server = createControlServer(async (service, action) => {
     await run("/usr/local/sbin/oj-service-control", [service, action], { timeout: 50_000, maxBuffer: 1024 });
-  }, deployment);
+  }, deployment, readServiceLog);
   // RuntimeDirectory belongs to root:oj and is not writable by the website.
   // Only the oj group can connect; never open a TCP listener for this protocol.
   try { unlinkSync(socketPath); }

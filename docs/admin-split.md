@@ -4,6 +4,8 @@
 
 目前可切換伺服器服務、遠端主機、評測監控、GitHub 部署、題庫、標籤及公告。先部署本 repo 的管理讀取 API，再依 `itouOJ-admin/deploy/nginx-admin.conf` 啟用分流。所有 `/api/*` 仍由本 repo 處理；出題申請、識讀群集、CTF 等未遷移頁和原管理頁仍可由本 repo 提供。
 
+伺服器紀錄依賴新版 `online-judge-control`。請先透過主站發版更新管理 API 及主機上的 `oj-service-control-server.mjs`，再部署後台。紀錄來自本機 systemd journal，讀取按服務限制，與部署工作紀錄分開。
+
 比賽主辦人入口已移到 `/contests/:id/manage/edit` 和 `/contests/:id/manage/status`，寫入 API 移到 `/api/contests/:id/manage` 和 `/api/contests/:id/manage/reveal`。舊頁導向新路徑，舊 API 暫時沿用同一套 handler 以支援已載入的舊版頁面。未來若把整個 `/admin` 切去新服務，Nginx 須優先將舊比賽編輯與狀態網址導到主站的新路徑。
 
 ## 本機端到端驗證
