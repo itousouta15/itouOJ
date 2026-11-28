@@ -7,6 +7,38 @@ async function requireAdmin() {
   return session?.role === "ADMIN" ? session : null;
 }
 
+// 管理後台（itouOJ-admin）讀取單一課程（編輯表單用）。
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!(await requireAdmin())) {
+    return Response.json({ error: "需要管理員權限" }, { status: 403 });
+  }
+  const courseId = Number((await params).id);
+  if (!Number.isInteger(courseId)) {
+    return Response.json({ error: "找不到課程" }, { status: 404 });
+  }
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: { problems: { orderBy: [{ order: "asc" }, { id: "asc" }] } },
+  });
+  if (!course) return Response.json({ error: "找不到課程" }, { status: 404 });
+  return Response.json(
+    {
+      course: {
+        id: course.id,
+        title: course.title,
+        description: course.description,
+        isPublic: course.isPublic,
+        joinCode: course.joinCode ?? "",
+        problemIds: course.problems.map((p) => p.problemId),
+      },
+    },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
