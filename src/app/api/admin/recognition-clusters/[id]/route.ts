@@ -7,6 +7,38 @@ async function requireAdmin() {
   return session?.role === "ADMIN" ? session : null;
 }
 
+// 管理後台（itouOJ-admin）讀取單一群集（編輯表單用）。
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!(await requireAdmin())) {
+    return Response.json({ error: "需要管理員權限" }, { status: 403 });
+  }
+  const clusterId = Number((await params).id);
+  if (!Number.isInteger(clusterId)) {
+    return Response.json({ error: "找不到群集" }, { status: 404 });
+  }
+  const cluster = await prisma.recognitionCluster.findUnique({
+    where: { id: clusterId },
+    include: { problems: { select: { id: true } }, tags: { select: { tagId: true } } },
+  });
+  if (!cluster) return Response.json({ error: "找不到群集" }, { status: 404 });
+  return Response.json(
+    {
+      cluster: {
+        id: cluster.id,
+        title: cluster.title,
+        description: cluster.description,
+        isPublic: cluster.isPublic,
+        problemIds: cluster.problems.map((p) => p.id),
+        tagIds: cluster.tags.map((t) => t.tagId),
+      },
+    },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

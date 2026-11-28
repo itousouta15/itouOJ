@@ -2,6 +2,37 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { recognitionClusterSchema } from "@/lib/recognitionClusterSchema";
 
+// 管理後台（itouOJ-admin）讀取識讀群集列表與未分類題數。
+export async function GET() {
+  if ((await getSession())?.role !== "ADMIN") {
+    return Response.json({ error: "需要管理員權限" }, { status: 403 });
+  }
+  const [clusters, uncategorized] = await Promise.all([
+    prisma.recognitionCluster.findMany({
+      orderBy: [{ order: "asc" }, { id: "asc" }],
+      include: {
+        _count: { select: { problems: { where: { type: "RECOGNITION" } } } },
+        tags: { include: { tag: true } },
+      },
+    }),
+    prisma.problem.count({ where: { type: "RECOGNITION", clusterId: null } }),
+  ]);
+  return Response.json(
+    {
+      uncategorized,
+      clusters: clusters.map((c) => ({
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        isPublic: c.isPublic,
+        problemCount: c._count.problems,
+        tags: c.tags.map((ct) => ({ id: ct.tagId, name: ct.tag.name })),
+      })),
+    },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
+}
+
 export async function POST(request: Request) {
   const session = await getSession();
   if (session?.role !== "ADMIN") {
