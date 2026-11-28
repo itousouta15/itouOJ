@@ -1,0 +1,171 @@
+import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { problemSchema } from "@/lib/problemSchema";
+import { pdfUpdateData, PdfUploadError } from "@/lib/problemPdf";
+import { resolveAuthorId } from "@/lib/problemAuthor";
+import { nextProblemCode } from "@/lib/problemCode";
+
+async function requireAdmin() {
+  const session = await getSession();
+  return session?.role === "ADMIN" ? session : null;
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!(await requireAdmin())) {
+    return Response.json({ error: "需要管理員權限" }, { status: 403 });
+  }
+  const { id } = await params;
+  const problemId = Number(id);
+
+  const body = await request.json().catch(() => null);
+  const parsed = problemSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues[0].message },
+      { status: 400 }
+    );
+  }
+  const {
+    testCases,
+    subtasks,
+    tagIds,
+    pdfUpload,
+    type,
+    code,
+    options,
+    answerIndex,
+    explanation,
+    paper,
+    sourceNumber,
+    category,
+    authorUsername,
+    ...base
+  } = parsed.data;
+
+  let pdf;
+  try {
+    pdf = pdfUpdateData(pdfUpload);
+  } catch (err) {
+    if (err instanceof PdfUploadError) {
+      return Response.json({ error: err.message }, { status: 400 });
+    }
+    throw err;
+  }
+
+  const author = await resolveAuthorId(authorUsername);
+  if ("error" in author) {
+    return Response.json({ error: author.error }, { status: 400 });
+  }
+
+  const existing = await prisma.problem.findUnique({
+    where: { id: problemId },
+    select: { id: true, type: true, order: true, problemCode: true },
+  });
+  if (!existing) {
+    return Response.json({ error: "題目不存在" }, { status: 404 });
+  }
+
+  // 切換題型時補上對應的識別欄位：實作題要有 problemCode，識別題要有整数 order。
+  const switchingToProgramming = type === "PROGRAMMING" && existing.type !== "PROGRAMMING";
+  const switchingToRecognition = type === "RECOGNITION" && existing.type !== "RECOGNITION";
+  let newProblemCode: string | undefined;
+  let newOrder: number | undefined;
+  if (switchingToProgramming) {
+    const last = await prisma.problem.findFirst({
+      where: { type: "PROGRAMMING" },
+      orderBy: { problemCode: "desc" },
+      select: { problemCode: true },
+    });
+    newProblemCode = nextProblemCode(last?.problemCode);
+  } else if (switchingToRecognition) {
+    const last = await prisma.problem.findFirst({
+      where: { type: "RECOGNITION" },
+      orderBy: { order: "desc" },
+      select: { order: true },
+    });
+    newOrder = (last?.order ?? -1) + 1;
+  }
+
+  // 測資、子題與標籤整批換新（簡單且不易出錯）。PDF 不在此列——沒有明確
+  // 上傳新檔或按移除的話（pdf 是空物件 {}），維持原本的檔案不動。
+  await prisma.$transaction(async (tx) => {
+    await tx.testCase.deleteMany({ where: { problemId } });
+    await tx.subtask.deleteMany({ where: { problemId } });
+    await tx.problemTag.deleteMany({ where: { problemId } });
+
+    if (type === "RECOGNITION") {
+      await tx.problem.update({
+        where: { id: problemId },
+        data: {
+          ...base,
+          type,
+          ...pdf,
+          code: code ?? null,
+          options: options ? JSON.stringify(options) : null,
+          answerIndex: answerIndex ?? null,
+          explanation: explanation?.trim() || null,
+          paper: paper?.trim() || null,
+          sourceNumber: sourceNumber ?? null,
+          category: category?.trim() || null,
+          ...(switchingToRecognition ? { order: newOrder, problemCode: null } : {}),
+        },
+      });
+      return;
+    }
+
+    const updated = await tx.problem.update({
+      where: { id: problemId },
+      data: {
+        ...base,
+        type,
+        ...pdf,
+        authorId: author.authorId,
+        ...(switchingToProgramming ? { problemCode: newProblemCode } : {}),
+        // 從識別題改回實作題時清掉識別欄位
+        code: null,
+        options: null,
+        answerIndex: null,
+        explanation: null,
+        paper: null,
+        sourceNumber: null,
+        category: null,
+        subtasks: {
+          create: subtasks.map((s, i) => ({
+            order: i + 1,
+            points: s.points,
+            checkMode: s.checkMode,
+          })),
+        },
+        tags: { create: tagIds.map((tagId) => ({ tagId })) },
+      },
+      include: { subtasks: { orderBy: { order: "asc" } } },
+    });
+    await tx.testCase.createMany({
+      data: testCases.map((tc, i) => ({
+        problemId,
+        input: tc.input,
+        output: tc.output,
+        isSample: tc.isSample,
+        order: i + 1,
+        subtaskId:
+          tc.subtaskIndex != null ? updated.subtasks[tc.subtaskIndex].id : null,
+      })),
+    });
+  });
+  return Response.json({ ok: true });
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!(await requireAdmin())) {
+    return Response.json({ error: "需要管理員權限" }, { status: 403 });
+  }
+  const { id } = await params;
+  await prisma.problem.delete({ where: { id: Number(id) } }).catch(() => null);
+  return Response.json({ ok: true });
+}

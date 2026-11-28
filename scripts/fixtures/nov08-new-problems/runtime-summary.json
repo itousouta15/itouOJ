@@ -1,0 +1,12 @@
+{
+  "scope": "b562-b790 additions",
+  "tutorials": 229,
+  "publicSamplesPerLanguage": 280,
+  "independentCasesPerLanguage": 5453,
+  "languages": [
+    "C++17",
+    "Python3"
+  ],
+  "sourceAndCaseHashesMatchCurrentFiles": true,
+  "staleEvidenceIgnored": 0
+}

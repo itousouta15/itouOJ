@@ -1,0 +1,638 @@
+{
+  "code": "b233",
+  "status": "proven_exact_polynomial_and_verified",
+  "algorithm": "端點排序、不可冗餘區間鏈與三角前綴 DP",
+  "scope": "Only this sidecar; practice2 and the six accepted national2/competition assets are untouched.",
+  "assumptions": [
+    "1<=N<=5000",
+    "0<=x,l<=10^9",
+    "Duplicate anchors and zero lengths are allowed.",
+    "Coverage length is Lebesgue length; endpoints have zero length."
+  ],
+  "sources": [
+    {
+      "kind": "primary_host_announcement",
+      "url": "https://sites.google.com/ms6.pmsh.khc.edu.tw/information"
+    },
+    {
+      "kind": "primary_original_pdf",
+      "url": "https://drive.google.com/file/d/1PkAnECpaBp_TBjJnyO8pnOsVKHOE8IJD/view",
+      "pdfPage": 5,
+      "printedSection": "第三題：飛彈防禦",
+      "finding": "The input states nonnegative coordinates and lengths <=10^9; it does not require distinct anchors or sorted input. The six bounds are 4,10,30,100,400,5000."
+    }
+  ],
+  "proof": [
+    {
+      "lemma": "允許省略裝置不改變最大值",
+      "argument": "從完整方向解刪去一些區間只會降低聯集；反過來，任何每裝置至多選一段的子集合，都能把未選裝置任意定向補齊而不減少聯集。因此求至多一段／裝置的最大聯集與原問題相同。零長區間可直接省略。"
+    },
+    {
+      "lemma": "最優解有不可刪的嚴格端點鏈",
+      "argument": "在一個最優方向解中反覆刪掉不改變聯集的區間，得到包含關係極小的子集合。它不含互相包含的區間（相同區間也只需一段），所以按右端點排序後，左右端點都嚴格遞增。對其中連續三段H,I,J，若r_H>=l_J，則H與J聯集已連通且包含I，I可刪，矛盾。故必有r_H<l_J，等號也不允許。"
+    },
+    {
+      "lemma": "同一裝置只可能在鏈中相鄰重複",
+      "argument": "同裝置L=[x-l,x]、R=[x,x+l]且l>0，L必排在R前。若中間恰一段，連續三段L,I,R違反r_L=x=l_R的嚴格不等式。若中間至少兩段，取L及緊隨的兩段，第三段左端<l_R=x=r_L，也違反不等式。因此滿足端點嚴格遞增及三段條件的鏈，只需禁止相鄰區間使用相同裝置，即可保證全鏈每裝置至多一次。"
+    },
+    {
+      "lemma": "DP轉移",
+      "argument": "將2N個正長候選依(right,left,device)排序。定義D[i,j]為以i,j收尾的合法鏈聯集長度。若l_i<l_j、r_i<r_j且device_i!=device_j，則D[i,j]=gain(i,j)+max(len_i, max_{h<i,r_h<l_j}D[h,i])，其中gain(i,j)=r_j-max(l_j,r_i)。只選i的base是len_i。舊鏈已有所有條件；加入j只須檢查最後三段h,i,j。前一引理保證沒有更早裝置衝突。嚴格遞增端點保證新增長度只依賴最後區間i。"
+    },
+    {
+      "lemma": "三角前綴表使每次轉移O(1)",
+      "argument": "P[i][t]=max(len_i,D[h,i] for 0<=h<t)。令q_j為所有候選右端點嚴格小於l_j的數量，以lower_bound求。轉移查P[i][min(q_j,i)]即可。處理j時掃描i<j並累計前綴最大，建出P[j][0..j]，因此每個有序候選對只做一次常數工作。"
+    },
+    {
+      "lemma": "全域最優性",
+      "argument": "任一最優完整方向解可壓成上述合法鏈，所以DP答案至少為原最優值。任一DP鏈沒有重複裝置，補上其餘裝置即成可行完整解且聯集不減，所以DP答案至多為原最優值。上下界相等。"
+    },
+    {
+      "lemma": "整數與記憶體界",
+      "argument": "所有候選皆在[-10^9,2*10^9]，因此任何聯集長度及前綴DP值皆介於0與3*10^9，可安全用uint32_t／array(I)存表；座標及減法用64位元。最多M=10000候選，三角表有M(M+1)/2=50005000個32位元項目，200020000 bytes，另有O(N)物件與輸入。"
+    }
+  ],
+  "complexity": {
+    "time": "O(N^2) worst-case, including the O(N log N) sorting and endpoint lower_bound preprocessing.",
+    "space": "C++ keeps the original triangular uint32 table, at most200020000 payload bytes forM=10000. Python stores only future queried positive q columns for non-formula rows, with array(I) dense-prefix/constant-tail records. Worst-case O(N^2), no more DP-value items than the original triangular table, plus O(N) index metadata and input words. array capacity overhead depends on CPython allocation.",
+    "no_search_cap": true,
+    "no_exponential_branching": true
+  },
+  "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nstruct Interval { ll left, right; int device; };\nll solve(const vector<pair<ll,ll>>& devices) {\n    vector<Interval> a;\n    for (int i=0; i<(int)devices.size(); ++i) {\n        auto [x,l]=devices[i];\n        if (!l) continue;\n        a.push_back({x-l,x,i});\n        a.push_back({x,x+l,i});\n    }\n    sort(a.begin(),a.end(),[](const Interval& x,const Interval& y) {\n        return tie(x.right,x.left,x.device)<tie(y.right,y.left,y.device);\n    });\n    int m=a.size();\n    if (!m) return 0;\n    vector<ll> ends;\n    for (auto x:a) ends.push_back(x.right);\n    // pref[j][t] = maximum union ending at j, with predecessor index < t,\n    // also allowing the one-interval chain consisting only of j.\n    vector<vector<uint32_t>> pref;\n    pref.reserve(m);\n    ll answer=0;\n    for (int j=0; j<m; ++j) {\n        ll left=a[j].left, right=a[j].right;\n        int bound=lower_bound(ends.begin(),ends.end(),left)-ends.begin();\n        uint32_t best=right-left;\n        vector<uint32_t> row(j+1,best);\n        for (int i=0; i<j; ++i) {\n            if (a[i].left<left && a[i].right<right && a[i].device!=a[j].device) {\n                uint32_t prior=pref[i][min(bound,i)];\n                ll gain=right-max(left,a[i].right);\n                best=max(best,(uint32_t)(prior+gain));\n            }\n            row[i+1]=best;\n        }\n        answer=max(answer,(ll)best);\n        pref.push_back(move(row));\n    }\n    return answer;\n}\nint main() {\n    ios::sync_with_stdio(false); cin.tie(nullptr);\n    int n;\n    while (cin>>n) {\n        vector<pair<ll,ll>> a(n);\n        for (auto& [x,l]:a) cin>>x>>l;\n        cout<<solve(a)<<'\\n';\n    }\n}\n",
+  "python": "import sys\nfrom array import array\nfrom bisect import bisect_left\n\ndef solve(devices):\n    # A coincident anchor needs only its two longest devices: one per direction.\n    at={}\n    for x,length in devices:\n        if not length:\n            continue\n        top=at.get(x)\n        if top is None:\n            at[x]=(length,0)\n        elif length>top[0]:\n            at[x]=(length,top[0])\n        elif length>top[1]:\n            at[x]=(top[0],length)\n    intervals=[]\n    device=0\n    for x,(a,b) in at.items():\n        for length in (a,b):\n            if length:\n                intervals.append((x,x-length,device))\n                intervals.append((x+length,x,device))\n                device+=1\n    intervals.sort()\n    m=len(intervals)\n    if not m:\n        return 0\n    rights=[r for r,l,d in intervals]\n    lefts=[l for r,l,d in intervals]\n    ids=[d for r,l,d in intervals]\n    lengths=[r-l for r,l,d in intervals]\n    bounds=[bisect_left(rights,l) for l in lefts]\n    queries=sorted(set(bounds))\n    query_rank=[0]*(m+1)\n    for rank,q in enumerate(queries):\n        query_rank[q]=rank\n    suffix_min=[m]*(m+1)\n    for j in range(m-1,-1,-1):\n        suffix_min[j]=min(bounds[j],suffix_min[j+1])\n    # For each prefix, the smallest left endpoints from two distinct devices.\n    INF=10**30\n    min1=[INF];min2=[INF];owner1=[-1]\n    first=second=INF;first_id=second_id=-1\n    starts=[];group_start=0\n    for j,(right,left,dev) in enumerate(intervals):\n        if j and right!=rights[j-1]:\n            group_start=j\n        starts.append(group_start)\n        if dev==first_id:\n            if left<first:\n                first=left\n        elif dev==second_id:\n            if left<second:\n                second=left\n                if second<first:\n                    first,second=second,first\n                    first_id,second_id=second_id,first_id\n        elif left<first:\n            second,second_id=first,first_id\n            first,first_id=left,dev\n        elif left<second:\n            second,second_id=left,dev\n        min1.append(first);min2.append(second);owner1.append(first_id)\n    # kind 0: constant base row. kind 1: bound=0 row, queried by a formula.\n    # kind 2: only genuinely queried prefix entries, followed by a constant tail.\n    kinds=[];rows=[];offsets=[];tails=[];tail_values=[]\n    end_best=[];global_best=[]\n    for j in range(m):\n        left=lefts[j];right=rights[j];dev=ids[j];length=lengths[j]\n        stop=starts[j]\n        small_left=min2[stop] if owner1[stop]==dev else min1[stop]\n        q=bounds[j]\n        if small_left>=left:\n            kind=0;best=length;row=None;lo=tail=0\n        elif q==0:\n            kind=1;best=max(length,right-small_left);row=None;lo=tail=0\n        else:\n            kind=2\n            # Earlier disjoint intervals are answered by one global prefix.\n            best=length+global_best[q-1]\n            lo=bisect_left(queries,max(1,suffix_min[j+1]))\n            hi=bisect_left(queries,j)\n            row=array('I');write=lo\n            while write<hi and queries[write]<=q:\n                row.append(length+global_best[queries[write]-1]);write+=1\n            upper=right-min1[j+1]\n            if best<upper:\n                qr=query_rank[q]\n                for i in range(q,stop):\n                    if lefts[i]<left and ids[i]!=dev:\n                        ik=kinds[i]\n                        if ik==0:\n                            prior=lengths[i]\n                        elif q>=i:\n                            prior=end_best[i]\n                        elif ik==1:\n                            limit=q if q<starts[i] else starts[i]\n                            ml=min2[limit] if owner1[limit]==ids[i] else min1[limit]\n                            v=rights[i]-ml\n                            prior=v if v>lengths[i] else lengths[i]\n                        elif qr>=tails[i]:\n                            prior=tail_values[i]\n                        else:\n                            prior=rows[i][qr-offsets[i]]\n                        value=prior+right-rights[i]\n                        if value>best:\n                            best=value\n                    if write<hi and queries[write]==i+1:\n                        row.append(best);write+=1\n                    if best==upper:\n                        break\n            # No later predecessor can beat an attained bounding-hull upper\n            # bound, or add a strictly earlier endpoint after 'stop'.\n            tail=write\n        kinds.append(kind);rows.append(row);offsets.append(lo)\n        tails.append(tail);tail_values.append(best);end_best.append(best)\n        global_best.append(max(best,global_best[-1]) if global_best else best)\n    return global_best[-1]\n\nif __name__=='__main__':\n    values=iter(map(int,sys.stdin.buffer.read().split()))\n    output=[]\n    for n in values:\n        devices=[(next(values),next(values)) for _ in range(n)]\n        output.append(str(solve(devices)))\n    print('\\n'.join(output))\n",
+  "checks": [
+    {
+      "input": "3\n2 8\n7 8\n0 4\n",
+      "output": "18",
+      "reason": "Enumerated every one of 8 orientations; computed interval union directly."
+    },
+    {
+      "input": "2\n0 3\n0 2\n",
+      "output": "5",
+      "reason": "Enumerated every one of 4 orientations; computed interval union directly."
+    },
+    {
+      "input": "1\n0 0\n",
+      "output": "0",
+      "reason": "Enumerated every one of 2 orientations; computed interval union directly."
+    },
+    {
+      "input": "3\n0 1000000000\n0 1000000000\n1000000000 1000000000\n",
+      "output": "3000000000",
+      "reason": "Enumerated every one of 8 orientations; computed interval union directly."
+    },
+    {
+      "input": "5\n0 9\n1 1\n2 8\n3 1\n4 7\n",
+      "output": "19",
+      "reason": "Enumerated every one of 32 orientations; computed interval union directly."
+    },
+    {
+      "input": "4\n10 1\n0 4\n10 1\n0 4\n",
+      "output": "10",
+      "reason": "Enumerated every one of 16 orientations; computed interval union directly."
+    },
+    {
+      "input": "4\n0 2\n2 2\n4 2\n6 2\n",
+      "output": "8",
+      "reason": "Enumerated every one of 16 orientations; computed interval union directly."
+    },
+    {
+      "input": "3\n7 0\n7 0\n7 0\n",
+      "output": "0",
+      "reason": "Enumerated every one of 8 orientations; computed interval union directly."
+    },
+    {
+      "input": "16\n8 28\n38 2\n3 4\n21 10\n3 12\n21 0\n31 17\n3 30\n39 11\n10 16\n7 4\n37 11\n0 14\n25 27\n37 21\n29 16\n",
+      "output": "85",
+      "reason": "Enumerated every one of 65536 orientations; computed interval union directly."
+    },
+    {
+      "input": "13\n30 20\n37 13\n15 25\n11 30\n29 20\n20 3\n14 11\n2 3\n19 8\n39 9\n31 21\n0 10\n16 9\n",
+      "output": "71",
+      "reason": "Enumerated every one of 8192 orientations; computed interval union directly."
+    },
+    {
+      "input": "14\n35 30\n18 17\n36 9\n13 9\n8 4\n7 18\n29 26\n12 19\n39 15\n39 13\n6 13\n20 8\n16 16\n19 26\n",
+      "output": "76",
+      "reason": "Enumerated every one of 16384 orientations; computed interval union directly."
+    },
+    {
+      "input": "13\n19 30\n13 3\n5 22\n27 11\n26 21\n25 19\n6 13\n26 3\n13 29\n27 26\n26 18\n4 1\n25 3\n",
+      "output": "70",
+      "reason": "Enumerated every one of 8192 orientations; computed interval union directly."
+    },
+    {
+      "input": "16\n2 28\n1 2\n2 4\n2 21\n2 25\n1 8\n1 2\n1 24\n0 25\n0 28\n1 3\n2 21\n2 23\n2 19\n1 10\n2 22\n",
+      "output": "58",
+      "reason": "Enumerated every one of 65536 orientations; computed interval union directly."
+    },
+    {
+      "input": "14\n854222353 829183471\n429112219 565078577\n864013120 902667634\n240919034 816556217\n974792100 9455814\n547376679 509444739\n314992664 530482277\n606566608 70212026\n607827030 540317986\n546726948 227536464\n622965024 453355132\n434570567 222273719\n541421 463784974\n448836511 233662636\n",
+      "output": "2342317937",
+      "reason": "Enumerated every one of 16384 orientations; computed interval union directly."
+    },
+    {
+      "input": "14\n17 14\n17 4\n13 17\n16 4\n21 10\n18 10\n11 22\n32 17\n13 4\n20 24\n38 12\n14 26\n19 3\n10 6\n",
+      "output": "62",
+      "reason": "Enumerated every one of 16384 orientations; computed interval union directly."
+    },
+    {
+      "input": "13\n19 27\n34 15\n29 28\n31 19\n27 1\n13 18\n34 6\n11 26\n38 20\n15 19\n17 13\n6 12\n14 27\n",
+      "output": "73",
+      "reason": "Enumerated every one of 8192 orientations; computed interval union directly."
+    },
+    {
+      "input": "15\n9 2\n0 19\n2 16\n28 3\n5 14\n23 26\n9 4\n8 19\n3 21\n24 7\n35 24\n36 21\n1 22\n9 3\n20 10\n",
+      "output": "80",
+      "reason": "Enumerated every one of 32768 orientations; computed interval union directly."
+    },
+    {
+      "input": "15\n1 30\n0 14\n1 21\n2 21\n2 3\n0 14\n0 30\n0 15\n1 2\n2 21\n2 15\n1 7\n2 2\n0 26\n1 15\n",
+      "output": "61",
+      "reason": "Enumerated every one of 32768 orientations; computed interval union directly."
+    },
+    {
+      "input": "14\n6 5\n37 8\n7 30\n17 9\n23 24\n34 5\n38 21\n3 30\n13 16\n28 21\n20 9\n25 21\n37 7\n23 6\n",
+      "output": "86",
+      "reason": "Enumerated every one of 16384 orientations; computed interval union directly."
+    },
+    {
+      "input": "13\n5 24\n7 13\n31 15\n8 9\n33 16\n3 13\n33 26\n24 17\n22 9\n14 12\n0 4\n5 30\n20 1\n",
+      "output": "84",
+      "reason": "Enumerated every one of 8192 orientations; computed interval union directly."
+    },
+    {
+      "input": "15\n677771274 574044691\n422259003 521468058\n662729236 688049015\n620294206 805484456\n646652743 664137356\n151106739 125857813\n197480076 693042606\n878689989 950921003\n160054806 559878808\n205526115 560860318\n177921687 49333864\n424743066 368444519\n686614657 34923252\n653822067 322074124\n890613548 142904878\n",
+      "output": "2325173522",
+      "reason": "Enumerated every one of 32768 orientations; computed interval union directly."
+    },
+    {
+      "input": "14\n13 25\n5 26\n5 4\n23 30\n19 23\n20 18\n21 4\n19 4\n12 5\n7 20\n0 6\n9 22\n12 20\n25 9\n",
+      "output": "74",
+      "reason": "Enumerated every one of 16384 orientations; computed interval union directly."
+    },
+    {
+      "input": "16\n2 21\n2 10\n0 9\n2 11\n1 2\n0 16\n2 28\n1 19\n0 3\n0 12\n0 15\n0 22\n0 12\n1 28\n1 19\n1 14\n",
+      "output": "57",
+      "reason": "Enumerated every one of 65536 orientations; computed interval union directly."
+    },
+    {
+      "input": "15\n21 18\n3 25\n6 12\n24 29\n34 7\n31 22\n40 5\n7 21\n18 19\n26 19\n4 17\n24 9\n22 25\n25 10\n16 29\n",
+      "output": "75",
+      "reason": "Enumerated every one of 32768 orientations; computed interval union directly."
+    },
+    {
+      "input": "14\n18 11\n20 14\n15 17\n6 3\n8 27\n6 16\n29 7\n34 25\n2 0\n2 2\n33 28\n37 5\n18 21\n27 5\n",
+      "output": "80",
+      "reason": "Enumerated every one of 16384 orientations; computed interval union directly."
+    },
+    {
+      "input": "13\n16 27\n34 6\n10 25\n16 1\n38 30\n22 21\n6 1\n37 20\n28 4\n19 14\n15 25\n7 28\n6 13\n",
+      "output": "89",
+      "reason": "Enumerated every one of 8192 orientations; computed interval union directly."
+    },
+    {
+      "input": "15\n28 28\n39 29\n4 16\n0 11\n11 20\n9 24\n21 14\n22 12\n0 9\n25 27\n12 25\n27 7\n23 19\n39 3\n1 5\n",
+      "output": "83",
+      "reason": "Enumerated every one of 32768 orientations; computed interval union directly."
+    },
+    {
+      "input": "14\n916386042 347569698\n413823773 716960291\n716934652 793507115\n91765844 436990544\n137977679 28176412\n173033129 431656219\n742420287 278464764\n68953451 281422367\n137439274 217123435\n79189829 950070478\n594425651 860682739\n188036740 462374639\n310203193 16388430\n749385733 166563754\n",
+      "output": "2381322416",
+      "reason": "Enumerated every one of 16384 orientations; computed interval union directly."
+    },
+    {
+      "input": "13\n22 27\n23 6\n9 20\n8 24\n2 17\n33 15\n9 7\n7 0\n8 0\n34 30\n29 25\n15 9\n39 18\n",
+      "output": "80",
+      "reason": "Enumerated every one of 8192 orientations; computed interval union directly."
+    },
+    {
+      "input": "14\n40 6\n14 24\n20 4\n2 0\n6 25\n11 6\n8 6\n4 15\n33 23\n10 20\n36 30\n31 16\n26 21\n35 30\n",
+      "output": "85",
+      "reason": "Enumerated every one of 16384 orientations; computed interval union directly."
+    },
+    {
+      "input": "14\n4 15\n40 3\n26 26\n5 17\n7 0\n23 3\n6 15\n2 2\n37 6\n18 11\n38 3\n21 16\n16 30\n7 11\n",
+      "output": "66",
+      "reason": "Enumerated every one of 16384 orientations; computed interval union directly."
+    },
+    {
+      "input": "14\n21 4\n39 20\n26 25\n30 30\n7 7\n4 26\n12 30\n20 7\n11 11\n32 18\n27 14\n24 9\n37 6\n11 8\n",
+      "output": "82",
+      "reason": "Enumerated every one of 16384 orientations; computed interval union directly."
+    }
+  ],
+  "counterexamples": [
+    {
+      "claim": "One L*R* cut in anchor order suffices",
+      "input": "4\n1 1\n2 2\n3 3\n4 4\n",
+      "trueOutput": "8",
+      "restrictedBest": "7",
+      "reason": "The fourth public example uses right,left,right on devices2,3,4; exhaustive single-cut enumeration gives only7."
+    },
+    {
+      "claim": "Irredundant selected intervals can follow anchor order",
+      "input": "3\n0 10000\n1 9999\n2 9998\n",
+      "trueOutput": "20000",
+      "reason": "A full-coverage witness is device0 left, device2 left, device1 right, whose interval endpoint order reverses the last two anchors."
+    },
+    {
+      "claim": "The natural coverage LP is integral",
+      "input": "3\n2 8\n7 8\n0 4\n",
+      "trueOutput": "18",
+      "fractionalUpper": "18.5",
+      "fractionalRightProbabilities": [
+        "1/2",
+        "1",
+        "1/2"
+      ],
+      "reason": "This LP observation is not used in the final algorithm or correctness evidence."
+    }
+  ],
+  "a853Evidence": {
+    "path": "public/exams/112-zhongtou.pdf",
+    "pdfPage": 8,
+    "followingSamplesPdfPage": 9,
+    "section": "6. 三色河內塔的最少移動次數",
+    "exactQuote": "編號較大的套環永遠都不能放在編號較小套環的上方。",
+    "context": "This sentence appears in the three-color rules paragraph, not only in the preceding conventional-Hanoi introduction. The three equally-sized rings still have ordered labels.",
+    "seedNeedsAmendment": false,
+    "suggestedChineseSentence": "另依原卷規定，即使外觀同大小，編號較大的套環也不得放在編號較小的套環上方。",
+    "why": "The former physical-size-only summary admits anN=6 ordered-stack solution in20moves; the original label ordering requires42. The current seed was read without modification and already contains the required label rule.",
+    "independentBfsN6": {
+      "originalLabelRule": 42,
+      "physicalSizeOnlyRule": 20
+    },
+    "originalSnapshotNeedsAmendment": true,
+    "currentSeedNeedsAmendment": false,
+    "currentSeedPath": "prisma/seed-data/competition-exams-112-114.mjs",
+    "currentSeedAlreadyContainsMissingRule": true
+  },
+  "validation": {
+    "status": "pass",
+    "platform": "linux",
+    "pythonVersion": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+    "pythonExecutable": "/usr/bin/python3",
+    "compiler": "g++ -std=c++17 -O2",
+    "smallCaseCountPerLanguage": 6661,
+    "smallCaseKinds": {
+      "exhaustive_tiny_multiset": 6187,
+      "bounded_random_all_orientations": 460,
+      "public_sample": 5,
+      "targeted_all_orientations": 9
+    },
+    "orientationsIndependentlyEnumerated": 2130276,
+    "stressCaseCountPerLanguage": 5,
+    "totalProgramCasesPerLanguage": 6666,
+    "smallProgramMetrics": {
+      "C++17": {
+        "seconds": 0.0137,
+        "peakRssKiB": 11264
+      },
+      "Python3": {
+        "seconds": 0.183,
+        "peakRssKiB": 11392
+      }
+    },
+    "stress": [
+      {
+        "name": "duplicate_anchor_variable_lengths",
+        "N": 5000,
+        "expected": 9999,
+        "independentReason": "At a common anchor, only the maximum left and right arm matter; use the two largest lengths on opposite sides.",
+        "languages": {
+          "C++17": {
+            "seconds": 0.4702,
+            "peakRssKiB": 199296
+          },
+          "Python3": {
+            "seconds": 0.0293,
+            "peakRssKiB": 11392
+          }
+        }
+      },
+      {
+        "name": "separated_positive_arms",
+        "N": 5000,
+        "expected": 12502500,
+        "independentReason": "All full envelopes are pairwise disjoint, so every orientation has union equal to the sum of lengths.",
+        "languages": {
+          "C++17": {
+            "seconds": 0.9713,
+            "peakRssKiB": 199296
+          },
+          "Python3": {
+            "seconds": 0.0843,
+            "peakRssKiB": 17176
+          }
+        }
+      },
+      {
+        "name": "max_three_billion_union",
+        "N": 5000,
+        "expected": 3000000000,
+        "independentReason": "The global envelope is [-10^9,2*10^9]; two opposite arms at0 and a right arm at10^9 cover it completely.",
+        "languages": {
+          "C++17": {
+            "seconds": 0.5177,
+            "peakRssKiB": 199296
+          },
+          "Python3": {
+            "seconds": 0.0283,
+            "peakRssKiB": 11136
+          }
+        }
+      },
+      {
+        "name": "nested_unique_anchor_frontier",
+        "N": 5000,
+        "expected": 2019995,
+        "independentReason": "If the last device points right, the smallest other possible left is -(1000000+N-2), giving this upper bound. Pointing it left gives a bound two smaller. The penultimate left arm and right arms of the antepenultimate and last devices attain the larger bound; all three devices are distinct.",
+        "languages": {
+          "C++17": {
+            "seconds": 0.6168,
+            "peakRssKiB": 199296
+          },
+          "Python3": {
+            "seconds": 4.8321,
+            "peakRssKiB": 66600
+          }
+        }
+      },
+      {
+        "name": "equal_length_distinct_anchors",
+        "N": 5000,
+        "expected": 2000004999,
+        "independentReason": "The full envelope is [-10^9,10^9+N-1]. Left arms at0 and N-2 plus right arms at1 and N-1 connect and cover it.",
+        "languages": {
+          "C++17": {
+            "seconds": 0.8188,
+            "peakRssKiB": 199296
+          },
+          "Python3": {
+            "seconds": 0.0836,
+            "peakRssKiB": 16956
+          }
+        }
+      }
+    ],
+    "failures": [],
+    "sourceSha256": {
+      "cpp": "3a6a8a61f528ea00036708e74d9cac12d7d2030b5b65d39e601d51f09fbb2c1f",
+      "python": "6528c228b4a2f8466159c763f2804c7a075821605762f084aa70dae258b0762c"
+    },
+    "seconds": 22.303,
+    "rssMeaning": "resource.getrusage(RUSAGE_CHILDREN).ru_maxrss from a fresh metrics wrapper for each actual program run, in KiB on Linux."
+  },
+  "runtimeAssessment": {
+    "observedNominalLimitMs": 5000,
+    "configuredEffectivePythonLimitMs": 15000,
+    "cppAllFiveN5000StressRunsUnderNominalLimit": true,
+    "pythonAllFiveN5000StressRunsUnderEffectiveLimit": true,
+    "worstObservedPythonSeconds": 4.8321,
+    "statement": "The optimized exact quadratic Python passed all five independently justified N5000 families. Worst observed time was4.8321s and RSS66600KiB on local Python3.13.12; configured judge Python is3.12.0 with15000ms allowance. Timing on the deployed judge is not measured and these families are not a universal wall-clock bound.",
+    "scopeUntouched": [
+      "src/lib/newProblemLessons/data/practice2.json",
+      "scripts/fixtures/new-problem-lessons/practice2-checks.json",
+      "the six accepted national2/competition files"
+    ]
+  },
+  "integrationSummary": {
+    "replacementScope": "Only existing b233 lesson fields supplied in lessonPatch; preserve code/title/topic/level and exact public sample fields. Parent owns practice2 integration.",
+    "algorithmBlockers": [],
+    "performanceCaveat": "Exact worst-case O(N^2), without search caps. All five N5000 local Python runs fit the configured15second budget; local3.13 timings do not assert deployed3.12 acceptance.",
+    "maximumCppTablePayloadBytes": 200020000,
+    "checksStored": 32,
+    "instructions": [
+      "Find code b233 in src/lib/newProblemLessons/data/practice2.json and assign all candidate.lessonPatch fields onto that object. This replaces the exponential explanation, both programs, trace, complexity and performanceNote together.",
+      "Merge candidate.checks into scripts/fixtures/new-problem-lessons/practice2-checks.json, adding code:b233 to each record. The checker can additionally execute the portable investigation script in Linux for exhaustive and N5000 evidence.",
+      "Keep original title, metadata, first public sampleInput/sampleOutput unchanged. Do not copy previousValidationBeforeOptimization as current evidence."
+    ]
+  },
+  "previousValidationBeforeOptimization": {
+    "status": "pass",
+    "platform": "linux",
+    "compiler": "g++ -std=c++17 -O2",
+    "smallCaseCountPerLanguage": 6661,
+    "smallCaseKinds": {
+      "exhaustive_tiny_multiset": 6187,
+      "bounded_random_all_orientations": 460,
+      "public_sample": 5,
+      "targeted_all_orientations": 9
+    },
+    "orientationsIndependentlyEnumerated": 2130276,
+    "stressCaseCountPerLanguage": 3,
+    "totalProgramCasesPerLanguage": 6664,
+    "smallProgramMetrics": {
+      "C++17": {
+        "seconds": 0.0152,
+        "peakRssKiB": 11392
+      },
+      "Python3": {
+        "seconds": 0.1854,
+        "peakRssKiB": 11264
+      }
+    },
+    "stress": [
+      {
+        "name": "duplicate_anchor_variable_lengths",
+        "N": 5000,
+        "expected": 9999,
+        "independentReason": "At a common anchor, only the maximum left and right arm matter; use the two largest lengths on opposite sides.",
+        "languages": {
+          "C++17": {
+            "seconds": 0.7187,
+            "peakRssKiB": 199296
+          },
+          "Python3": {
+            "seconds": 13.9996,
+            "peakRssKiB": 209024
+          }
+        }
+      },
+      {
+        "name": "separated_positive_arms",
+        "N": 5000,
+        "expected": 12502500,
+        "independentReason": "All full envelopes are pairwise disjoint, so every orientation has union equal to the sum of lengths.",
+        "languages": {
+          "C++17": {
+            "seconds": 0.819,
+            "peakRssKiB": 199296
+          },
+          "Python3": {
+            "seconds": 23.7835,
+            "peakRssKiB": 208640
+          }
+        }
+      },
+      {
+        "name": "max_three_billion_union",
+        "N": 5000,
+        "expected": 3000000000,
+        "independentReason": "The global envelope is [-10^9,2*10^9]; two opposite arms at0 and a right arm at10^9 cover it completely.",
+        "languages": {
+          "C++17": {
+            "seconds": 0.6202,
+            "peakRssKiB": 199296
+          },
+          "Python3": {
+            "seconds": 15.8605,
+            "peakRssKiB": 208768
+          }
+        }
+      }
+    ],
+    "failures": [],
+    "sourceSha256": {
+      "cpp": "3a6a8a61f528ea00036708e74d9cac12d7d2030b5b65d39e601d51f09fbb2c1f",
+      "python": "2d3e5006d89ed6eff470c8accb55d2d6f7e678397a583ffd1ee3119292db8a8f"
+    },
+    "seconds": 71.412,
+    "rssMeaning": "resource.getrusage(RUSAGE_CHILDREN).ru_maxrss from a fresh metrics wrapper for each actual program run, in KiB on Linux."
+  },
+  "optimizationProof": [
+    {
+      "lemma": "同座標只保留最大兩個正長裝置",
+      "argument": "任一方向解在該座標的覆蓋，只由左向最大長a與右向最大長b決定。若兩向都有，最大兩長L1,L2可把L1指向較大的一側、L2指向另一側，逐側覆蓋不少於原解；只有一向時用L1即可。因此刪掉其餘同座標裝置不減少全域最優。保留的是至多兩個真實不同裝置。"
+    },
+    {
+      "lemma": "不重疊的前驅一次取全域前綴",
+      "argument": "q_j是r_i<l_j的候選數。對i<q_j，必有l_i<r_i<l_j<r_j，且i不可能是j的另一方向（那個端點等於l_j或大於它）。三段限制自動成立，所以D[i,j]=endBest[i]+len_j；P[j][t]=globalBest[t-1]+len_j對0<t<=q_j成立，毋須逐對掃描。"
+    },
+    {
+      "lemma": "常數列與q=0公式列",
+      "argument": "若所有嚴格較早右端點的候選（排除同裝置）左端均>=l_j，則無合法前驅，整列P[j][t]=len_j。若q_j=0，對每個前驅i可用的更早h不存在，因此D[i,j]=len_i+r_j-max(l_j,r_i)=r_j-l_i（需l_i<l_j且r_i<r_j）。故P[j][t]=max(len_j,r_j-minLeft)，minLeft取前min(t,firstEqualRight[j])個候選、排除device_j；每個前綴最小兩個不同裝置左端點可O(1)回答。"
+    },
+    {
+      "lemma": "只存未來會被查詢的q欄",
+      "argument": "P[i]只可能被未來j>i在q_j<i時查詢，q_j>=i直接用endBest[i]，q_j=0直接用len_i。令Q為所有q_j的排序去重集，對第i列只保留1<=q<i且q>=min_{j>i}q_j的全域Q連續子段。全域q→rank陣列及列offset讓每次讀取仍為嚴格O(1)，不在查詢時二分，也不用預期O(1)字典查DP。"
+    },
+    {
+      "lemma": "可證上界達到後的常數尾段",
+      "argument": "以j收尾的鏈整體位於[minLeftPrefix[j+1],r_j]內，其聯集長度至多U_j=r_j-minLeftPrefix[j+1]。掃描前驅時若已達U_j，所有較長前綴必保持此值，可停止掃描並以一個常數尾段描述。掃至所有r_i<r_j的前驅後，之後同右端點候選亦均不可接，剩餘前綴同為常數。這是數學上界，不是節點數或時間截斷。"
+    },
+    {
+      "lemma": "最壞界不變",
+      "argument": "各列至多掃描M個前驅及存M個查詢值，所有查詢與公式O(1)，故最壞O(N²)時間、O(N²)空間。稀疏列及常數尾只刪除未用儲存或已知相同值，沒有更換遞推或放寬可行鏈。array(I)存值仍在0..3*10^9。"
+    }
+  ],
+  "runtimeConfiguration": {
+    "livePage": {
+      "url": "https://oj.itousouta.me/problems/b233",
+      "timeLimitMs": 5000,
+      "memoryMiB": 512
+    },
+    "repoEvidence": [
+      {
+        "path": "src/lib/languages.ts",
+        "line": 26,
+        "finding": "python timeMultiplier=3, memoryMultiplier=1, configured Python3.12.0"
+      },
+      {
+        "path": "src/lib/judgeCore.ts",
+        "line": 153,
+        "finding": "job.timeLimitMs * lang.timeMultiplier is passed as runTimeoutMs; memory is multiplied and converted fromMiB tobytes"
+      }
+    ],
+    "configuredEffectivePythonTimeMs": 15000,
+    "configuredEffectivePythonMemoryMiB": 512,
+    "limitsCaveat": "The public nominal limits are live observations. The multiplier and interpreter version are checked-in execution configuration, not a direct query of the deployed sandbox interpreter."
+  },
+  "lessonPatch": {
+    "concept": "不可刪區間鏈、最後兩段狀態與三角前綴動態規劃",
+    "goal": "利用不可刪區間鏈的性質，以平方時間求最大保護長度。",
+    "explanation": [
+      "每個裝置提供左向 [x-l,x] 與右向 [x,x+l] 兩個候選；零長候選可省略。先允許每裝置至多選一段：未選裝置最後任意補方向只會增加覆蓋，所以此放寬的最大值與原題相同。",
+      "從最優解刪去所有不影響聯集的區間。剩下的區間按右端點排序後，左右端點都嚴格遞增。若連續三段 H、I、J 滿足 r_H >= l_J，則 H 與 J 已經覆蓋 I，與 I 不可刪矛盾。因此必有 r_H < l_J，連端點相等也不允許。",
+      "同裝置的左、右候選分別結束與開始於 x。若兩者在鏈中不相鄰，嚴格遞增端點與上述三段條件會矛盾。因此只需禁止相鄰兩段來自同裝置，就能保證整條鏈沒有重複裝置；不能完全省略這個限制。",
+      "將 M 個正長候選按 (右端點,左端點,裝置編號) 排序。D[i,j] 表示以 i、j 收尾的合法鏈長度。只在 l_i<l_j、r_i<r_j、裝置不同時轉移。令 q_j 為右端點嚴格小於 l_j 的候選數，P[i][t]=max(len_i, D[h,i]：h<t)，則 D[i,j]=P[i][min(q_j,i)]+r_j-max(l_j,r_i)。前一項可從單獨選 i 開始，也能接上滿足 r_h<l_j 的舊鏈。",
+      "按 j 遞增，逐一掃描 i<j，同時建立 P[j] 的前綴最大值；每對候選只做常數工作。單區間也列入答案。任何最優方向解都能刪成合法鏈，而每條 DP 鏈都能補成完整方向解，所以這個 DP 恰好得到原題最優值。",
+      "C++ 直接保留完整三角前綴表。Python 保留相同遞推：同座標只需兩個最長裝置；只儲存未來實際可能查詢的 q 欄；沒有合法前驅的列及 q=0 的列用公式回答。不相交前驅以全域前綴最大值合併；若達到右端點減歷史最小左端點的可證上界，剩餘前綴用常數尾段表示。這些都是等價計算，沒有搜尋截斷。",
+      "所有候選都在 [-10^9,2×10^9]，聯集最多 3×10^9。座標運算用 64 位元，前綴表可用無號 32 位元；不能用有號 32 位元儲存答案。"
+    ],
+    "complexity": "最壞時間 O(N²)，含 O(N log N) 排序與二分預處理；最壞空間 O(N²)。M≤2N，C++ 三角表最多 M(M+1)/2=50,005,000 個 uint32_t，共 200,020,000 bytes，另加 O(N) 資料。Python 用 array(I) 儲存稀疏查詢列，最壞仍 O(N²)，另有 O(N) 索引、裝置及 read().split() 的輸入字串儲存；陣列配置可能保留額外容量。",
+    "pitfall": "三段限制必須是 r_H<l_J，不能改成 ≤；同右端點也不能互接。同座標不可只保留一個裝置，兩個反向裝置可能同時必要。轉移必須排除相鄰同裝置；答案可達 3×10^9。",
+    "performanceNote": "完整解為最壞 O(N²) 的精確 DP，沒有方向枚舉或搜尋上限。題頁時限 5 秒、記憶體 512 MB；目前程式設定 Python 時限乘 3，即 15 秒。Linux 本機五組 N=5000 獨立可證答案測試中，C++ 最慢 0.972 秒，最佳化 Python 最慢 4.833 秒、峰值約 65.1 MiB。本機 Python 為 3.13，評測設定為 3.12；這些測量不是任意輸入在遠端機器的時間保證。",
+    "traceLabel": "另例：兩個同座標裝置 (x,l)=(0,3)、(0,2)",
+    "trace": [
+      {
+        "title": "候選按右端點排序",
+        "description": "編號 A 長 3、B 長 2，各提供左右兩向；同一裝置最後至多用一段。",
+        "cells": [
+          "A左 [-3,0]",
+          "B左 [-2,0]",
+          "B右 [0,2]",
+          "A右 [0,3]"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "M",
+            "4"
+          ],
+          [
+            "單段最大值",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "計算以 B右 結尾的鏈",
+        "description": "l_j=0，沒有右端點嚴格小於 0 的候選，所以 q_j=0。A左 與 B右 可接，新增長度 2；B左 因為同裝置而不可接。",
+        "cells": [
+          "A左 [-3,0]：3",
+          "B左 [-2,0]：同裝置，禁止",
+          "B右 [0,2]：新增 2"
+        ],
+        "active": [
+          0,
+          2
+        ],
+        "variables": [
+          [
+            "q_j",
+            "0"
+          ],
+          [
+            "P[A左][0]",
+            "3"
+          ],
+          [
+            "D[A左,B右]",
+            "3+2=5"
+          ]
+        ]
+      },
+      {
+        "title": "取所有結尾的最大值",
+        "description": "A左 與 B右 的聯集為 [-3,2]，長 5。反向使用 B左 與 A右 也得到 5。兩個裝置長度總和只有 5，故此值已最優。",
+        "cells": [
+          "[-3,0] ∪ [0,2] = [-3,2]",
+          "另一最優：[-2,0] ∪ [0,3]"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "最大聯集長度",
+            "5"
+          ],
+          [
+            "長度總和上界",
+            "3+2=5"
+          ]
+        ]
+      }
+    ],
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nstruct Interval { ll left, right; int device; };\nll solve(const vector<pair<ll,ll>>& devices) {\n    vector<Interval> a;\n    for (int i=0; i<(int)devices.size(); ++i) {\n        auto [x,l]=devices[i];\n        if (!l) continue;\n        a.push_back({x-l,x,i});\n        a.push_back({x,x+l,i});\n    }\n    sort(a.begin(),a.end(),[](const Interval& x,const Interval& y) {\n        return tie(x.right,x.left,x.device)<tie(y.right,y.left,y.device);\n    });\n    int m=a.size();\n    if (!m) return 0;\n    vector<ll> ends;\n    for (auto x:a) ends.push_back(x.right);\n    // pref[j][t] = maximum union ending at j, with predecessor index < t,\n    // also allowing the one-interval chain consisting only of j.\n    vector<vector<uint32_t>> pref;\n    pref.reserve(m);\n    ll answer=0;\n    for (int j=0; j<m; ++j) {\n        ll left=a[j].left, right=a[j].right;\n        int bound=lower_bound(ends.begin(),ends.end(),left)-ends.begin();\n        uint32_t best=right-left;\n        vector<uint32_t> row(j+1,best);\n        for (int i=0; i<j; ++i) {\n            if (a[i].left<left && a[i].right<right && a[i].device!=a[j].device) {\n                uint32_t prior=pref[i][min(bound,i)];\n                ll gain=right-max(left,a[i].right);\n                best=max(best,(uint32_t)(prior+gain));\n            }\n            row[i+1]=best;\n        }\n        answer=max(answer,(ll)best);\n        pref.push_back(move(row));\n    }\n    return answer;\n}\nint main() {\n    ios::sync_with_stdio(false); cin.tie(nullptr);\n    int n;\n    while (cin>>n) {\n        vector<pair<ll,ll>> a(n);\n        for (auto& [x,l]:a) cin>>x>>l;\n        cout<<solve(a)<<'\\n';\n    }\n}\n",
+    "python": "import sys\nfrom array import array\nfrom bisect import bisect_left\n\ndef solve(devices):\n    # A coincident anchor needs only its two longest devices: one per direction.\n    at={}\n    for x,length in devices:\n        if not length:\n            continue\n        top=at.get(x)\n        if top is None:\n            at[x]=(length,0)\n        elif length>top[0]:\n            at[x]=(length,top[0])\n        elif length>top[1]:\n            at[x]=(top[0],length)\n    intervals=[]\n    device=0\n    for x,(a,b) in at.items():\n        for length in (a,b):\n            if length:\n                intervals.append((x,x-length,device))\n                intervals.append((x+length,x,device))\n                device+=1\n    intervals.sort()\n    m=len(intervals)\n    if not m:\n        return 0\n    rights=[r for r,l,d in intervals]\n    lefts=[l for r,l,d in intervals]\n    ids=[d for r,l,d in intervals]\n    lengths=[r-l for r,l,d in intervals]\n    bounds=[bisect_left(rights,l) for l in lefts]\n    queries=sorted(set(bounds))\n    query_rank=[0]*(m+1)\n    for rank,q in enumerate(queries):\n        query_rank[q]=rank\n    suffix_min=[m]*(m+1)\n    for j in range(m-1,-1,-1):\n        suffix_min[j]=min(bounds[j],suffix_min[j+1])\n    # For each prefix, the smallest left endpoints from two distinct devices.\n    INF=10**30\n    min1=[INF];min2=[INF];owner1=[-1]\n    first=second=INF;first_id=second_id=-1\n    starts=[];group_start=0\n    for j,(right,left,dev) in enumerate(intervals):\n        if j and right!=rights[j-1]:\n            group_start=j\n        starts.append(group_start)\n        if dev==first_id:\n            if left<first:\n                first=left\n        elif dev==second_id:\n            if left<second:\n                second=left\n                if second<first:\n                    first,second=second,first\n                    first_id,second_id=second_id,first_id\n        elif left<first:\n            second,second_id=first,first_id\n            first,first_id=left,dev\n        elif left<second:\n            second,second_id=left,dev\n        min1.append(first);min2.append(second);owner1.append(first_id)\n    # kind 0: constant base row. kind 1: bound=0 row, queried by a formula.\n    # kind 2: only genuinely queried prefix entries, followed by a constant tail.\n    kinds=[];rows=[];offsets=[];tails=[];tail_values=[]\n    end_best=[];global_best=[]\n    for j in range(m):\n        left=lefts[j];right=rights[j];dev=ids[j];length=lengths[j]\n        stop=starts[j]\n        small_left=min2[stop] if owner1[stop]==dev else min1[stop]\n        q=bounds[j]\n        if small_left>=left:\n            kind=0;best=length;row=None;lo=tail=0\n        elif q==0:\n            kind=1;best=max(length,right-small_left);row=None;lo=tail=0\n        else:\n            kind=2\n            # Earlier disjoint intervals are answered by one global prefix.\n            best=length+global_best[q-1]\n            lo=bisect_left(queries,max(1,suffix_min[j+1]))\n            hi=bisect_left(queries,j)\n            row=array('I');write=lo\n            while write<hi and queries[write]<=q:\n                row.append(length+global_best[queries[write]-1]);write+=1\n            upper=right-min1[j+1]\n            if best<upper:\n                qr=query_rank[q]\n                for i in range(q,stop):\n                    if lefts[i]<left and ids[i]!=dev:\n                        ik=kinds[i]\n                        if ik==0:\n                            prior=lengths[i]\n                        elif q>=i:\n                            prior=end_best[i]\n                        elif ik==1:\n                            limit=q if q<starts[i] else starts[i]\n                            ml=min2[limit] if owner1[limit]==ids[i] else min1[limit]\n                            v=rights[i]-ml\n                            prior=v if v>lengths[i] else lengths[i]\n                        elif qr>=tails[i]:\n                            prior=tail_values[i]\n                        else:\n                            prior=rows[i][qr-offsets[i]]\n                        value=prior+right-rights[i]\n                        if value>best:\n                            best=value\n                    if write<hi and queries[write]==i+1:\n                        row.append(best);write+=1\n                    if best==upper:\n                        break\n            # No later predecessor can beat an attained bounding-hull upper\n            # bound, or add a strictly earlier endpoint after 'stop'.\n            tail=write\n        kinds.append(kind);rows.append(row);offsets.append(lo)\n        tails.append(tail);tail_values.append(best);end_best.append(best)\n        global_best.append(max(best,global_best[-1]) if global_best else best)\n    return global_best[-1]\n\nif __name__=='__main__':\n    values=iter(map(int,sys.stdin.buffer.read().split()))\n    output=[]\n    for n in values:\n        devices=[(next(values),next(values)) for _ in range(n)]\n        output.append(str(solve(devices)))\n    print('\\n'.join(output))\n"
+  }
+}

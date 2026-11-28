@@ -1,0 +1,23 @@
+[Unit]
+Description=Online Judge remote executor %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=oj
+Group=oj
+WorkingDirectory=/opt/online-judge
+Environment=NODE_ENV=production
+Environment=JUDGE_WORKER_ID=%H:%i
+# Contains JUDGE_WORKER_URL, JUDGE_WORKER_SECRET and this instance's SANDBOX_URL.
+EnvironmentFile=/etc/online-judge/remote-%i.env
+ExecStart=/usr/bin/node --import ./scripts/ctf-test-loader.mjs scripts/judge-remote-worker.mjs
+Restart=always
+RestartSec=3
+TimeoutStopSec=120
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

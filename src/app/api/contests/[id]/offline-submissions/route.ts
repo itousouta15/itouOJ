@@ -1,0 +1,221 @@
+import { z } from "zod";
+import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { LANGUAGE_KEYS } from "@/lib/languages";
+import {
+  getContestPhase,
+  parseAllowedLanguages,
+  languageLabels,
+} from "@/lib/contest";
+import { enforceRateLimit } from "@/lib/rateLimit";
+import { acquireSubmissionAdmission } from "@/lib/submissionAdmission";
+
+const MAX_ACTIVE_PER_USER = 3;
+const MAX_PENDING_SUBMISSIONS = 100;
+
+// 斷網比賽的整批上傳：收件程式把程式碼存在本機，連網後一次送上來。
+// 一般選手只可在賽事進行中上傳，並以伺服器收到的時間計分。
+const schema = z.object({
+  submissions: z
+    .array(
+      z.object({
+        // 收件程式為每筆提交產生的去重鍵，選手重複按上傳時用它擋掉重複寫入
+        clientKey: z.string().min(1).max(100),
+        problemId: z.number().int().positive(),
+        language: z.enum(LANGUAGE_KEYS as [string, ...string[]]),
+        code: z.string().min(1, "程式碼不能是空的").max(65536, "程式碼過長"),
+        submittedAt: z.coerce.date(),
+      })
+    )
+    .min(1, "沒有要上傳的提交")
+    .max(100, "一次最多上傳 100 筆"),
+});
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getSession();
+  if (!session) {
+    return Response.json({ error: "請先登入" }, { status: 401 });
+  }
+  const rateLimited = enforceRateLimit(
+    `offline-submission:${session.userId}`,
+    10,
+    60_000
+  );
+  if (rateLimited) return rateLimited;
+
+  const { id } = await params;
+  const contestId = Number(id);
+  if (!Number.isInteger(contestId)) {
+    return Response.json({ error: "比賽不存在" }, { status: 404 });
+  }
+
+  const body = await request.json().catch(() => null);
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues[0].message },
+      { status: 400 }
+    );
+  }
+
+  const contest = await prisma.contest.findUnique({
+    where: { id: contestId },
+    include: { problems: { select: { problemId: true } } },
+  });
+  if (!contest) {
+    return Response.json({ error: "比賽不存在" }, { status: 404 });
+  }
+
+  const isAdmin = session.role === "ADMIN";
+  if (!isAdmin) {
+    const participant = await prisma.contestParticipant.findUnique({
+      where: { contestId_userId: { contestId, userId: session.userId } },
+    });
+    if (!participant) {
+      return Response.json({ error: "尚未報名此比賽" }, { status: 403 });
+    }
+  }
+
+  const phase = getContestPhase(contest);
+  if (phase === "upcoming") {
+    return Response.json({ error: "比賽尚未開始" }, { status: 403 });
+  }
+  // A client clock is not evidence of when code was submitted. Participants
+  // must upload while the contest is running; trusted administrators can
+  // still import supervised offline collections after it ends.
+  if (phase === "ended" && !isAdmin) {
+    return Response.json({ error: "比賽已結束，無法再上傳" }, { status: 403 });
+  }
+
+  const contestProblemIds = new Set(contest.problems.map((p) => p.problemId));
+  const invalid = parsed.data.submissions.find(
+    (s) => !contestProblemIds.has(s.problemId)
+  );
+  if (invalid) {
+    return Response.json(
+      { error: `題目 ${invalid.problemId} 不屬於本比賽` },
+      { status: 400 }
+    );
+  }
+
+  // 收件程式也會擋，但那是選手機器上的檢查，擋不住改過的用戶端
+  const allowed = parseAllowedLanguages(contest.allowedLanguages);
+  if (allowed) {
+    const badLang = parsed.data.submissions.find(
+      (s) => !allowed.includes(s.language)
+    );
+    if (badLang) {
+      return Response.json(
+        { error: `本比賽只開放 ${languageLabels(allowed)}` },
+        { status: 400 }
+      );
+    }
+  }
+
+  const releaseAdmission = await acquireSubmissionAdmission();
+  try {
+  const [activeCount, pendingCount] = await Promise.all([
+    prisma.submission.count({
+      where: { userId: session.userId, status: { in: ["PENDING", "JUDGING"] } },
+    }),
+    prisma.submission.count({ where: { status: "PENDING" } }),
+  ]);
+  if (activeCount >= MAX_ACTIVE_PER_USER) {
+    return Response.json({ error: "已有太多提交等待評測" }, { status: 429 });
+  }
+  if (pendingCount >= MAX_PENDING_SUBMISSIONS) {
+    return Response.json(
+      { error: "評測佇列已滿，請稍後再試" },
+      { status: 503, headers: { "Retry-After": "30" } }
+    );
+  }
+  if (parsed.data.submissions.length > MAX_ACTIVE_PER_USER - activeCount) {
+    return Response.json(
+      { error: "這批提交超過個人待評測上限" },
+      { status: 429 }
+    );
+  }
+  if (parsed.data.submissions.length > MAX_PENDING_SUBMISSIONS - pendingCount) {
+    return Response.json(
+      { error: "這批提交超過目前佇列容量" },
+      { status: 503, headers: { "Retry-After": "30" } }
+    );
+  }
+
+  // Participant submissions always use the server receipt time. Administrators
+  // are the only trusted actors permitted to import supervised offline work.
+  const startMs = contest.startTime.getTime();
+  const endMs = contest.endTime.getTime();
+  const clamp = (at: Date) =>
+    new Date(Math.min(Math.max(at.getTime(), startMs), endMs));
+
+  // 依提交時間排序後寫入，讓自增 id 的順序和時間順序一致；
+  // 夾制後若有多筆撞到同一個邊界時間，計分板才能用 id 穩定決定「最後一次」。
+  const incoming = [...parsed.data.submissions].sort(
+    (a, b) => a.submittedAt.getTime() - b.submittedAt.getTime()
+  );
+
+  const accepted: number[] = [];
+  let duplicates = 0;
+  // clientKey -> 伺服器上的提交編號。收件程式靠這個做出「查看結果」的連結；
+  // 只回傳 id 陣列的話，中間夾雜重複筆數時就對不回去是哪一筆對應哪一筆。
+  const results: {
+    clientKey: string;
+    submissionId: number;
+    duplicate: boolean;
+  }[] = [];
+
+  for (const s of incoming) {
+    // 用 userId 當前綴，避免有人拿別人的 clientKey 來讓對方的提交被當成重複而消失
+    const clientKey = `${session.userId}:${s.clientKey}`;
+
+    const existing = await prisma.submission.findUnique({
+      where: { clientKey },
+      select: { id: true },
+    });
+    if (existing) {
+      duplicates++;
+      // 重複也把編號給回去，重傳一次照樣拿得到連結
+      results.push({
+        clientKey: s.clientKey,
+        submissionId: existing.id,
+        duplicate: true,
+      });
+      continue;
+    }
+
+    const created = await prisma.submission.create({
+      data: {
+        userId: session.userId,
+        problemId: s.problemId,
+        contestId,
+        language: s.language,
+        code: s.code,
+        status: "PENDING",
+        clientKey,
+        createdAt: isAdmin ? clamp(s.submittedAt) : new Date(),
+      },
+      select: { id: true },
+    });
+    accepted.push(created.id);
+    results.push({
+      clientKey: s.clientKey,
+      submissionId: created.id,
+      duplicate: false,
+    });
+  }
+
+  return Response.json({
+    accepted: accepted.length,
+    duplicates,
+    total: incoming.length,
+    submissionIds: accepted,
+    results,
+  });
+  } finally {
+    releaseAdmission();
+  }
+}

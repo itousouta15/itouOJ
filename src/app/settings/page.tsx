@@ -1,0 +1,168 @@
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { avatarSrc } from "@/lib/avatar";
+import { googleConfigured } from "@/lib/googleOAuth";
+import { discordConfigured } from "@/lib/discordOAuth";
+import { DIFFICULTY_META, getUserStats } from "@/lib/userStats";
+import AvatarUploader from "@/components/AvatarUploader";
+import ProfileForm from "@/components/ProfileForm";
+import ChangePasswordForm from "@/components/ChangePasswordForm";
+import LinkedAccounts from "@/components/LinkedAccounts";
+import DeleteAccountForm from "@/components/DeleteAccountForm";
+import CtfStats from "@/components/CtfStats";
+
+export const metadata: Metadata = { title: "帳號設定" };
+export const dynamic = "force-dynamic";
+
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ linked?: string; error?: string }>;
+}) {
+  const { linked, error } = await searchParams;
+  const session = await getSession();
+  if (!session) redirect("/login");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    omit: { avatarData: true },
+  });
+  if (!user) redirect("/login");
+
+  const authMethodCount =
+    (user.passwordHash ? 1 : 0) + (user.googleId ? 1 : 0) + (user.discordId ? 1 : 0);
+
+  // 解題統計（只算實作題，識別題不算進難度統計）
+  const {
+    solvedCount,
+    totalSubmissions,
+    acSubmissions,
+    acRate,
+    solvedByDifficulty,
+    totalByDifficulty,
+    ctf,
+  } = await getUserStats(user.id);
+
+  const stats = [
+    { label: "解題數", value: solvedCount },
+    { label: "提交數", value: totalSubmissions },
+    { label: "Accepted", value: acSubmissions },
+    { label: "AC 率", value: `${acRate}%` },
+  ];
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <h1 className="page-title">帳號設定</h1>
+
+      <section className="card p-6">
+        <h2 className="section-title mb-4">頭像</h2>
+        <AvatarUploader
+          name={user.displayName || user.username}
+          currentSrc={avatarSrc(user)}
+          hasLocalAvatar={Boolean(user.avatarUpdatedAt)}
+        />
+      </section>
+
+      <section className="card p-6">
+        <h2 className="section-title mb-4">個人資料</h2>
+        <dl className="mb-5 space-y-3 border-b border-bd pb-5 text-sm">
+          <div className="flex items-center justify-between">
+            <dt className="text-dim">使用者名稱</dt>
+            <dd className="mono flex items-center gap-2 font-medium">
+              {user.username}
+              {user.role === "ADMIN" && (
+                <span className="vbadge vbadge-purple">管理員</span>
+              )}
+            </dd>
+          </div>
+          {user.email && (
+            <div className="flex items-center justify-between">
+              <dt className="text-dim">Email（僅自己可見）</dt>
+              <dd className="mono text-dim">{user.email}</dd>
+            </div>
+          )}
+          <div className="flex items-center justify-between">
+            <dt className="text-dim">註冊時間</dt>
+            <dd className="text-dim">
+              {user.createdAt.toLocaleString("zh-TW", {
+                timeZone: "Asia/Taipei",
+                hour12: false,
+              })}
+            </dd>
+          </div>
+        </dl>
+        <ProfileForm
+          initialDisplayName={user.displayName ?? ""}
+          initialBio={user.bio ?? ""}
+          initialEmail={user.email ?? ""}
+        />
+      </section>
+
+      <section className="card p-6">
+        <h2 className="section-title mb-4">連結帳號</h2>
+        <LinkedAccounts
+          googleLinked={Boolean(user.googleId)}
+          discordLinked={Boolean(user.discordId)}
+          googleEnabled={googleConfigured()}
+          discordEnabled={discordConfigured()}
+          canUnlink={authMethodCount > 1}
+          initialLinked={linked}
+          initialError={error}
+        />
+      </section>
+
+      <section className="card p-6">
+        <h2 className="section-title mb-4">解題統計</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className="rounded-xl bg-inset p-4">
+              <p className="page-kicker">{s.label}</p>
+              <p className="mono mt-1 text-2xl font-bold text-tx">{s.value}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 space-y-3">
+          {DIFFICULTY_META.map((d) => {
+            const solved = solvedByDifficulty.get(d.key) ?? 0;
+            const total = totalByDifficulty.get(d.key) ?? 0;
+            const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
+            return (
+              <div key={d.key}>
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="text-dim">{d.label}</span>
+                  <span className="mono text-xs text-dim">
+                    {solved} / {total}
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-inset">
+                  <div
+                    className="motion-progress h-full rounded-full transition-all"
+                    style={{ width: `${pct}%`, background: d.color }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <CtfStats stats={ctf} />
+      <section className="card p-6">
+        <h2 className="section-title mb-4">
+          {user.passwordHash ? "修改密碼" : "設定密碼"}
+        </h2>
+        <ChangePasswordForm hasPassword={Boolean(user.passwordHash)} />
+      </section>
+
+      <section className="card p-6">
+        <h2 className="section-title mb-4">危險區域</h2>
+        <DeleteAccountForm
+          username={user.username}
+          hasPassword={Boolean(user.passwordHash)}
+        />
+      </section>
+    </div>
+  );
+}

@@ -1,0 +1,428 @@
+{
+  "schemaVersion": 1,
+  "platform": "linux",
+  "pythonVersion": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+  "compiler": "g++ -std=c++17 -O2",
+  "compilerVersion": "g++ (Debian 16.2.0-1) 16.2.0",
+  "tutorials": 46,
+  "publicSamplesPerLanguage": 53,
+  "independentCasesPerLanguage": 1019,
+  "seconds": 120.52,
+  "programs": [
+    {
+      "code": "b562",
+      "cppSha256": "76022173f768171c5ad802596c67d0aace44446ebe7aacd0fb93e5a7fde597d0",
+      "pythonSha256": "7065e05d7993dbf9a897c819759d8f93bf375e07dd01de0ee35a49224ed813fe",
+      "casesSha256": "4d21bd7ee0b079d3989750de758ebba300eea061a898f65e6960c7c996c9789c",
+      "publicSamples": 1,
+      "independentCases": 2,
+      "status": "pass"
+    },
+    {
+      "code": "b563",
+      "cppSha256": "d9711568d28ad5b04e982ccf64dc2211e60eb2ec535df678c84539de00576305",
+      "pythonSha256": "7516abd88bdc7a3d3a735b9dced452570e6d93693657c24a151ae0841130c753",
+      "casesSha256": "9c81f0fbd948dbf2c8154b5f35a87806fbb7daba426033c673455cfb0bce06a3",
+      "publicSamples": 2,
+      "independentCases": 43,
+      "status": "pass"
+    },
+    {
+      "code": "b564",
+      "cppSha256": "eb73bbf65a1f6b11d336e6586250dfb373f5ffdf0db9ae15bdf7738ee50cc3b9",
+      "pythonSha256": "e4edd067776d8a762b0b0f54458723040b37a17f86e8a986c5a7576b35fa3c5b",
+      "casesSha256": "469ed22327374b4f2f803a165909089cc12b67b4c30dc5ac93fef9aac54c80c4",
+      "publicSamples": 2,
+      "independentCases": 25,
+      "status": "pass"
+    },
+    {
+      "code": "b565",
+      "cppSha256": "c5a93c2cd3aa14af2b6a1b774f3e6ad74e39b7522ab8255405c2e03a91c59659",
+      "pythonSha256": "81d9385c21fe6b1743005611c814eda9d53c1090d4b1a562bb15f6519826194e",
+      "casesSha256": "f1614c2eedaec747872c91e06816100412f51ad948db53086f702baf9de0dfe7",
+      "publicSamples": 3,
+      "independentCases": 16,
+      "status": "pass"
+    },
+    {
+      "code": "b566",
+      "cppSha256": "f2a0aebd0ef8cea7578839dc70b00caadb9523326cb9b8c151efaa02ba68279e",
+      "pythonSha256": "df9a93939402b052f211d22675876fb730e1ac27e335a9ed01656c6e08b05d84",
+      "casesSha256": "fd6910b879da48a5bb070d529bd5d1d3b711c87b610d63b7c7f737eeb6eaf3c5",
+      "publicSamples": 1,
+      "independentCases": 1,
+      "status": "pass"
+    },
+    {
+      "code": "b567",
+      "cppSha256": "76f7c7674921f7572c872d1579c3d104ab2fbad0031d72946b648b2086d5c6ac",
+      "pythonSha256": "46a26ba96b088bbd3eb577d1cdce8914f2c4fd270cfb5aa56d1f8b973b37957a",
+      "casesSha256": "f1b501766ed23f15a8275c8cbc822f29ae0f18be6ad1b6f1b50b0b76ce9ac0fa",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "status": "pass"
+    },
+    {
+      "code": "b568",
+      "cppSha256": "44983b2ee3676718d7a1d04304c9120debb6f10bab15e17105906a27cfa0dba4",
+      "pythonSha256": "907db2b0a9e4cc3b1a77632ec2737ba1456c2b449e73eae3349d6766e59067d7",
+      "casesSha256": "ab9cce8c0a7d39e4decc5e6f28dff2252f674de7850bc86357ec4e7e30eaf444",
+      "publicSamples": 1,
+      "independentCases": 149,
+      "status": "pass"
+    },
+    {
+      "code": "b569",
+      "cppSha256": "de253ac5e85f91891381d28c9413ccabe9a8963e689d4b33123bbbcb19018fab",
+      "pythonSha256": "a8240bb222b55a0495dfddc18288d757cfe870104778379cdebd14a433002f71",
+      "casesSha256": "6bc8b8c2b54df385b97b0cd2c131bbea0f8122f766fa38a689cddc5ebc93b7eb",
+      "publicSamples": 1,
+      "independentCases": 2,
+      "status": "pass"
+    },
+    {
+      "code": "b570",
+      "cppSha256": "029ef385ee0e2b760dae03b30374f8c66ab689014fb84d2ee78078f3d238f9fd",
+      "pythonSha256": "2cda73196a22f9c982fa2e9037720dbe5c2b567ce94d61d05f31dc08bada1c64",
+      "casesSha256": "9964f5060f3081731c3b3396ca787ba1e3413ab390381fcaac07499ef6531856",
+      "publicSamples": 2,
+      "independentCases": 21,
+      "status": "pass"
+    },
+    {
+      "code": "b571",
+      "cppSha256": "0b00b16d8f0e5bb64df5928b0f9eaec13f8d493b18518863c250d5d0244e9244",
+      "pythonSha256": "687359d99d86c3e7c2df36388de62c0419a7224b48011cea44e27195627baa59",
+      "casesSha256": "e8f2d03893128f7fa1c7cbde8ef2717dca5e4dba16dec39e8690b05d030fb003",
+      "publicSamples": 2,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b572",
+      "cppSha256": "e8a78765f54c853cbde71b321d1851810f8fa8835ecdea08f126116668ced973",
+      "pythonSha256": "befaff7c9cf3ac5ce73bc7291891f7db43c070d9daf3c1c9005831312adc3116",
+      "casesSha256": "204eaf9334551574d4fd7b9a5b5c51b272dddeaad2debf52f5e4f81c531c1ef7",
+      "publicSamples": 2,
+      "independentCases": 15,
+      "status": "pass"
+    },
+    {
+      "code": "b573",
+      "cppSha256": "e6c82ecad37a3c835e67434ff6bbd964761ba2db165c96773a6e9b8e9aa1b612",
+      "pythonSha256": "ab400ebe4841f0aed4eb49bb03bf7a7c6267a3e888774b5f6fee93f9c6de2a3b",
+      "casesSha256": "90f1095a33e8177ad3fd752bda7223fcc7bc9ac89c244a44ed9715d48469dff1",
+      "publicSamples": 1,
+      "independentCases": 46,
+      "status": "pass"
+    },
+    {
+      "code": "b574",
+      "cppSha256": "9a353378bd3d593c2e0aaa0a45302b63cdbd39b0e7cc376da14d919a7225e2f9",
+      "pythonSha256": "b6db5ba73f361607225c196e43098dabbf49fbaa96e2554a64d094393dde6875",
+      "casesSha256": "b5b0de602a9ffb7bc8990592e0aaa4108a2957cf580724165799969ffce67a58",
+      "publicSamples": 1,
+      "independentCases": 20,
+      "status": "pass"
+    },
+    {
+      "code": "b575",
+      "cppSha256": "7fe79dc23560aa69777162cda4656cb514fd74fdc018d8a7b580609bf24765a5",
+      "pythonSha256": "832c7a58e28193f76f8bbf072af37600c4d52d6b30f3c72772cca22236e301ca",
+      "casesSha256": "b2bd9255971ab8ce29dc90f9685de2ffef27e8ee46c5a3cf10ee8da2ee723f7d",
+      "publicSamples": 1,
+      "independentCases": 16,
+      "status": "pass"
+    },
+    {
+      "code": "b576",
+      "cppSha256": "cdf4be462be5165a16ac7ac46b9f3532f97b63dd62823834a5fcf28298f95399",
+      "pythonSha256": "e6654be5e771fb05c7b07dd977609ee4d76fd36e41930f51c53d1ceed8ae30a4",
+      "casesSha256": "8e9471b0995a7f3f0acac0209bca6ba839aabe874d666956aadf7ff89b4e910d",
+      "publicSamples": 1,
+      "independentCases": 20,
+      "status": "pass"
+    },
+    {
+      "code": "b577",
+      "cppSha256": "73c3ee39a696a6fdc34a4bd56f32d82bd5db41ac84950b159f639cd589e5ef38",
+      "pythonSha256": "dee19f96d9142fb12eca2906b7d03d54b7fcf48f57b720313ef8741d587cc75f",
+      "casesSha256": "8287a6f400a32c2764cdd54421e0cf1b1bc6a68b7c63010cbb90940bf2667c36",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b578",
+      "cppSha256": "93e048731421477cadec7093b9d62e0301ac912c3c193516c9cde2726e1d0b4f",
+      "pythonSha256": "73f91c62446c1f6ac3f90fcaaeee390a98b4936ed2bd504dbae21fbe58685e1d",
+      "casesSha256": "60b07b85076cecbe0e60ab98409f9f41fb9537822f63d350cb7f765902b5dd4c",
+      "publicSamples": 1,
+      "independentCases": 46,
+      "status": "pass"
+    },
+    {
+      "code": "b579",
+      "cppSha256": "9789de618e7277e43c58127f73e6492f7d2c47f208f8c9424b4cb2da025add56",
+      "pythonSha256": "0a9b59b0b0ab0e240431cffbd052aedafa736856cf06dcd1ce56656b9542891a",
+      "casesSha256": "f95ae5d79b1a967f24806e64ca138c96855c0cbfefbb767f6e644b41d184661a",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "status": "pass"
+    },
+    {
+      "code": "b580",
+      "cppSha256": "1ec58ca78691a5d11c99912b8c326f5509bebb924551a4944796f28e4c47fbd6",
+      "pythonSha256": "22ff6623695f72b089e017a00eaee35ea8de19cf2a6dc6d1aeeadb98580a3039",
+      "casesSha256": "397e7dc30e446a65639253dbd814154ca7390e0541e131a9a9b75e97e1d5034f",
+      "publicSamples": 1,
+      "independentCases": 12,
+      "status": "pass"
+    },
+    {
+      "code": "b581",
+      "cppSha256": "8d21092505758b35c6f2215f3a1378c2dd9bed04188514ae30edadfeca7579ce",
+      "pythonSha256": "19ed9ad32cf49ca42b8198d1f37ed987225719c13f6f6a894d2b851885ab63ca",
+      "casesSha256": "fa129fc63b23afb20e4893c6269bb69ce785cb50aa616e1ae4be7fbafc841ab1",
+      "publicSamples": 1,
+      "independentCases": 20,
+      "status": "pass"
+    },
+    {
+      "code": "b582",
+      "cppSha256": "10d2a5eea9cfbe8ff346ecdd167ae8c70a931bf95a4a36e6e9dd75a5156e5e66",
+      "pythonSha256": "2f829640d2c0a5a28b0680411539e3e65758e0ef307ad91c8e4aaf9628bb9073",
+      "casesSha256": "46991602c9c0adf84748dbd83fa6ba8d746a5c6df17bb19bbc6cf66b55aa1393",
+      "publicSamples": 1,
+      "independentCases": 25,
+      "status": "pass"
+    },
+    {
+      "code": "b583",
+      "cppSha256": "665753b6f247b1bc3c07a8a9aa964cfb1b67a120e4aad07890dab8d91ecb32fb",
+      "pythonSha256": "88ecf8a0e872283fa85493d186e6129625d353dd9e1d62fb9bfda9a75314e8d7",
+      "casesSha256": "5556cb1d31e45ac484579355c231789f346abd4add6c0e2fc8f611532f3a6271",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b584",
+      "cppSha256": "ba71cd042a2f4e5d2e7516184f059b7760226a2b11612880d50982d7fdd57e0b",
+      "pythonSha256": "ece39cfccea36215b58e6a7134c8d857d5699af9a6f067e56f7c8e5e5f296a75",
+      "casesSha256": "156deeef84d2604504bc471a7d153489b7a323510659cc23dde614b501e0bd0a",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b585",
+      "cppSha256": "98c2bba85cb9fed764ebda736aacd65ac1acd128c4606fe824a90b41e05eb94f",
+      "pythonSha256": "80323c608bc708c08047cfcf7f6f5f8705bbab74ae2d028f9bb5968eb603bf77",
+      "casesSha256": "100280ee72ea87b72b79c3f87b7f7cc7ea9cee8356ffa1bad087496cc2ec9daa",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b586",
+      "cppSha256": "ae8771147f8ef0bd79fa609733fcf1d00c0b2030c10875880b6557d40bd0c9ff",
+      "pythonSha256": "5a6a3f3d1ff92b5d6f526a7d9ae334948eff89abe615be6c095f941a0e20a047",
+      "casesSha256": "8a4e3d34260d1b2ec612bbe0d41145cf39048f9b3b846290e1eea2870c75eea9",
+      "publicSamples": 1,
+      "independentCases": 15,
+      "status": "pass"
+    },
+    {
+      "code": "b587",
+      "cppSha256": "73d9668256f73c9407c32e10d916b6c8b5126e1b076dfef33c042b15ebd8ee1a",
+      "pythonSha256": "ce4adba940ea1af263dc3b6580a7a2052f257c1be1d907de2fe7d703b1e19b0a",
+      "casesSha256": "93af7fc0240b55bb090159f410b135ca4608a20152e009f072aad3d62720abc7",
+      "publicSamples": 1,
+      "independentCases": 18,
+      "status": "pass"
+    },
+    {
+      "code": "b588",
+      "cppSha256": "9dcb90f3634076dc637f5262306d33232aa2eb072ec6996f88261a38a448aa4d",
+      "pythonSha256": "70813b1860ba8b3012ab7e4de92a7cb63018d1c938d4f2144c048b9aed6cee60",
+      "casesSha256": "2292408e19c09d07cc9dfc86eb08566bcbc81f25a4091daf1e20ed96726a43f0",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b589",
+      "cppSha256": "00dc30a1b98f99e608100c7e377f357bf5fe9cd806c735552895849db04ead51",
+      "pythonSha256": "fad2342bda35ab82e19466d66acd560f738340792c592ee996a028a8c637004d",
+      "casesSha256": "7fc3b3060a4534299e22658b6dc913ebb104f15c563835bfd955ae897afdf6b7",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b590",
+      "cppSha256": "547ce42b446781287919d2669cb3198b62b896aae46cc561f7681e8d9e17e96d",
+      "pythonSha256": "24842fd6a25c654b0da6e56b2ab20c9548375590025f42908e53d6df9413e74f",
+      "casesSha256": "c0d8ebb5274e67eb700dae0f6a49c81e719caea1990a12243dfbb8c0f47f2f22",
+      "publicSamples": 1,
+      "independentCases": 67,
+      "status": "pass"
+    },
+    {
+      "code": "b591",
+      "cppSha256": "d40b7316ff8ce3909a9534ee79b39aa2c34676ebd9ff961c812c9373382aa2ce",
+      "pythonSha256": "4c8f324e5b1a72bce36dfb025575039c1502da3c4b0d96b5358fc087fff55fa0",
+      "casesSha256": "b5f3f1fad6800144c06e478a315911db6fcb9ce6136bfe8e2f13c476a1bcdd0f",
+      "publicSamples": 1,
+      "independentCases": 5,
+      "status": "pass"
+    },
+    {
+      "code": "b592",
+      "cppSha256": "d3d0bba9607cd9b28ff12b6e0cd7a1fe1df563fc2d9a080b6350753b391518f9",
+      "pythonSha256": "70ca3abea3b02e441676df74045c7601a8415280a10d1c2d6dab4581fa78cdc8",
+      "casesSha256": "8fd17853e034f9c5fb94888b85170c7d12db54ee602d18308bf859bc1a31a8da",
+      "publicSamples": 1,
+      "independentCases": 5,
+      "status": "pass"
+    },
+    {
+      "code": "b593",
+      "cppSha256": "a2ffcf155f53672d5c2ae982aeb23d103febb0b3c4359598e72d36d446e0c7b1",
+      "pythonSha256": "dc635a385592e6abf8a42fd0435a69cca5aff3ed4e575c073fc40b9c60ccfa89",
+      "casesSha256": "6593cb49476e5029421a012d2bf3f6ed3486c0977c6fca6c22be6a7fb337a116",
+      "publicSamples": 1,
+      "independentCases": 2,
+      "status": "pass"
+    },
+    {
+      "code": "b594",
+      "cppSha256": "2de87f47907018a4769c020db8babf01c3ca831c19c0bc4f0c334fbe20061922",
+      "pythonSha256": "c09e9f70f2934a90ef257be954c328ba388e5352bde2ab79680467e07db6f8c8",
+      "casesSha256": "d1e758e476b9abdd982ee443e86d75edeab47632f561fb4f913935f85e6e4bec",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b595",
+      "cppSha256": "02d165d9ef65cb0ee1dd4b115148625cb7fd3544e0749f10ccc2d220a7989fd2",
+      "pythonSha256": "aae68f82ace070fafde8526ba2e5cadf5bd73f1dbf1ee24d6d9e16b7ec1cea8d",
+      "casesSha256": "d6d43f7072519105bb935ac0411250981bac822a7a93dc0c01932b8524df9674",
+      "publicSamples": 1,
+      "independentCases": 20,
+      "status": "pass"
+    },
+    {
+      "code": "b596",
+      "cppSha256": "81765eaf5b28c738471794ee38851f56561b6e1dd5b0a230fdd22af1d9647a03",
+      "pythonSha256": "bc1f9d4ba611fb26c2013157b7429e16ba3ee2733178d9c24ea4cfab3639ac55",
+      "casesSha256": "10496ef08d8c9733c7f14a925f1ee3cbb6badd914d55bdb032f39e288178d0a0",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b597",
+      "cppSha256": "b54f81285afec0d0a4cdcdb83e67d3bbccf7a74c08f19ddc30e52abbd1dcc456",
+      "pythonSha256": "a1dbbb607cfc7e511148fb4362e92c14a364a3ff73b17ae8a80c68eb99031454",
+      "casesSha256": "f6643c467a7999e4cbd4c3a44dc28711ff7662ed79d1c192a39cbfff325c9bab",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b598",
+      "cppSha256": "b88818e8ed8724a04d1bf8d7744324eabded83b4e54d1ea3c977b1d659cd09d3",
+      "pythonSha256": "b58d7a3b2c9dda99f50c864c016dac2f15136020ed3081df4ba7eca2f01f9d4e",
+      "casesSha256": "7b7157d2575e072f8a4a72bdb7dd0571f2f733595c9a34256bd18821cde0e2bc",
+      "publicSamples": 1,
+      "independentCases": 16,
+      "status": "pass"
+    },
+    {
+      "code": "b599",
+      "cppSha256": "ffd8a32941b2f86026385a0c230fe1d07fd5da0438857d3234606f97b86258b1",
+      "pythonSha256": "077aef07303179b481fb543ecaf5435bb9abb92533fb7dbbda4c3e18d3b839e1",
+      "casesSha256": "440ba191de03821d4e34106a61c84b8b63acff029f27e79277037274cb4165f9",
+      "publicSamples": 1,
+      "independentCases": 22,
+      "status": "pass"
+    },
+    {
+      "code": "b600",
+      "cppSha256": "0225531c539153220526874c3d86a4003bafb9ae6868e617d398731c7de66f4b",
+      "pythonSha256": "59316431a70c98f92558fc4d96bd441e06199c24974634cf84fefea0ac54690b",
+      "casesSha256": "f63716a775f98a88f5dbaecb3b68729ac70fdce80055dcaf01b1cfac5f1196e8",
+      "publicSamples": 1,
+      "independentCases": 7,
+      "status": "pass"
+    },
+    {
+      "code": "b601",
+      "cppSha256": "39921368f53278f9eec4197f072b538ac4a4cc1b910e2d4c1ff70aeeea63be6f",
+      "pythonSha256": "68588bd52f06efaaf23b50a2c2ee9bbde6e188278dbfda7a8e71271e9ae8613f",
+      "casesSha256": "8d13de9557039f998f0d052d05928381a0a5905f2ca1836f94ac107aaca13b1e",
+      "publicSamples": 1,
+      "independentCases": 1,
+      "status": "pass"
+    },
+    {
+      "code": "b602",
+      "cppSha256": "93dc874fa2483d535cff1a2bf9d3b0e68adf4efb1cf26b66e02bfa805cc9db4a",
+      "pythonSha256": "a1ca056c948fb11bf2d87160a871a8ef66668c3f671eb3975a5bfc712f39233c",
+      "casesSha256": "7bc6b38ab71682d648252b39e5de840c69fdc2f0b72af22ee407958d5176d6d9",
+      "publicSamples": 1,
+      "independentCases": 1,
+      "status": "pass"
+    },
+    {
+      "code": "b603",
+      "cppSha256": "72c88ac423888f9e647377476753ca31ddba04926f795b7f72b94cb966c04d45",
+      "pythonSha256": "d48057512c5e882dca6dd464c36c1fa5a1e82abf47317e999d462e60e09361e1",
+      "casesSha256": "22a27bb5c7c4fbd686acc305358e3361cd4103fbef4f647e5f91b7314b0bfd66",
+      "publicSamples": 1,
+      "independentCases": 7,
+      "status": "pass"
+    },
+    {
+      "code": "b604",
+      "cppSha256": "be614a1b2c0fd2a981186472bda59cc2b358be8b8327ad8a5ad46029d7a9cfa8",
+      "pythonSha256": "b815e025ad0b40b3159c693fda5c58b94cc78d76ed4af41f6e9c5b45c1228cfe",
+      "casesSha256": "61877c0597ffbdabd84945b7b2ae65d60874187b9507a1bf28914bed7c71751e",
+      "publicSamples": 1,
+      "independentCases": 24,
+      "status": "pass"
+    },
+    {
+      "code": "b605",
+      "cppSha256": "acb84798ee10adc13c09a45f62d8761b0d9b755e711521311701aab3e5ae0ac8",
+      "pythonSha256": "c497bcd46636a353f97cb180907f0d1f1db8474bc75dcf82150c2fb198921b40",
+      "casesSha256": "2a315c8213873bbbba43efedef9f0d4604c79b9a35d330407cebf5f39e85d472",
+      "publicSamples": 1,
+      "independentCases": 21,
+      "status": "pass"
+    },
+    {
+      "code": "b606",
+      "cppSha256": "d91e72b85926919e65e3b060fc21e957cacd334dee3a7770b5e9ea867eeda864",
+      "pythonSha256": "742003291a0df33623256f8ab4a7be9b3b6af0625ff83196fe147be82153a747",
+      "casesSha256": "c5725ff16a1c967352e86c0e61834b789dde1e8f6302fc6fdce2d3f603fdf9e7",
+      "publicSamples": 1,
+      "independentCases": 21,
+      "status": "pass"
+    },
+    {
+      "code": "b607",
+      "cppSha256": "a2ba21aecb28129a8e0f602e5737d5487e19ad1235f7cb5163ad3bed0e53462f",
+      "pythonSha256": "dc5fdb14f11f2afa4bf527c51082a12c5003fb7a48601793d184e589b60cf93f",
+      "casesSha256": "64c9d912c36f61aa340f62232fcd9d2bb540d3d5261bbba772ff516543f1c74e",
+      "publicSamples": 1,
+      "independentCases": 32,
+      "status": "pass"
+    }
+  ],
+  "failures": []
+}

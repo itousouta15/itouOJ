@@ -1,0 +1,656 @@
+{
+  "tutorials": 46,
+  "tested": 46,
+  "publicSamplesPerLanguage": 63,
+  "independentCasesPerLanguage": 972,
+  "failures": [],
+  "resolvedFailureHistory": [
+    {
+      "code": "b720",
+      "language": "python",
+      "index": 8,
+      "kind": "independent",
+      "input": "1\n0\n",
+      "expected": "0 1 0",
+      "actual": "False True 0\n",
+      "stderr": "",
+      "reason": "Deterministic seed 70074520261108, independent case 8: enumerate all independent question-mark assignments and execute postfix"
+    },
+    {
+      "code": "b720",
+      "language": "python",
+      "index": 12,
+      "kind": "independent",
+      "input": "3\n0 ! !\n",
+      "expected": "0 1 0",
+      "actual": "False True 0\n",
+      "stderr": "",
+      "reason": "Deterministic seed 70074520261108, independent case 12: enumerate all independent question-mark assignments and execute postfix"
+    },
+    {
+      "code": "b720",
+      "language": "python",
+      "index": 13,
+      "kind": "independent",
+      "input": "2\n? !\n",
+      "expected": "1 1 ?",
+      "actual": "True True ?\n",
+      "stderr": "",
+      "reason": "Deterministic seed 70074520261108, independent case 13: enumerate all independent question-mark assignments and execute postfix"
+    },
+    {
+      "code": "b720",
+      "language": "python",
+      "index": 16,
+      "kind": "independent",
+      "input": "1\n?\n",
+      "expected": "1 1 ?",
+      "actual": "True True ?\n",
+      "stderr": "",
+      "reason": "Deterministic seed 70074520261108, independent case 16: enumerate all independent question-mark assignments and execute postfix"
+    }
+  ],
+  "problems": [
+    {
+      "code": "b700",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.10574531555175781,
+        "python": 0.8365719318389893
+      },
+      "failures": [],
+      "duration": 3.8348212242126465
+    },
+    {
+      "code": "b701",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.07637500762939453,
+        "python": 1.436936616897583
+      },
+      "failures": [],
+      "duration": 4.4042956829071045
+    },
+    {
+      "code": "b702",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.07529377937316895,
+        "python": 0.6150026321411133
+      },
+      "failures": [],
+      "duration": 3.7008087635040283
+    },
+    {
+      "code": "b703",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 22,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.1663048267364502,
+        "python": 1.0832993984222412
+      },
+      "failures": [],
+      "duration": 4.55098819732666
+    },
+    {
+      "code": "b704",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.08515310287475586,
+        "python": 1.0882365703582764
+      },
+      "failures": [],
+      "duration": 3.8012704849243164
+    },
+    {
+      "code": "b705",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.059906005859375,
+        "python": 0.47647738456726074
+      },
+      "failures": [],
+      "duration": 3.3136041164398193
+    },
+    {
+      "code": "b706",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 22,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.14344263076782227,
+        "python": 0.7204883098602295
+      },
+      "failures": [],
+      "duration": 3.8157174587249756
+    },
+    {
+      "code": "b707",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.12319326400756836,
+        "python": 0.8282473087310791
+      },
+      "failures": [],
+      "duration": 3.8074965476989746
+    },
+    {
+      "code": "b708",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.19259023666381836,
+        "python": 0.7555983066558838
+      },
+      "failures": [],
+      "duration": 3.817986249923706
+    },
+    {
+      "code": "b709",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.09464788436889648,
+        "python": 0.5047028064727783
+      },
+      "failures": [],
+      "duration": 3.4002840518951416
+    },
+    {
+      "code": "b710",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.07988762855529785,
+        "python": 0.5114212036132812
+      },
+      "failures": [],
+      "duration": 3.6326544284820557
+    },
+    {
+      "code": "b711",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.07439875602722168,
+        "python": 0.5239608287811279
+      },
+      "failures": [],
+      "duration": 3.601576328277588
+    },
+    {
+      "code": "b712",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.06333613395690918,
+        "python": 0.5259454250335693
+      },
+      "failures": [],
+      "duration": 3.8946330547332764
+    },
+    {
+      "code": "b713",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.07868051528930664,
+        "python": 0.6264395713806152
+      },
+      "failures": [],
+      "duration": 3.89042329788208
+    },
+    {
+      "code": "b714",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.12426495552062988,
+        "python": 1.8087337017059326
+      },
+      "failures": [],
+      "duration": 4.626557111740112
+    },
+    {
+      "code": "b715",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.10878396034240723,
+        "python": 0.6013236045837402
+      },
+      "failures": [],
+      "duration": 3.363929510116577
+    },
+    {
+      "code": "b716",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.1391429901123047,
+        "python": 0.5821363925933838
+      },
+      "failures": [],
+      "duration": 3.4781994819641113
+    },
+    {
+      "code": "b717",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.10873794555664062,
+        "python": 1.135545015335083
+      },
+      "failures": [],
+      "duration": 3.988269329071045
+    },
+    {
+      "code": "b718",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.08826279640197754,
+        "python": 0.5041968822479248
+      },
+      "failures": [],
+      "duration": 3.1730852127075195
+    },
+    {
+      "code": "b719",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.12752270698547363,
+        "python": 3.3148386478424072
+      },
+      "failures": [],
+      "duration": 6.2885823249816895
+    },
+    {
+      "code": "b720",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.09721231460571289,
+        "python": 0.5053331851959229
+      },
+      "failures": [],
+      "duration": 3.7108848094940186
+    },
+    {
+      "code": "b721",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.06197786331176758,
+        "python": 0.5390346050262451
+      },
+      "failures": [],
+      "duration": 3.7988500595092773
+    },
+    {
+      "code": "b722",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.06589198112487793,
+        "python": 0.5538129806518555
+      },
+      "failures": [],
+      "duration": 3.6989970207214355
+    },
+    {
+      "code": "b723",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.05326724052429199,
+        "python": 0.43611907958984375
+      },
+      "failures": [],
+      "duration": 2.8917768001556396
+    },
+    {
+      "code": "b724",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.053795576095581055,
+        "python": 0.9684340953826904
+      },
+      "failures": [],
+      "duration": 3.1990602016448975
+    },
+    {
+      "code": "b725",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.04950714111328125,
+        "python": 0.37785935401916504
+      },
+      "failures": [],
+      "duration": 2.5242409706115723
+    },
+    {
+      "code": "b726",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 22,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.06604862213134766,
+        "python": 0.6401820182800293
+      },
+      "failures": [],
+      "duration": 3.1980741024017334
+    },
+    {
+      "code": "b727",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.05464673042297363,
+        "python": 0.3952655792236328
+      },
+      "failures": [],
+      "duration": 2.2093944549560547
+    },
+    {
+      "code": "b728",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.057711124420166016,
+        "python": 1.3592114448547363
+      },
+      "failures": [],
+      "duration": 3.060878276824951
+    },
+    {
+      "code": "b729",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.042353153228759766,
+        "python": 0.4806814193725586
+      },
+      "failures": [],
+      "duration": 2.2939915657043457
+    },
+    {
+      "code": "b730",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.04725003242492676,
+        "python": 0.5771563053131104
+      },
+      "failures": [],
+      "duration": 2.4965903759002686
+    },
+    {
+      "code": "b731",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.045914411544799805,
+        "python": 0.40772151947021484
+      },
+      "failures": [],
+      "duration": 2.3919155597686768
+    },
+    {
+      "code": "b732",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.05301499366760254,
+        "python": 0.4295310974121094
+      },
+      "failures": [],
+      "duration": 2.3573927879333496
+    },
+    {
+      "code": "b733",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.05640053749084473,
+        "python": 1.01322340965271
+      },
+      "failures": [],
+      "duration": 3.130465269088745
+    },
+    {
+      "code": "b734",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.04407215118408203,
+        "python": 0.4159712791442871
+      },
+      "failures": [],
+      "duration": 2.3852782249450684
+    },
+    {
+      "code": "b735",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.047930002212524414,
+        "python": 0.5118842124938965
+      },
+      "failures": [],
+      "duration": 2.474651575088501
+    },
+    {
+      "code": "b736",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.04422116279602051,
+        "python": 0.38576436042785645
+      },
+      "failures": [],
+      "duration": 2.412513256072998
+    },
+    {
+      "code": "b737",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.09804558753967285,
+        "python": 3.6809561252593994
+      },
+      "failures": [],
+      "duration": 5.6066272258758545
+    },
+    {
+      "code": "b738",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.048494815826416016,
+        "python": 0.38104701042175293
+      },
+      "failures": [],
+      "duration": 2.2716524600982666
+    },
+    {
+      "code": "b739",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.05319833755493164,
+        "python": 0.4798591136932373
+      },
+      "failures": [],
+      "duration": 2.2031564712524414
+    },
+    {
+      "code": "b740",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 22,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.05843353271484375,
+        "python": 1.397420883178711
+      },
+      "failures": [],
+      "duration": 3.33243989944458
+    },
+    {
+      "code": "b741",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.05561113357543945,
+        "python": 0.46083855628967285
+      },
+      "failures": [],
+      "duration": 2.6092872619628906
+    },
+    {
+      "code": "b742",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.05896878242492676,
+        "python": 0.4059610366821289
+      },
+      "failures": [],
+      "duration": 2.608114719390869
+    },
+    {
+      "code": "b743",
+      "compile": true,
+      "publicSamples": 2,
+      "independentCases": 21,
+      "executions": 46,
+      "seconds": {
+        "cpp": 0.049706220626831055,
+        "python": 0.4572625160217285
+      },
+      "failures": [],
+      "duration": 2.2560274600982666
+    },
+    {
+      "code": "b744",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 23,
+      "executions": 48,
+      "seconds": {
+        "cpp": 0.06368613243103027,
+        "python": 0.50142502784729
+      },
+      "failures": [],
+      "duration": 2.617344856262207
+    },
+    {
+      "code": "b745",
+      "compile": true,
+      "publicSamples": 1,
+      "independentCases": 21,
+      "executions": 44,
+      "seconds": {
+        "cpp": 0.038648128509521484,
+        "python": 0.634077787399292
+      },
+      "failures": [],
+      "duration": 2.615025758743286
+    }
+  ],
+  "elapsedSeconds": 39.118643283843994,
+  "environment": "WSL kali-linux; Linux g++ -std=c++17 -O2; Python 3.13.12",
+  "seed": 70074520261108
+}

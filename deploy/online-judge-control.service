@@ -1,0 +1,19 @@
+[Unit]
+Description=Online Judge restricted service controller
+After=local-fs.target
+
+[Service]
+Type=simple
+User=root
+Group=oj
+RuntimeDirectory=oj-service-control
+RuntimeDirectoryMode=0750
+ExecStart=/usr/bin/node /usr/local/sbin/oj-service-control-server.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

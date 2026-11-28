@@ -1,0 +1,114 @@
+{
+  "timingWarning": "Local elapsed time, not formal judge timing. Distribution stress checks selected certificates only; small full differential tests live in batch fixtures.",
+  "cases": [
+    {
+      "code": "b568",
+      "case": "monotone-max",
+      "language": "C++",
+      "inputBytes": 1000007,
+      "certificate": "Monotone staircase never revisits a position; all100000 commands and maximal length.",
+      "seconds": 0.07233407500000055,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b568",
+      "case": "monotone-max",
+      "language": "Python",
+      "inputBytes": 1000007,
+      "certificate": "Monotone staircase never revisits a position; all100000 commands and maximal length.",
+      "seconds": 1.1659299660000073,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b573",
+      "case": "identical-rows-max",
+      "language": "C++",
+      "inputBytes": 250507,
+      "certificate": "Every row is identical cyclic alphabet; a rectangle contains all26 letters iff its column width>=26, so independent closed count.",
+      "seconds": 0.236283365999995,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b573",
+      "case": "identical-rows-max",
+      "language": "Python",
+      "inputBytes": 250507,
+      "certificate": "Every row is identical cyclic alphabet; a rectangle contains all26 letters iff its column width>=26, so independent closed count.",
+      "seconds": 40.04199030900001,
+      "certificatePass": false,
+      "error": "timeout40"
+    },
+    {
+      "code": "b591",
+      "case": "distribution-max",
+      "language": "C++",
+      "inputBytes": 4,
+      "certificate": "Sum of counts2^(n(n-1)/2); k=n:n!, k=n-1:0, k=n-2:2*C(n,3)*(n-2)!.",
+      "seconds": 0.13621990100000403,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b591",
+      "case": "distribution-max",
+      "language": "Python",
+      "inputBytes": 4,
+      "certificate": "Sum of counts2^(n(n-1)/2); k=n:n!, k=n-1:0, k=n-2:2*C(n,3)*(n-2)!.",
+      "seconds": 4.021002242999998,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b592",
+      "case": "distribution-max",
+      "language": "C++",
+      "inputBytes": 5,
+      "certificate": "Sum n^n; k=n:1, k=n-1:3*C(n,2), k=n-2:17*C(n,3)+27*C(n,4). These are partial certificates, not all-bin correctness proof.",
+      "seconds": 0.043732822999999144,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b592",
+      "case": "distribution-max",
+      "language": "Python",
+      "inputBytes": 5,
+      "certificate": "Sum n^n; k=n:1, k=n-1:3*C(n,2), k=n-2:17*C(n,3)+27*C(n,4). These are partial certificates, not all-bin correctness proof.",
+      "seconds": 4.753547695000009,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b593",
+      "case": "maximum-prime-query-batch",
+      "language": "C++",
+      "inputBytes": 20006,
+      "certificate": "For primek, exponents0/1 must avoid adjacent00: exact Fibonacci(n+2), independently fast-doubled. All1000 queries with large primek.",
+      "seconds": 0.0871782929999938,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    },
+    {
+      "code": "b593",
+      "case": "maximum-prime-query-batch",
+      "language": "Python",
+      "inputBytes": 20006,
+      "certificate": "For primek, exponents0/1 must avoid adjacent00: exact Fibonacci(n+2), independently fast-doubled. All1000 queries with large primek.",
+      "seconds": 3.1702460289999976,
+      "certificatePass": true,
+      "error": null,
+      "stderr": ""
+    }
+  ]
+}

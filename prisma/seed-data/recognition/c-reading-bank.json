@@ -1,0 +1,1880 @@
+{
+  "source": "C 程式識讀 125 題",
+  "questions": [
+    {
+      "number": 1,
+      "category": "C",
+      "question": "a,b 的值為何？",
+      "code": "int a=5, b;\nb = 3+a*2-a/2;\na = a+b;",
+      "options": [
+        "a=15.5, b=10.5",
+        "a=16, b=11",
+        "a=10, b=5",
+        "a=10.5, b=5.5",
+        "程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "整數除法、先乘除後加減\n出題用意：變數與基本運算\n難度：易"
+    },
+    {
+      "number": 2,
+      "category": "C",
+      "question": "a,b 的值為何？",
+      "code": "int a=0, b;\na = (5+2)*(7-2*3);\nb = (a-4*(a-5))*2;",
+      "options": [
+        "a=7, b=-2",
+        "a=105, b=-325",
+        "a=51, b=-9",
+        "a=0, b=0",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "括弧先算、先乘除後加減\n出題用意：變數與基本運算\n難度：易"
+    },
+    {
+      "number": 3,
+      "category": "C",
+      "question": "a,b 的值為何？",
+      "code": "int a,b=2;\na = 5;\na+3 = b+7;",
+      "options": [
+        "a=5, b=2",
+        "a=5, b=9",
+        "a=6, b=2",
+        "a=6, b=9",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "指定運算(=)左方必須為變數\n出題用意：變數與基本運算\n難度：易"
+    },
+    {
+      "number": 4,
+      "category": "C",
+      "question": "此程式中 q 是用來當作一個簡易先進先出的佇\n列(queue)。push 與 pop 兩函數中所缺的指\n令 x 與 y 應填入下列何者？此處不考慮佇列是\n空與滿的狀況。",
+      "code": "int q[10],head=0,tail=0;\nvoid push(int c):\n        x\n    return;\nint pop():\n    int c = q[head];\n        y\n    return c;",
+      "options": [
+        "x: q[++tail]=c; y: head++;",
+        "x: q[tail++]=c; y: head++;",
+        "x: q[++tail]=c; y: head--;",
+        "x: q[tail++]=c; y: head--;",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "queue 的基本題，簡易的 queue，\nhead 為彈出的位置，tail-1 是尾端。\n出題用意：queue, list\n難度：中"
+    },
+    {
+      "number": 5,
+      "category": "C",
+      "question": "a,b 的值為何？",
+      "code": "int a = 2, b;\na = 3.5;\nb = 3/5*5;",
+      "options": [
+        "a=3, b=3",
+        "a=3.5, b=3",
+        "a=2, b=0",
+        "a=3, b=0",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "變數與型態的認識，a 是整數，所以\na=3.5 執行時，3.5 會型轉成整數 3。b 的\n計算，同是乘除，由左往右，整數除法無小\n數，b=0\n出題用意：變數與型態，基本運算\n難度：易"
+    },
+    {
+      "number": 6,
+      "category": "C",
+      "question": "執行結果為何？",
+      "code": "int q[5]={2,-3,6,-2,0},i=0;\nwhile (q[i] != 0) {\n    i = (i+q[i])%5;\n}\nprintf(\"%d\\n\",i);",
+      "options": [
+        "輸出 4",
+        "輸出 5",
+        "輸出 3",
+        "無窮迴圈",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "i=0,2,3,1 => (1-3)%5=-2, q[-\n2]超界\n出題用意：基本運算，陣列，常見錯誤\n難度：中"
+    },
+    {
+      "number": 7,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a = 5, b = 3;\nb = a; a = b;\nprintf(\"%d %d\\n\",a,b);",
+      "options": [
+        "3 5",
+        "3 3",
+        "5 5",
+        "0 0",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "依順序執行\n出題用意：指令執行順序，常見錯誤\n難度：易"
+    },
+    {
+      "number": 8,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int s[12]={1,1,-3,2,4,-1,2,3,-5,2,-1,1};\nint q[12], head=0, tail=0, i;\nfor (i=0; i<12; i++) {\n    if (s[i] > 0)\n        q[tail++] = s[i];\n    else {\n        while (s[i] < 0 && head<tail {\n            s[i] += q[head++];\n        }\n    }\n}\nint isum = 0;\nfor (i=head; i<tail; i++)\n    isum += q[i];\nprintf(\"%d\\n\", isum);",
+      "options": [
+        "1",
+        "3",
+        "4",
+        "6",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "用理解或直接追蹤皆可。q 是\nqueue，碰到正數壓入，負數則一直彈\n出抵銷，直到 q 是空或抵消完畢。問最\n後剩下 queue 中的總和。在測資中，-\n3 消掉前面，-1 消掉 2，-5 消(4,2)，\n-1 消 3，最後 queue 中剩下(2,1)\n出題用意：queue,array\n難度：難"
+    },
+    {
+      "number": 9,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int p=0,q=0,i;\nchar s[13]=\"axxbcdxefxxg\",t[9];\nfor (i=0; i<12; i++) {\n    if (s[i] == 'x') {\n        if (p < q) p++;\n    } else {\n        t[q++] = s[i];\n    }\n}\nt[q] = '\\0';\nprintf(\"%s\\n\",t+p);",
+      "options": [
+        "efg",
+        "cdg",
+        "bcg",
+        "abcdefg",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "t 是 queue，p 是 head，q 是 tail。\n非'x'壓入，否則從 t 中 pop，最後輸出\nqueue 中的字元。\n出題用意：queue, string\n難度：中"
+    },
+    {
+      "number": 10,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int p=0,i;\nchar s[13]=\"axxbcdxefxxg\",t[9];\nfor (i=0; i<12; i++) {\n    if (s[i] == 'x') {\n        if (p > 0) {\n            p--;\n            printf(\"%c\",t[p]);\n        }\n    } else {\n        t[p++] = s[i];\n    }\n}",
+      "options": [
+        "abcd",
+        "abcdefg",
+        "abefg",
+        "adfe",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "t 是 stack，p 是 top+1 的位置。非\n'x'壓入，否則從 t 中 pop 並印出(若非\n空)。\n出題用意：queue, string\n難度：中"
+    },
+    {
+      "number": 11,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int s[15]={1,1,-3,3,4,-1,2,3,-5,2,1,-1};\nint q[15],t=0, i;\nfor (i=0; i<12; i++) {\n    if (s[i] > 0) q[t++] = s[i];\n    else {\n        while (s[i] < 0 && t > 0) {\n            s[i] += q[--t];\n        }\n    }\n}\nint total = 0;\nwhile (t>0) total += q[--t];\nprintf(\"%d\", total);",
+      "options": [
+        "1",
+        "3",
+        "5",
+        "7",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "用理解或直接追蹤皆可。q 是\nstack，碰到正數壓入，負數則一直\n彈出抵銷，直到 q 是空或抵消完畢。\n問最後剩下 stack 中的總和。在測\n資中，-3 消掉前面，-1 消掉 3，-\n5 消(2,3)，-1 消 1，最後 stack\n中剩下(3,2)\n出題用意：stack,list\n難度：難"
+    },
+    {
+      "number": 12,
+      "category": "C",
+      "question": "f 與 x 的值為何？",
+      "code": "int a=3;\nfloat f, x;\nf = a/2 + 0.5;\nx = a/4.0 + 0.5;",
+      "options": [
+        "f=2.0, x = 1.25",
+        "f=2.0, x = 0.5",
+        "f=1.5, x = 0.5",
+        "f=1.5, x = 1.25",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "a/2 是 1，f=1.5；a/4.0=0.75，\nx=1.25\n出題用意：整數與浮點數運算，casting\n難度：易"
+    },
+    {
+      "number": 13,
+      "category": "C",
+      "question": "則輸出為何？",
+      "code": "int a=4,b=2;\nchar c,d;\nc = 'a'+a;\nd = 5;\nb += d;\nprintf(\"%c,%d\\n\",c,b);",
+      "options": [
+        "a,55",
+        "a,7",
+        "e,7",
+        "e,55",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "'a'+4 是'a'之後 4 個，就是\n'e'。char 可以當整數 5+2=7。\n出題用意：整數與字元\n難度：易"
+    },
+    {
+      "number": 14,
+      "category": "C",
+      "question": "執行後 c 的值為何？",
+      "code": "int a=2,b=5,c=0;\nif (a != 2)\n    if (b < 6) c = 1;\nelse c = 2;",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "不一定",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "else 是跟第二個 if，格式無關。\n所以什麼都沒執行，c=0\n。\n出題用意：if-else 格式。\n難度：易"
+    },
+    {
+      "number": 15,
+      "category": "C",
+      "question": "執行後 b,c 的值為何？",
+      "code": "int a = (10<3) || (4!=2+3);\nint b = (a)? 7: 8;\nint c = (b>7)? 1: 2;",
+      "options": [
+        "b=7, c=1",
+        "b=7, c=2",
+        "b=8, c=1",
+        "b=8, c=2",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "三元運算，a 是 true，b=7；c=2\n出題用意：基本邏輯運算\n難度：易"
+    },
+    {
+      "number": 16,
+      "category": "C",
+      "question": "執行後 c 的值為何？",
+      "code": "int a=2,b=0,c=0;\nif ((b+1) && (a || b)) {\n    c = 1;\n    if ((a && !b) || (!a && b))\n        c = 2;\n}\nelse c = 3;",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "非 0 是 true，第一個 if 成立；\nc=1，第二個 if 也成立，c=2。\n出題用意：if 與邏輯運算\n難度：易"
+    },
+    {
+      "number": 17,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "char a[10]=\"abcd 01\", b[10]=\"xy pq rs\";\nint i=0, j=0;\nwhile (a[i] != '\\0') i++;\nwhile (b[j] != ' ') j++;\nfor (j++; b[j]!=' '; j++)\n    a[i++] = b[j];\na[i] = '\\0';\nprintf(\"%s\", a);",
+      "options": [
+        "abcd pq",
+        "abcd pqrs",
+        "abcd 01pqrs",
+        "abcd 01pq",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "'\\0'是字串結尾符號，i 會找到\na 的字串尾端，j 先找到 b 的第一個空\n白，把下一個空白之前的抄錄到 a 的尾\n端。\n出題用意：字串處理\n難度：中"
+    },
+    {
+      "number": 18,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "char a[9]=\"0x3f2\";\nint t = 0;\nfor (int i=0; i<9 && a[i]; i++) {\n    if (a[i]>='0' && a[i]<='9')\n        t = t*10 + a[i]-'0';\n}\nprintf(\"%d\",t+10);",
+      "options": [
+        "1020",
+        "42",
+        "3210",
+        "60",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "將 a 中數字取出轉成整數，0x 只是幌\n子。\n出題用意：字串處理，類似字串轉整數\n難度：中"
+    },
+    {
+      "number": 19,
+      "category": "C",
+      "question": "執行後 b,c 的內容為何？",
+      "code": "char a[] = \"fake\";\nint b = a[3]-a[1];\nchar c = 'd' + b;",
+      "options": [
+        "b=5, c='i'",
+        "b=5, c='d'",
+        "b=4, c='h'",
+        "b=4, c='d'",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "index 從 0 開始，'e'-'a'=4;\n'd'+4='h'\n出題用意：字串基本，字母的 ASCII 是連\n續(a ~ z)\n難度：易"
+    },
+    {
+      "number": 20,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "char a[9]=\"ab cde\",b[9];\nint i=0,j;\nwhile (a[i]) i++;\nfor (j=0, i--; i>=0; i--,j++)\n    b[j] = a[i];\nb[j] = '\\0';\nprintf(\"%s\",b);",
+      "options": [
+        "edc ba",
+        "ba",
+        "ba edc",
+        "cde ab",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "將 a 反轉放入 b\n出題用意：字串，迴圈\n難度：中"
+    },
+    {
+      "number": 21,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "struct mystruct {\n    int x,y;\n} s1={1,3},s2={2,4};\ns1.x = 0;\ns2.y = s1.x+s1.y;\nprintf(\"{%d,%d}, {%d,%d}\", s1.x, s1.y,\n    s2.x, s2.y);",
+      "options": [
+        "{0,0}, {2,0}",
+        "{1,3}, {2,4}",
+        "{0,3}, {2,4}",
+        "{0,3}, {2,3}",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "struct 的用法與存取\n出題用意：struct 的用法與存取\n難度：易"
+    },
+    {
+      "number": 22,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "struct mystruct {\n    int x,y;\n} s1={1,3},s2={1,4};\nif (s1.x == s2.x)\n    s2 = s1;\nprintf(\"%d %d\", s1.y, s2.y);",
+      "options": [
+        "3 3",
+        "4 4",
+        "3 4",
+        "4 3",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "struct 可以用=。\n出題用意：struct\n難度：易"
+    },
+    {
+      "number": 23,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "struct mystruct {\n    int x[5];\n} s1={{1,2,3,4,5}},s2;\ns2 = s1;\ns2.x[0] = 9;\nprintf(\"%d %d\", s1.x[0], s2.x[0]);",
+      "options": [
+        "1 1",
+        "1 9",
+        "9 9",
+        "9 1",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "struct 可以用 =運算，即使成員是\n陣列。\n出題用意：struct\n難度：中"
+    },
+    {
+      "number": 24,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a=1, b=5;\nint *p, *q;\np = &a;\na += 2;\nq = &b;\n*q += *p;\nprintf(\"%d %d\",*p, b);",
+      "options": [
+        "3 8",
+        "3 6",
+        "1 5",
+        "3 5",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "指標基本使用\n出題用意：指標\n難度：易"
+    },
+    {
+      "number": 25,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "char a[9]=\"python\", b[9]=\"prog\";\nb = a;\nprintf(\"%s\", b);",
+      "options": [
+        "python",
+        "prog",
+        "pythonprog",
+        "(輸出空字串)",
+        "以上皆非或程式有錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "字串(字元陣列)無法指定新位置，編\n譯會出現錯誤\n出題用意：字串與陣列\n難度：易"
+    },
+    {
+      "number": 26,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "char a[9]=\"python\", b[9]=\"prog\";\nb += a;\nprintf(\"%s\", b);",
+      "options": [
+        "progpython",
+        "python",
+        "prog",
+        "pythonprog",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "陣列不可用 b += a\n出題用意：字串與陣列\n難度：易"
+    },
+    {
+      "number": 27,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a=0;\nfloat b=1;\na = 1.2 + 10*3.5 + 1.95;\nb = (1+3/2)*10.0;\nif (b < 21) a += 10;\nprintf(\"%d\", a);",
+      "options": [
+        "48",
+        "47",
+        "38",
+        "37",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "10*3.5 會以 float 計算得到 35.0，\n因此計算加法十前後兩個都是浮點數，得到\n38.15，指定給 a 時再轉為整數 a=38。\n計算 b 時，(1+3/2)內部皆整數，所以得\n到 2，再乘以 10.0 時變成 20.0。因此 if\n會執行 a 變成 48。\n出題用意：int,float 運算與型轉\n難度：中"
+    },
+    {
+      "number": 28,
+      "category": "C",
+      "question": "則輸出為何？",
+      "code": "int a[5]={1},*p, s=0;\np = a;\nfor (int i=0; i<5; i++,p++) {\n    if (*p == 0) *p = -1;\n    s += *p;\n}\nprintf(\"%d %d\", s, a[2]);",
+      "options": [
+        "5 1",
+        "5 0",
+        "-3 -1",
+        "-5 -1",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "陣列初始給值比較少，後面\n的是 0，所以 a[1]到 a[4]都是\n0。 後面迴圈將陣列中的 0 改成-\n1，s 是陣列全部的值相加。陣列\n是[1,-1,-1,-1,-1]，s=-3。\n出題用意：陣列初始，指標。有些\n人以為 a 初始為全部都是 1。\n難度：易"
+    },
+    {
+      "number": 29,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int w=5, s=0, a=-1;\nif (s) {\n    if (w < 7) a = 0;\n    else a = 1;\n} else if (0<w && w<7) {\n    a = (s)? 2: 3;\n} else {\n    a = 4;\n}\nprintf(\"%d\", a%4);",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "0",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "if 判斷，0 是 false，故第一個 if\n不成立，第二個 else if 成立，s==0 所\n以(s)為假，a=3\n出題用意：基本流程控制，邏輯運算，三元\n表示式。\n難度：易"
+    },
+    {
+      "number": 30,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a = 3;\nchar s='e';\nif (2<a && a<5)\n    s += 2;\nif (s == 'g')\n    a += 5;\nelse a = 0;\nprintf(\"%d %c\", a, s);",
+      "options": [
+        "8 e",
+        "8 g",
+        "0 e",
+        "3 g",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "第一個 if 會成立，第 2 個 if 也成\n立。\n出題用意：基本流程控制與邏輯運算，多個\nif 以及有沒有 else 的流程\n難度：易"
+    },
+    {
+      "number": 31,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a=3, s=5;\nif (2<a && a<5) {\n    s -= 4;\n    if (s == 2)\n        a += 5;\n} else a = 0;\nprintf(\"%d %d\", a,s);",
+      "options": [
+        "8 1",
+        "0 1",
+        "0 5",
+        "3 1",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "else 是跟第一個 if，第一個 if 成\n立，s=1，內部 if 不成立，所以 a=3,s=1\n出題用意：基本流程控制與邏輯運算，\nnested if and else。\n難度：易"
+    },
+    {
+      "number": 32,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int t = 0, i;\nfor (i=0; i<10; i++) {\n    if (i%3 == 1)\n        t += 1;\n}\nprintf(\"%d\", t);",
+      "options": [
+        "0",
+        "3",
+        "4",
+        "10",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "i=1,4,7 時 if 成立，t 加 1 三次\n出題用意：for 與 if 的基本流程控制與使\n用方式。\n難度：易"
+    },
+    {
+      "number": 33,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int t=0;\nfor (int i=0; i<100; i+=2) {\n    if (i%3 == 0)\n        t += i;\n}\nprintf(\"%d\", t);",
+      "options": [
+        "16",
+        "816",
+        "1683",
+        "4950",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "i 是 0,2,4,..，3 的倍數加起來，所\n以 t=0+6+12+…+96\n= (6+96)*16/2=816\n出題用意：for 與 if 的基本流程控制與簡\n單的等差級數公式。\n難度：易"
+    },
+    {
+      "number": 34,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int t = 0,i;\nfor (i=0; i<10; i++) {\n    if (i%2==0) continue;\n    t += i;\n    if (t > 2*i) break;\n}\nprintf(\"%d %d\",t,i);",
+      "options": [
+        "10 4",
+        "45 10",
+        "16 7",
+        "25 9",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "偶數跳過，(t,i)值的變化是(1 1);\n(4 3); (9 5); (16 7); 16>2*7 故\n離開迴圈\n出題用意：if-continue-break 的使用。\n難度：中"
+    },
+    {
+      "number": 35,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int t = 0,i;\nfor (i=0; i<10; t += i++);\nt = (t%6 == 0)? t + 10: t + t;\nprintf(\"%d\",t);",
+      "options": [
+        "45",
+        "55",
+        "90",
+        "110",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "for的迴圈內是空指令，運算寫在for\n指令內部，t 每次會把 i 加進來，所以 t 是\n45。三元運算(條件運算)，t%6==0 不成\n立，所以進行 t+t 指定給 t，結果是 90。\n出題用意：if 與 for 的格式，三元運算。\n難度：易"
+    },
+    {
+      "number": 36,
+      "category": "C",
+      "question": "此函數定義為：檢查以 a,b,c 是否為直角三角形\n的三邊長，其中已知 c 為最大值。請問程式中的?\n處填入下列何者最為合適？",
+      "code": "int f(int a,int b,int c) {\n    if (\n            ?\n                )\n        return 1;\n    else return 0;\n}",
+      "options": [
+        "(a^2 + b^2) == c^2",
+        "a^2 + b^2 == c^2",
+        "sqrt(a*a + b*b) == c",
+        "a*a + b*b == c*c",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "平 方 可 以 寫 a*a ， a^2 是\nexclusive or。(C)是不恰當的，\n因為把浮點數與整數做==\n出 題 用 意 ： 基 本 運 算 。 code\ncompletion\n難度：易"
+    },
+    {
+      "number": 37,
+      "category": "C",
+      "question": "此函數定義為： 保證傳入的 a 是一個正整數，回\n傳 a 的結尾有幾個 0(十進制)，例如 10300 的結\n尾有 2 個 0。請問程式中的?處應填入下列何者？",
+      "code": "int f(int a){\n    int i = 0;\n    while (a%10 == 0) {\n        i++;\n            ?\n                ;\n    }\n    return i;\n}",
+      "options": [
+        "a -= 10",
+        "a/10",
+        "a /= 10",
+        "a >> 1",
+        "以上皆非"
+      ],
+      "answerIndex": 2,
+      "explanation": "每次除以 10。\n出題用意：推理程式的意義。\n難度：中"
+    },
+    {
+      "number": 38,
+      "category": "C",
+      "question": "費式數列的定義為：f(1)=f(2)=1，對 i>2，\nf(i)=f(i-1)+f(i-2)。\n此程式要計算第一個大於 10000 的費式數，程式\n中的?處應填入下列何者？",
+      "code": "int t1 = 1, t2 = 1, s;\nwhile (t2 <= 10000) {\n        ?\n}\nprintf(\"%d\", t2);",
+      "options": [
+        "t1=t2; t2=t1+t2;",
+        "s=t2; t1=t2; t2=t1+t2;",
+        "s=t1; t1=t2; t2=s;",
+        "s=t1; t1=t2; t2=s+t1;",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "t1=t2 後 t1 的值會不見，所\n以先將 t1 暫存在 s，再指定給 t2 相\n加。\n出題用意：指令的執行順序。類似變\n數交換的程序\n難度：中\n如果寫 t2 += t1; t1 = t2-t1;\n也是對的答案，但這個比較難一點"
+    },
+    {
+      "number": 39,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int t = 0, i;\nfor (i=0; i<10; i++) {\n    if (i%2 == 1)\n        i += 2;\n    t += i;\n}\nprintf(\"%d\", t);",
+      "options": [
+        "33",
+        "45",
+        "55",
+        "35",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "i=0，t=0；\ni=1 → 變 3，t=3，迴圈尾 i++\ni=4，t=7，i++\ni=5，變 7，t=14，i++\ni=8，t=22, i++\ni=9，變 11，t=33\n出題用意：for 與 if 的基本流程控制，for\n的變數運作方式\n難度：中"
+    },
+    {
+      "number": 40,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int t = 0;\nwhile (t<20) {\n    if (t%2) t *= 2;\n    else t += 1;\n}\nprintf(\"%d\", t);",
+      "options": [
+        "0",
+        "20",
+        "30",
+        "32",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "t 是奇數的話加倍，偶數加一，\nt = 0,1,2,3,6,7,14,15,30\n出題用意：while 的基本流程控制\n難度：中"
+    },
+    {
+      "number": 41,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int t = 5;\nwhile (t<20) {\n    t += t//2;\n    if (t%3 == 0)\n        break;\n}\nprintf(\"%d\",t);",
+      "options": [
+        "22",
+        "5",
+        "15",
+        "20",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "t=5,7,10,15\n出題用意：while 的基本流程控制\n難度：中"
+    },
+    {
+      "number": 42,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int t = 208140759;\nwhile (t > 9) {\n    int s = 0;\n    while (t) {\n        s += t%10;\n        t /= 10;\n    }\n    t = s;\n}\nprintf(\"%d\", t);",
+      "options": [
+        "0",
+        "9",
+        "6",
+        "3",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "每次將各個位數相加，直到剩下一位\n數。t=36, 9\n出題用意：while-else 的基本流程控制\n難度：中"
+    },
+    {
+      "number": 43,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int t = 0, i, j;\nfor (i=0; i<10; i++) {\n    for (j=1; j<10; j+=2) {\n        if ((i+j)%5 == 0)\n            t++;\n    }\n}\nprintf(\"%d\", t);",
+      "options": [
+        "0",
+        "5",
+        "10",
+        "50",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "j 的變化是(1,3,5,7,9)，\nj%5=(1,3,0,2,4)也就是對於任何 i，\n恰有一個相加後為 5 的倍數，所以答案是\n10。\n出題用意：nested for 的基本流程控\n制，要一點思考否則花時間。\n難度：難"
+    },
+    {
+      "number": 44,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int cnt = 0;\nfor (int t=9; t<50; t+=10) {\n    int flag=1;\n    for (int i=2; i<t; i++) {\n        if (t%i == 0)\n            flag = 0;\n    }\n    cnt += flag;\n}\nprintf(\"%d\", cnt);",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "迴圈內為檢驗 t 是否為質數的程\n序，外面被檢測的(9, 19, 29, 39,\n49)中有 2 個質數。\n出題用意：nested for 的基本流程\n控制，簡單數學，要能看得出來是在測\n試因數，就可以理解 f 代表是否是質\n數。\n難度：難"
+    },
+    {
+      "number": 45,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int k = 0, i;\nfor (i=1; i<20; i+=3) {\n    k += i;\n    for (i=0; i<3; i++) {\n        k -= i;\n    }\n}\nprintf(\"%d\", k);",
+      "options": [
+        "49",
+        "0",
+        "70",
+        "28",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "內迴圈誤用外迴圈的 i，所以會導致\n無窮迴圈。\n出題用意：基本流程控制，常見錯誤。\n難度：中"
+    },
+    {
+      "number": 46,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int k = 0,i;\nfor (i=1; i<20; i+=3) {\n    k += i;\n    for (int i=0; i<3; i++) {\n        k -= i;\n    }\n}\nprintf(\"%d\", k);",
+      "options": [
+        "49",
+        "0",
+        "70",
+        "28",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "內迴圈的 i 是區域變數與外迴圈的 i\n無關，內迴圈每次減去 3，k 的值是 1 + 4\n+ 7 …+19=70, 70-7*3=49\n出題用意：流程控制，變數範圍。\n難度：中"
+    },
+    {
+      "number": 47,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[9]={3,5,1,0,7,3,2,0,9};\nint *p, s;\nfor (p=a; *p; p++);\nfor (s=0, p++; *p; p++)\n    s += *p;\nprintf(\"%d\", s);",
+      "options": [
+        "9",
+        "21",
+        "12",
+        "30",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "找到第一個 0，從下一個開始加，直到\n碰到第二個 0 為止。也就是第一與第二個 0\n之間的數字和。\n出題用意：for, 指標與陣列。\n難度：中"
+    },
+    {
+      "number": 48,
+      "category": "C",
+      "question": "若宣告為\n考慮以下指令：\n有幾組指令會導致錯誤或陣列超界？",
+      "code": "int a[100], *p=a;\n(1) *p+1 = 5;\n(2) *(p+1) = 5;\n(3) p += 100; *p = 5;\n(4) a += 3; *a = 5;",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "answerIndex": 3,
+      "explanation": "(1)(4)是錯的，(3)會超界。\n出題用意：指標與陣列。常見程式錯誤。\n難度：中"
+    },
+    {
+      "number": 49,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[9]={2,-3,-1,6,0,3,5,6,8},t=0;\nfor (int i=0; i<9; i++) {\n    if (a[i] == 0) break;\n    if (a[i]%2) {\n        t *= 2;\n    } else {\n        t += 1;\n    }\n}\nprintf(\"%d\", t);",
+      "options": [
+        "4",
+        "5",
+        "42",
+        "50",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "偶數 t 加一，奇數 t 乘 2，遇到 0 離\n開，t 值 0,1,2,4,5。\n出題用意：對 for-if-break 的運作方式\n的了解。\n難度：中"
+    },
+    {
+      "number": 50,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[3][4] = {{2,-3,-1}, {-3,3,4,6}};\nint t = 0,i,j;\nfor (i=0,j=3; i<3; i++,j--) {\n    t += a[i][i]-a[i][j];\n}\nprintf(\"%d\", t);",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "4",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "對角線相加減去右上左下的\n反對角線，陣列初始未給值的是 0。\n出題用意：二維陣列存取。\n難度：易。"
+    },
+    {
+      "number": 51,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int p[21] = {0},i,j,s=0;\nfor (i=2; i<21; i++) {\n    if (p[i]) continue;\n    s++;\n    for (j=i+i; j<21; j+= i) {\n        p[j] = 1;\n    }\n}\nprintf(\"%d\", s);",
+      "options": [
+        "8",
+        "9",
+        "10",
+        "11",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "找質數，20 以內的質數個數(2, 3,\n5, 7, 11, 13, 17, 19)共八個\n出題用意：能看出在找質數。p[i]=0 是質\n數。\n難度：中"
+    },
+    {
+      "number": 52,
+      "category": "C",
+      "question": "執行後 a 的內容為何？",
+      "code": "int a[8] = {8,3,1,5,0,7,4,2},i,j;\nfor (j=0; j<3; j++) {\n    for (i=1; i<8; i++) {\n        if (a[i-1] > a[i]) {\n            int t = a[i-1];\n            a[i-1] = a[i];\n            a[i] = t;\n        }\n    }\n}",
+      "options": [
+        "[0,1,2,3,4,5,7,8]",
+        "[3,1,0,4,2,5,7,8]",
+        "[1,0,3,4,5,2,7,8]",
+        "[1,0,3,4,2,5,7,8]",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "此為 bubble sort 前三回合\n[3,1,5,0,7,4,2,8]\n[1,3,0,5,4,2,7,8]\n[1,0,3,4,2,5,7,8]\n出題用意：能看出運作方式後，用紙\n本很容易得到答案。變數交換的用\n法。\n難度：中"
+    },
+    {
+      "number": 53,
+      "category": "C",
+      "question": "執行後 d 的內容為何？",
+      "code": "int a[4]={8,4,3,1}, b[3]={0,4,5},d[7];\nint ai=3, di=0;\nfor (int bi=0; bi<3; bi++) {\n    while (ai>=0 && a[ai] <= b[bi])\n        d[di++] = a[ai--];\n    d[di++] = b[bi];\n}\nwhile (ai >= 0) d[di++] = a[ai--];",
+      "options": [
+        "[0,1,4,3,5,4,8]",
+        "[0,1,3,4,4,5,8]",
+        "[0,4,5,1,3,4,8]",
+        "[1,3,4,8,0,4,5]",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "a 是遞減，b 是遞增，合併成\nsorted list\n出題用意：推理程式碼運作的意義。\n難度：中"
+    },
+    {
+      "number": 54,
+      "category": "C",
+      "question": "考慮下面的程式片段，\n此程式是想要將 a,b 兩個遞增序列合併成一個遞\n增序列 d，但此程式有個錯誤，請問下列哪一組測\n資放在第一行的?處，可以使得 d 不是想要的結\n果？",
+      "code": "int a[4]=?, b[4]=?,d[8];\nint ai=0, di=0;\nfor (int bi=0; bi<4; bi++) {\n    while (ai<4 && a[ai] <= b[bi])\n        d[di++] = a[ai++];\n    d[di++] = b[bi];\n}",
+      "options": [
+        "a[4]={0,0,0,0}, b[4]={1,4,5,6}",
+        "a[4]={1,2,3,4}, b[4]={5,6,7,8}",
+        "a[4]={3,4,7,9}, b[4]={1,2,5,8}",
+        "a[4]={1,3,5,7}, b[4]={0,0,0,0}",
+        "以上皆非"
+      ],
+      "answerIndex": 2,
+      "explanation": "for 之後漏了將 a 的剩下部份\n放進 d 的尾端\n所以 a 中>b[3]的部份沒有在 d 中，\n選項中只有(C)有此情形\n出題用意：推理程式碼運作與偵錯能\n力。\n難度：難"
+    },
+    {
+      "number": 55,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[4][2]={{-1,-2},{1,2},{5,-4},{-3,1}};\nint d[10],i,j,k=0;\nfor (i=0; i<4; i++) {\n    for (j=0; j<2; j++) {\n        if (a[i][j] < 0) continue;\n        d[k++] = a[i][j];\n    }\n}\nprintf(\"%d %d %d\", k,d[1],d[3]);",
+      "options": [
+        "8 -1 1",
+        "4 2 1",
+        "4 -2 -3",
+        "4 1 5",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "每個以 row-major 方式將非\n負元素放進 d，k 是 d 中元素個數。\n出題用意：陣列與迴圈。\n難度：中"
+    },
+    {
+      "number": 56,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[8]={4,3,6,5,0,8,9,2};\nint t1=-1, t2=-1;\nfor (int i=0; i<8; i++) {\n    if (a[i]%2) continue;\n    if (a[i] > t1) {\n        t2 = t1; t1 = a[i];\n    } else if (a[i] > t2) {\n        t2 = a[i];\n    }\n}\nprintf(\"%d %d\", t1,t2);",
+      "options": [
+        "9 8",
+        "6 4",
+        "8 6",
+        "8 4",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "找第二大偶數。t1,t2 是存最\n大與第二大偶數\n出題用意：推理程式碼運作\n難度：中"
+    },
+    {
+      "number": 57,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[4] = {1,2,3,4}, c[4];\nint *b = a;\nfor (int i=0; i<4; i++)\n    c[i] = a[3-i];\nb[1] = 0;\nprintf(\"%d %d %d\", a[1],b[1],c[1]);",
+      "options": [
+        "0 0 3",
+        "2 0 3",
+        "0 0 2",
+        "1 2 2",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "a,b 指向同一陣列，c 是被複\n製出來 a 的反轉。\n出題用意：陣列與指標\n難度：中"
+    },
+    {
+      "number": 58,
+      "category": "C",
+      "question": "以下選項中 k 的初值與執行後 a 陣列的內容的敘述何\n者正確？",
+      "code": "int k = ?, a[7]={3,1,4,7,2,6,5}, t[7],i;\nfor (i=0; i<k; i++) t[i]=a[i];\nfor (i=k; i<7; i++) a[i-k] = a[i];\nfor (i=0; i<k; i++) a[7-k+i] = t[i];",
+      "options": [
+        "若 k=0，則 a={3,5,1,6,4,2,7}",
+        "若 k=2，則 a={4,3,1,7,2,6,5}",
+        "若 k=4，則 a={2,6,5,7,4,1,3}",
+        "若 k=5，則 a={6,5,3,1,4,7,2}",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "把 a 看成環狀，向左旋轉 k\n格。\n出題用意：陣列與迴圈，理解程\n序。\n難度：難"
+    },
+    {
+      "number": 59,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int total=0, imax=0, i;\nfor (i=0; i<16; i++) {\n    int cnt=0, j=i;\n    while (j > 0) {\n        if (j&1) cnt++;\n        j >>= 1;\n    }\n    if (cnt > imax) imax = cnt;\n    total += cnt;\n}\nprintf(\"%d %d\", imax, total);",
+      "options": [
+        "5 30",
+        "4 30",
+        "4 32",
+        "4 34",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "迴圈內是計算二進位表示時 1-bit 的\n個數，imax 是最大，所以是 4 (i=15,\n1111)，total 要計算 1-bit 總數，每個\nbit 剛好有一半是 1，所以 total =\n4*(16/2)=32\n出題用意：binary code，推理程式碼運\n作，計算總和要有點數學推理\n難度：難"
+    },
+    {
+      "number": 60,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a = (10 << 3);\nint b = (a&(a-1));\nprintf(\"%d\", a-b);",
+      "options": [
+        "0",
+        "16",
+        "32",
+        "64",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "由二進位表示法去看\na = 1010 << 3 = 1010000\nb = 1000000\na-b 就是 10000 = 16\na&(a-1)是去除最後一個 1\n出題用意：binary code\n難度：難"
+    },
+    {
+      "number": 61,
+      "category": "C",
+      "question": "註： 0b 是二進位表示的意思，例如 0b1101 就是十\n進制整數 13。\n以下選項中 k 的初值與輸出的敘述何者錯誤？",
+      "code": "int k = 0b?\nint a[8] = {8,3,1,5,0,7,4,2},t = 0;\nfor (int i=0; i<8; i++) {\n    if (k & (1<<i))\n        t += a[i];\n}\nprintf(\"%d\", t);",
+      "options": [
+        "若 k=0b00000101，則輸出為 9",
+        "若 k=0b10100010，則輸出為 12",
+        "若 k=0b10000001，則輸出為 10",
+        "若 k=0b00110000，則輸出為 6",
+        "以上皆無錯誤或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "k 的二進位表示中 1-bit 的位\n置就是 a 中要被加入總和的元素，例\n如 k=0b101，t=a[0]+a[2]。要注\n意高位元與低位元的位置\n(D)錯誤，因為 t=a[4]+a[5]=7\n出題用意：位元運算\n難度：中"
+    },
+    {
+      "number": 62,
+      "category": "C",
+      "question": "以下選項中的函數呼叫與回傳值的敘述何者錯\n誤？",
+      "code": "int chk(char s[], int n) {\n    for (int i=0,j=n-1; i<j; i++,j--) {\n        if (s[i] != s[j])\n            return 0;\n    }\n    return 1;\n}",
+      "options": [
+        "chk(\"xxarx\",5)回傳 1",
+        "chk(\"a\",1)回傳 1",
+        "chk(\"abba\",4)回傳 1",
+        "chk(\"abab\",4)回傳 0",
+        "以上皆無錯誤或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "此函數判斷字串是否為迴文\n出題用意：字串與函數\n難度：中"
+    },
+    {
+      "number": 63,
+      "category": "C",
+      "question": "以下程式\n輸出為何？",
+      "code": "char chk(char *s, char *t) {\n    for ( ; *s; s++,t++) {\n        if (*s != *t)\n            return *s;\n    }\n    return '?';\n}\nchar p=chk(\"axarc\",\"axabc\"),\n    q=chk(\"qwerty\",\"qwer\"),\n        r=chk(\"ds\",\"dst\");\nprintf(\"%c%c%c\",p,q,r);",
+      "options": [
+        "ats",
+        "a?s",
+        "r??",
+        "rt?",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "回傳 s 中第一個與 t 中不同的\n字元，若找不到，回傳?\n出題用意：字串與函數定義。看懂程\n式的意義\n難度：中"
+    },
+    {
+      "number": 64,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a = 3;\nint f(int k) {\n    int a = 4;\n    k += 2;\n    return a+k;\n}\nint main() {\n    int b = 1, c = f(b)+a;\n    printf(\"%d %d\", b,c);\n    return 0;\n}",
+      "options": [
+        "3 11",
+        "1 10",
+        "1 11",
+        "3 10",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "a,b 值不會改變，副程式內的\na 是區域變數\n出題用意：參數傳遞與區域/全域變\n數\n難度：易"
+    },
+    {
+      "number": 65,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a = 3;\nint f(int *k) {\n    a = 4;\n    *k += 2;\n    return a+(*k);\n}\nint main() {\n    int b = 1;\n    int c = f(&b)+a;\n    printf(\"%d %d\", b,c);\n    return 0;\n}",
+      "options": [
+        "1 11",
+        "1 10",
+        "3 10",
+        "3 11",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "函數內的 a 是全域變數，*k 是\n傳址變數會變動，呼叫後 a=4,\nc=7+4=11, b=3。\n出題用意：參數傳遞與區域/全域變\n數\n難度：中"
+    },
+    {
+      "number": 66,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a = 3, b = 1;\nint f(int a) {\n    a += 2;\n    b = 4;\n    return a+b;\n}\nint main() {\n    int a=5;\n    int c = f(b)+a;\n    printf(\"%d %d\", b,c);\n    return 0;\n}",
+      "options": [
+        "1 14",
+        "4 14",
+        "4 12",
+        "1 12",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "函數 f 內的 a 是參數，算是區\n域變數，傳進來是 b=1，所以 a+=2\n變成 3，函數 f 內 b 是全域變數，值\n改成 4。回傳 7。main 中的 a 是區\n域變數，值是 5，所以 c=12。全域\n的 b 值在 f 中改成 4\n出題用意：參數傳遞與區域/全域變\n數\n難度：中"
+    },
+    {
+      "number": 67,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int f(int p, int q[]) {\n    p += 2;\n    q[0] = 0;\n    return p+q[0]+q[1];\n}\nint main() {\n    int a=3, b[3] = {1,2,0};\n    int d = f(a,b+1);\n    printf(\"%d %d %d\",a,d,b[0]+b[1]);\n    return 0;\n}",
+      "options": [
+        "5 7 2",
+        "3 7 2",
+        "3 5 1",
+        "3 7 1",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "傳進來 p=3，q 的位置是 b[1]，\n所以b[1]被改成0，回傳5+0+0=5，\na 值不會改變，b 改成[1,0,0]。\n出題用意：list 參數傳遞與區域/全\n域變數\n難度：中"
+    },
+    {
+      "number": 68,
+      "category": "C",
+      "question": "此函數將字串複製 k 次放在 t，例如呼叫\nf(t,\"tle\",2)後 t 的內容會是\"tletle\"。程\n式中 for 迴圈的?部份應該填入下列何者？",
+      "code": "char *f(char t[], char *s, int k) {\n    int i, j=0;\n    for (i=0; i<k; i++) {\n        for (\n                    ?\n                            )\n            t[j] = *p;\n    }\n    t[j] = '\\0';\n    return t;\n}",
+      "options": [
+        "j=0; j<n; j++",
+        "char *p=s; *p; p++,j++",
+        "char p=*s; p!='\\0'; p++,j++",
+        "char *p=s; *p; p++",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "內迴圈在複製一次 s，而 j 是\n複製寫入的位置，每次回圈不重置j。\n此處的寫法是用指標歷遍 s。\n出題用意：字串，函數，程式解讀，\n指標\n難度：中"
+    },
+    {
+      "number": 69,
+      "category": "C",
+      "question": "以下選項中傳入值 s 與回傳值的敘述何者錯誤？",
+      "code": "int f(char s[]) {\n    int cnt[26]={0}, imax=0;\n    for (char *p=s; *p; p++) {\n        if (*p<'a' || *p>'z')\n            return -1;\n        cnt[*p - 'a']++;\n    }\n    for (int i=0; i<26; i++) {\n        if (cnt[i]>imax) imax = cnt[i];\n    }\n    return imax;\n}",
+      "options": [
+        "f(\"xxBarx\")回傳-1",
+        "f(\"abccbac\")回傳 3",
+        "f(\"waxyz\")回傳 1",
+        "f(\"aaaaabbbb\")回傳 5",
+        "以上皆無錯誤或程式錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "函數計算最多出現的字母次\n數，若有非小寫字母回傳-1。選項皆\n無錯誤\n出題用意：字串與陣列運算\n難度：中"
+    },
+    {
+      "number": 70,
+      "category": "C",
+      "question": "以下程式\n輸出為何？",
+      "code": "int g(int x, int y) {\n    if (y == 0) return x;\n    if (x >= y) return g(x-y,y);\n    return g(y,x);\n}\nint a[4]={3,5,12,18},ans = 0;\nfor (int i=0; i<3; i++) {\n    ans += g(a[i],a[i+1]);\n}\nprintf(\"%d\", ans);",
+      "options": [
+        "3",
+        "8",
+        "10",
+        "12",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "此函數為 gcd，a 中相鄰數的\ngcd 分別是 1,1,6，總和 8\n出題用意：遞迴。要推理出此函數在\n算 gcd\n難度：難"
+    },
+    {
+      "number": 71,
+      "category": "C",
+      "question": "以下程式\n輸出為何？",
+      "code": "int g(int x, int y) {\n    if (x < 2) return y;\n    return g(x-2,y+1);\n}\nint a[4]={1,5,20,8}, b[4]={3,1,20,0};\nint ans=0;\nfor (int i=0; i<4; i++)\n    ans += g(a[i],b[i]);\nprintf(\"%d\", ans);",
+      "options": [
+        "40",
+        "45",
+        "52",
+        "58",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "推理函數所做的運算，每次 x-\n2，y+1，(皆非負)，所以此函數回傳\n是 y+x//2，\n3+(1+2)+(20+10)+4=40\n出題用意：遞迴。\n難度：中"
+    },
+    {
+      "number": 72,
+      "category": "C",
+      "question": "以下程式\n輸出為何？",
+      "code": "int g(int x, int y) {\n    int t = 0;\n    while (x > 1 && y > 0) {\n        t++; x -= 2; y--;\n    }\n    return t;\n}\nint a[4]={1,5,20,9}, b[4]={3,1,11,4};\nint ans=0;\nfor (int i=0; i<4; i++)\n    ans += g(a[i],b[i]);\nprintf(\"%d\", ans);",
+      "options": [
+        "17",
+        "16",
+        "15",
+        "14",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "每次 x-2，y-1，(皆非負)所以\n函數回傳是 min(x/2,y)\nans= min(1/2,3) + min(5/2,1) +\nmin(20/2,11) + min(9/2,4) =\n0+1+10+4=15\n出題用意：推理函數所做的運算\n難度：中"
+    },
+    {
+      "number": 73,
+      "category": "C",
+      "question": "若 ans = f(1)+f(2)+f(3)+f(4)，則 ans 的\n值為何？",
+      "code": "int g(int d) {\n    if (d%2 == 0) return f(d/2)+1;\n    return f(d);\n}\nint f(int d) {\n    if (d == 1) return 0;\n    if (d%2) return g(3*d+1)+1;\n    return g(d);\n}",
+      "options": [
+        "7",
+        "8",
+        "9",
+        "10",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "此函數是 3n+1，即偶數除以 2\n奇數變 3n+1，回傳經過幾回合變成\n1，輸入 3 時\n(3,10,5,16,8,4,2,1)，7 回合。\nans= 0+1+7+2=10\n出題用意：兩函數遞迴，推理函數所\n做的運算再去算答案\n難度：難"
+    },
+    {
+      "number": 74,
+      "category": "C",
+      "question": "以下程式\n輸出為何？",
+      "code": "int g(int d[], int n) {\n    int t=0;\n    for (int i=0; i<n; i++) {\n        t += d[i];\n        d[i] = i;\n    }\n    return t;\n}\nint *p;\nint x=g(p, 10);\nprintf(\"%d %d\", x,p[3]);",
+      "options": [
+        "0 3",
+        "0 0",
+        "45 3",
+        "45 0",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "指標 p 未初始化記憶體，存取\nd[i]是未定義行為，屬於程式錯誤。\n出題用意：指標\n難度：中"
+    },
+    {
+      "number": 75,
+      "category": "C",
+      "question": "以下程式\n輸出為何？",
+      "code": "void g(int s[], int le, int ri) {\n    if (le >= ri) return;\n    for (int i=le+1; i<ri; i++) {\n        if (s[i] > s[le]) le = i;\n    }\n    printf(\"%d \", s[le]);\n    g(s, le+1, ri);\n}\nint a[9]={5,2,9,4,5,6,3,4,1};\ng(a, 0, 9);",
+      "options": [
+        "9 5 6",
+        "9 6 4 1",
+        "9 5 6 1",
+        "9 6 3 4 1",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "函數參數 le 與 ri 是範圍(左閉\n右開區間)，找最大值印出，然後遞\n迴右邊的區間。\n對此輸入，先找到 9，然後 9 的右邊\n最大是 6，然後是 4，最後是 1。\n出題用意：遞迴。推理出函數的意義，\n再找答案。\n難度：中"
+    },
+    {
+      "number": 76,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[11]={3,4,1,5,2,4,2,6,9,7,8};\nint s[11],t=-1,i;\nfor (i=0; i<11; i++) {\n    while (t>=0 && s[t]>=a[i])\n        t--;\n    s[++t] = a[i];\n}\nwhile (t >= 0)\n    printf(\"%d \", s[t--]);",
+      "options": [
+        "8 7 6 5 4 3",
+        "8 7 6 4 2 1",
+        "8 7 6 2 1",
+        "8 7 6 2 2 1",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "s 是一個 stack，t 是 top 的\nindex，s 中維護遞增子序列(無等\n號)。輸出時反序輸出\n出題用意：stack, list 操作。推\n理出函數的意義，tracing。\n難度：中"
+    },
+    {
+      "number": 77,
+      "category": "C",
+      "question": "則程式中?的部分為以下選項與其輸出的敘述何者\n錯誤？",
+      "code": "int a[9] =\n                ?  ;\nint t = 0;\nfor (int i=0; i<9; i++) {\n    if (a[i]>t || a[i]<-t)\n        t = a[i];\n}\nprintf(\"%d\", t);",
+      "options": [
+        "?為{1,2,3,4,5,6,9,8,7}時輸出 9",
+        "?為{3,2,-4,-5,1,2,3,0,-5}時輸出-5",
+        "?為{5,-2,3,-6,0,-4,1,2,-3}時輸出-4",
+        "?為{1,0,0,-4,2,1,-7,2,0}時輸出 2",
+        "以上皆無誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "絕對值大的會變成 t，但如果\nt 是負值，下一個任何值都會取代\n它，也等同於：找絕對值最大的，如\n果是正數，就是它，否則遞迴右邊。\n(C)的輸出是-3\n出題用意：推理出函數的意義，再找\n答案。\n難度：難"
+    },
+    {
+      "number": 78,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[7] = {3,1,6,4,9,5,7}, n=7, s=0;\nfor (int i=0; i<n; i++) {\n    s += (a[i] > a[i+1])? a[i] : a[i+1];\n}\nprintf(\"%d\", s);",
+      "options": [
+        "35",
+        "40",
+        "50",
+        "47",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "將相鄰兩個降大的加起來，但 i 範\n圍寫錯，會 out of range。\n應該寫 i<n-1。\n出題用意：陣列常見錯誤。\n難度：中"
+    },
+    {
+      "number": 79,
+      "category": "C",
+      "question": "以下選項中，v 與回傳值的敘述何者錯誤？",
+      "code": "int a[8]={1,2,4,4,5,7,7,8};\nint f(int v) {\n    int i = 0;\n    while (a[i] < v)\n        i++;\n    return i;\n}",
+      "options": [
+        "f(0)回傳 0",
+        "f(6)回傳 5",
+        "f(4)回傳 2",
+        "f(9)回傳 8",
+        "以上皆無錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "while 迴圈 i 的上限忘記寫，\nv=9 時會陣列超界， 程式錯誤。\n出題用意：常見錯誤。\n難度：中"
+    },
+    {
+      "number": 80,
+      "category": "C",
+      "question": "考慮 f(0,9)呼叫此函數，以下選項中 s 的初值與對\n應的回傳值何者錯誤？",
+      "code": "int s[9] =\n                ?\n                    ;\nint f(int le, int ri) {\n    for (int i=le+1; i<ri; i++) {\n        if (abs(s[i]) > abs(s[le]))\n            le = i;\n    }\n    if (s[le] >= 0 || le+1==ri)\n        return s[le];\n    return f(le+1,ri);\n}",
+      "options": [
+        "?為{1,2,3,4,5,6,9,8,7}時回傳 9",
+        "?為{3,2,-4,-5,1,2,3,0,-5}時回傳-5",
+        "?為{5,-2,3,-6,0,-4,1,2,-3}時回傳-4",
+        "?為{1,0,0,-4,2,1,-7,2,0}時回傳 2",
+        "以上皆無誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "區間[le,ri)，找絕對值最\n大的，如果是正數或者右邊已經沒\n有，答案就是它，否則遞迴右邊。\n(C)的輸出是-3\n出題用意：遞迴。推理出函數的意\n義，再找答案。Q077 的遞迴版本\n難度：難"
+    },
+    {
+      "number": 81,
+      "category": "C",
+      "question": "對於輸出 a,b,c[2]的值，下列敘述何者正確？",
+      "code": "int a;\nint main() {\n    int b, c[5]={-1};\n    printf(\"%d %d %d\", a, b, c[2]);\n    return 0;\n}",
+      "options": [
+        "a=0，b=0，c[2]= -1",
+        "a 與 b 的值不一定，c[2]= -1",
+        "a 與 b 的值不一定，c[2]= 0",
+        "a=0，b 的值不一定，c[2]= 0",
+        "a，b，c[2]的值皆不一定"
+      ],
+      "answerIndex": 3,
+      "explanation": "全域變數 a 會初始為 0，區域\n變數 b 沒有初值則值不一定，陣列 c\n只有 c[0]=-1，其他值會給-1。\n出題用意：常見錯誤。\n難度：難"
+    },
+    {
+      "number": 82,
+      "category": "C",
+      "question": "以 chk(\"93010307435\")呼叫的回傳值為何？",
+      "code": "int chk(char *s) {\n    int i=0, j, cost=0;\n    for (j=0; s[j]; j++);\n    j--;\n    while (i < j) {\n        if (s[i] != s[j]) {\n            cost += (s[i]<s[j])? s[i]: s[j];\n            cost -= '0';\n        }\n        i++; j--;\n    }\n    return cost;\n}",
+      "options": [
+        "6",
+        "8",
+        "9",
+        "12",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "此函數找左右對稱位置不相等\n字元，也就是第 i 個與倒數第 i 個不\n同時加上較小的數值。答案是 5+0+1\n= 6\n出題用意：推理函數的意義。\n難度：中"
+    },
+    {
+      "number": 83,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int idx[4] = {3,0,5,1},\n    p[5] = {5,4,3,2,1}, total = 0;\nfor (int i=0; i<4; i++) {\n    if (p[idx[i]]<5 && idx[i]<5)\n        total += p[idx[i]];\n}\nprintf(\"%d\", total);",
+      "options": [
+        "11",
+        "6",
+        "15",
+        "4",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "想要將 idx 所指位置的值小於 5 的\n相加，預期是 4+2=6，但 if\n的 short-circuit 保護寫反了，會產\n生 index out of range 的錯誤。\n出題用意：short-circuit。常見錯誤。\n難度：難"
+    },
+    {
+      "number": 84,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[5]={3,1,2,0,5},p=12,cnt=0;\nfor (int i=0; i<5; i++) {\n    if ((p%a[i]==0) && (a[i]!=0)) {\n        cnt++;\n    }\n}\nprintf(\"%d\", cnt);",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "想要計算 p 的倍數有幾個，預期有\n三個，但 if 的兩條件寫反了，沒有\nshort-circuit 保護，產生除以 0 取\n餘數的 程式錯誤\n出題用意：short-circuit。常見錯誤。\n難度：中"
+    },
+    {
+      "number": 85,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[8]={0,1,4,2,0,-3,2,0},p=3;\nwhile (1) {\n    if (a[p]==0 || p<0 || p>=8)\n        break;\n    p += a[p];\n}\nprintf(\"%d\", p);",
+      "options": [
+        "0",
+        "4",
+        "7",
+        "8",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 4,
+      "explanation": "每次前進 a[p]距離，負值為倒退，\n直到碰到 0 或者出界，if 的條件寫反\n了，沒有 short-circuit 保護，會對\na[8]取值，超界， 程式錯誤\n出題用意：short-circuit。常見錯\n誤。\n難度：中"
+    },
+    {
+      "number": 86,
+      "category": "C",
+      "question": "則 f(1),f(3),f(8),f(10)回傳值依序為\n何？",
+      "code": "int a[11]={0,-1,4,2,0,-3,-2,5,1,-8,-3};\nint f(int i) {\n    while (0<=i && i<11) {\n        if (a[i]==0) return i;\n        i += a[i];\n    }\n    return -1;\n}",
+      "options": [
+        "0,4,-1,-1",
+        "0,4,0,-1",
+        "1,-1,4,-1",
+        "0,-1,0,-1",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "每次前進 a[i]距離，負值為倒退，\n直到碰到 0 或者出界，出界回傳-1，否\n則回傳停下來的位置\n每一格走過了之後，下次再走到不必重複\n走，可以很快的用紙筆模擬\n出題用意：一維陣列模擬\n難度：中"
+    },
+    {
+      "number": 87,
+      "category": "C",
+      "question": "執行後 p 的內容為何？[]用來表示陣列。",
+      "code": "int a[8]={0,1,2,3,4,5,6,7},p[8],j=0;\nfor (int i=0; i<8; i+=2)\n    p[j++] = a[i];\nfor (int i=7; i>=0; i-=2)\n    p[j++] = a[i];",
+      "options": [
+        "[0,2,4,6,7,5,3,1]",
+        "[0,1,2,3,4,5,6,7]",
+        "[0,2,4,6,1,3,5,7]",
+        "[0,1,2,3,7,6,5,4]",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "j 每次加一，是一一填入 p 中。\n出題用意： 陣列與迴圈\n難度：易"
+    },
+    {
+      "number": 88,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[3][2]={{0,1},{2,3},{4,5}},*p=a;\n*(p+4) = 9;\n*(p+2) = 7;\nfor (int i=0; i<3; i++)\n    printf(\"%d %d \", a[i][0],a[i][1]);",
+      "options": [
+        "0 1 2 3 4 5",
+        "0 1 2 9 7 5",
+        "0 1 7 3 9 5",
+        "0 1 2 3 7 9",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "二維陣列以 row major 方式儲存，\n所以第 4 個位置是 a[2][0]也就是原來\n存 4 的位置，而第 2 個位置就是存 2 的位\n置。\n出題用意：二維陣列。row-major\n難度：中"
+    },
+    {
+      "number": 89,
+      "category": "C",
+      "question": "若函數 f 定義如上，則以下程式的輸出為何？",
+      "code": "void f(char *p, char *q) {\n    for ( ; *q; p++,q++) *p = *q;\n    *p = '\\0';\n}\nchar a[3][6]={\"wa\",\"tle\",\"ac\"};\nfor (int i=0; i<3; i++)\n    f(a[i]+2, \"Omg\");\nprintf(\"%s %s %s\",a[0],a[1],a[2]);",
+      "options": [
+        "waOmg tlOmg acOmg",
+        "Omg Omg Omg",
+        "waOmg tleOmg acOmg",
+        "Omgwa Omgtl Omgac",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "f 是類似 strcpy 字串複製，\n程式中在每個字串+2 的位置複製\nOmg\n出題用意：字串函數 strcpy，字串\n陣列\n難度：中"
+    },
+    {
+      "number": 90,
+      "category": "C",
+      "question": "f(\"3,100,254\")+f(\"3e5\")的回傳為何？",
+      "code": "int f(char *s) {\n    int r = 0;\n    for ( ; *s; s++) {\n        if (*s < '0' || *s>'9') continue;\n        r = r*10+(*s-'0');\n    }\n    return r;\n}",
+      "options": [
+        "3400254",
+        "289",
+        "310025435",
+        "3100289",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "函數 f 將傳入字串中的數字轉\n成整數，答案是 3100254+35\n出題用意：字串與字元，函數\n難度：中"
+    },
+    {
+      "number": 91,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "char a[10]=\"127037265\", n=9;\nfor (int i=0; i<n; i++)\n    a[i] -= '0';\nwhile (n > 1) {\n    int j=0;\n    for (int i=0; i<n; i+=2) {\n        int p=a[i];\n        if (i+1 < n) p += a[i+1];\n        if (p < 10) a[j++] = p;\n        else {\n            a[j++] = 1; a[j++] = p-10;\n        }\n    }\n    n = j;\n}\nprintf(\"%d\", a[0]);",
+      "options": [
+        "4",
+        "6",
+        "7",
+        "8",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "每 2 位切成一個數字，個位與\n十位相加寫下來，重複此步驟直到剩\n下一位。\n注意不會奇數位數不會 error\n出題用意：string。模擬與推理程式\n的意義。\n難度：難"
+    },
+    {
+      "number": 92,
+      "category": "C",
+      "question": "若函數 g 與 f 定義如上，則 f(2371),\nf(932), f(1221)回傳值依序為何？",
+      "code": "int g(int a) {\n    int r=0;\n    while (a) {\n        r = r*10+a%10;\n        a /= 10;\n    }\n    return r;\n}\nint f(int a) {\n    while (1) {\n        int b = g(a);\n        if (a == b) return a;\n        a += b;\n    }\n}",
+      "options": [
+        "7117, 1441, 1221",
+        "6226, 2822, 3553",
+        "7117, 2882, 1221",
+        "6226, 1441, 3553",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "函數 g 是將整數反轉，f 則是\nreverse and add: 將整數反轉\n後與原數相加，直到成為迴文數字。\n2371 → 4103 → 7117\n932 → 1171 → 2882\n出題用意：string。模擬與推理程式\n的意義。\n難度：難"
+    },
+    {
+      "number": 93,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "char a[4][5]={\"1110\",\"1010\",\"0011\",\"1110\"};\nchar w[7],j=0;\nfor (int i=0; i<4; i++)\n    w[j++] = a[i][i];\nw[j] = '\\0';\nprintf(\"%s\", w);",
+      "options": [
+        "1110",
+        "1010",
+        "0101",
+        "1101",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "對角線串接\n出題用意：二維陣列\n難度：中"
+    },
+    {
+      "number": 94,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "char a[3][5]={\"abcd\",\"pqrs\",\"1234\"};\nchar s[20];\nint k=0;\nfor (int i=0; i<4; i++) {\n    for (int j=0; j<3; j++) {\n        s[k++] = a[j][i];\n    }\n}\ns[k] = '\\0';\nprintf(\"%s\", s);",
+      "options": [
+        "abcdpqrs1234",
+        "aaaapppp1111",
+        "aq3br4cs1dp2",
+        "ap1bq2cr3ds4",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "依照 column major 串接字\n串。\n出題用意：二維陣列。\n難度：中"
+    },
+    {
+      "number": 95,
+      "category": "C",
+      "question": "以下程式\n輸出為何？",
+      "code": "char *f(char *s, char d, char *t){\n    int i=0;\n    while (*s && *s!=d) {\n        *t = *s;\n        t++, s++;\n    }\n    *t = '\\0';\n    return (*s)? s+1: NULL;\n}\nchar a[20]=\"13/1,4/;/xy\", w[9][9];\nchar *p = a;\nint i=0\nwhile (p) {\n    p = f(p,'/',w[i++]);\n}\nfor (i--; i>=0; i--)\n    printf(\"%s\", w[i]);",
+      "options": [
+        "1314xy",
+        "131,4;xy",
+        "xy;1,413",
+        "yx;4,131",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "將 s 字串以 d 為間隔切斷依序\n存在 w 中，再反順序印出 w 中字串\n出題用意：字串與陣列與指標。模擬\n與推理程式的意義。\n難度：難"
+    },
+    {
+      "number": 96,
+      "category": "C",
+      "question": "則依序呼叫 f(1,3),f(0,3),f(2,9),f(0,2)的回傳\n值分別為何？",
+      "code": "char a[4][11]={\"0110001101\",\n                \"1011101101\",\n                \"1101110111\",\n                \"1100100010\"};\nint f(int i,int j) {\n    if (a[i][j] == '0') return 0;\n    a[i][j] = '0';\n    int cnt = 1;\n    int dr[4]={0,1,0,-1}, dc[4]={1,0,-1,0};\n    for (int d=0; d<4; d++) {\n        int r=i+dr[d], c=j+dc[d];\n        if (r<0 || r>3 || c<0 ||c >9) continue;\n        cnt += f(r,c);\n    }\n    return cnt;\n}",
+      "options": [
+        "9 1 9 9",
+        "10 0 5 0",
+        "9 0 10 9",
+        "9 0 10 0",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "很標準的 DFS 寫法，以\n上下左右為聯通，計算連通\n區塊的大小，DFS。留意走過\n的會改成 0，所以在 f(1,3)\n之後再呼叫 f(0,2)會變成\n0。\n用字串且對齊位置，讓人眼\n比較好看出答案。\n出題用意：遞迴。推理程式的\n意義。二維陣列。\n難度：難"
+    },
+    {
+      "number": 97,
+      "category": "C",
+      "question": "以 f(0,9)呼叫的輸出為何？",
+      "code": "int a[9]={3,4,2,7,0,8,1,3,2};\nvoid f(int le, int ri) {\n    if (le >= ri) return;\n    int p = le;\n    for (int i=le+1; i<ri; i++) {\n        if (a[i] < a[p]) p = i;\n    }\n    printf(\"%d \", a[p]);\n    f(le, p);\n    f(p+1, ri);\n}",
+      "options": [
+        "0 1 2 2 3 3 4 7 8",
+        "0 2 3 4 7 1 8 2 3",
+        "0 2 3 4 7 1 2 3 8",
+        "0 2 3 4 7 1 8 3 2",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "分治的標準型，找最小值放在\n前面，分左右遞迴\nf([3,4,2,7,0,8,1,3,2])\n=[0]+f([3,4,2,7])+f(8,1,3,2])\n=[0]+[2]+f([3,4])+f([7])+\n[1]+f([8])+f([3,2])\n=[0,2,3,4,7,1,8,2,3]\n出題用意：遞迴。推理程式的意義。\n難度：難"
+    },
+    {
+      "number": 98,
+      "category": "C",
+      "question": "以下呼叫與結果何者錯誤？",
+      "code": "int a[8]={0,3,6,9,12,15,18,20};\nint b(int x):\n    int le=0, ri=7;\n    while (le < ri) {\n        int mid = (le+ri)/2;\n        if (x == a[mid]) return mid;\n        if (x < a[mid])\n            ri = mid-1;\n        else\n            le = mid;\n    }\n    return le;\n}",
+      "options": [
+        "b(-1)回傳 0",
+        "b(5)回傳 2",
+        "b(18)回傳 6",
+        "b(30)程式不會正常結束",
+        "以上選項皆無錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "寫壞的二分搜，只有在 a 中或\n<0 會正確回傳第一個≥x 的位置，其\n他會導致無窮迴圈\n當 le+1=ri 時，mid = le，會執\n行 le = mid，因此 le,ri 並無改\n變\n出題用意：偵錯。推理程式的意義。\n難度：難"
+    },
+    {
+      "number": 99,
+      "category": "C",
+      "question": "此程式計算根號 2 的近似值，其中 cnt 的值是迴\n圈的次數，也表示程式的效率。cnt 最後輸出的值\n在下列何範圍？",
+      "code": "float low=1.0, up=2.0, x=2.0;\nfloat eps = 0.0001;\nint cnt = 0;\nwhile (up - low > eps) {\n    cnt++;\n    float mid = (low+up)/2;\n    if (mid*mid > x)\n        up = mid;\n    else low = mid;\n}\nprintf(\"%f, %d\", low,cnt);",
+      "options": [
+        "0 ~ 50",
+        "51 ~ 100",
+        "101 ~ 500",
+        "501 ~ 1000",
+        "1000 以上"
+      ],
+      "answerIndex": 0,
+      "explanation": "二分搜，區間不超過 10000，\n次數大約 14 次 2^14>10000\n出題用意：時間複雜度。\n難度：中"
+    },
+    {
+      "number": 100,
+      "category": "C",
+      "question": "此程式片段的時間複雜度以 m,n 表示為下列何\n者？",
+      "code": "int a=0,i,j;\nfor (i=0; i<n; i++) {\n    for (j=0; j<m; j++)\n        a += i+j;\n}",
+      "options": [
+        "O(m+n)",
+        "O(mn)",
+        "O(m/n)",
+        "O(m2+n2)",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "雙迴圈執行次數\n出題用意：時間複雜度。\n難度：易"
+    },
+    {
+      "number": 101,
+      "category": "C",
+      "question": "若輸入字串 a 的長度是 n，此程式片段的時間複\n雜度以 n 表示為下列何者？",
+      "code": "int len(char s[]) {\n    int i=0;\n    while (s[i]!='\\0') i++;\n    return i;\n}\nchar a[N],b[N]; // 假設  N 已經定義且足夠大\nscanf(\"%s\", a);\nfor (int i=0; i<len(a); i++) {\n    b[i] = a[i];\n}",
+      "options": [
+        "O(n)",
+        "O(nlog(n))",
+        "O(n2)",
+        "O(n3)",
+        "以上皆非"
+      ],
+      "answerIndex": 2,
+      "explanation": "在沒有編譯器優化的狀況下，\n每次回圈都會呼叫一次 len，所以每\n次 O(n)總和 O(n*n)= O(n2)\n出題用意：時間複雜度。常犯錯誤。\n難度：中"
+    },
+    {
+      "number": 102,
+      "category": "C",
+      "question": "以 f(a,n-1,0)呼叫此函數，其中 n 是陣列 a 的\n長度，則 worst case 時間複雜度以 n 表示為下\n列何者？",
+      "code": "int f(int a[], int i, int v) {\n    if (i < 0) return abs(v-100);\n    int x = f(a,i-1,v+a[i]);\n    int y = f(a,i-1,v);\n    return (x<y)? x: y;\n}",
+      "options": [
+        "O(n)",
+        "O(n2)",
+        "O(n!)",
+        "O(2n)",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "暴搜子集合，找所有子集合的\n和與 100 的最小差距。\n出題用意：時間複雜度。\n難度：中"
+    },
+    {
+      "number": 103,
+      "category": "C",
+      "question": "此程式的 worst case 時間複雜度以 n 表示為下\n列何者？",
+      "code": "int f(int k) {\n    for (int i=0; i<k; i++) {\n        if (i*i > k)\n            return i;\n    }\n}\nint p = 0;\nfor (int i=0; i<n; i++) {\n    p += f(i);\n}",
+      "options": [
+        "O(n3/2)",
+        "O(nlog(n))",
+        "O(n1/2)",
+        "O(n2)",
+        "以上皆非"
+      ],
+      "answerIndex": 0,
+      "explanation": "f(k)的時間是根號 k，(根號\n1+根號 2+…根號 n) = O(n^1.5)\n出題用意：時間複雜度。\n難度：難"
+    },
+    {
+      "number": 104,
+      "category": "C",
+      "question": "以 f(0,n)呼叫此函數，則 worst case 時間複\n雜度為下列何者？",
+      "code": "int f(int p, int q) {\n    if (q < p+5) return (p+q)/2;\n    int s = 0;\n    for (int i=p; i<q; i++) {\n        s += i;\n    }\n    int m = (p+q)/2;\n    return f(p,m)+f(m,q)+s;\n}",
+      "options": [
+        "O(2n)",
+        "O(nlog(n))",
+        "O(n)",
+        "O(n2)",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "每次處理的區間[p,q)，區間\n長度 n=q-p，則此為分治，時間複\n雜度\nT(n)=2T(n/2)+O(n)，\nT(n)=O(nlog(n))。注意時間複\n雜度不是返回的數值。\n出題用意：時間複雜度。\n難度：難"
+    },
+    {
+      "number": 105,
+      "category": "C",
+      "question": "此程式片段的時間複雜度以 n 表示，則下列何者\n為最準確的表示式？",
+      "code": "int s = 0;\nfor (int i=1; i<n; i++) {\n    for (int j=i; j<n; j+=i) {\n        s++;\n    }\n}\nprintf(\"%d\", s);",
+      "options": [
+        "O(n)",
+        "O(nlog(n))",
+        "O(n2)",
+        "O(n3)",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "n(1+1/2+1/3+1/4…) = O(nlog(n))\n出題用意：時間複雜度。\n難度：難。有點數學，調和級數，用\n積分可證。"
+    },
+    {
+      "number": 106,
+      "category": "C",
+      "question": "a 是一個整數陣列，此程式片段的時間複雜度以 a\n的長度 n 表示，則下列何者為最準確的表示式？",
+      "code": "int f(int a[], int p, int q) {\n    int t=0;\n    for (int i=p; i<q; i++)\n        t += a[i];\n    return t;\n}\ns = 0;\nfor (i=0; i<n; i++) {\n    for (j=i+1; j<n; j++) {\n        s += f(a,i,j);\n    }\n}",
+      "options": [
+        "O(n)",
+        "O(nlog(n))",
+        "O(n2)",
+        "O(n3)",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "f(a,p,q)的時間是 O(q-\np)，也就是區間長度，因為長度 i\n的區間有 n-i 個，所以總時間是\ni*(n-i)= O(n3)。(省略次要項\n次)\n出題用意：時間複雜度。\n難度：難"
+    },
+    {
+      "number": 107,
+      "category": "C",
+      "question": "此函數被呼叫時，傳入的 a 是一個長度 n 的整數\n陣列，而 x 是一個整數。此函數的時間複雜度以 a\n的長度 n 來表示的話，則下列何者為其 worst\ncase 時間複雜度？",
+      "code": "int f(int a[], int n, int x) {\n    int p = n/2, q = 0;\n    while (p > 0) {\n        if (q+p<n && a[q+p] < x)\n            q += p;\n        p /= 2;\n    }\n    return q;\n}",
+      "options": [
+        "O(1)",
+        "O(log(n))",
+        "O(n)",
+        "O(nlog(n))",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "p 每次減半，log(n)次之後變\n成 0，迴圈內為 O(1)，故複雜度為\nO(logn)。\n此程式未必是執行二分搜，但只要看\n時間複雜度，while 內是 O(1)，p\n每次折半。\n出題用意：時間複雜度。\n難度：中"
+    },
+    {
+      "number": 108,
+      "category": "C",
+      "question": "函數 f 定義為：m 與 n 分別是字串 a 與 b 的長度，\n當 a 字串的「字典序」小於 b 字串時回傳 1(或非\n0 整數)，請問程式中的 q1 與 q2 為下列何者時可\n以符合定義？",
+      "code": "int f(char *a, char *b, int m, int n) {\n    for (int i=0; i<(  q1\n                                ); i++) {\n        if (a[i] < b[i]) return 1;\n        if (a[i] > b[i]) return 0;\n    }\n    return\n                q2\n                    ;\n}",
+      "options": [
+        "q1: (m<n)?m:n, q2: (a[i]<b[i])",
+        "q1: (m<n)?m:n, q2: (m<n)",
+        "q1: (m<n)?n:m, q2: (a[i]<b[i])",
+        "q1: (m<n)?n:m, q2: 0",
+        "以上皆非"
+      ],
+      "answerIndex": 1,
+      "explanation": "迴圈比較到 min(m,n)，若未分\n大小，a 比較短的時候回傳 1\n出題用意：推理程式的意義。字典序\n的定義。\n難度：中"
+    },
+    {
+      "number": 109,
+      "category": "C",
+      "question": "此函數定義為： a 字串的「字典序」小於 b 字串\n時回傳 1(或非 0 整數)，輸入保證傳入的 a 與 b\n長度相等。請問程式中的?處應填入下列何者？",
+      "code": "// ensure len(a)==len(b)\nint small(char *a, char *b, int n) {\n    int i = 0;\n    while (i<n && a[i]==b[i])\n        i++;\n    return (\n                ?\n                    );\n}",
+      "options": [
+        "a[i]<b[i] && i<n",
+        "i>=n || a[i]<b[i]",
+        "i<n || a[i]<b[i]",
+        "i<n && a[i]<b[i]",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "迴圈找到第一個不相同位置，但\n不能超範圍。迴圈結束後，若 i==n\n則 a==b(不符合 True 的定義)，否\n則，a[i]與 b[i]不同，a[i]小則回\n傳 True。\n注意(A)的寫法可能導致陣列超界\n錯誤\n出題用意：推理程式的意義。字典序\n的定義。短路\n難度：中"
+    },
+    {
+      "number": 110,
+      "category": "C",
+      "question": "此函數利用 b 的二進位表示法來快速計算 a 的 b\n次方除以 mod 的餘數，其中 a,b,mod 皆正整數\n且 mod 不為 0。請問程式中的 q1 與 q2 處應填入\n下列何者？",
+      "code": "int f(int a, int b, int mod) {\n    int result = 1;\n    while (b) {\n        if (\n                q1\n                        ) {\n            result = (result*a)%mod;\n        }\n            q2\n                    ;\n        a = (a*a)%mod;\n    }\n    return result;\n}",
+      "options": [
+        "q1: b%2==1, q2: b //= 10",
+        "q1: b&result, q2: b >>= 1",
+        "q1: b&1, q2: b >>= 1",
+        "q1: b^1, q2: b //= 2",
+        "以上皆非"
+      ],
+      "answerIndex": 2,
+      "explanation": "b 為奇數時將 a 乘進去。每一回\n合 b 右移一位。\n出題用意：推理程式的意義。二進位。\n難度：中"
+    },
+    {
+      "number": 111,
+      "category": "C",
+      "question": "此函數利用 b 的二進位表示法在 O(log(b))的時間\n複雜度計算「a 的 b 次方除以 mod 的餘數」\n，其中 a>0,\nb≥0, mod>0 皆為整數。請問程式中的?處應填入下\n列何者？",
+      "code": "int f(int a, int b, int mod) {\n    if (b == 0) return 1;\n    if (b&1) return f(a,b-1,mod)*a%mod;\n        ?\n}",
+      "options": [
+        "return f(a,b-1,mod)*a%mod;",
+        "return f(a,b/2,mod)*f(a,b/2,mod)%mod;",
+        "int p=f(a,b-1,mod); return p*a%mod;",
+        "int p=f(a,b/2,mod); return p*p%mod;",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "b 是偶數時，先算出 b/2 次\n方，再自乘。要注意(B)的寫法會\n呼叫兩次，時間複雜度是 O(b)。\n出 題 用 意 ： 遞 迴 。 code\ncompletion\n難度：易"
+    },
+    {
+      "number": 112,
+      "category": "C",
+      "question": "程式中?為下列何者時輸出 1？",
+      "code": "int s[10]=\n                ?\n                        ;\nint q[10], idx=-1, i;\nfor (i=0; i<n; i++) {\n    if (s[i] < 0) q[++idx] = s[i];\n    else if (idx<0 || q[idx] != -s[i]) {\n        idx = 99; break;\n    } else idx--;\n}\nprintf(\"%d\", (idx<0)? 1: 0);",
+      "options": [
+        "{-1,1,-2,-3,2,3}, n=6",
+        "{-1,-3,-2,2,3,-1,1}, n=7",
+        "{-1,-2,2,-3,-1,1,3,1}, n=8",
+        "{-1,-1,1,-2,3,-3,2,1}, n=8",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "類似用 stack 檢查括號平衡，\n負數是左括號，正數是右括號，絕對\n值相同是一對。\n出題用意：stack\n難度：難"
+    },
+    {
+      "number": 113,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[10]={4,-5,2,0,4,2,-2,1,3,-1};\nint q = -999;\nfor (int i=1; i<10; i++) {\n    if (a[i-1] > 0)\n        a[i] += a[i-1];\n    if (a[i] > q) q = a[i];\n}\nprintf(\"%d %d\", a[7],q);",
+      "options": [
+        "5 10",
+        "7 12",
+        "7 10",
+        "5 12",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "若前一項大於 0 就加過來，否\n則不變。很容易用紙筆得到\na=[4,-1,2,2,6,8,6,7,10,9]\n其實是找 max subarray 的演算\n法，但做答並不一定需要知道。\n出題用意：模擬，陣列，迴圈\n難度：中"
+    },
+    {
+      "number": 114,
+      "category": "C",
+      "question": "若 p<q 且兩者皆為在 int 範圍內的正整數，現要\n計算兩者的中點，考慮下面兩個寫法：\n下列敘述何者正確？",
+      "code": "int m = (p + q)/2;\nint c = p + (q-p)/2;",
+      "options": [
+        "m 與 c 必定相同",
+        "若 q-p 是偶數，則 m 與 c 必定相同",
+        "若 q-p 是奇數，則 m 與 c 必不相等",
+        "m 與 c 可能不同",
+        "以上皆非"
+      ],
+      "answerIndex": 3,
+      "explanation": "當 p+q 會產生溢位時，(1)會\n得到錯誤的結果(負值)\n這個一個二分搜著名的 bug。\n出題用意：整數溢位\n難度：難"
+    },
+    {
+      "number": 115,
+      "category": "C",
+      "question": "若已有以上宣告，考慮以下指令：\n有哪幾個可以正確得到 2 的 40 次方？",
+      "code": "int a=40, b;\nlong long c,d;\nlong long int e;\nb = 1 << a;\nc = (long long)(1 << a);\nd = 1ull << a;\ne = (long long)1 << a;",
+      "options": [
+        "b,c,d,e 都可以",
+        "只有 c,e 可以，b,d 不可以",
+        "只有 d,e 可以，b,c 不可以",
+        "只有 e 可以，b,c,d 不可以",
+        "以上皆非"
+      ],
+      "answerIndex": 2,
+      "explanation": "b 與 c 都會發生 overflow\n出題用意：型態轉換，常見錯誤\n難度：易"
+    },
+    {
+      "number": 116,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int a[6] = {1,1,1,1,1,1};\nint f(int i, int s) {\n    if (i == 6) {\n        return (s==3)? 1: 0;\n    }\n    int w1 = f(i+1,s);\n    int w2 = f(i+1,s+a[i]);\n    return w1+w2;\n}\nprintf(\"%d\", f(0,0));",
+      "options": [
+        "4",
+        "16",
+        "20",
+        "64",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "此遞迴程式枚舉所有子集合，\n檢查其和是否為 3。所以答案是\nC(6,3)=20\n出題用意：遞迴，枚舉子集合\n難度：難"
+    },
+    {
+      "number": 117,
+      "category": "C",
+      "question": "f(5,2)的回傳值為何？",
+      "code": "int f(int n, int i) {\n    if (i==0 || i==n)\n        return 1;\n    return f(n-1,i)+f(n-1,i-1);\n}",
+      "options": [
+        "6",
+        "10",
+        "15",
+        "20",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "遞迴。手算可以建表，其實這是\n組合數的公式 C(n,r)=C(n-1,r-\n1)+C(n-1,r-1)\n出題用意：遞迴\n難度：中"
+    },
+    {
+      "number": 118,
+      "category": "C",
+      "question": "d[4][2]+d[5][3]的值為何？",
+      "code": "int d[6][6]={0},i,j;\nfor (i=0; i<6; i++) {\n    d[i][0] = 1; d[i][i] = 1;\n    for (j=1; j<i; j++) {\n        d[i][j] = d[i-1][j-1]+d[i-1][j];\n    }\n}",
+      "options": [
+        "13",
+        "14",
+        "15",
+        "16",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "二維陣列建表。\nC(4,2)+C(5,3)=16\n其實這是組合數的公式，但並不需要\n知道也可以做。\nC(n,r)=C(n-1,r-1)+C(n-1,r-1)\n出題用意：二維陣列\n難度：中"
+    },
+    {
+      "number": 119,
+      "category": "C",
+      "question": "下列何者最準確的以 n 來表達此程式的時間複雜\n度？",
+      "code": "#define n 100\nint d[n+1][n+1] = {0}, mod=1000000007;\nint f(int k, int i) {\n    if (d[k][i] > 0) return d[k][i];\n    if (i==0 || i==k)\n        d[k][i] = 1;\n    else\n        d[k][i]=(f(k-1,i)+f(k-1,i-1))%mod;\n    return d[k][i];\n}\nprintf(\"%d\", f(n,n/2))",
+      "options": [
+        "O(n2)",
+        "O(n3)",
+        "O(2n)",
+        "O(n!)",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 0,
+      "explanation": "這是以 top-down DP 來計算\n組合數，答題不一定要知道，注意到\nd 的存在，所有可能的呼叫參數都在\n表格內，每一個格子只會遞迴計算一\n次，格子數是 O(n2)，所以複雜度就\n是平方。\n如果沒有 memoization，時間複雜\n度是 O(C(n,n/2))=O(2^n)\n出題用意：程式效率，遞迴，DP\n難度：難"
+    },
+    {
+      "number": 120,
+      "category": "C",
+      "question": "若函數 cmp 宣告如上，執行後 d 的內容為何？",
+      "code": "int cmp(const void *x, const void *y) {\n    return (*(int*)x) - (*(int*)y);\n}\nint d[6],i, s=0;\nfor (i=0; i<6; i++)\n    d[i] = (i-2)*(i-2);\nqsort(d, 6, sizeof(int), cmp);",
+      "options": [
+        "[4,1,0,1,4,9]",
+        "[-4,-2,0,2,4,6]",
+        "[0,1,1,4,4,9]",
+        "[0,1,1,4,4,9,16]",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "用 0..5 生成\n[4,1,0,1,4,9]，然後小排到大\n出題用意：qsort 用法\n難度：易"
+    },
+    {
+      "number": 121,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int cmp(const void *x, const void *y) {\n    return (*(int*)x) - (*(int*)y);\n}\nint d[10]={3,-1,0,5,0,9,1,0,7,4},cnt=0;\nqsort(d, 5, sizeof(int), cmp);\nqsort(d+5, 5, sizeof(int), cmp);\nfor (int i=0; i<10;i++)\n    for (int j=i+1; j<10; j++)\n        if (d[i] > d[j]) cnt++;\nprintf(\"%d\", cnt);",
+      "options": [
+        "15",
+        "10",
+        "7",
+        "5",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "d 切成 2 段，個別排序，\n左邊[-1,0,0,3,5]，\n右邊[0,1,4,7,9]\n後面算 inversion，就是有幾對(前大\n後小)，已排序的內部不需要算，所以只\n要算 p[i]在左邊，p[j]在右邊的有多少\n反序就好了。\n(3,0)(5,0)(3,1)(5,1)(5,4)\n出題用意：sort,推理\n難度：難"
+    },
+    {
+      "number": 122,
+      "category": "C",
+      "question": "若要將 d 中字母大到小排序，?處應填下列何者？",
+      "code": "int cmp(const void *x, const void *y) {\n    return (\n                ?\n                    );\n}\nchar d[10]=\"ababcddba\";\nqsort(d, 9, sizeof(char), cmp);",
+      "options": [
+        "(*(char*)x) <= (*(char*)y)",
+        "(*(char*)x) >= (*(char*)y)",
+        "(*y) - (*x)",
+        "(*(char*)y) - (*(char*)x)",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "型態轉換後相減，x 在 y 之前\n應回傳負值。注意(B)是錯的\n出題用意：sort,string\n難度：易"
+    },
+    {
+      "number": 123,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "int cmp(const void *x, const void *y) {\n    char *p=x, *q=y;\n    while (*p == *q && *p) p++,q++;\n    return (*p - *q);\n}\nchar d[5][6]={\"abcde\", \"abc\", \"baaa\",\n    \"aba\", \"baa\"};\nqsort(d, 5, sizeof(char)*6, cmp);\nprintf(\"%s %s %s\", d[0],d[2],d[4]);",
+      "options": [
+        "aba abc baaa",
+        "abc abcde baa",
+        "aba abcde baaa",
+        "aba abcde baa",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 2,
+      "explanation": "字串陣列的排序，依照字典序。\n出題用意：sort,string\n難度：中"
+    },
+    {
+      "number": 124,
+      "category": "C",
+      "question": "若 q 為字串\"apaltpptpay\"的字母由小排到大\n後的字串，輸出為何？",
+      "code": "q = ?\nint what = 1, cnt = 1, n=11;\nfor (int i=1; i<n; i++) {\n    if (q[i] == q[i-1]) {\n        cnt++;\n        if (cnt > what) what = cnt;\n    } else {\n        cnt = 1;\n    }\n}\nprintf(\"%d\", what);",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 3,
+      "explanation": "排序後相同的東西會在一起。q\n是 s 每個字母的 list，後面那段在\n算連續出現的字母個數，what 是最\n大值，所以，就是出現最多的字母，\np 有 4 個。\n出題用意：sort，程式理解。\n難度：難"
+    },
+    {
+      "number": 125,
+      "category": "C",
+      "question": "輸出為何？",
+      "code": "char s[11]=\"qwaearqtba\", n=10,i,j;\nfor (i=2; i<n-1; i+=2) {\n    char t1=d[i],t2=d[i+1];\n    for (j=i-2; j>=0; j-=2) {\n        if (d[j]>t1 || (d[j]==t1 && d[j+1]>t2))\n            d[j+2]=d[j], d[j+3]=d[j+1];\n        else break;\n    }\n    d[j+2]=t1, d[j+3]=t2;\n}\nprintf(\"%s\", d);",
+      "options": [
+        "aaabeqqrtw",
+        "aearbaqtqw",
+        "aearabqqtw",
+        "qwaearqtba",
+        "以上皆非或程式錯誤"
+      ],
+      "answerIndex": 1,
+      "explanation": "以 2 個字母為一個字串\n的 insertion sort。\nqwaearqtba\naeqwarqtba\naearqwqtba\naearqtqwba\naearbaqtqw\naearbaqtqw\n出題用意：sort\n難度：中"
+    }
+  ]
+}

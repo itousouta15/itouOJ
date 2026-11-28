@@ -1,0 +1,16 @@
+[Unit]
+Description=Interactive programming terminal sandbox
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/sandbox-runner
+ExecStart=/usr/bin/python3 /opt/sandbox-runner/interactive.py
+Restart=on-failure
+RestartSec=3
+KillMode=mixed
+TimeoutStopSec=25
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target

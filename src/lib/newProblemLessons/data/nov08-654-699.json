@@ -1,0 +1,3377 @@
+[
+  {
+    "code": "b654",
+    "title": "重現標記的尾端回收",
+    "topic": "data-structures",
+    "level": "medium",
+    "concept": "堆疊與每字母位置串列的攤銷分析",
+    "goal": "在線性時間內求每次完整回收操作後的最大剩餘帶長。",
+    "explanation": [
+      "紀錄帶只會在右端新增或刪除，所以用堆疊保存字母，另替 26 個字母保存仍在帶上的位置。加入 c 後，若位置數等於門檻，就取 c 的第一個位置作為截斷點，逐個彈出後綴，並同步彈出那些字母的位置。",
+      "每一步開始時，位置串列恰好描述帶上所有同字母位置；加入與同步刪除都維持這個不變量。因此第一個位置就是題目要求的最左 c。每個輸入字元只入棧一次、出棧至多一次，整趟刪除總量不超過 n；最大長度必須在刪除完成後才更新。"
+    ],
+    "complexity": "時間 O(n)，帶與位置串列 O(n+26)；Python 讀入字串及 split 緩衝 O(n)，整體 O(n)。",
+    "pitfall": "不可保留已刪字元的計次；q=1 時本次完整操作的長度不會增加。",
+    "sampleInput": "7\n3 2 8 8 8 8 8 8 8 8 8 8 8 8 8 8 8 8 8 8 8 8 8 8 8 8\nabacaba",
+    "sampleOutput": "4",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "附加首字",
+        "description": "門檻 a=2、b=2，讀入 aba。",
+        "cells": [
+          "a"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "長度",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "附加異字",
+        "description": "尚未達到任何門檻。",
+        "cells": [
+          "a",
+          "b"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "最大長度",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "回收後綴",
+        "description": "第二個 a 使整段 aba 刪除。",
+        "cells": [
+          "空帶"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "長度",
+            "0"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nt = sys.stdin.buffer.read().split()\nn = int(t[0])\nq = list(map(int, t[1:27]))\npos = [[] for _ in range(26)]\nst = []\nans = 0\nfor c in t[27]:\n    c -= 97\n    pos[c].append(len(st))\n    st.append(c)\n    if len(pos[c]) == q[c]:\n        cut = pos[c][0]\n        while len(st) > cut:\n            pos[st.pop()].pop()\n    ans = max(ans, len(st))\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    cin >> n;\n    vector<int> q(26);\n    for (int &x : q)\n        cin >> x;\n    string s;\n    cin >> s;\n    vector<int> st;\n    vector<vector<int>> p(26);\n    int ans = 0;\n    for (char ch : s) {\n        int c = ch - 'a';\n        p[c].push_back(st.size());\n        st.push_back(c);\n        if (p[c].size() == q[c]) {\n            int cut = p[c][0];\n            while (st.size() > cut) {\n                p[st.back()].pop_back();\n                st.pop_back();\n            }\n        }\n        ans = max(ans, (int)st.size());\n    }\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b655",
+    "title": "單葉加速的分層回報",
+    "topic": "trees",
+    "level": "hard",
+    "concept": "單次加速的樹上最佳回報 DP",
+    "goal": "恰好加速一個葉節點，使根的第 k 份回報時刻最早。",
+    "explanation": [
+      "對每個節點保存 normal（完全不加速）與 best（恰在該子樹選一葉加速）的時刻。葉的兩值為 a 與 max(0,a−B)。由於父編號較小，可逆編號處理。非葉先將孩子 normal 排序，取得第 k 小基準值。",
+      "若只改孩子 j，其餘孩子的第 k−1 小、第 k 小分別為 lo、hi（k=1 時 lo=0，沒有第 k 小時 hi=無限大）。替換後第 k 小為 min(hi,max(lo,best[j]))。依 j 在排序中的名次，可從原排序直接查到這兩個值。枚舉被加速的唯一孩子取最小，再加本節點延遲，已涵蓋所有合法葉選擇；不能把多個孩子的 best 同時使用。"
+    ],
+    "complexity": "排序總時間 O(n log n)，狀態、孩子與 Python 輸入緩衝 O(n)。64 位元可容納最多約 2×10^14 的根時刻。",
+    "pitfall": "加速只作用於一片葉；相等時刻仍是不同孩子，排序時不能去重。",
+    "sampleInput": "5 100\n0 2 1\n1 0 20\n1 1 0\n1 0 40\n3 0 100",
+    "sampleOutput": "21",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "兩葉原時刻",
+        "description": "根門檻 k=2、延遲 1；葉為 5、9，B=6。",
+        "cells": [
+          "5",
+          "9"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "原根時刻",
+            "10"
+          ]
+        ]
+      },
+      {
+        "title": "加速第一葉",
+        "description": "變成 0、9，第 2 小仍是 9。",
+        "cells": [
+          "0",
+          "9"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "根時刻",
+            "10"
+          ]
+        ]
+      },
+      {
+        "title": "加速第二葉",
+        "description": "變成 5、3，第 2 小為 5。",
+        "cells": [
+          "5",
+          "3"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "最佳根時刻",
+            "6"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn = next(it)\nB = next(it)\nch = [[] for _ in range(n)]\nk = []\na = []\nfor i in range(n):\n    p = next(it)\n    k.append(next(it))\n    a.append(next(it))\n    if p:\n        ch[p - 1].append(i)\nnormal = [0] * n\nbest = [0] * n\nfor u in range(n - 1, -1, -1):\n    if not ch[u]:\n        normal[u] = a[u]\n        best[u] = max(0, a[u] - B)\n        continue\n    vs = sorted(ch[u], key=lambda v: normal[v])\n    x = [normal[v] for v in vs]\n    z = k[u] - 1\n    normal[u] = x[z] + a[u]\n    b = 10**30\n    for j, v in enumerate(vs):\n        lo = 0 if z == 0 else x[z - 1 + (j < z)]\n        hi = x[z + (j <= z)] if z + (j <= z) < len(x) else 10**30\n        b = min(b, min(hi, max(lo, best[v])))\n    best[u] = b + a[u]\nprint(best[0])\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    ll B;\n    cin >> n >> B;\n    vector<vector<int>> ch(n);\n    vector<int> k(n);\n    vector<ll> a(n), d(n), b(n);\n    for (int i = 0, p; i < n; i++) {\n        cin >> p >> k[i] >> a[i];\n        if (p)\n            ch[p - 1].push_back(i);\n    }\n    const ll INF = 4e18;\n    for (int u = n - 1; u >= 0; u--) {\n        if (ch[u].empty()) {\n            d[u] = a[u];\n            b[u] = max(0LL, a[u] - B);\n            continue;\n        }\n        auto v = ch[u];\n        sort(v.begin(), v.end(), [&](int x, int y) { return d[x] < d[y]; });\n        int z = k[u] - 1;\n        d[u] = d[v[z]] + a[u];\n        b[u] = INF;\n        for (int j = 0; j < (int)v.size(); j++) {\n            ll lo = z ? d[v[z - 1 + (j < z)]] : 0;\n            int h = z + (j <= z);\n            ll hi = h < (int)v.size() ? d[v[h]] : INF;\n            b[u] = min(b[u], min(hi, max(lo, b[v[j]])) + a[u]);\n        }\n    }\n    cout << b[0] << '\\n';\n}\n"
+  },
+  {
+    "code": "b656",
+    "title": "逐站啟充的最低費用",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "啟充固定費的前綴最小值轉移",
+    "goal": "允許跳過啟充，在容量限制下求完整旅程的最低充電費。",
+    "explanation": [
+      "dp[e] 表示抵達目前站、電量恰為 e 的最小費用。若充電後為 y，跳過充電只能由 e=y 轉移；真正充電則從所有 e<y 取 dp[e]+f+p(y−e)，等於 f+py+min(dp[e]−pe)。按 y 遞增掃描即可維護這個嚴格前綴最小值。",
+      "只對 y≥d 產生下一站電量 y−d，且掃描到 y 後才把 dp[y] 加入前綴，避免把零充電誤收啟充費。所有可行充電量均對應唯一 e,y，故轉移完整。終點剩電無價值但合法，答案取所有終點狀態最小值。"
+    ],
+    "complexity": "時間 O(nC)，在 n,C≤2000 時至多約四百萬狀態；滾動陣列 O(C)，Python 一次讀入的緩衝 O(n)，總 O(n+C)。",
+    "pitfall": "d=0 也能跳站，不能強迫每站付 f；費用必須使用 64 位元。",
+    "sampleInput": "3 5\n2 2 4\n3 9 2\n1 1 0",
+    "sampleOutput": "15",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "初站空電",
+        "description": "容量3，兩段耗電2、1，兩站皆為單位價1、啟充費5。",
+        "cells": [
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "初始費用",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "一次買足",
+        "description": "第一站補 3，花 8，行駛後剩 1。",
+        "cells": [
+          "1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "累積費用",
+            "8"
+          ]
+        ]
+      },
+      {
+        "title": "跳過第二站",
+        "description": "第二站不充電，耗盡最後 1；若分兩站啟充會多付固定費。",
+        "cells": [
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最小費用",
+            "8"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn = next(it)\nC = next(it)\ninf = 10**30\ndp = [inf] * (C + 1)\ndp[0] = 0\nfor _ in range(n):\n    d, p, f = next(it), next(it), next(it)\n    nd = [inf] * (C + 1)\n    pref = inf\n    for y in range(C + 1):\n        if y >= d:\n            nd[y - d] = min(dp[y], pref + f + p * y)\n        pref = min(pref, dp[y] - p * y)\n    dp = nd\nprint(min(dp))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, C;\n    cin >> n >> C;\n    const ll INF = 4e18;\n    vector<ll> dp(C + 1, INF);\n    dp[0] = 0;\n    while (n--) {\n        ll d, p, f;\n        cin >> d >> p >> f;\n        vector<ll> nd(C + 1, INF);\n        ll pref = INF;\n        for (int y = 0; y <= C; y++) {\n            if (y >= d)\n                nd[y - d] = min(dp[y], pref + f + p * y);\n            pref = min(pref, dp[y] - p * y);\n        }\n        dp.swap(nd);\n    }\n    cout << *min_element(dp.begin(), dp.end()) << '\\n';\n}\n"
+  },
+  {
+    "code": "b657",
+    "title": "延遲配額的啟動網",
+    "topic": "graphs",
+    "level": "hard",
+    "concept": "按抵達時間排序的配額事件佇列",
+    "goal": "處理環與永不啟動節點，求累積配額網路各點的最早啟動時刻。",
+    "explanation": [
+      "配額為零的點直接在時刻零啟動，將其出邊訊號加入最小堆。其餘點保存尚缺訊號數，每彈出一個抵達事件便減一；首次減至零時立即確定啟動時刻並發送出邊訊號。",
+      "由於邊延遲為正，啟動所造成的新事件必晚於目前事件。堆依時間處理，故某點收到的第 q 個訊號就是最早能滿足配額的時刻。環本身不會無中生有產生事件；堆空後仍未啟動的點即無法再收到足夠訊號。"
+    ],
+    "complexity": "每條邊至多產生一事件，時間 O((n+m) log(m+1))，圖、事件與 Python 讀入緩衝 O(n+m)。",
+    "pitfall": "訊號永久累積；已啟動的點不能再次發送。同時抵達仍算多份，不是只算一個時間。",
+    "sampleInput": "5 5\n0 0 2 2 2\n1 3 4\n2 3 2\n3 4 1\n1 4 9\n4 5 1",
+    "sampleOutput": "0 0 4 9 -1",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "初始啟動",
+        "description": "q=(0,1,1)，邊 1→2 延遲2、2→3 延遲3。",
+        "cells": [
+          "0",
+          "-1",
+          "-1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "待處理事件",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "抵達第二點",
+        "description": "時刻2使節點2首次滿額。",
+        "cells": [
+          "0",
+          "2",
+          "-1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "下一事件時刻",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "抵達第三點",
+        "description": "時刻5使節點3啟動。",
+        "cells": [
+          "0",
+          "2",
+          "5"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "已啟動數",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, heapq\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn = next(it)\nm = next(it)\nq = [next(it) for _ in range(n)]\ng = [[] for _ in range(n)]\nfor _ in range(m):\n    u, v, w = next(it) - 1, next(it) - 1, next(it)\n    g[u].append((v, w))\nans = [-1] * n\nh = []\nfor u in range(n):\n    if q[u] == 0:\n        ans[u] = 0\n        for v, w in g[u]:\n            heapq.heappush(h, (w, v))\nwhile h:\n    t, v = heapq.heappop(h)\n    if ans[v] != -1:\n        continue\n    q[v] -= 1\n    if q[v] == 0:\n        ans[v] = t\n        for z, w in g[v]:\n            heapq.heappush(h, (t + w, z))\nprint(*ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, m;\n    cin >> n >> m;\n    vector<int> q(n);\n    for (int &x : q)\n        cin >> x;\n    vector<vector<pair<int, ll>>> g(n);\n    for (int i = 0, u, v; i < m; i++) {\n        ll w;\n        cin >> u >> v >> w;\n        g[u - 1].push_back({v - 1, w});\n    }\n    vector<ll> a(n, -1);\n    priority_queue<pair<ll, int>, vector<pair<ll, int>>, greater<pair<ll, int>>> h;\n    for (int u = 0; u < n; u++)\n        if (!q[u]) {\n            a[u] = 0;\n            for (auto [v, w] : g[u])\n                h.push({w, v});\n        }\n    while (!h.empty()) {\n        auto [t, u] = h.top();\n        h.pop();\n        if (a[u] != -1)\n            continue;\n        if (--q[u] == 0) {\n            a[u] = t;\n            for (auto [v, w] : g[u])\n                h.push({t + w, v});\n        }\n    }\n    for (ll x : a)\n        cout << x << ' ';\n    cout << '\\n';\n}\n"
+  },
+  {
+    "code": "b658",
+    "title": "雙片套印的單孔輪廓",
+    "topic": "geometry",
+    "level": "hard",
+    "concept": "有限平移枚舉與補集連通塊",
+    "goal": "枚舉所有可能相交位移，判斷單洞與四連通並統計最小周長的位移數。",
+    "explanation": [
+      "非空交集要求 dx 在 [1−hB,hA−1]、dy 在 [1−wB,wA−1]；只需枚舉這些位移。以黑格集合建立交集與聯集，先檢查兩者是否各自四連通。周長可由每個黑格四鄰中不存在的格數相加。",
+      "在涵蓋兩圖的矩形外再加一圈白格。白格洪水填充的連通塊中，恰一塊接觸外框，代表無限背景，其餘每塊各是一個洞。因此白塊總數恰為二才合格。枚舉每個位移一次，再對最小周長累加位移數，就算聯集相同也不會漏算不同位移。"
+    ],
+    "complexity": "設 T=(hA+hB−1)(wA+wB−1)，G=(hA+hB+2)(wA+wB+2)。時間 O(TG)、額外 O(G)；尺寸至多35時 T≤4761、G≤5184。Python 圖樣與輸入緩衝 O(G)，沒有枚舉無界平面。",
+    "pitfall": "白洞也用四連通，不能用對角逃出；全白圖直接無解。外框要額外一圈。",
+    "sampleInput": "3 3 1 1\n111\n101\n111\n1",
+    "sampleOutput": "16 8",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "外框圖樣",
+        "description": "A 是 3×3 黑環，B 單黑格放在左上角。",
+        "cells": [
+          "111",
+          "101",
+          "111"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "交集格數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "檢查白洞",
+        "description": "中央白格無法四連通走到外部，聯集仍為黑環。",
+        "cells": [
+          "外部白",
+          "中央洞"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "洞數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "計算周長",
+        "description": "外側12條邊加內側4條；單格可放在8個黑格上。",
+        "cells": [
+          "12",
+          "4"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "最小周長",
+            "16"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nt = sys.stdin.buffer.read().split()\nha, wa, hb, wb = map(int, t[:4])\nA = {(r, c) for r in range(ha) for c in range(wa) if t[4 + r][c] == 49}\nB = {(r, c) for r in range(hb) for c in range(wb) if t[4 + ha + r][c] == 49}\ndirs = ((1, 0), (-1, 0), (0, 1), (0, -1))\n\n\ndef components(s, stop=10**9):\n    s = set(s)\n    count = 0\n    while s:\n        count += 1\n        if count > stop:\n            return count\n        stack = [s.pop()]\n        while stack:\n            r, c = stack.pop()\n            for dr, dc in dirs:\n                z = (r + dr, c + dc)\n                if z in s:\n                    s.remove(z)\n                    stack.append(z)\n    return count\n\n\nbest = 10**9\nways = 0\nif A and B:\n    for dx in range(1 - hb, ha):\n        for dy in range(1 - wb, wa):\n            V = {(r + dx, c + dy) for r, c in B}\n            I = A & V\n            if not I or components(I, 1) != 1:\n                continue\n            U = A | V\n            if components(U, 1) != 1:\n                continue\n            x0 = min(0, dx) - 1\n            x1 = max(ha, dx + hb)\n            y0 = min(0, dy) - 1\n            y1 = max(wa, dy + wb)\n            W = {(r, c) for r in range(x0, x1 + 1) for c in range(y0, y1 + 1)} - U\n            if components(W, 2) != 2:\n                continue\n            per = sum((r + dr, c + dc) not in U for r, c in U for dr, dc in dirs)\n            if per < best:\n                best = per\n                ways = 1\n            elif per == best:\n                ways += 1\nprint(best if ways else -1, ways)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int ha, wa, hb, wb;\n    cin >> ha >> wa >> hb >> wb;\n    vector<pair<int, int>> A, B;\n    string s;\n    for (int r = 0; r < ha; r++) {\n        cin >> s;\n        for (int c = 0; c < wa; c++)\n            if (s[c] == '1')\n                A.push_back({r, c});\n    }\n    for (int r = 0; r < hb; r++) {\n        cin >> s;\n        for (int c = 0; c < wb; c++)\n            if (s[c] == '1')\n                B.push_back({r, c});\n    }\n    if (A.empty() || B.empty()) {\n        cout << \"-1 0\\n\";\n        return 0;\n    }\n    int best = INT_MAX, ways = 0;\n    int dr[] = {1, -1, 0, 0}, dc[] = {0, 0, 1, -1};\n    for (int dx = 1 - hb; dx < ha; dx++)\n        for (int dy = 1 - wb; dy < wa; dy++) {\n            int x0 = min(0, dx) - 1, y0 = min(0, dy) - 1, H = max(ha, dx + hb) - x0 + 1,\n                W = max(wa, dy + wb) - y0 + 1;\n            vector<int> a(H * W), b(H * W);\n            for (auto [r, c] : A)\n                a[(r - x0) * W + c - y0] = 1;\n            for (auto [r, c] : B)\n                b[(r + dx - x0) * W + c + dy - y0] = 1;\n            auto comp = [&](int kind) {\n                vector<char> vis(H * W);\n                int ans = 0;\n                for (int i = 0; i < H * W; i++) {\n                    bool ok = kind == 0   ? (a[i] && b[i])\n                              : kind == 1 ? (a[i] || b[i])\n                                          : !(a[i] || b[i]);\n                    if (!ok || vis[i])\n                        continue;\n                    ans++;\n                    vector<int> st{i};\n                    vis[i] = 1;\n                    while (!st.empty()) {\n                        int z = st.back();\n                        st.pop_back();\n                        int r = z / W, c = z % W;\n                        for (int d = 0; d < 4; d++) {\n                            int nr = r + dr[d], nc = c + dc[d];\n                            if (nr < 0 || nr >= H || nc < 0 || nc >= W)\n                                continue;\n                            int j = nr * W + nc;\n                            bool good = kind == 0   ? (a[j] && b[j])\n                                        : kind == 1 ? (a[j] || b[j])\n                                                    : !(a[j] || b[j]);\n                            if (good && !vis[j]) {\n                                vis[j] = 1;\n                                st.push_back(j);\n                            }\n                        }\n                    }\n                }\n                return ans;\n            };\n            if (comp(0) != 1 || comp(1) != 1 || comp(2) != 2)\n                continue;\n            int per = 0;\n            for (int r = 1; r < H - 1; r++)\n                for (int c = 1; c < W - 1; c++)\n                    if (a[r * W + c] || b[r * W + c])\n                        for (int d = 0; d < 4; d++) {\n                            int j = (r + dr[d]) * W + c + dc[d];\n                            per += !(a[j] || b[j]);\n                        }\n            if (per < best) {\n                best = per;\n                ways = 1;\n            } else if (per == best)\n                ways++;\n        }\n    cout << (ways ? best : -1) << ' ' << ways << '\\n';\n}\n",
+    "performanceNote": "來源未提供評測時限。WSL 本機35×35兩張全黑圖實測：Python約15.90秒、C++17約0.34秒；此案例已觸及全部平移。Python大界執行成本高，嚴格時限建議使用C++17，不能保證Python通過未知時限。"
+  },
+  {
+    "code": "b659",
+    "title": "逐層限幅的括號計算",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "值域有界的區間最小代價與樹形計數",
+    "goal": "保留原順序與運算符，求得到目標值的最少逐層限幅次數及最優樹形數。",
+    "explanation": [
+      "設 dp[l,r][v]=(最少限幅次數,方案數)，葉只有輸入值、代價零、方案一。枚舉根切點 k 與左右可達值 x,y，以原第 k 個運算符計算 z，再夾到 [−B,B]，額外代價是未夾值超出範圍的布林值。",
+      "固定切點與左右樹形唯一決定一棵樹，且每棵完整二元樹有唯一根切點，因此乘左右方案數、同代價相加不會重複。對相同區間值只保留最低代價，因為祖先只看值，較高代價永不可能改善答案。這也是不能只保留區間最小值或最大值的原因。"
+    ],
+    "complexity": "時間 O(n³(2B+1)²)，空間 O(n²(2B+1))；n≤45、B≤15，約一千五百萬對值合併上界。Python 輸入 O(n)，稀疏字典只儲存可達值。",
+    "pitfall": "恰好等於邊界不算限幅；計數是樹形，不能把相同結果的不同切點合併成一種。",
+    "sampleInput": "3 2 0\n2 2 -2\n++",
+    "sampleOutput": "1 1",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "兩種根切點",
+        "description": "數列 2,2,−2，B=2，皆為加號。",
+        "cells": [
+          "2",
+          "2",
+          "-2"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "樹形數",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "左子樹先算",
+        "description": "(2+2) 夾成2，再加−2為0。",
+        "cells": [
+          "2",
+          "-2"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "限幅次數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "右子樹先算",
+        "description": "2+(2−2)=2，全程不用限幅。",
+        "cells": [
+          "2",
+          "0"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "目標2的最少次數",
+            "0"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nt = sys.stdin.buffer.read().split()\nn, B, T = map(int, t[:3])\na = list(map(int, t[3 : 3 + n]))\nops = t[3 + n].decode() if n > 1 else \"\"\nM = 1000000007\ndp = [[{} for _ in range(n)] for _ in range(n)]\nfor i, x in enumerate(a):\n    dp[i][i][x] = (0, 1)\nfor length in range(2, n + 1):\n    for l in range(n - length + 1):\n        r = l + length - 1\n        cur = dp[l][r]\n        for k in range(l, r):\n            for x, (cx, nx) in dp[l][k].items():\n                for y, (cy, ny) in dp[k + 1][r].items():\n                    z = x + y if ops[k] == \"+\" else x - y\n                    c = cx + cy + (abs(z) > B)\n                    v = max(-B, min(B, z))\n                    ways = nx * ny % M\n                    old = cur.get(v, (10**9, 0))\n                    if c < old[0]:\n                        cur[v] = (c, ways)\n                    elif c == old[0]:\n                        cur[v] = (c, (old[1] + ways) % M)\nprint(*dp[0][n - 1].get(T, (-1, 0)))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, B, T;\n    cin >> n >> B >> T;\n    vector<int> a(n);\n    for (int &x : a)\n        cin >> x;\n    string op;\n    if (n > 1)\n        cin >> op;\n    using P = pair<int, ll>;\n    vector<vector<map<int, P>>> d(n, vector<map<int, P>>(n));\n    for (int i = 0; i < n; i++)\n        d[i][i][a[i]] = {0, 1};\n    for (int len = 2; len <= n; len++)\n        for (int l = 0; l + len <= n; l++) {\n            int r = l + len - 1;\n            for (int k = l; k < r; k++)\n                for (auto [x, px] : d[l][k])\n                    for (auto [y, py] : d[k + 1][r]) {\n                        int z = op[k] == '+' ? x + y : x - y,\n                            c = px.first + py.first + (abs(z) > B), v = clamp(z, -B, B);\n                        ll w = px.second * py.second % MOD;\n                        auto it = d[l][r].find(v);\n                        if (it == d[l][r].end() || c < it->second.first)\n                            d[l][r][v] = {c, w};\n                        else if (c == it->second.first)\n                            it->second.second = (it->second.second + w) % MOD;\n                    }\n        }\n    if (!d[0][n - 1].count(T))\n        cout << \"-1 0\\n\";\n    else {\n        auto p = d[0][n - 1][T];\n        cout << p.first << ' ' << p.second << '\\n';\n    }\n}\n",
+    "performanceNote": "來源未提供評測時限。WSL 本機n=45、B=15混合加減與隨機值實測：Python約4.14秒、C++17約0.23秒，兩者答案一致；大界案例並非獨立窮舉證明。嚴格時限建議C++17，不能保證Python通過未知時限。"
+  },
+  {
+    "code": "b660",
+    "title": "免除最大值的最長段",
+    "topic": "data-structures",
+    "level": "medium",
+    "concept": "單調佇列維護免除最大值的滑動窗口",
+    "goal": "求免除一個最大值後總和不超標的最長非空連續段。",
+    "explanation": [
+      "窗口的費用是總和減去一個最大值。右端加入正數時，這個費用不會減少；左端移走元素時也不會增加。因此固定右端的合法左端形成一段後綴，可用雙指標移到最早合法位置。",
+      "以遞減單調佇列維護最大值，另保存窗口總和。當總和減隊首值超過 B，就刪左端並移除過期隊首。每個右端留下的窗口是該右端最長合法段，對它們取最大即為全域答案。單一元素費用零，所以非空解必存在。"
+    ],
+    "complexity": "時間 O(n)，佇列最壞 O(n)；Python 輸入陣列與 token 緩衝 O(n)，總 O(n)。總和使用 64 位元。",
+    "pitfall": "只免除一個最大元素，不是所有相同最大值；B=0 時仍至少能選長度1。",
+    "sampleInput": "5 5\n3 1 5 2 4",
+    "sampleOutput": "3",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "納入第一個",
+        "description": "B=2，數列3,2,1。",
+        "cells": [
+          "3"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "費用",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "納入第二個",
+        "description": "總和5免除3，費用2。",
+        "cells": [
+          "3",
+          "2"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "最長長度",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "窗口收縮",
+        "description": "加入1後費用3超標，移掉3後費用1。",
+        "cells": [
+          "2",
+          "1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "最長長度",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom collections import deque\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, B = t[:2]\na = t[2:]\nq = deque()\nl = s = ans = 0\nfor r, x in enumerate(a):\n    s += x\n    while q and a[q[-1]] <= x:\n        q.pop()\n    q.append(r)\n    while s - a[q[0]] > B:\n        s -= a[l]\n        if q[0] == l:\n            q.popleft()\n        l += 1\n    ans = max(ans, r - l + 1)\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    ll B;\n    cin >> n >> B;\n    vector<ll> a(n);\n    for (ll &x : a)\n        cin >> x;\n    deque<int> q;\n    int l = 0, ans = 0;\n    ll s = 0;\n    for (int r = 0; r < n; r++) {\n        s += a[r];\n        while (!q.empty() && a[q.back()] <= a[r])\n            q.pop_back();\n        q.push_back(r);\n        while (s - a[q.front()] > B) {\n            s -= a[l];\n            if (q.front() == l)\n                q.pop_front();\n            l++;\n        }\n        ans = max(ans, r - l + 1);\n    }\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b661",
+    "title": "達標連通的最早日",
+    "topic": "search",
+    "level": "hard",
+    "concept": "並行二分答案與逐日 DSU",
+    "goal": "同時滿足兩點連通與塊大小門檻，找出含第0日的最早達標日。",
+    "explanation": [
+      "加邊只會讓連通塊合併、大小增加，故每個查詢的條件對日數單調。將第 m+1 日視為永不成立的哨兵，維護答案所在的閉區間 [lo,hi]，初始 [0,m+1]。每輪將尚未收斂的查詢依 mid 分桶。",
+      "重新建立 DSU，從第0日掃到第m日，並在每個 mid 檢查兩點同根且塊大小至少 k。成立把 hi 降至 mid，否則 lo 提到 mid+1。一次 DSU 掃描替全部查詢完成一層二分；收斂到 m+1 的查詢輸出−1。"
+    ],
+    "complexity": "時間 O((n+m+q) log(m+2) α(n))，分桶、DSU、邊與 Python 輸入緩衝 O(n+m+q)。",
+    "pitfall": "u=v,k=1 在第0日已成立；自環與重邊不能增加塊大小。",
+    "sampleInput": "4 3 4\n1 2\n3 4\n2 3\n1 1 1\n1 2 3\n3 4 2\n1 4 4",
+    "sampleOutput": "0\n3\n2\n3",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "第零日",
+        "description": "3點，依序加1−2、2−3；問1,1,2。",
+        "cells": [
+          "1",
+          "2",
+          "3"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "條件",
+            "不成立"
+          ]
+        ]
+      },
+      {
+        "title": "第一日",
+        "description": "1與2合併，包含點1的塊大小2。",
+        "cells": [
+          "1,2",
+          "3"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "條件",
+            "成立"
+          ]
+        ]
+      },
+      {
+        "title": "二分收斂",
+        "description": "第0日不成立而第1日成立。",
+        "cells": [
+          "0",
+          "1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "最早日",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, m, q = next(it), next(it), next(it)\nedges = [(next(it) - 1, next(it) - 1) for _ in range(m)]\nqs = [(next(it) - 1, next(it) - 1, next(it)) for _ in range(q)]\nlo = [0] * q\nhi = [m + 1] * q\nwhile True:\n    buckets = {}\n    for i in range(q):\n        if lo[i] < hi[i]:\n            buckets.setdefault((lo[i] + hi[i]) // 2, []).append(i)\n    if not buckets:\n        break\n    p = list(range(n))\n    sz = [1] * n\n\n    def find(x):\n        while x != p[x]:\n            p[x] = p[p[x]]\n            x = p[x]\n        return x\n\n    for day in range(m + 1):\n        if day:\n            a, b = map(find, edges[day - 1])\n            if a != b:\n                if sz[a] < sz[b]:\n                    a, b = b, a\n                p[b] = a\n                sz[a] += sz[b]\n        for i in buckets.get(day, ()):\n            u, v, k = qs[i]\n            a, b = find(u), find(v)\n            if a == b and sz[a] >= k:\n                hi[i] = day\n            else:\n                lo[i] = day + 1\nprint(\"\\n\".join(str(x if x <= m else -1) for x in lo))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, m, q;\n    cin >> n >> m >> q;\n    vector<pair<int, int>> e(m);\n    for (auto &[a, b] : e) {\n        cin >> a >> b;\n        --a;\n        --b;\n    }\n    vector<array<int, 3>> qs(q);\n    for (auto &x : qs) {\n        cin >> x[0] >> x[1] >> x[2];\n        --x[0];\n        --x[1];\n    }\n    vector<int> lo(q), hi(q, m + 1);\n    while (true) {\n        vector<vector<int>> b(m + 1);\n        bool any = false;\n        for (int i = 0; i < q; i++)\n            if (lo[i] < hi[i]) {\n                b[(lo[i] + hi[i]) / 2].push_back(i);\n                any = true;\n            }\n        if (!any)\n            break;\n        vector<int> p(n), sz(n, 1);\n        iota(p.begin(), p.end(), 0);\n        auto find = [&](int x) {\n            while (x != p[x]) {\n                p[x] = p[p[x]];\n                x = p[x];\n            }\n            return x;\n        };\n        for (int t = 0; t <= m; t++) {\n            if (t) {\n                auto [u, v] = e[t - 1];\n                u = find(u);\n                v = find(v);\n                if (u != v) {\n                    if (sz[u] < sz[v])\n                        swap(u, v);\n                    p[v] = u;\n                    sz[u] += sz[v];\n                }\n            }\n            for (int i : b[t]) {\n                auto [u, v, k] = qs[i];\n                int a = find(u), c = find(v);\n                if (a == c && sz[a] >= k)\n                    hi[i] = t;\n                else\n                    lo[i] = t + 1;\n            }\n        }\n    }\n    for (int x : lo)\n        cout << (x <= m ? x : -1) << '\\n';\n}\n"
+  },
+  {
+    "code": "b662",
+    "title": "長度窗口的最大異或",
+    "topic": "data-structures",
+    "level": "hard",
+    "concept": "可刪除二元 Trie 與前綴 XOR 窗口",
+    "goal": "在長度上下限之內，用精確窗口候選求最大連續 XOR。",
+    "explanation": [
+      "令 p[i] 是前 i 項 XOR，區間 (j,i] 的 XOR 為 p[i] XOR p[j]。對右端 i，合法 j 恰在 [i−R,i−L]；加入新進入的 p[i−L]、刪掉過期的 p[i−R−1]，即可維持精確候選集。",
+      "Trie 每層對應一個二進位，節點保存有效候選數。查詢由最高位往下，優先走與查詢值相反且計數大於零的分支；最高不同位的收益大於所有低位總和，所以此貪心給出最大 XOR。重複前綴必須分別計次，刪一份不能抹去整個值。"
+    ],
+    "complexity": "時間 O(30n)，Trie 最壞 O(30n) 個節點。Python 使用 array 儲存三個整數陣列，避免每節點字典的高額開銷；輸入、前綴 O(n)，總 O(30n)。",
+    "pitfall": "先更新候選集再查詢；不得讓空區間的 p[i] 混入 L≥1 的窗口。",
+    "sampleInput": "4 2 3\n1 2 3 4",
+    "sampleOutput": "7",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "前綴計算",
+        "description": "數列1,2,4，L=2,R=3，前綴為0,1,3,7。",
+        "cells": [
+          "0",
+          "1",
+          "3",
+          "7"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "前綴個數",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "右端為2",
+        "description": "只可用 j=0，得到3。",
+        "cells": [
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "目前最大",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "右端為3",
+        "description": "可用0與1，XOR分別7與6。",
+        "cells": [
+          "0",
+          "1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "答案",
+            "7"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom array import array\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, L, R = t[:3]\np = [0]\nfor x in t[3:]:\n    p.append(p[-1] ^ x)\nch = [array(\"i\", [-1]), array(\"i\", [-1])]\ncnt = array(\"i\", [0])\n\n\ndef change(x, d):\n    u = 0\n    cnt[0] += d\n    for b in range(29, -1, -1):\n        c = (x >> b) & 1\n        v = ch[c][u]\n        if v == -1:\n            v = len(cnt)\n            ch[c][u] = v\n            ch[0].append(-1)\n            ch[1].append(-1)\n            cnt.append(0)\n        u = v\n        cnt[u] += d\n\n\nans = 0\nfor i in range(L, n + 1):\n    change(p[i - L], 1)\n    if i > R:\n        change(p[i - R - 1], -1)\n    u = 0\n    val = 0\n    for b in range(29, -1, -1):\n        c = (p[i] >> b) & 1\n        v = ch[c ^ 1][u]\n        if v != -1 and cnt[v] > 0:\n            val |= 1 << b\n            u = v\n        else:\n            u = ch[c][u]\n    ans = max(ans, val)\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, L, R;\n    cin >> n >> L >> R;\n    vector<int> p(n + 1);\n    for (int i = 1, x; i <= n; i++) {\n        cin >> x;\n        p[i] = p[i - 1] ^ x;\n    }\n    vector<array<int, 3>> tr(1, {-1, -1, 0});\n    auto change = [&](int x, int d) {\n        int u = 0;\n        tr[0][2] += d;\n        for (int b = 29; b >= 0; b--) {\n            int c = x >> b & 1;\n            if (tr[u][c] == -1) {\n                int v = tr.size();\n                tr[u][c] = v;\n                tr.push_back({-1, -1, 0});\n            }\n            u = tr[u][c];\n            tr[u][2] += d;\n        }\n    };\n    int ans = 0;\n    for (int i = L; i <= n; i++) {\n        change(p[i - L], 1);\n        if (i > R)\n            change(p[i - R - 1], -1);\n        int u = 0, z = 0;\n        for (int b = 29; b >= 0; b--) {\n            int c = p[i] >> b & 1, v = tr[u][c ^ 1];\n            if (v != -1 && tr[v][2] > 0) {\n                z |= 1 << b;\n                u = v;\n            } else\n                u = tr[u][c];\n        }\n        ans = max(ans, z);\n    }\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b663",
+    "title": "交色遞重的最長行走",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "同權重批次更新的最長行走計數",
+    "goal": "求嚴格遞重且類別交替的最長非空行走及邊序列數。",
+    "explanation": [
+      "將邊依權重遞增排序。dp[v][c] 保存以類別 c 的邊結束在 v 的最長長度及數量；對 u→v、類別 c 的新邊，只從 dp[u][1−c] 延伸，若沒有前驅則此邊單獨構成一條長度1行走。",
+      "同權重的所有邊必須先讀舊狀態、算出候選，再一起更新，才能保證嚴格遞增。每個行走有唯一最後一條輸入邊，故同長度的方案數相加不重複；平行邊各自處理，恰好保留題目要求的區別。最後將所有終點與尾類別的全域最長方案加總。"
+    ],
+    "complexity": "時間 O(m log m+n)，空間 O(n+m)，包含 Python 邊 tuple、排序與讀取緩衝。",
+    "pitfall": "不可讓同權重邊互相延伸；m=0 時沒有非空行走，輸出0 0。",
+    "sampleInput": "2 5\n1 1 2 0\n1 2 2 1\n1 2 3 1\n1 2 3 1\n2 1 4 0",
+    "sampleOutput": "3 2",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "第一批權重",
+        "description": "1→2 權重1類別0，有兩條平行邊。",
+        "cells": [
+          "2:類0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "長度／數量",
+            "1／2"
+          ]
+        ]
+      },
+      {
+        "title": "第二批延伸",
+        "description": "2→1 權重2類別1，延伸兩種前綴。",
+        "cells": [
+          "1:類1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "長度／數量",
+            "2／2"
+          ]
+        ]
+      },
+      {
+        "title": "排除同類",
+        "description": "1→2 權重3類別1不能接在類1後。",
+        "cells": [
+          "2:類1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "全域最佳",
+            "2／2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, m = t[:2]\ne = [(t[i + 2], t[i] - 1, t[i + 1] - 1, t[i + 3]) for i in range(2, len(t), 4)]\ne.sort()\nM = 1000000007\nd = [[0, 0] for _ in range(n)]\nways = [[0, 0] for _ in range(n)]\ni = 0\nwhile i < m:\n    j = i\n    pending = []\n    while j < m and e[j][0] == e[i][0]:\n        w, u, v, c = e[j]\n        z = d[u][c ^ 1]\n        pending.append((v, c, z + 1, ways[u][c ^ 1] if z else 1))\n        j += 1\n    for v, c, z, h in pending:\n        if z > d[v][c]:\n            d[v][c] = z\n            ways[v][c] = h\n        elif z == d[v][c]:\n            ways[v][c] = (ways[v][c] + h) % M\n    i = j\nbest = max((max(x) for x in d), default=0)\nprint(\n    best,\n    sum(ways[v][c] for v in range(n) for c in range(2) if d[v][c] == best) % M\n    if best\n    else 0,\n)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, m;\n    cin >> n >> m;\n    vector<array<int, 4>> e(m);\n    for (auto &x : e) {\n        cin >> x[1] >> x[2] >> x[0] >> x[3];\n        --x[1];\n        --x[2];\n    }\n    sort(e.begin(), e.end());\n    vector<array<int, 2>> d(n);\n    vector<array<ll, 2>> ways(n);\n    for (int i = 0; i < m;) {\n        int j = i;\n        vector<array<ll, 4>> p;\n        while (j < m && e[j][0] == e[i][0]) {\n            auto [w, u, v, c] = e[j++];\n            int z = d[u][c ^ 1];\n            p.push_back({v, c, z + 1, z ? ways[u][c ^ 1] : 1});\n        }\n        for (auto [v, c, z, h] : p) {\n            if (z > d[v][c]) {\n                d[v][c] = z;\n                ways[v][c] = h;\n            } else if (z == d[v][c])\n                ways[v][c] = (ways[v][c] + h) % MOD;\n        }\n        i = j;\n    }\n    int best = 0;\n    ll cnt = 0;\n    for (int v = 0; v < n; v++)\n        for (int c = 0; c < 2; c++)\n            if (d[v][c] > best) {\n                best = d[v][c];\n                cnt = ways[v][c];\n            } else if (d[v][c] == best)\n                cnt = (cnt + ways[v][c]) % MOD;\n    cout << best << ' ' << (best ? cnt : 0) << '\\n';\n}\n"
+  },
+  {
+    "code": "b664",
+    "title": "連續同值批次的平方總分",
+    "topic": "data-structures",
+    "level": "hard",
+    "concept": "保存端點同值長度的線段樹合併",
+    "goal": "支援點修改並回答截斷於查詢邊界的同值批次長度平方和。",
+    "explanation": [
+      "每個區間摘要保存長度、左右端數值、同值前綴長、同值後綴長，以及批次平方和。合併相鄰 A,B 時，若接縫兩數不同，分數直接相加；若相同，原本兩批長 x,y 應合成一批，故額外加 2xy。",
+      "若 A 全段同值且接縫相同，合併後前綴延伸至 B 的同值前綴；後綴同理。摘要完全由實際串接序列決定，因而具結合律，能用線段樹維護點修改與任意區間查詢。查詢順序必須由左至右，因為摘要不具交換律。"
+    ],
+    "complexity": "建樹 O(n)，每次操作 O(log n)，空間 O(n)；Python 讀取緩衝 O(n+q)，摘要樹 O(n)。平方和最大 n²，用64位元。",
+    "pitfall": "查詢兩端截斷批次，不能直接使用全陣列原批次長度。空摘要是合併單位元。",
+    "sampleInput": "5 5\n2 2 3 2 2\nQ 1 5\nU 3 2\nQ 2 4\nU 1 7\nQ 1 5",
+    "sampleOutput": "9\n9\n17",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "分成兩段",
+        "description": "左段2,2；右段2,3。",
+        "cells": [
+          "2,2",
+          "2,3"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "原分數和",
+            "6"
+          ]
+        ]
+      },
+      {
+        "title": "合併接縫",
+        "description": "後綴長2與前綴長1合併，額外加4。",
+        "cells": [
+          "2,2,2",
+          "3"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "分數",
+            "10"
+          ]
+        ]
+      },
+      {
+        "title": "修改末項",
+        "description": "把末項3改為2，形成長4一批。",
+        "cells": [
+          "2,2,2,2"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "分數",
+            "16"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef merge(a, b):\n    if a is None:\n        return b\n    if b is None:\n        return a\n    n, l, r, p, s, z = a\n    m, L, R, P, S, Z = b\n    eq = r == L\n    return (\n        n + m,\n        l,\n        R,\n        p + (P if eq and p == n else 0),\n        S + (s if eq and S == m else 0),\n        z + Z + (2 * s * P if eq else 0),\n    )\n\n\nit = iter(sys.stdin.buffer.read().split())\nn = int(next(it))\nq = int(next(it))\nsize = 1\nwhile size < n:\n    size *= 2\ntr = [None] * (2 * size)\nfor i in range(n):\n    x = int(next(it))\n    tr[size + i] = (1, x, x, 1, 1, 1)\nfor i in range(size - 1, 0, -1):\n    tr[i] = merge(tr[i * 2], tr[i * 2 + 1])\nout = []\nfor _ in range(q):\n    op = next(it)\n    x = int(next(it))\n    y = int(next(it))\n    if op == b\"U\":\n        i = size + x - 1\n        tr[i] = (1, y, y, 1, 1, 1)\n        i //= 2\n        while i:\n            tr[i] = merge(tr[2 * i], tr[2 * i + 1])\n            i //= 2\n    else:\n        l = size + x - 1\n        r = size + y\n        a = b = None\n        while l < r:\n            if l & 1:\n                a = merge(a, tr[l])\n                l += 1\n            if r & 1:\n                r -= 1\n                b = merge(tr[r], b)\n            l //= 2\n            r //= 2\n        out.append(str(merge(a, b)[5]))\nprint(\"\\n\".join(out))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nstruct S {\n    ll n = 0, l = 0, r = 0, p = 0, s = 0, z = 0;\n};\nS mergeS(S a, S b) {\n    if (!a.n)\n        return b;\n    if (!b.n)\n        return a;\n    bool e = a.r == b.l;\n    return {a.n + b.n,\n            a.l,\n            b.r,\n            a.p + (e && a.p == a.n ? b.p : 0),\n            b.s + (e && b.s == b.n ? a.s : 0),\n            a.z + b.z + (e ? 2 * a.s * b.p : 0)};\n}\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, q, N = 1;\n    cin >> n >> q;\n    while (N < n)\n        N *= 2;\n    vector<S> t(2 * N);\n    for (int i = 0; i < n; i++) {\n        ll x;\n        cin >> x;\n        t[N + i] = {1, x, x, 1, 1, 1};\n    }\n    for (int i = N - 1; i; i--)\n        t[i] = mergeS(t[2 * i], t[2 * i + 1]);\n    while (q--) {\n        char op;\n        int x;\n        ll y;\n        cin >> op >> x >> y;\n        if (op == 'U') {\n            int i = N + x - 1;\n            t[i] = {1, y, y, 1, 1, 1};\n            for (i /= 2; i; i /= 2)\n                t[i] = mergeS(t[2 * i], t[2 * i + 1]);\n        } else {\n            int l = N + x - 1, r = N + y;\n            S a, b;\n            while (l < r) {\n                if (l & 1)\n                    a = mergeS(a, t[l++]);\n                if (r & 1)\n                    b = mergeS(t[--r], b);\n                l /= 2;\n                r /= 2;\n            }\n            cout << mergeS(a, b).z << '\\n';\n        }\n    }\n}\n"
+  },
+  {
+    "code": "b665",
+    "title": "逐次延伸的最省覆蓋",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "前緣 DAG 上的區間最小費用與計數",
+    "goal": "以嚴格延伸前緣的服務序列覆蓋1至N，求最低費用及序列數。",
+    "explanation": [
+      "前緣嚴格增加，所以只可能是0或某個服務右端。壓縮這些座標並按右端遞增處理服務。要啟用 [l,r]，前一個前緣 f 必須在 [l−1,r−1]，故取該範圍所有狀態的最低費用及對應方案總數，再加服務費。",
+      "線段樹保存「較小費用優先、同費用相加」的摘要。相同右端的服務不能互相接續，查詢上界必須嚴格小於 r。每個有效序列有唯一最後服務編號，因此候選計數相加恰好涵蓋全部最優序列。正費用與嚴增前緣亦保證無法重用同服務。"
+    ],
+    "complexity": "時間 O(m log(m+1))，空間 O(m)，含 Python 排序、座標及讀取緩衝；N≤10^9 不能建立大小 N 的表。",
+    "pitfall": "相同區間的不同服務仍是不同選擇；查詢包含 l−1，且不包含 r。",
+    "sampleInput": "4 4\n1 2 2\n1 2 2\n2 4 3\n1 4 6",
+    "sampleOutput": "5 2",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "起始前緣",
+        "description": "N=3，服務[1,1]費2、[2,3]費4、[1,3]費7。",
+        "cells": [
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最低費用",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "到達1",
+        "description": "啟用第一服務，費用2。",
+        "cells": [
+          "1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "序列數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "到達3",
+        "description": "經前緣1的費用6，比直接7小。",
+        "cells": [
+          "3"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最佳費用",
+            "6"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, bisect\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nN, m = t[:2]\nes = [tuple(t[i : i + 3]) for i in range(2, len(t), 3)]\nxs = sorted({0} | {r for l, r, w in es})\nsize = 1\ninf = 10**30\nM = 1000000007\nwhile size < len(xs):\n    size *= 2\ntr = [(inf, 0)] * (2 * size)\n\n\ndef merge(a, b):\n    if a[0] != b[0]:\n        return min(a, b)\n    return (a[0], (a[1] + b[1]) % M)\n\n\ndef update(i, v):\n    i += size\n    tr[i] = merge(tr[i], v)\n    i //= 2\n    while i:\n        tr[i] = merge(tr[2 * i], tr[2 * i + 1])\n        i //= 2\n\n\ndef query(l, r):\n    l += size\n    r += size\n    ans = (inf, 0)\n    while l < r:\n        if l & 1:\n            ans = merge(ans, tr[l])\n            l += 1\n        if r & 1:\n            r -= 1\n            ans = merge(ans, tr[r])\n        l //= 2\n        r //= 2\n    return ans\n\n\nupdate(0, (0, 1))\nfor l, r, w in sorted(es, key=lambda e: e[1]):\n    j = bisect.bisect_left(xs, r)\n    d, c = query(bisect.bisect_left(xs, l - 1), j)\n    if d < inf:\n        update(j, (d + w, c))\nj = bisect.bisect_left(xs, N)\nd, c = query(j, j + 1) if j < len(xs) and xs[j] == N else (inf, 0)\nprint(d if d < inf else -1, c)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nusing P = pair<ll, ll>;\nconst ll INF = 4e18;\nP mg(P a, P b) {\n    if (a.first != b.first)\n        return min(a, b);\n    return {a.first, (a.second + b.second) % MOD};\n}\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int N, m;\n    cin >> N >> m;\n    vector<array<int, 3>> e(m);\n    vector<int> x{0};\n    for (auto &a : e) {\n        cin >> a[0] >> a[1] >> a[2];\n        x.push_back(a[1]);\n    }\n    sort(x.begin(), x.end());\n    x.erase(unique(x.begin(), x.end()), x.end());\n    sort(e.begin(), e.end(), [](auto a, auto b) { return a[1] < b[1]; });\n    int S = 1;\n    while (S < (int)x.size())\n        S *= 2;\n    vector<P> t(2 * S, {INF, 0});\n    auto up = [&](int i, P v) {\n        i += S;\n        t[i] = mg(t[i], v);\n        while (i /= 2)\n            t[i] = mg(t[2 * i], t[2 * i + 1]);\n    };\n    auto qu = [&](int l, int r) {\n        P a = {INF, 0};\n        for (l += S, r += S; l < r; l /= 2, r /= 2) {\n            if (l & 1)\n                a = mg(a, t[l++]);\n            if (r & 1)\n                a = mg(a, t[--r]);\n        }\n        return a;\n    };\n    up(0, {0, 1});\n    for (auto [l, r, w] : e) {\n        int j = lower_bound(x.begin(), x.end(), r) - x.begin(),\n            i = lower_bound(x.begin(), x.end(), l - 1) - x.begin();\n        auto [d, c] = qu(i, j);\n        if (d < INF)\n            up(j, {d + w, c});\n    }\n    int j = lower_bound(x.begin(), x.end(), N) - x.begin();\n    auto [d, c] = j < (int)x.size() && x[j] == N ? qu(j, j + 1) : P{INF, 0};\n    cout << (d == INF ? -1 : d) << ' ' << c << '\\n';\n}\n"
+  },
+  {
+    "code": "b666",
+    "title": "奇標強連通塊的前驅",
+    "topic": "graphs",
+    "level": "hard",
+    "concept": "迭代 Kosaraju 與縮圖前驅去重",
+    "goal": "計算奇數標記且恰有K個不同直接前驅的強連通分量數。",
+    "explanation": [
+      "先在原圖完成 DFS 後序，再依後序反向在反圖搜尋，得到強連通分量編號。採用顯式堆疊而非遞迴，避免長鏈 n=10^5 造成呼叫堆疊溢位。每個分量將標記1的數量累計取奇偶。",
+      "掃描每條原邊 u→v，只保留分量編號不同的有序對。集合去重後，對目標分量累加前驅數；平行邊及同一前驅不同頂點的邊都只計一次。強連通分量分割唯一，因此最終逐分量檢查奇數與前驅數 K 就是答案。"
+    ],
+    "complexity": "Kosaraju 時間 O(n+m)。分量對去重：Python 雜湊集合期望 O(m)，C++ 有序 set 上界 O(m log(m+1))，故 C++ 總時間 O(n+m log(m+1))。空間 O(n+m)，包含反圖、分量對集合及 Python 輸入緩衝。",
+    "pitfall": "前驅是直接跨分量入邊來源，不是所有能走到此分量的祖先；內部邊不計。",
+    "sampleInput": "4 5 1\n1 0 1 1\n1 2\n2 1\n2 3\n1 3\n3 4",
+    "sampleOutput": "2",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "找出互通群",
+        "description": "邊1↔2、2→3、1→3，標記1,0,1。",
+        "cells": [
+          "{1,2}",
+          "{3}"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "分量數",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "邊去重",
+        "description": "兩條跨邊同從{1,2}出發。",
+        "cells": [
+          "{1,2}→{3}"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "不同前驅數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "套用條件",
+        "description": "K=1，只有{3}奇標且有一前驅。",
+        "cells": [
+          "{3}"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "答案",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, m, K = next(it), next(it), next(it)\na = [next(it) for _ in range(n)]\ng = [[] for _ in range(n)]\nrg = [[] for _ in range(n)]\nedges = []\nfor _ in range(m):\n    u, v = next(it) - 1, next(it) - 1\n    g[u].append(v)\n    rg[v].append(u)\n    edges.append((u, v))\nseen = [False] * n\norder = []\nfor s in range(n):\n    if seen[s]:\n        continue\n    seen[s] = True\n    st = [(s, 0)]\n    while st:\n        u, i = st[-1]\n        if i == len(g[u]):\n            order.append(u)\n            st.pop()\n            continue\n        v = g[u][i]\n        st[-1] = (u, i + 1)\n        if not seen[v]:\n            seen[v] = True\n            st.append((v, 0))\nco = [-1] * n\nparity = []\nfor s in reversed(order):\n    if co[s] != -1:\n        continue\n    idx = len(parity)\n    co[s] = idx\n    st = [s]\n    z = 0\n    while st:\n        u = st.pop()\n        z ^= a[u]\n        for v in rg[u]:\n            if co[v] == -1:\n                co[v] = idx\n                st.append(v)\n    parity.append(z)\ninc = [0] * len(parity)\nfor u, v in {(co[u], co[v]) for u, v in edges if co[u] != co[v]}:\n    inc[v] += 1\nprint(sum(z == 1 and d == K for z, d in zip(parity, inc)))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, m, K;\n    cin >> n >> m >> K;\n    vector<int> a(n);\n    for (int &x : a)\n        cin >> x;\n    vector<vector<int>> g(n), r(n);\n    vector<pair<int, int>> e;\n    for (int i = 0, u, v; i < m; i++) {\n        cin >> u >> v;\n        --u;\n        --v;\n        g[u].push_back(v);\n        r[v].push_back(u);\n        e.push_back({u, v});\n    }\n    vector<int> seen(n), order;\n    for (int s = 0; s < n; s++)\n        if (!seen[s]) {\n            vector<pair<int, int>> st{{s, 0}};\n            seen[s] = 1;\n            while (!st.empty()) {\n                int u = st.back().first, &i = st.back().second;\n                if (i == (int)g[u].size()) {\n                    order.push_back(u);\n                    st.pop_back();\n                    continue;\n                }\n                int v = g[u][i++];\n                if (!seen[v]) {\n                    seen[v] = 1;\n                    st.push_back({v, 0});\n                }\n            }\n        }\n    vector<int> co(n, -1), par;\n    reverse(order.begin(), order.end());\n    for (int s : order)\n        if (co[s] < 0) {\n            int id = par.size(), z = 0;\n            vector<int> st{s};\n            co[s] = id;\n            while (!st.empty()) {\n                int u = st.back();\n                st.pop_back();\n                z ^= a[u];\n                for (int v : r[u])\n                    if (co[v] < 0) {\n                        co[v] = id;\n                        st.push_back(v);\n                    }\n            }\n            par.push_back(z);\n        }\n    set<pair<int, int>> pairs;\n    for (auto [u, v] : e)\n        if (co[u] != co[v])\n            pairs.insert({co[u], co[v]});\n    vector<int> inc(par.size());\n    for (auto [u, v] : pairs)\n        inc[v]++;\n    int ans = 0;\n    for (int i = 0; i < (int)par.size(); i++)\n        ans += par[i] && inc[i] == K;\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b667",
+    "title": "異色兩翼的高峰三元組",
+    "topic": "data-structures",
+    "level": "hard",
+    "concept": "按顏色拆分的嚴格小於 Fenwick 計數",
+    "goal": "計算兩翼較小且兩翼異色的高峰位置三元組。",
+    "explanation": [
+      "固定中點 j，答案貢獻為左側小於 a[j] 的色0數乘右側小於它的色1數，加上左右顏色對調的乘積。中點顏色完全無關，不能誤把問題當成交錯三色。",
+      "壓縮值域後，分別從左到右、從右到左，用兩棵 Fenwick 樹統計各色嚴格較小的個數。查詢 rank−1 保證相等數值排除。每個三元組有唯一中點和唯一兩翼顏色配法，因此逐中點加總既不漏也不重複。"
+    ],
+    "complexity": "時間 O(n log n)，空間 O(n)，含 Python 壓縮排序、四個計數陣列及讀取緩衝；答案最大 O(n³)，在 n≤200000 時可用64位元。",
+    "pitfall": "兩翼必須嚴格較小，不是小於等於；左右位置不能混用。",
+    "sampleInput": "5\n1 0\n5 0\n2 1\n4 1\n1 1",
+    "sampleOutput": "5",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "固定中央高點",
+        "description": "序列(1,0),(5,1),(2,1)。",
+        "cells": [
+          "1:0",
+          "5:1",
+          "2:1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "中點",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "左側統計",
+        "description": "比5小的左色0有1個。",
+        "cells": [
+          "1:0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "左色0",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "右側配對",
+        "description": "右色1有1個，乘積1。",
+        "cells": [
+          "2:1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "三元組貢獻",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, bisect\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn = t[0]\na = t[1::2]\nc = t[2::2]\nxs = sorted(set(a))\nranks = [bisect.bisect_left(xs, x) + 1 for x in a]\nz = len(xs)\n\n\ndef sweep(order):\n    bit = [[0] * (z + 1) for _ in range(2)]\n    out = [[0, 0] for _ in range(n)]\n    for i in order:\n        for color in range(2):\n            j = ranks[i] - 1\n            s = 0\n            while j:\n                s += bit[color][j]\n                j -= j & -j\n            out[i][color] = s\n        j = ranks[i]\n        while j <= z:\n            bit[c[i]][j] += 1\n            j += j & -j\n    return out\n\n\nL = sweep(range(n))\nR = sweep(range(n - 1, -1, -1))\nprint(sum(l[0] * r[1] + l[1] * r[0] for l, r in zip(L, R)))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    cin >> n;\n    vector<int> a(n), c(n), x;\n    for (int i = 0; i < n; i++) {\n        cin >> a[i] >> c[i];\n        x.push_back(a[i]);\n    }\n    sort(x.begin(), x.end());\n    x.erase(unique(x.begin(), x.end()), x.end());\n    vector<int> rk(n);\n    for (int i = 0; i < n; i++)\n        rk[i] = lower_bound(x.begin(), x.end(), a[i]) - x.begin() + 1;\n    vector<array<ll, 2>> L(n), R(n);\n    for (int pass = 0; pass < 2; pass++) {\n        vector<vector<ll>> b(2, vector<ll>(x.size() + 1));\n        for (int k = 0; k < n; k++) {\n            int i = pass ? n - 1 - k : k;\n            auto &d = pass ? R[i] : L[i];\n            for (int col = 0; col < 2; col++)\n                for (int j = rk[i] - 1; j; j -= j & -j)\n                    d[col] += b[col][j];\n            for (int j = rk[i]; j < (int)b[0].size(); j += j & -j)\n                b[c[i]][j]++;\n        }\n    }\n    ll ans = 0;\n    for (int i = 0; i < n; i++)\n        ans += L[i][0] * R[i][1] + L[i][1] * R[i][0];\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b668",
+    "title": "單色候選的雙色距離平衡",
+    "topic": "trees",
+    "level": "hard",
+    "concept": "帶符號權量的換根距離總和",
+    "goal": "只在色0頂點中最小化兩色距離總和之差的絕對值，平手取最小編號。",
+    "explanation": [
+      "令色0權量為+1、色1為−1，則 F(v)=Σ權量[u]×dist(v,u)=A(v)−B(v)。先任選根，累計全樹權量 W、每個子樹權量 sub，以及根到各點的帶符號距離和 F(root)。",
+      "沿父 u 到子 v、邊長 w 換根時，v 子樹所有距離減 w，其餘增加 w，故 F(v)=F(u)+w(W−2sub[v])。依根序向下套用即可算出全部候選。最後只看色0，依 (abs(F),編號) 比較，自然滿足平手規則。"
+    ],
+    "complexity": "時間 O(n)，空間 O(n)，包含 Python 鄰接串列、遍歷順序與輸入緩衝；距離和可達約4×10^16，須64位元。",
+    "pitfall": "色1不能成為候選；缺少某色時仍可用同一公式，不能假設兩色都有。",
+    "sampleInput": "3\n0 1 1\n1 2 1\n2 3 1",
+    "sampleOutput": "1 3",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "根端距離和",
+        "description": "鏈1−2−3，邊長1，顏色0,1,0。",
+        "cells": [
+          "+1",
+          "-1",
+          "+1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "F(1)",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "換根到2",
+        "description": "總權量1，子樹2權量0，增加1。",
+        "cells": [
+          "2"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "F(2)",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "換根到3",
+        "description": "子樹3權量1，減少1；合法候選1與3平手。",
+        "cells": [
+          "1",
+          "3"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "選擇編號",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn = next(it)\nc = [next(it) for _ in range(n)]\ng = [[] for _ in range(n)]\nfor _ in range(n - 1):\n    u, v, w = next(it) - 1, next(it) - 1, next(it)\n    g[u].append((v, w))\n    g[v].append((u, w))\np = [-1] * n\ndist = [0] * n\npw = [0] * n\norder = [0]\np[0] = 0\nfor u in order:\n    for v, w in g[u]:\n        if v != p[u]:\n            p[v] = u\n            pw[v] = w\n            dist[v] = dist[u] + w\n            order.append(v)\nsub = [1 - 2 * x for x in c]\nW = sum(sub)\nF = [0] * n\nF[0] = sum(x * d for x, d in zip(sub, dist))\nfor v in reversed(order[1:]):\n    sub[p[v]] += sub[v]\nfor v in order[1:]:\n    F[v] = F[p[v]] + pw[v] * (W - 2 * sub[v])\nvalue, v = min((abs(F[i]), i + 1) for i in range(n) if c[i] == 0)\nprint(v, value)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    cin >> n;\n    vector<int> c(n);\n    vector<ll> sub(n), d(n), pw(n), F(n);\n    ll W = 0;\n    for (int i = 0; i < n; i++) {\n        cin >> c[i];\n        sub[i] = 1 - 2 * c[i];\n        W += sub[i];\n    }\n    vector<vector<pair<int, ll>>> g(n);\n    for (int i = 1, u, v; i < n; i++) {\n        ll w;\n        cin >> u >> v >> w;\n        --u;\n        --v;\n        g[u].push_back({v, w});\n        g[v].push_back({u, w});\n    }\n    vector<int> p(n, -1), ord{0};\n    p[0] = 0;\n    for (int k = 0; k < n; k++) {\n        int u = ord[k];\n        for (auto [v, w] : g[u])\n            if (v != p[u]) {\n                p[v] = u;\n                pw[v] = w;\n                d[v] = d[u] + w;\n                ord.push_back(v);\n            }\n    }\n    for (int i = 0; i < n; i++)\n        F[0] += sub[i] * d[i];\n    for (int k = n - 1; k > 0; k--) {\n        int v = ord[k];\n        sub[p[v]] += sub[v];\n    }\n    for (int k = 1; k < n; k++) {\n        int v = ord[k];\n        F[v] = F[p[v]] + pw[v] * (W - 2 * sub[v]);\n    }\n    pair<ll, int> ans = {LLONG_MAX, n};\n    for (int i = 0; i < n; i++)\n        if (!c[i])\n            ans = min(ans, {abs(F[i]), i + 1});\n    cout << ans.second << ' ' << ans.first << '\\n';\n}\n"
+  },
+  {
+    "code": "b669",
+    "title": "頂點換位與有向面積",
+    "topic": "geometry",
+    "level": "medium",
+    "concept": "鞋帶公式的局部邊貢獻更新",
+    "goal": "依序交換完整座標，常數時間維護不取絕對值的有向面積兩倍。",
+    "explanation": [
+      "有向面積兩倍 S 是各循環邊 cross(P[i],P[i+1]) 之和。交換位置 u,v 只會影響以 u−1,u,v−1,v 為起點的邊；先將這些起點去重，扣除舊貢獻，交換座標，再加新貢獻。",
+      "其他邊的兩端完全沒變，故其貢獻可以保留。相鄰位置、首尾相鄰或 u=v 時受影響邊會重疊，去重後每條邊恰好扣加一次。公式本身是定義，不需圖形簡單，也不能最後取絕對值。"
+    ],
+    "complexity": "初始化 O(n)，每次交換 O(1)，空間 O(n)，Python 讀取與輸出緩衝 O(n+q)。|S|≤4×10^17，使用64位元。",
+    "pitfall": "交換的是完整座標且會永久保留；負面積合法，不能當成面積大小輸出。",
+    "sampleInput": "3 3\n0 0\n2 0\n0 1\n1 2\n1 1\n1 3",
+    "sampleOutput": "-2\n-2\n2",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "原三角形",
+        "description": "(0,0),(2,0),(0,1)。",
+        "cells": [
+          "0,0",
+          "2,0",
+          "0,1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "S",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "交換首兩點",
+        "description": "循環方向反轉。",
+        "cells": [
+          "2,0",
+          "0,0",
+          "0,1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "S",
+            "-2"
+          ]
+        ]
+      },
+      {
+        "title": "同點交換",
+        "description": "交換位置2與2，所有座標不變。",
+        "cells": [
+          "2,0",
+          "0,0",
+          "0,1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "S",
+            "-2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, q = next(it), next(it)\np = [(next(it), next(it)) for _ in range(n)]\n\n\ndef edge(i):\n    x, y = p[i]\n    X, Y = p[(i + 1) % n]\n    return x * Y - y * X\n\n\ns = sum(edge(i) for i in range(n))\nout = []\nfor _ in range(q):\n    u, v = next(it) - 1, next(it) - 1\n    ids = {(u - 1) % n, u, (v - 1) % n, v}\n    s -= sum(edge(i) for i in ids)\n    p[u], p[v] = p[v], p[u]\n    s += sum(edge(i) for i in ids)\n    out.append(str(s))\nprint(\"\\n\".join(out))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, q;\n    cin >> n >> q;\n    vector<pair<ll, ll>> p(n);\n    for (auto &[x, y] : p)\n        cin >> x >> y;\n    auto edge = [&](int i) {\n        auto [x, y] = p[i];\n        auto [X, Y] = p[(i + 1) % n];\n        return x * Y - y * X;\n    };\n    ll s = 0;\n    for (int i = 0; i < n; i++)\n        s += edge(i);\n    while (q--) {\n        int u, v;\n        cin >> u >> v;\n        --u;\n        --v;\n        set<int> ids{(u + n - 1) % n, u, (v + n - 1) % n, v};\n        for (int i : ids)\n            s -= edge(i);\n        swap(p[u], p[v]);\n        for (int i : ids)\n            s += edge(i);\n        cout << s << '\\n';\n    }\n}\n"
+  },
+  {
+    "code": "b670",
+    "title": "雙色均衡射線",
+    "topic": "number-theory",
+    "level": "easy",
+    "concept": "保留方向符號的最簡整數向量",
+    "goal": "區分相反射線，計算兩色數量相等且非空的方向。",
+    "explanation": [
+      "對非原點 (x,y)，以正整數 g=gcd(|x|,|y|) 約分為 (x/g,y/g)。同一射線上所有整點都是同一個最簡方向的正整數倍，因此這個向量就是射線的唯一鍵。",
+      "將每個方向的兩色數量分別累加，最後檢查兩者相等且大於零。負方向不額外翻號，因此相反射線仍是不同鍵；水平與垂直點亦可用 gcd 同樣處理，不涉及浮點誤差。"
+    ],
+    "complexity": "雜湊版本期望時間 O(n log V)（gcd），空間 O(n)；C++ map 額外 O(n log n)，Python 輸入緩衝 O(n)。V≤10^9。",
+    "pitfall": "不能把第一個非零座標強制變正，否則會錯把相反射線合併。",
+    "sampleInput": "5\n1 0 0\n2 0 1\n-1 0 0\n0 1 1\n0 2 0",
+    "sampleOutput": "2",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "第一色點",
+        "description": "(1,1)色0約分為(1,1)。",
+        "cells": [
+          "1,1:0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "此方向數量",
+            "1／0"
+          ]
+        ]
+      },
+      {
+        "title": "同射線第二色",
+        "description": "(2,2)色1也約分為(1,1)。",
+        "cells": [
+          "1,1:0",
+          "2,2:1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "均衡射線",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "反向點",
+        "description": "(−1,−1)色1是另一射線，並未均衡。",
+        "cells": [
+          "-1,-1:1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "均衡射線",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, math\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn = next(it)\nd = {}\nfor _ in range(n):\n    x, y, c = next(it), next(it), next(it)\n    g = math.gcd(x, y)\n    z = d.setdefault((x // g, y // g), [0, 0])\n    z[c] += 1\nprint(sum(a == b and a > 0 for a, b in d.values()))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    cin >> n;\n    map<pair<ll, ll>, array<int, 2>> d;\n    while (n--) {\n        ll x, y;\n        int c;\n        cin >> x >> y >> c;\n        ll g = gcd(abs(x), abs(y));\n        d[{x / g, y / g}][c]++;\n    }\n    int ans = 0;\n    for (auto [k, v] : d)\n        ans += v[0] > 0 && v[0] == v[1];\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b671",
+    "title": "限距同高度視線",
+    "topic": "data-structures",
+    "level": "medium",
+    "concept": "最近較高阻擋點與等高位置二分",
+    "goal": "計算距離不超K且不被嚴格高點阻擋的同高度位置對。",
+    "explanation": [
+      "對每個右端 j，任何高度大於 h[j] 的中間點都會阻擋視線。以遞減單調堆疊求左側最近嚴格較高位置 b；將小於等於目前高度的棧頂彈掉，剩餘棧頂即為 b。",
+      "另按高度保存已出現的位置串列。合法左端必須同高，且至少為 max(j−K,b+1)。用二分找出串列中大於等於此下界的個數後，再插入 j。這些條件同時保證等高、距離與無較高阻擋，逐右端統計不會重複。"
+    ],
+    "complexity": "時間 O(n log n)，空間 O(n)，含 Python 各高度位置串列、棧及讀取緩衝；答案 O(n²) 用64位元。",
+    "pitfall": "中間等高不阻擋，最近阻擋必須嚴格較高；計數後才插入當前位置。",
+    "sampleInput": "7 3\n3 1 3 4 3 2 3",
+    "sampleOutput": "2",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "前兩個等高",
+        "description": "高度3,1,3,4,3，K=4；右端3可看位置1。",
+        "cells": [
+          "3",
+          "1",
+          "3"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "累計",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "高點阻擋",
+        "description": "位置4高度4，成為高度3的阻擋。",
+        "cells": [
+          "4"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "阻擋位置",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "末點查詢",
+        "description": "右端5高度3，不可越過位置4配位置1或3。",
+        "cells": [
+          "3"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "累計",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, bisect\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, K = t[:2]\nh = t[2:]\nst = []\npos = {}\nans = 0\nfor j, x in enumerate(h):\n    while st and h[st[-1]] <= x:\n        st.pop()\n    low = max(j - K, st[-1] + 1 if st else 0)\n    v = pos.setdefault(x, [])\n    ans += len(v) - bisect.bisect_left(v, low)\n    v.append(j)\n    st.append(j)\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, K;\n    cin >> n >> K;\n    vector<int> h(n), st;\n    map<int, vector<int>> pos;\n    ll ans = 0;\n    for (int j = 0; j < n; j++) {\n        cin >> h[j];\n        while (!st.empty() && h[st.back()] <= h[j])\n            st.pop_back();\n        int low = max(j - K, st.empty() ? 0 : st.back() + 1);\n        auto &v = pos[h[j]];\n        ans += v.end() - lower_bound(v.begin(), v.end(), low);\n        v.push_back(j);\n        st.push_back(j);\n    }\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b672",
+    "title": "禁連特殊邊的餘數路線",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "DAG 上的末邊類別與模三路線計數",
+    "goal": "在有向無環圖中計算禁連特殊邊且權重模3達標的路線數。",
+    "explanation": [
+      "每條邊由小編號指向大編號，所以頂點編號本身就是拓樸序。dp[v][c][s] 表示走到 v、上一邊類別為 c、總權重模3為 s 的路線數。起點用類別0、餘數0放入一條空路線。",
+      "沿類別 d、權重 w 的邊轉移時，若 c=d=1 就略過，否則加入 dp[to][d][(s+w)%3]。每條路線有唯一最後邊，平行邊逐條累加才能分開計數；最後將終點兩種末類別的目標餘數相加，n=1 也自然涵蓋空路線。"
+    ],
+    "complexity": "時間 O(n+m)，每邊至多6個狀態；空間 O(n+m)，含 Python 六狀態表、圖與 token 緩衝。",
+    "pitfall": "餘數必須更新的是權重和而非邊數；空路線只在起點放一次。",
+    "sampleInput": "4 4 0\n1 2 1 0\n2 4 1 0\n1 3 0 1\n3 4 1 2",
+    "sampleOutput": "1",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "起點狀態",
+        "description": "n=3，1→2類1權1，2→3類0權2。",
+        "cells": [
+          "1:類0餘0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "路線數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "走特殊邊",
+        "description": "抵達2時類1、餘1。",
+        "cells": [
+          "2:類1餘1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "路線數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "走普通邊",
+        "description": "抵達3時類0、餘0，合法。",
+        "cells": [
+          "3:類0餘0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "目標餘0答案",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, m, r = next(it), next(it), next(it)\ng = [[] for _ in range(n)]\nM = 1000000007\nfor _ in range(m):\n    u, v, c, w = next(it) - 1, next(it) - 1, next(it), next(it)\n    g[u].append((v, c, w % 3))\ndp = [[0] * 6 for _ in range(n)]\ndp[0][0] = 1\nfor u in range(n):\n    for v, c, w in g[u]:\n        for old in range(2):\n            if old == c == 1:\n                continue\n            for s in range(3):\n                j = 3 * c + (s + w) % 3\n                dp[v][j] = (dp[v][j] + dp[u][3 * old + s]) % M\nprint((dp[-1][r] + dp[-1][3 + r]) % M)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, m, r;\n    cin >> n >> m >> r;\n    vector<vector<array<int, 3>>> g(n);\n    for (int i = 0, u, v, c, w; i < m; i++) {\n        cin >> u >> v >> c >> w;\n        g[u - 1].push_back({v - 1, c, w % 3});\n    }\n    vector<array<ll, 6>> d(n);\n    d[0][0] = 1;\n    for (int u = 0; u < n; u++)\n        for (auto [v, c, w] : g[u])\n            for (int old = 0; old < 2; old++)\n                if (!(old && c))\n                    for (int s = 0; s < 3; s++) {\n                        int j = 3 * c + (s + w) % 3;\n                        d[v][j] = (d[v][j] + d[u][3 * old + s]) % MOD;\n                    }\n    cout << (d[n - 1][r] + d[n - 1][3 + r]) % MOD << '\\n';\n}\n"
+  },
+  {
+    "code": "b673",
+    "title": "偶塊單標記切分",
+    "topic": "trees",
+    "level": "hard",
+    "concept": "開放連通塊的標記數與大小奇偶 DP",
+    "goal": "計算刪邊後每塊恰一標記且大小偶數的所有刪邊集合。",
+    "explanation": [
+      "由葉向根處理。dp[u][b][p] 計算 u 子樹切邊方案，其中含 u 的開放塊有 b 個標記、大小奇偶為 p，其餘已封閉塊都合法。只需 b=0或1，超過一個標記後永遠無法靠合併減少，所以立即捨棄。",
+      "合併孩子時有兩種選擇：切邊要求孩子開放塊為一標記且偶數，父狀態不變；留邊則標記數相加、奇偶 XOR。不同孩子與切邊選擇對應唯一刪邊集合，乘法後加總即可。根沒有外部父邊，最後只接受 dp[root][1][0]。"
+    ],
+    "complexity": "時間 O(n)，每邊至多16對狀態；空間 O(n)，包含 Python 鄰接串列、遍歷順序與輸入緩衝。",
+    "pitfall": "不能只保留已完成的偶塊：奇數開放塊可以與父側合併後變偶數。",
+    "sampleInput": "4\n1 0 1 0\n1 2\n2 3\n3 4",
+    "sampleOutput": "1",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "葉的開放塊",
+        "description": "二點樹，標記1,0；無標葉大小1。",
+        "cells": [
+          "標0／奇"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "方案數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "保留連邊",
+        "description": "與有標根合併成大小2、一標記。",
+        "cells": [
+          "標1／偶"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "方案數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "檢查根狀態",
+        "description": "切邊會留下無標塊，只有不切合法。",
+        "cells": [
+          "完整二點塊"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "合法切法",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn = next(it)\na = [next(it) for _ in range(n)]\ng = [[] for _ in range(n)]\nM = 1000000007\nfor _ in range(n - 1):\n    u, v = next(it) - 1, next(it) - 1\n    g[u].append(v)\n    g[v].append(u)\np = [-1] * n\np[0] = 0\norder = [0]\nfor u in order:\n    for v in g[u]:\n        if v != p[u]:\n            p[v] = u\n            order.append(v)\ndp = [[0] * 4 for _ in range(n)]\nfor u in reversed(order):\n    d = [0] * 4\n    d[2 * a[u] + 1] = 1\n    for v in g[u]:\n        if p[v] != u:\n            continue\n        e = dp[v]\n        nd = [x * e[2] % M for x in d]\n        for x in range(4):\n            for y in range(4):\n                b = x // 2 + y // 2\n                if b <= 1:\n                    z = 2 * b + ((x ^ y) & 1)\n                    nd[z] = (nd[z] + d[x] * e[y]) % M\n        d = nd\n    dp[u] = d\nprint(dp[0][2])\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    cin >> n;\n    vector<int> a(n), p(n, -1), ord{0};\n    for (int &x : a)\n        cin >> x;\n    vector<vector<int>> g(n);\n    for (int i = 1, u, v; i < n; i++) {\n        cin >> u >> v;\n        --u;\n        --v;\n        g[u].push_back(v);\n        g[v].push_back(u);\n    }\n    p[0] = 0;\n    for (int k = 0; k < n; k++) {\n        int u = ord[k];\n        for (int v : g[u])\n            if (v != p[u]) {\n                p[v] = u;\n                ord.push_back(v);\n            }\n    }\n    vector<array<ll, 4>> dp(n);\n    for (int k = n - 1; k >= 0; k--) {\n        int u = ord[k];\n        array<ll, 4> d{};\n        d[2 * a[u] + 1] = 1;\n        for (int v : g[u])\n            if (p[v] == u) {\n                array<ll, 4> nd{};\n                for (int x = 0; x < 4; x++)\n                    nd[x] = d[x] * dp[v][2] % MOD;\n                for (int x = 0; x < 4; x++)\n                    for (int y = 0; y < 4; y++)\n                        if (x / 2 + y / 2 <= 1) {\n                            int z = 2 * (x / 2 + y / 2) + ((x ^ y) & 1);\n                            nd[z] = (nd[z] + d[x] * dp[v][y]) % MOD;\n                        }\n                d = nd;\n            }\n        dp[u] = d;\n    }\n    cout << dp[0][2] << '\\n';\n}\n"
+  },
+  {
+    "code": "b674",
+    "title": "恰標記數的單環分量",
+    "topic": "graphs",
+    "level": "medium",
+    "concept": "DSU 聚合點數、邊數與標記數",
+    "goal": "包含自環和平行邊，統計邊數等於點數且標記數恰k的連通分量。",
+    "explanation": [
+      "DSU 每個根保存連通塊的頂點數、邊數、標記總數。讀邊時若兩端不同根，合併三項統計後再加本條邊；同根也要增加一條邊，因為自環和平行邊都是實際邊。",
+      "每個頂點只在一個 DSU 塊中，每條邊只在讀取時計一次，因此讀完後三項值恰是連通分量的統計。只遍歷根，計算邊數等於點數且標記總數等於 k 的塊；不用額外判斷環的形狀。"
+    ],
+    "complexity": "時間 O((n+m)α(n))，空間 O(n)，Python 一次讀取緩衝 O(n+m)。",
+    "pitfall": "連通後的新邊仍增加邊數；自環一條而非兩條，孤立點邊數0不合格。",
+    "sampleInput": "4 4 1\n1 0 0 1\n1 2\n2 3\n3 1\n4 4",
+    "sampleOutput": "2",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "孤立初始",
+        "description": "兩頂點標記1,0，目標k=1。",
+        "cells": [
+          "1",
+          "2"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "合格塊",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "連接兩點",
+        "description": "加邊1−2，點數2邊數1。",
+        "cells": [
+          "{1,2}"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "合格塊",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "再加平行邊",
+        "description": "點數2邊數2，標記數1。",
+        "cells": [
+          "{1,2}"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "合格塊",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, m, k = next(it), next(it), next(it)\nmark = [next(it) for _ in range(n)]\np = list(range(n))\nsz = [1] * n\nec = [0] * n\n\n\ndef find(x):\n    while p[x] != x:\n        p[x] = p[p[x]]\n        x = p[x]\n    return x\n\n\nfor _ in range(m):\n    u, v = find(next(it) - 1), find(next(it) - 1)\n    if u != v:\n        if sz[u] < sz[v]:\n            u, v = v, u\n        p[v] = u\n        sz[u] += sz[v]\n        ec[u] += ec[v]\n        mark[u] += mark[v]\n    ec[u] += 1\nprint(sum(p[u] == u and ec[u] == sz[u] and mark[u] == k for u in range(n)))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, m, k;\n    cin >> n >> m >> k;\n    vector<int> p(n), sz(n, 1), ec(n), a(n);\n    iota(p.begin(), p.end(), 0);\n    for (int &x : a)\n        cin >> x;\n    auto f = [&](int x) {\n        while (x != p[x]) {\n            p[x] = p[p[x]];\n            x = p[x];\n        }\n        return x;\n    };\n    while (m--) {\n        int u, v;\n        cin >> u >> v;\n        u = f(u - 1);\n        v = f(v - 1);\n        if (u != v) {\n            if (sz[u] < sz[v])\n                swap(u, v);\n            p[v] = u;\n            sz[u] += sz[v];\n            ec[u] += ec[v];\n            a[u] += a[v];\n        }\n        ec[u]++;\n    }\n    int ans = 0;\n    for (int u = 0; u < n; u++)\n        ans += p[u] == u && ec[u] == sz[u] && a[u] == k;\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b675",
+    "title": "限距跨類漲幅",
+    "topic": "data-structures",
+    "level": "medium",
+    "concept": "雙色滑動最小值與字典序平手",
+    "goal": "在合法距離與異色限制下最大化漲幅，依i再j正確處理平手。",
+    "explanation": [
+      "固定右端 j，候選左端在 [j−R,j−L] 且必須異色。用兩個依讀數遞增的佇列分別維護色0與色1的候選，只查另一色隊首即可得到最大漲幅。",
+      "加入新候選時，只彈掉嚴格較大的尾值；相等值保留較早位置，才能在漲幅相同時優先選最小 i。過期位置從隊首刪除。每個 j 的最佳候選用 (漲幅,−i,−j) 比較，便完整實現全域平手規則，包括所有漲幅皆為負的情形。"
+    ],
+    "complexity": "時間 O(n)，空間 O(n)，含 Python 讀數、兩佇列與輸入緩衝。",
+    "pitfall": "不能用0初始化答案，因為最優漲幅可能是負數；找不到配對才輸出 NONE。",
+    "sampleInput": "5 1 3\n4 0\n1 0\n7 1\n9 0\n8 1",
+    "sampleOutput": "7 2 5",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "第一候選",
+        "description": "L=1,R=2，讀數(5,0),(3,1),(4,1)。",
+        "cells": [
+          "5:0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "候選位置",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "第二點配對",
+        "description": "漲幅3−5=−2。",
+        "cells": [
+          "1→2"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最佳漲幅",
+            "-2"
+          ]
+        ]
+      },
+      {
+        "title": "第三點改善",
+        "description": "同一候選得到4−5=−1。",
+        "cells": [
+          "1→3"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最佳漲幅",
+            "-1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom collections import deque\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, L, R = t[:3]\na = t[3::2]\nc = t[4::2]\nqs = [deque(), deque()]\nbest = None\nfor j in range(n):\n    i = j - L\n    if i >= 0:\n        q = qs[c[i]]\n        while q and a[q[-1]] > a[i]:\n            q.pop()\n        q.append(i)\n    for q in qs:\n        while q and q[0] < j - R:\n            q.popleft()\n    q = qs[c[j] ^ 1]\n    if q:\n        i = q[0]\n        val = (a[j] - a[i], -i, -j)\n        if best is None or val > best:\n            best = val\nprint(\"NONE\" if best is None else f\"{best[0]} {-best[1] + 1} {-best[2] + 1}\")\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, L, R;\n    cin >> n >> L >> R;\n    vector<ll> a(n);\n    vector<int> c(n);\n    for (int i = 0; i < n; i++)\n        cin >> a[i] >> c[i];\n    deque<int> q[2];\n    tuple<ll, int, int> best;\n    bool ok = false;\n    for (int j = 0; j < n; j++) {\n        int i = j - L;\n        if (i >= 0) {\n            auto &d = q[c[i]];\n            while (!d.empty() && a[d.back()] > a[i])\n                d.pop_back();\n            d.push_back(i);\n        }\n        for (auto &d : q)\n            while (!d.empty() && d.front() < j - R)\n                d.pop_front();\n        auto &d = q[c[j] ^ 1];\n        if (!d.empty()) {\n            i = d.front();\n            auto v = make_tuple(a[j] - a[i], -i, -j);\n            if (!ok || v > best) {\n                ok = true;\n                best = v;\n            }\n        }\n    }\n    if (!ok)\n        cout << \"NONE\\n\";\n    else {\n        auto [v, i, j] = best;\n        cout << v << ' ' << 1 - i << ' ' << 1 - j << '\\n';\n    }\n}\n"
+  },
+  {
+    "code": "b676",
+    "title": "相鄰讀數配對",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "路徑匹配的雙目標前綴 DP",
+    "goal": "只配原始相鄰讀數，先最大化配對數，再最小化差值總和。",
+    "explanation": [
+      "dp[i] 保存前 i 筆的最佳「組數、差值總和」，比較時先最大化組數，再最小化總和。最後一筆若未配對，沿用 dp[i−1]；若有配對，就只能和原位置 i−1 配，且差值需在 T 內，候選為 dp[i−2] 加一組及該差值。",
+      "任一合法配對集合的最後位置必屬於上述兩種情形；配對情形的前 i−2 筆不會與最後兩筆重疊。因此歸納可知每個前綴皆最優。刪掉已配對讀數後才相鄰的兩筆不能配，轉移始終只用原始相鄰位置。"
+    ],
+    "complexity": "時間 O(n)，滾動 DP 額外 O(1)；Python 讀入陣列與 token 緩衝 O(n)。總差值最多約10^14，使用64位元。",
+    "pitfall": "先配最小差或從左能配就配都不保證雙目標最優，應比較完整 DP 候選。",
+    "sampleInput": "5 5\n0 4 5 9 20",
+    "sampleOutput": "2 8",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "一筆前綴",
+        "description": "數列0,4,5，T=5。",
+        "cells": [
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最佳",
+            "0組／0"
+          ]
+        ]
+      },
+      {
+        "title": "兩筆前綴",
+        "description": "配0與4，得1組差4。",
+        "cells": [
+          "0—4"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最佳",
+            "1組／4"
+          ]
+        ]
+      },
+      {
+        "title": "三筆前綴",
+        "description": "不配首筆，改配4與5，組數同為1但差更小。",
+        "cells": [
+          "4—5"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最佳",
+            "1組／1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, T = t[:2]\na = t[2:]\nprev2 = (0, 0)\nprev = (0, 0)\nfor i in range(n):\n    cur = prev\n    if i and abs(a[i] - a[i - 1]) <= T:\n        cand = (prev2[0] + 1, prev2[1] - abs(a[i] - a[i - 1]))\n        cur = max(cur, cand)\n    prev2, prev = prev, cur\nprint(prev[0], -prev[1])\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    ll T;\n    cin >> n >> T;\n    vector<ll> a(n);\n    for (ll &x : a)\n        cin >> x;\n    pair<ll, ll> p2{0, 0}, p{0, 0};\n    for (int i = 0; i < n; i++) {\n        auto c = p;\n        if (i && abs(a[i] - a[i - 1]) <= T)\n            c = max(c, make_pair(p2.first + 1, p2.second - abs(a[i] - a[i - 1])));\n        p2 = p;\n        p = c;\n    }\n    cout << p.first << ' ' << -p.second << '\\n';\n}\n"
+  },
+  {
+    "code": "b677",
+    "title": "限期距離帳本",
+    "topic": "data-structures",
+    "level": "medium",
+    "concept": "壓縮值域的多重集合排名與選擇",
+    "goal": "只比較最近W筆的多重集合，精確加總每筆的最近值差。",
+    "explanation": [
+      "排序離散化全部讀數，以 Fenwick 樹保存最近 W 筆的頻率。對當前 x，先查嚴格小於 x 的個數 s；第 s 個有效元素是前驅，第 s+1 個是大於等於 x 的後繼，存在者都與 x 比較差值。",
+      "絕對差在有序集合中只可能由前驅或後繼達到最小。利用 Fenwick 二進位提升查第 k 個元素，可在 O(log n) 找出兩者；計算後插入當前值，再刪除離開窗口的位置。重複數值只增減頻率，不會誤刪其他位置。"
+    ],
+    "complexity": "時間 O(n log n)，空間 O(n)，包含 Python 排序、排名、Fenwick 與輸入緩衝；不是用 list 中途插入的 O(n²) 解法。",
+    "pitfall": "當前值不能先加入再找最近值，否則永遠得到0；第一筆不記差。",
+    "sampleInput": "5 2\n8 3 6 3 10",
+    "sampleOutput": "11",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "第一筆",
+        "description": "W=1，數列8,3,6。",
+        "cells": [
+          "8"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "差值總和",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "讀入3",
+        "description": "只可比較前一筆8，差5。",
+        "cells": [
+          "8→3"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "差值總和",
+            "5"
+          ]
+        ]
+      },
+      {
+        "title": "讀入6",
+        "description": "8已過期，只比較3，差3。",
+        "cells": [
+          "3→6"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "差值總和",
+            "8"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, bisect\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, W = t[:2]\na = t[2:]\nxs = sorted(set(a))\nz = len(xs)\nrk = [bisect.bisect_left(xs, x) + 1 for x in a]\nbit = [0] * (z + 1)\n\n\ndef update(i, d):\n    while i <= z:\n        bit[i] += d\n        i += i & -i\n\n\ndef prefix(i):\n    s = 0\n    while i:\n        s += bit[i]\n        i -= i & -i\n    return s\n\n\ndef kth(k):\n    p = 0\n    step = 1 << (z.bit_length() - 1)\n    while step:\n        j = p + step\n        if j <= z and bit[j] < k:\n            p = j\n            k -= bit[j]\n        step //= 2\n    return xs[p]\n\n\nans = 0\nfor i, x in enumerate(a):\n    if i:\n        s = prefix(rk[i] - 1)\n        count = min(i, W)\n        d = 10**20\n        if s:\n            d = min(d, x - kth(s))\n        if s < count:\n            d = min(d, kth(s + 1) - x)\n        ans += d\n    update(rk[i], 1)\n    if i >= W:\n        update(rk[i - W], -1)\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, W;\n    cin >> n >> W;\n    vector<ll> a(n), x;\n    for (ll &v : a)\n        cin >> v;\n    x = a;\n    sort(x.begin(), x.end());\n    x.erase(unique(x.begin(), x.end()), x.end());\n    int z = x.size();\n    vector<int> rk(n), b(z + 1);\n    for (int i = 0; i < n; i++)\n        rk[i] = lower_bound(x.begin(), x.end(), a[i]) - x.begin() + 1;\n    auto up = [&](int i, int d) {\n        for (; i <= z; i += i & -i)\n            b[i] += d;\n    };\n    auto sum = [&](int i) {\n        int s = 0;\n        for (; i; i -= i & -i)\n            s += b[i];\n        return s;\n    };\n    auto kth = [&](int k) {\n        int p = 0;\n        for (int h = 1 << __lg(z); h; h /= 2)\n            if (p + h <= z && b[p + h] < k) {\n                k -= b[p + h];\n                p += h;\n            }\n        return x[p];\n    };\n    ll ans = 0;\n    for (int i = 0; i < n; i++) {\n        if (i) {\n            int s = sum(rk[i] - 1), cnt = min(i, W);\n            ll d = LLONG_MAX;\n            if (s)\n                d = min(d, a[i] - kth(s));\n            if (s < cnt)\n                d = min(d, kth(s + 1) - a[i]);\n            ans += d;\n        }\n        up(rk[i], 1);\n        if (i >= W)\n            up(rk[i - W], -1);\n    }\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b678",
+    "title": "限距異色較小祖先",
+    "topic": "trees",
+    "level": "hard",
+    "concept": "DFS 路徑窗口與可回復 Fenwick",
+    "goal": "對每個頂點計算距離不超L、異色且嚴格較小的祖先數。",
+    "explanation": [
+      "DFS 到 v 前，兩色 Fenwick 樹只保存路徑上最近 L 個嚴格祖先。進入 v 時，若路徑太長，先暫時移除深度比 v 少 L+1 的祖先；查另一色、排名小於 a[v] 的前綴和後，再把 v 加入並往孩子走。",
+      "離開 v 時刪掉 v，再恢復進入時暫時移除的祖先。這使兄弟子樹看到完全相同的父路徑狀態。以進出事件堆疊取代遞迴，保持長鏈安全；L=0 時每次查詢前會移除最後祖先，答案自然全零。"
+    ],
+    "complexity": "時間 O(n log n)，空間 O(n)，含 Python 顯式事件堆疊、路徑、壓縮與輸入緩衝；n≤50000。",
+    "pitfall": "只限制邊數距離，不是值差；離開子樹一定要恢復被暫時移除的遠祖先。",
+    "sampleInput": "5 2\n1 0\n4 1\n3 0\n5 1\n2 1\n1 2 3 1",
+    "sampleOutput": "0\n1\n0\n1\n1",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "進入根",
+        "description": "鏈值1,4,5、色0,1,0，L=1。",
+        "cells": [
+          "根1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "根答案",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "進入第二點",
+        "description": "根異色且1<4，在距離1內。",
+        "cells": [
+          "1→4"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "第二點答案",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "進入第三點",
+        "description": "移除距離2的根，只看色1的4。",
+        "cells": [
+          "4→5"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "第三點答案",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, bisect\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, L = next(it), next(it)\nac = [(next(it), next(it)) for _ in range(n)]\nch = [[] for _ in range(n)]\nfor v in range(1, n):\n    ch[next(it) - 1].append(v)\nxs = sorted({a for a, c in ac})\nz = len(xs)\nrk = [bisect.bisect_left(xs, a) + 1 for a, c in ac]\nbit = [[0] * (z + 1) for _ in range(2)]\n\n\ndef up(v, d):\n    i = rk[v]\n    b = bit[ac[v][1]]\n    while i <= z:\n        b[i] += d\n        i += i & -i\n\n\npath = []\nans = [0] * n\nst = [(0, 0, -1)]\nwhile st:\n    v, kind, old = st.pop()\n    if kind:\n        path.pop()\n        up(v, -1)\n        if old != -1:\n            up(old, 1)\n        continue\n    old = path[-L - 1] if len(path) > L else -1\n    if old != -1:\n        up(old, -1)\n    b = bit[ac[v][1] ^ 1]\n    i = rk[v] - 1\n    s = 0\n    while i:\n        s += b[i]\n        i -= i & -i\n    ans[v] = s\n    up(v, 1)\n    path.append(v)\n    st.append((v, 1, old))\n    for u in reversed(ch[v]):\n        st.append((u, 0, -1))\nprint(\"\\n\".join(map(str, ans)))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, L;\n    cin >> n >> L;\n    vector<int> a(n), c(n), x;\n    for (int i = 0; i < n; i++) {\n        cin >> a[i] >> c[i];\n        x.push_back(a[i]);\n    }\n    vector<vector<int>> ch(n);\n    for (int i = 1, p; i < n; i++) {\n        cin >> p;\n        ch[p - 1].push_back(i);\n    }\n    sort(x.begin(), x.end());\n    x.erase(unique(x.begin(), x.end()), x.end());\n    int z = x.size();\n    vector<int> rk(n);\n    for (int i = 0; i < n; i++)\n        rk[i] = lower_bound(x.begin(), x.end(), a[i]) - x.begin() + 1;\n    vector<vector<int>> b(2, vector<int>(z + 1));\n    auto up = [&](int v, int d) {\n        for (int i = rk[v]; i <= z; i += i & -i)\n            b[c[v]][i] += d;\n    };\n    vector<int> path, ans(n);\n    vector<array<int, 3>> st{{0, 0, -1}};\n    while (!st.empty()) {\n        auto [v, kind, old] = st.back();\n        st.pop_back();\n        if (kind) {\n            path.pop_back();\n            up(v, -1);\n            if (old >= 0)\n                up(old, 1);\n            continue;\n        }\n        old = path.size() > (unsigned)L ? path[path.size() - L - 1] : -1;\n        if (old >= 0)\n            up(old, -1);\n        for (int i = rk[v] - 1; i; i -= i & -i)\n            ans[v] += b[c[v] ^ 1][i];\n        up(v, 1);\n        path.push_back(v);\n        st.push_back({v, 1, old});\n        for (auto it = ch[v].rbegin(); it != ch[v].rend(); it++)\n            st.push_back({*it, 0, -1});\n    }\n    for (int v : ans)\n        cout << v << '\\n';\n}\n"
+  },
+  {
+    "code": "b679",
+    "title": "星點印記",
+    "topic": "trees",
+    "level": "hard",
+    "concept": "重心分解與路徑標記和配對",
+    "goal": "計算含兩端路徑標記和恰K的不同頂點無序對，包含K=0。",
+    "explanation": [
+      "移除一個重心後，每個剩餘子樹至多原大小一半。對每個鄰接子樹，列出從重心到其頂點的路徑標記和（包含重心）。先查先前子樹的頻率表：若本路徑和為 s，需要另一端路徑和 K−s+a[重心]；再把本子樹所有和加入表。頻率表起始只有重心自己。",
+      "先查後加使同一子樹內的點對不會在這層被計入，重心到自己也不計。任何不同頂點對在分解樹上第一次被重心分離時，恰有唯一路徑經該重心，所以恰被計一次；同側的點對交給後續子問題。標記非負，路徑和大於 K 的分支可提前剪枝。"
+    ],
+    "complexity": "時間 O(n log n)，空間 O(n)（逐子樹暫存與頻率表），Python 圖與輸入緩衝 O(n)。顯式堆疊避免 n=30000 長鏈遞迴溢位。",
+    "pitfall": "端點必須不同；合併路徑和時重心被算兩次，須扣掉一次，K=0 也不能忽略零標記分支。",
+    "sampleInput": "5 2\n1 0 1 0 1\n1 2\n2 3\n2 4\n4 5",
+    "sampleOutput": "3",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "重心啟始",
+        "description": "三點鏈皆0，K=0，重心為2。",
+        "cells": [
+          "2"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "頻率0",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "第一側配對",
+        "description": "頂點1與重心成一對，再加入1。",
+        "cells": [
+          "1—2"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "累計點對",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "第二側配對",
+        "description": "頂點3可配重心與頂點1。",
+        "cells": [
+          "1—2—3"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "累計點對",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, K = next(it), next(it)\na = [next(it) for _ in range(n)]\ng = [[] for _ in range(n)]\nfor _ in range(n - 1):\n    u, v = next(it) - 1, next(it) - 1\n    g[u].append(v)\n    g[v].append(u)\ndead = [False] * n\nsize = [0] * n\nparent = [-1] * n\ntasks = [0]\nans = 0\nwhile tasks:\n    root = tasks.pop()\n    order = [root]\n    parent[root] = -1\n    for u in order:\n        for v in g[u]:\n            if not dead[v] and v != parent[u]:\n                parent[v] = u\n                order.append(v)\n    total = len(order)\n    for u in reversed(order):\n        size[u] = 1 + sum(size[v] for v in g[u] if not dead[v] and parent[v] == u)\n    center = min(\n        order,\n        key=lambda u: max(\n            [total - size[u]]\n            + [size[v] for v in g[u] if not dead[v] and parent[v] == u]\n        ),\n    )\n    freq = {a[center]: 1}\n    dead[center] = True\n    for v in g[center]:\n        if dead[v]:\n            continue\n        vals = []\n        st = [(v, center, a[center] + a[v])]\n        while st:\n            u, p, s = st.pop()\n            if s > K:\n                continue\n            vals.append(s)\n            for z in g[u]:\n                if not dead[z] and z != p:\n                    st.append((z, u, s + a[z]))\n        for s in vals:\n            ans += freq.get(K - s + a[center], 0)\n        for s in vals:\n            freq[s] = freq.get(s, 0) + 1\n        tasks.append(v)\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, K;\n    cin >> n >> K;\n    vector<int> a(n);\n    for (int &x : a)\n        cin >> x;\n    vector<vector<int>> g(n);\n    for (int i = 1, u, v; i < n; i++) {\n        cin >> u >> v;\n        --u;\n        --v;\n        g[u].push_back(v);\n        g[v].push_back(u);\n    }\n    vector<int> dead(n), sz(n), p(n), tasks{0};\n    ll ans = 0;\n    while (!tasks.empty()) {\n        int r = tasks.back();\n        tasks.pop_back();\n        vector<int> ord{r};\n        p[r] = -1;\n        for (int i = 0; i < (int)ord.size(); i++) {\n            int u = ord[i];\n            for (int v : g[u])\n                if (!dead[v] && v != p[u]) {\n                    p[v] = u;\n                    ord.push_back(v);\n                }\n        }\n        for (int i = ord.size() - 1; i >= 0; i--) {\n            int u = ord[i];\n            sz[u] = 1;\n            for (int v : g[u])\n                if (!dead[v] && p[v] == u)\n                    sz[u] += sz[v];\n        }\n        int c = r, best = n + 1;\n        for (int u : ord) {\n            int mx = ord.size() - sz[u];\n            for (int v : g[u])\n                if (!dead[v] && p[v] == u)\n                    mx = max(mx, sz[v]);\n            if (mx < best) {\n                best = mx;\n                c = u;\n            }\n        }\n        unordered_map<int, ll> f;\n        f[a[c]] = 1;\n        dead[c] = 1;\n        for (int v : g[c])\n            if (!dead[v]) {\n                vector<int> vals;\n                vector<array<int, 3>> st{{v, c, a[c] + a[v]}};\n                while (!st.empty()) {\n                    auto [u, pa, s] = st.back();\n                    st.pop_back();\n                    if (s > K)\n                        continue;\n                    vals.push_back(s);\n                    for (int z : g[u])\n                        if (!dead[z] && z != pa)\n                            st.push_back({z, u, s + a[z]});\n                }\n                for (int s : vals) {\n                    auto it = f.find(K - s + a[c]);\n                    if (it != f.end())\n                        ans += it->second;\n                }\n                for (int s : vals)\n                    f[s]++;\n                tasks.push_back(v);\n            }\n    }\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b680",
+    "title": "區間翻色的交錯三點",
+    "topic": "data-structures",
+    "level": "hard",
+    "concept": "可翻轉的子序列摘要線段樹",
+    "goal": "支援區間翻色，計算查詢片段中不必相鄰的010位置三元組。",
+    "explanation": [
+      "每段保存0與1個數、01與10位置對數、010與101三元組數。串接 A,B 時，010 除了兩段內部答案，還有 A 的01配 B 的0，以及 A 的0配 B 的10；其他摘要也依分界位置列出所有可能。",
+      "整段翻色會把0↔1、01↔10、010↔101，所以只需交換三對統計並切換懶標記。線段樹合併保持原本左右順序，延遲翻轉在下探前傳給孩子。摘要計算的是子序列位置組合，並不要求三點相鄰。"
+    ],
+    "complexity": "建樹 O(n)，翻轉或查詢 O(log n)，空間 O(n)；Python 輸入與輸出緩衝 O(n+q)。三元組至多 C(n,3)，在 n≤10^5 下64位元足夠。",
+    "pitfall": "只存010不夠，翻色後需要原101；查詢合併不能交換左右。",
+    "sampleInput": "5 6\n01010\n2 1 5\n1 1 5\n2 1 5\n1 2 4\n2 1 5\n2 2 4",
+    "sampleOutput": "4\n1\n0\n0",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "原字串",
+        "description": "字串010，只有一組三元組。",
+        "cells": [
+          "0",
+          "1",
+          "0"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "010數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "整段翻色",
+        "description": "變成101，原010轉為101。",
+        "cells": [
+          "1",
+          "0",
+          "1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "010數",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "再翻中央",
+        "description": "中央0變1，得到111。",
+        "cells": [
+          "1",
+          "1",
+          "1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "010數",
+            "0"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\n\ndef merge(a, b):\n    x, y, p, q, s, t = a\n    X, Y, P, Q, S, T = b\n    return (\n        x + X,\n        y + Y,\n        p + P + x * Y,\n        q + Q + y * X,\n        s + S + p * X + x * Q,\n        t + T + q * Y + y * P,\n    )\n\n\nit = iter(sys.stdin.buffer.read().split())\nn = int(next(it))\nq = int(next(it))\ns = next(it)\ntr = [(0,) * 6] * (4 * n)\nlazy = [0] * (4 * n)\n\n\ndef build(v, l, r):\n    if r - l == 1:\n        tr[v] = (1, 0, 0, 0, 0, 0) if s[l] == 48 else (0, 1, 0, 0, 0, 0)\n        return\n    m = (l + r) // 2\n    build(v * 2, l, m)\n    build(v * 2 + 1, m, r)\n    tr[v] = merge(tr[v * 2], tr[v * 2 + 1])\n\n\ndef flip(v):\n    a = tr[v]\n    tr[v] = (a[1], a[0], a[3], a[2], a[5], a[4])\n    lazy[v] ^= 1\n\n\ndef run(v, l, r, L, R, change):\n    if R <= l or r <= L:\n        return (0,) * 6\n    if L <= l and r <= R:\n        if change:\n            flip(v)\n        return tr[v]\n    if lazy[v]:\n        flip(v * 2)\n        flip(v * 2 + 1)\n        lazy[v] = 0\n    m = (l + r) // 2\n    a = run(v * 2, l, m, L, R, change)\n    b = run(v * 2 + 1, m, r, L, R, change)\n    if change:\n        tr[v] = merge(tr[v * 2], tr[v * 2 + 1])\n    return merge(a, b)\n\n\nbuild(1, 0, n)\nout = []\nfor _ in range(q):\n    t, l, r = int(next(it)), int(next(it)) - 1, int(next(it))\n    a = run(1, 0, n, l, r, t == 1)\n    if t == 2:\n        out.append(str(a[4]))\nprint(\"\\n\".join(out))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nusing S = array<ll, 6>;\nS mg(S a, S b) {\n    return {a[0] + b[0],\n            a[1] + b[1],\n            a[2] + b[2] + a[0] * b[1],\n            a[3] + b[3] + a[1] * b[0],\n            a[4] + b[4] + a[2] * b[0] + a[0] * b[3],\n            a[5] + b[5] + a[3] * b[1] + a[1] * b[2]};\n}\nvector<S> tr;\nvector<int> lazy;\nstring s;\nvoid flip(int v) {\n    swap(tr[v][0], tr[v][1]);\n    swap(tr[v][2], tr[v][3]);\n    swap(tr[v][4], tr[v][5]);\n    lazy[v] ^= 1;\n}\nvoid build(int v, int l, int r) {\n    if (r - l == 1) {\n        tr[v][s[l] - '0'] = 1;\n        return;\n    }\n    int m = (l + r) / 2;\n    build(v * 2, l, m);\n    build(v * 2 + 1, m, r);\n    tr[v] = mg(tr[v * 2], tr[v * 2 + 1]);\n}\nS run(int v, int l, int r, int L, int R, bool ch) {\n    if (R <= l || r <= L)\n        return {};\n    if (L <= l && r <= R) {\n        if (ch)\n            flip(v);\n        return tr[v];\n    }\n    if (lazy[v]) {\n        flip(v * 2);\n        flip(v * 2 + 1);\n        lazy[v] = 0;\n    }\n    int m = (l + r) / 2;\n    S a = run(v * 2, l, m, L, R, ch), b = run(v * 2 + 1, m, r, L, R, ch);\n    if (ch)\n        tr[v] = mg(tr[v * 2], tr[v * 2 + 1]);\n    return mg(a, b);\n}\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, q;\n    cin >> n >> q >> s;\n    tr.resize(4 * n);\n    lazy.resize(4 * n);\n    build(1, 0, n);\n    while (q--) {\n        int t, l, r;\n        cin >> t >> l >> r;\n        auto a = run(1, 0, n, l - 1, r, t == 1);\n        if (t == 2)\n            cout << a[4] << '\\n';\n    }\n}\n"
+  },
+  {
+    "code": "b681",
+    "title": "動態雙色等量連通塊",
+    "topic": "data-structures",
+    "level": "hard",
+    "concept": "連通塊色差與全域合格數維護",
+    "goal": "支援永久加邊與單點翻色，即時維護兩色等量的連通塊數。",
+    "explanation": [
+      "令每點色0貢獻+1、色1貢獻−1，DSU 根保存塊內總和 d，塊均衡恰等價於 d=0。另維護全域均衡塊數 ans，任何修改前先扣掉受影響根的舊貢獻，修改後再加回新貢獻。",
+      "加邊若兩根不同就按大小合併並相加色差；同根不用改。翻色時只需在所屬根的 d 加上−2×該點舊貢獻，再反轉點貢獻。此操作不改連通關係，因此 DSU 能處理所有操作，不需要重建或離線回滾。"
+    ],
+    "complexity": "時間 O((n+q)α(n))，空間 O(n)，Python 整批輸入與輸出緩衝 O(n+q)。",
+    "pitfall": "初始孤立點都是不均衡；同根重邊不能重複扣減全域計數。",
+    "sampleInput": "3 7\n0 1 0\n3\n1 1 2\n3\n2 2\n3\n1 2 3\n3",
+    "sampleOutput": "0\n1\n0\n0",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "初始兩點",
+        "description": "顏色0,1，各自獨立。",
+        "cells": [
+          "+1",
+          "-1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "均衡塊數",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "加入連邊",
+        "description": "合併色差為0。",
+        "cells": [
+          "{1,2}:0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "均衡塊數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "翻轉第二點",
+        "description": "色1變0，色差由0變2。",
+        "cells": [
+          "{1,2}:2"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "均衡塊數",
+            "0"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, q = next(it), next(it)\nc = [1 - 2 * next(it) for _ in range(n)]\nd = c[:]\np = list(range(n))\nsz = [1] * n\nans = 0\nout = []\n\n\ndef f(x):\n    while p[x] != x:\n        p[x] = p[p[x]]\n        x = p[x]\n    return x\n\n\nfor _ in range(q):\n    t = next(it)\n    if t == 1:\n        u, v = f(next(it) - 1), f(next(it) - 1)\n        if u != v:\n            ans -= (d[u] == 0) + (d[v] == 0)\n            if sz[u] < sz[v]:\n                u, v = v, u\n            p[v] = u\n            sz[u] += sz[v]\n            d[u] += d[v]\n            ans += d[u] == 0\n    elif t == 2:\n        u = next(it) - 1\n        r = f(u)\n        ans -= d[r] == 0\n        d[r] -= 2 * c[u]\n        c[u] *= -1\n        ans += d[r] == 0\n    else:\n        out.append(str(ans))\nprint(\"\\n\".join(out))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, q;\n    cin >> n >> q;\n    vector<int> c(n), d(n), p(n), sz(n, 1);\n    iota(p.begin(), p.end(), 0);\n    for (int i = 0, x; i < n; i++) {\n        cin >> x;\n        c[i] = d[i] = 1 - 2 * x;\n    }\n    auto f = [&](int x) {\n        while (p[x] != x) {\n            p[x] = p[p[x]];\n            x = p[x];\n        }\n        return x;\n    };\n    int ans = 0;\n    while (q--) {\n        int t, u, v;\n        cin >> t;\n        if (t == 1) {\n            cin >> u >> v;\n            u = f(u - 1);\n            v = f(v - 1);\n            if (u != v) {\n                ans -= (d[u] == 0) + (d[v] == 0);\n                if (sz[u] < sz[v])\n                    swap(u, v);\n                p[v] = u;\n                sz[u] += sz[v];\n                d[u] += d[v];\n                ans += d[u] == 0;\n            }\n        } else if (t == 2) {\n            cin >> u;\n            --u;\n            int r = f(u);\n            ans -= d[r] == 0;\n            d[r] -= 2 * c[u];\n            c[u] *= -1;\n            ans += d[r] == 0;\n        } else\n            cout << ans << '\\n';\n    }\n}\n"
+  },
+  {
+    "code": "b682",
+    "title": "可二染的標記誤差分量",
+    "topic": "data-structures",
+    "level": "hard",
+    "concept": "帶 XOR 位勢的二分圖 DSU",
+    "goal": "逐邊加入後，計算可二染且最少標記錯配不超K的連通塊數。",
+    "explanation": [
+      "DSU 每點保存與父根的顏色 XOR 關係；find 回傳根及到根的 XOR 位勢。每條邊要求兩端不同色，因此同根時若兩位勢 XOR 不等於1，就把該塊標為衝突；衝突永久存在。",
+      "無衝突塊只有兩種完整二染方向。固定根指定0，保存與既定標記不符的數量 e；另一方向的不符數為 size−e。合併兩根時，相對位勢若為1，就先將被掛根的 e 換成 size−e 再相加。每次更新先移除舊合格塊數、再加入新根是否無衝突且 min(e,size−e)≤K，得到即時答案。"
+    ],
+    "complexity": "以大小合併、不做路徑壓縮，find O(log n)，總 O((n+m) log n)，空間 O(n)；Python 輸入及輸出緩衝 O(n+m)。",
+    "pitfall": "自環必衝突；標記錯配要允許整塊翻色，不能只檢查固定根為0的方向。",
+    "sampleInput": "4 3 0\n0 1 0 0\n1 2\n3 4\n2 3",
+    "sampleOutput": "3\n1\n0",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "初始標記",
+        "description": "三點皆標記0，K=0，各自可選指定0。",
+        "cells": [
+          "1",
+          "2",
+          "3"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "合格塊",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "加入1−2",
+        "description": "必異色，至少錯一點，合併塊不合格。",
+        "cells": [
+          "{1,2}",
+          "3"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "合格塊",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "加入自環3−3",
+        "description": "第三點也無法二染。",
+        "cells": [
+          "{1,2}",
+          "{3:衝突}"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "合格塊",
+            "0"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, m, K = next(it), next(it), next(it)\nerr = [next(it) for _ in range(n)]\np = list(range(n))\nsz = [1] * n\nxr = [0] * n\nbad = [False] * n\nans = n\nout = []\n\n\ndef find(x):\n    z = 0\n    while p[x] != x:\n        z ^= xr[x]\n        x = p[x]\n    return x, z\n\n\ndef good(r):\n    return not bad[r] and min(err[r], sz[r] - err[r]) <= K\n\n\nfor _ in range(m):\n    u, x = find(next(it) - 1)\n    v, y = find(next(it) - 1)\n    if u == v:\n        ans -= good(u)\n        if x ^ y != 1:\n            bad[u] = True\n        ans += good(u)\n    else:\n        ans -= good(u) + good(v)\n        t = x ^ y ^ 1\n        if sz[u] < sz[v]:\n            u, v = v, u\n        p[v] = u\n        xr[v] = t\n        err[u] += sz[v] - err[v] if t else err[v]\n        sz[u] += sz[v]\n        bad[u] |= bad[v]\n        ans += good(u)\n    out.append(str(ans))\nprint(\"\\n\".join(out))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, m, K;\n    cin >> n >> m >> K;\n    vector<int> e(n), p(n), sz(n, 1), xr(n), bad(n);\n    for (int &x : e)\n        cin >> x;\n    iota(p.begin(), p.end(), 0);\n    auto f = [&](int x) {\n        int z = 0;\n        while (x != p[x]) {\n            z ^= xr[x];\n            x = p[x];\n        }\n        return pair<int, int>{x, z};\n    };\n    auto good = [&](int r) { return !bad[r] && min(e[r], sz[r] - e[r]) <= K; };\n    int ans = n;\n    while (m--) {\n        int a, b;\n        cin >> a >> b;\n        auto [u, x] = f(a - 1);\n        auto [v, y] = f(b - 1);\n        if (u == v) {\n            ans -= good(u);\n            if ((x ^ y) != 1)\n                bad[u] = 1;\n            ans += good(u);\n        } else {\n            ans -= good(u) + good(v);\n            int t = x ^ y ^ 1;\n            if (sz[u] < sz[v])\n                swap(u, v);\n            p[v] = u;\n            xr[v] = t;\n            e[u] += t ? sz[v] - e[v] : e[v];\n            sz[u] += sz[v];\n            bad[u] |= bad[v];\n            ans += good(u);\n        }\n        cout << ans << '\\n';\n    }\n}\n"
+  },
+  {
+    "code": "b683",
+    "title": "問號片段的異位詞",
+    "topic": "strings",
+    "level": "medium",
+    "concept": "字母前綴頻率與萬用字元補足條件",
+    "goal": "對兩段問號字串判斷能否補成相同字母頻率，且各查詢獨立。",
+    "explanation": [
+      "替兩字串建立26種已知字母的前綴頻率，問號數可由片段長減去已知字母總數得出。片段長度不同立即無解；相同長度時，令某字母兩側已知數為 a,b，最終至少需 max(a,b) 份。",
+      "因此所有字母的 max(a,b) 總和不超過片段長度，恰是可行條件：先用問號補足每種差額，剩餘問號兩側數量相同，可以同填任一字母。反之若總需求超長，不可能有共同頻率向量。每查詢只需26次減法與最大值。"
+    ],
+    "complexity": "預處理 O(26(|A|+|B|))，每詢問 O(26)，空間同前綴表。Python 使用 array 的32位元頻率，兩條長200000字串約42MB，另輸入緩衝 O(|A|+|B|+q)。",
+    "pitfall": "只比較問號總數不夠；既定不同字母的差額也必須能被補足。",
+    "sampleInput": "a?\nab\n2\n1 2 1 2\n1 1 2 2",
+    "sampleOutput": "YES\nNO",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "擷取片段",
+        "description": "A=a?，B=?b，長度都是2。",
+        "cells": [
+          "a:1",
+          "b:1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "共同最低需求",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "問號補足",
+        "description": "A問號填b，B問號填a。",
+        "cells": [
+          "ab",
+          "ab"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "判定",
+            "YES"
+          ]
+        ]
+      },
+      {
+        "title": "無問號變體",
+        "description": "若A=aa、B=bb，max頻率總和4大於2。",
+        "cells": [
+          "aa",
+          "bb"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "判定",
+            "NO"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom array import array\n\nit = iter(sys.stdin.buffer.read().split())\nA = next(it)\nB = next(it)\nq = int(next(it))\n\n\ndef build(s):\n    out = []\n    for c in range(97, 123):\n        a = array(\"i\", [0])\n        x = 0\n        for v in s:\n            x += v == c\n            a.append(x)\n        out.append(a)\n    return out\n\n\npa, pb = build(A), build(B)\nout = []\nfor _ in range(q):\n    l, r, u, v = (int(next(it)) for _ in range(4))\n    length = r - l + 1\n    ok = (\n        length == v - u + 1\n        and sum(\n            max(pa[c][r] - pa[c][l - 1], pb[c][v] - pb[c][u - 1]) for c in range(26)\n        )\n        <= length\n    )\n    out.append(\"YES\" if ok else \"NO\")\nprint(\"\\n\".join(out))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    string a, b;\n    int q;\n    cin >> a >> b >> q;\n    auto build = [](string s) {\n        vector<array<int, 26>> p(s.size() + 1);\n        for (int i = 0; i < (int)s.size(); i++) {\n            p[i + 1] = p[i];\n            if (s[i] != '?')\n                p[i + 1][s[i] - 'a']++;\n        }\n        return p;\n    };\n    auto A = build(a), B = build(b);\n    while (q--) {\n        int l, r, u, v;\n        cin >> l >> r >> u >> v;\n        int need = 0;\n        for (int c = 0; c < 26; c++)\n            need += max(A[r][c] - A[l - 1][c], B[v][c] - B[u - 1][c]);\n        cout << (r - l == v - u && need <= r - l + 1 ? \"YES\" : \"NO\") << '\\n';\n    }\n}\n"
+  },
+  {
+    "code": "b684",
+    "title": "限長的唯一重複種類",
+    "topic": "data-structures",
+    "level": "hard",
+    "concept": "重複盈餘的兩個至多窗口相減",
+    "goal": "在長度限制內計算恰有一種值重複兩次、其餘均唯一的連續段。",
+    "explanation": [
+      "對窗口定義盈餘 E=長度−不同值種類數=Σ(freq−1)。E=1 恰好是一種值出現兩次、其他都只一次；三次同值或兩組重複都會使 E≥2。答案可由長度限制下的 atMost(1) 減 atMost(0) 求得。",
+      "atMost(t) 用雙指標維護頻率與盈餘，新增已存在的值使 E 加一，移除後仍存在的值使 E 減一。固定右端 r，合法左端需同時大於等於窗口左界及 r−R+1、小於等於 r−L+1，取交集長度即可。兩個至多集合相減便留下恰好 E=1。"
+    ],
+    "complexity": "時間期望 O(n)，空間 O(n)，含 Python 頻率雜湊表、輸入陣列與緩衝。",
+    "pitfall": "E是多出的出現次數，不能只計「出現至少兩次的種類數」，否則三連同值也會誤判。",
+    "sampleInput": "5 2 4\n1 2 1 2 3",
+    "sampleOutput": "3",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "長度2",
+        "description": "序列1,2,1，限制2至3；首段1,2盈餘0。",
+        "cells": [
+          "1",
+          "2"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "合格段數",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "次段同樣不同",
+        "description": "第二段2,1仍盈餘0。",
+        "cells": [
+          "2",
+          "1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "合格段數",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "整段長度3",
+        "description": "1出現兩次，盈餘1。",
+        "cells": [
+          "1",
+          "2",
+          "1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "合格段數",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, L, R = t[:3]\na = t[3:]\n\n\ndef count(limit):\n    freq = {}\n    l = extra = ans = 0\n    for r, x in enumerate(a):\n        old = freq.get(x, 0)\n        extra += old > 0\n        freq[x] = old + 1\n        while extra > limit:\n            y = a[l]\n            freq[y] -= 1\n            extra -= freq[y] > 0\n            l += 1\n        ans += max(0, r - L + 2 - max(l, r - R + 1))\n    return ans\n\n\nprint(count(1) - count(0))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, L, R;\n    cin >> n >> L >> R;\n    vector<int> a(n);\n    for (int &x : a)\n        cin >> x;\n    auto count = [&](int lim) {\n        unordered_map<int, int> f;\n        int l = 0, e = 0;\n        ll ans = 0;\n        for (int r = 0; r < n; r++) {\n            e += f[a[r]]++ > 0;\n            while (e > lim) {\n                e += --f[a[l++]] > 0 ? -1 : 0;\n            }\n            ans += max(0, r - L + 2 - max(l, r - R + 1));\n        }\n        return ans;\n    };\n    cout << count(1) - count(0) << '\\n';\n}\n"
+  },
+  {
+    "code": "b685",
+    "title": "定額互質名冊",
+    "topic": "number-theory",
+    "level": "hard",
+    "concept": "Möbius 反演與奇數個奇值組合",
+    "goal": "恰選K個位置，計算最大公因數1且總和奇數的集合數。",
+    "explanation": [
+      "令 F(d) 為恰選 K 個、所有值皆是 d 倍數、總和為奇數的集合數。若其中奇值有 o 個、偶值有 e 個，則 F(d)=Σ奇數 j C(o,j)C(e,K−j)，不合法的組合數視為0。預先以階乘與逆階乘 O(1) 查組合數。",
+      "利用 Σ_{d|g} μ(d) 在 g=1 時為1、其餘為0，答案為 Σ μ(d)F(d)。偶數 d 的倍數全為偶數，F(d)=0，可略過。頻率倍數篩同時取得 o,e，線性篩求 μ；組合枚舉總量受所有輸入值的奇因數個數總和控制，而不是對每個 d 都無條件枚舉 K 次。"
+    ],
+    "complexity": "時間 O(M log M+n log M+Σ_d min(K,o_d))，後項≤Σ_i τ(a_i)，M≤200000 時每數因數至多160，最壞約3200萬組合項；空間 O(M+n)，含 Python 輸入緩衝。Python 大界計算較重，見效能註記。",
+    "pitfall": "不是只選奇數值；奇數總和要求選奇數個奇值，偶值可以一起選。位置相同值仍獨立計組合。",
+    "sampleInput": "4 2 6\n1 2 3 6",
+    "sampleOutput": "3",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "列出二元集合",
+        "description": "值1,2,3，K=2。",
+        "cells": [
+          "{1,2}",
+          "{1,3}",
+          "{2,3}"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "總集合",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "奇偶過濾",
+        "description": "總和3、4、5，只有第一和第三為奇數。",
+        "cells": [
+          "{1,2}",
+          "{2,3}"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "奇和集合",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "互質過濾",
+        "description": "兩者最大公因數都1。",
+        "cells": [
+          "gcd1",
+          "gcd1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "答案",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, K, V = t[:3]\nf = [0] * (V + 1)\nP = 1000000007\nfor x in t[3:]:\n    f[x] += 1\nfac = [1] * (n + 1)\nfor i in range(1, n + 1):\n    fac[i] = fac[i - 1] * i % P\ninv = [1] * (n + 1)\ninv[n] = pow(fac[n], P - 2, P)\nfor i in range(n, 0, -1):\n    inv[i - 1] = inv[i] * i % P\n\n\ndef C(n, k):\n    return fac[n] * inv[k] % P * inv[n - k] % P if 0 <= k <= n else 0\n\n\nmu = [0] * (V + 1)\nmu[1] = 1\nprimes = []\ncomp = bytearray(V + 1)\nfor i in range(2, V + 1):\n    if not comp[i]:\n        primes.append(i)\n        mu[i] = -1\n    for p in primes:\n        if i * p > V:\n            break\n        comp[i * p] = 1\n        if i % p == 0:\n            break\n        mu[i * p] = -mu[i]\nans = 0\nfor d in range(1, V + 1, 2):\n    if not mu[d]:\n        continue\n    o = sum(f[d :: 2 * d])\n    e = sum(f[2 * d :: 2 * d])\n    if o + e < K:\n        continue\n    low = max(1, K - e)\n    low += 1 - low % 2\n    val = sum(C(o, j) * C(e, K - j) % P for j in range(low, min(K, o) + 1, 2)) % P\n    ans = (ans + mu[d] * val) % P\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nll pw(ll a, ll b) {\n    ll z = 1;\n    for (; b; b /= 2, a = a * a % MOD)\n        if (b & 1)\n            z = z * a % MOD;\n    return z;\n}\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, K, V;\n    cin >> n >> K >> V;\n    vector<int> f(V + 1);\n    for (int i = 0, x; i < n; i++) {\n        cin >> x;\n        f[x]++;\n    }\n    vector<ll> fac(n + 1, 1), inv(n + 1, 1);\n    for (int i = 1; i <= n; i++)\n        fac[i] = fac[i - 1] * i % MOD;\n    inv[n] = pw(fac[n], MOD - 2);\n    for (int i = n; i; i--)\n        inv[i - 1] = inv[i] * i % MOD;\n    auto C = [&](int a, int b) {\n        return b < 0 || b > a ? 0LL : fac[a] * inv[b] % MOD * inv[a - b] % MOD;\n    };\n    vector<int> mu(V + 1), pr, comp(V + 1);\n    mu[1] = 1;\n    for (int i = 2; i <= V; i++) {\n        if (!comp[i]) {\n            pr.push_back(i);\n            mu[i] = -1;\n        }\n        for (int p : pr) {\n            if ((ll)i * p > V)\n                break;\n            comp[i * p] = 1;\n            if (i % p == 0)\n                break;\n            mu[i * p] = -mu[i];\n        }\n    }\n    ll ans = 0;\n    for (int d = 1; d <= V; d += 2)\n        if (mu[d]) {\n            int o = 0, e = 0;\n            for (int j = d; j <= V; j += d)\n                if (j & 1)\n                    o += f[j];\n                else\n                    e += f[j];\n            ll val = 0;\n            for (int j = 1; j <= min(K, o); j += 2)\n                val = (val + C(o, j) * C(e, K - j)) % MOD;\n            ans = (ans + mu[d] * val) % MOD;\n        }\n    cout << (ans + MOD) % MOD << '\\n';\n}\n",
+    "performanceNote": "提供的來源未含評測時限。Python 雖使用符合值域的演算法，大界常數成本仍須視平台；最嚴格時限建議採用 C++17。實測與案例記錄見 results-654-699.json，不能由通過範例推論所有評測時間皆有保證。"
+  },
+  {
+    "code": "b686",
+    "title": "嚴格高度的開口三點",
+    "topic": "graphs",
+    "level": "hard",
+    "concept": "度數定向三角形枚舉扣除閉口",
+    "goal": "計算中心度數嚴格較大且兩端不相鄰的無序開口三點組。",
+    "explanation": [
+      "對每個中心 v，設 t 是度數嚴格小於 v 的鄰居數，先計 C(t,2) 個候選。當兩個端點相鄰時，這個候選其實是三角形，必須扣除。只在三角形有唯一嚴格最高度數頂點時扣一次。",
+      "為避免逐中心枚舉所有鄰居對，將每條邊依 (度數,編號) 由小指向大。對 u 標記其所有出鄰居，枚舉 u→v→w，若 w 被標記就找到唯一排序 u<v<w 的三角形。出度至多 O(√m)，總枚舉 O(m√m)；最高排序頂點 w 僅在度數也嚴格較大時才扣候選。"
+    ],
+    "complexity": "時間 O(n+m√m)，空間 O(n+m)，含 Python 圖、定向鄰接表與輸入緩衝。m≤200000，不採用可能達 O(n²) 的星狀鄰居配對。",
+    "pitfall": "度數相等不能當較小；編號只用於唯一枚舉三角形，不能改變合法性。",
+    "sampleInput": "6 6\n1 2\n1 3\n1 4\n2 3\n4 5\n4 6",
+    "sampleOutput": "1",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "星狀候選",
+        "description": "中心1連2,3,4，度數3，其餘度數1。",
+        "cells": [
+          "2",
+          "3",
+          "4"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "候選",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "加入端點邊",
+        "description": "加2−3後，兩者度數2仍低於中心3。",
+        "cells": [
+          "2—3"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "候選",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "扣掉閉口",
+        "description": "{2,3}形成三角形，其餘兩組仍開口。",
+        "cells": [
+          "{2,4}",
+          "{3,4}"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "答案",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, m = next(it), next(it)\nedges = [(next(it) - 1, next(it) - 1) for _ in range(m)]\ndeg = [0] * n\nfor u, v in edges:\n    deg[u] += 1\n    deg[v] += 1\nout = [[] for _ in range(n)]\nlower = [0] * n\nfor u, v in edges:\n    if deg[u] > deg[v]:\n        lower[u] += 1\n    if deg[v] > deg[u]:\n        lower[v] += 1\n    if (deg[u], u) > (deg[v], v):\n        u, v = v, u\n    out[u].append(v)\nans = sum(x * (x - 1) // 2 for x in lower)\nmark = [-1] * n\nfor u in range(n):\n    for w in out[u]:\n        mark[w] = u\n    for v in out[u]:\n        for w in out[v]:\n            if mark[w] == u and deg[w] > deg[v] and deg[w] > deg[u]:\n                ans -= 1\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, m;\n    cin >> n >> m;\n    vector<pair<int, int>> e(m);\n    vector<int> d(n), low(n);\n    for (auto &[u, v] : e) {\n        cin >> u >> v;\n        --u;\n        --v;\n        d[u]++;\n        d[v]++;\n    }\n    vector<vector<int>> g(n);\n    for (auto [u, v] : e) {\n        low[u] += d[u] > d[v];\n        low[v] += d[v] > d[u];\n        if (make_pair(d[u], u) > make_pair(d[v], v))\n            swap(u, v);\n        g[u].push_back(v);\n    }\n    ll ans = 0;\n    for (int x : low)\n        ans += (ll)x * (x - 1) / 2;\n    vector<int> mark(n, -1);\n    for (int u = 0; u < n; u++) {\n        for (int w : g[u])\n            mark[w] = u;\n        for (int v : g[u])\n            for (int w : g[v])\n                if (mark[w] == u && d[w] > d[v] && d[w] > d[u])\n                    ans--;\n    }\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b687",
+    "title": "無遮擋的異色點對",
+    "topic": "sorting",
+    "level": "medium",
+    "concept": "同行同列相鄰點的遮擋判定",
+    "goal": "計算同列或同欄、異色、限距且線段內部無遮擋的點對。",
+    "explanation": [
+      "固定 x 並按 y 排序，線段內沒有其他點的同列配對，恰是此排序中相鄰兩點；若不相鄰，中間至少有一個點遮擋。逐相鄰配對檢查異色及座標差≤D 即可。",
+      "再交換兩軸角色，依 y,x 排序處理同橫列。座標互異保證不同點不可能同時同x又同y，所以兩次掃描的配對集合互斥，答案可直接相加。遮擋檢查與中間點顏色無關。"
+    ],
+    "complexity": "時間 O(n log n)，空間 O(n)，包含 Python 兩次排序與輸入緩衝；D與座標差以64位元計算。",
+    "pitfall": "不能只按顏色分組後找相鄰，因為同色點也會遮擋異色端點。",
+    "sampleInput": "4 10\n0 0 0\n1 0 0\n2 0 1\n2 1 0",
+    "sampleOutput": "2",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "排列同橫列",
+        "description": "(0,0)色0、(1,0)色0、(2,0)色1，D=3。",
+        "cells": [
+          "0:0",
+          "1:0",
+          "2:1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "相鄰對",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "檢查顏色",
+        "description": "只有座標1與2異色。",
+        "cells": [
+          "1:0",
+          "2:1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "合格對",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "排除跨點線段",
+        "description": "0與2之間有座標1，不能再計。",
+        "cells": [
+          "0—1—2"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "答案",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, D = next(it), next(it)\np = [(next(it), next(it), next(it)) for _ in range(n)]\nans = 0\nfor swap in range(2):\n    a = sorted((y, x, c) if swap else (x, y, c) for x, y, c in p)\n    for (x, y, c), (X, Y, C) in zip(a, a[1:]):\n        ans += x == X and Y - y <= D and c != C\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    ll D;\n    cin >> n >> D;\n    vector<array<ll, 3>> p(n);\n    for (auto &a : p)\n        cin >> a[0] >> a[1] >> a[2];\n    ll ans = 0;\n    for (int t = 0; t < 2; t++) {\n        sort(p.begin(), p.end());\n        for (int i = 1; i < n; i++)\n            ans += p[i][0] == p[i - 1][0] && p[i][1] - p[i - 1][1] <= D &&\n                   p[i][2] != p[i - 1][2];\n        for (auto &a : p)\n            swap(a[0], a[1]);\n    }\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b688",
+    "title": "定額偶和區段的最大收益",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "恰 K 段的奇偶前綴單調佇列 DP",
+    "goal": "選恰K個限長偶和且不重疊的區段，最大化可為負數的總收益。",
+    "explanation": [
+      "設前綴和 P[i]，dp[k][i] 是前 i 項選恰 k 段的最大收益。最後位置可不選，沿用 dp[k][i−1]；若最後一段為 (j,i]，需 i−D≤j<i 且 P[j],P[i] 同奇偶，候選是 dp[k−1][j]+P[i]−P[j]。",
+      "固定 k 掃描 i，以兩個單調佇列分奇偶維護 dp[k−1][j]−P[j] 的窗口最大值，每步加入 j=i−1、刪 j<i−D。不可達狀態不加入。每個解按最後一段唯一分解，故轉移完整；上一層涵蓋至 j，允許下一段相鄰而不重疊。"
+    ],
+    "complexity": "時間 O(Kn)，K≤20；滾動陣列及佇列 O(n)，Python 輸入緩衝 O(n)。收益可能為負，必用負無限大表示不可達。",
+    "pitfall": "不能把「恰好K」改成「至多K」；負收益的合法答案不能誤輸出0。",
+    "sampleInput": "5 2 3\n3 1 -2 3 1",
+    "sampleOutput": "8",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "前綴和",
+        "description": "數列−2,3,1，K=1,D=2，P=0,−2,1,2。",
+        "cells": [
+          "0",
+          "-2",
+          "1",
+          "2"
+        ],
+        "active": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "variables": [
+          [
+            "目標段數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "第一段候選",
+        "description": "單選−2為偶和，收益−2。",
+        "cells": [
+          "-2"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "目前最佳",
+            "-2"
+          ]
+        ]
+      },
+      {
+        "title": "後段改善",
+        "description": "選3,1得偶和4，長度2。",
+        "cells": [
+          "3",
+          "1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "答案",
+            "4"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom collections import deque\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, K, D = t[:3]\nP = [0]\nfor x in t[3:]:\n    P.append(P[-1] + x)\nneg = -(10**30)\nprev = [0] * (n + 1)\nfor k in range(1, K + 1):\n    cur = [neg] * (n + 1)\n    qs = [deque(), deque()]\n    for i in range(1, n + 1):\n        j = i - 1\n        if prev[j] != neg:\n            q = qs[P[j] & 1]\n            v = prev[j] - P[j]\n            while q and q[-1][1] <= v:\n                q.pop()\n            q.append((j, v))\n        for q in qs:\n            while q and q[0][0] < i - D:\n                q.popleft()\n        q = qs[P[i] & 1]\n        cur[i] = max(cur[i - 1], P[i] + q[0][1] if q else neg)\n    prev = cur\nprint(\"NONE\" if prev[n] == neg else prev[n])\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, K, D;\n    cin >> n >> K >> D;\n    vector<ll> P(n + 1);\n    for (int i = 1; i <= n; i++) {\n        ll x;\n        cin >> x;\n        P[i] = P[i - 1] + x;\n    }\n    const ll NEG = -4e18;\n    vector<ll> prev(n + 1);\n    for (int k = 1; k <= K; k++) {\n        vector<ll> cur(n + 1, NEG);\n        deque<pair<int, ll>> q[2];\n        for (int i = 1; i <= n; i++) {\n            int j = i - 1;\n            if (prev[j] != NEG) {\n                auto &d = q[(P[j] % 2 + 2) % 2];\n                ll v = prev[j] - P[j];\n                while (!d.empty() && d.back().second <= v)\n                    d.pop_back();\n                d.push_back({j, v});\n            }\n            for (auto &d : q)\n                while (!d.empty() && d.front().first < i - D)\n                    d.pop_front();\n            auto &d = q[(P[i] % 2 + 2) % 2];\n            cur[i] = max(cur[i - 1], d.empty() ? NEG : P[i] + d.front().second);\n        }\n        prev.swap(cur);\n    }\n    if (prev[n] == NEG)\n        cout << \"NONE\\n\";\n    else\n        cout << prev[n] << '\\n';\n}\n"
+  },
+  {
+    "code": "b689",
+    "title": "只加總正值的列欄表",
+    "topic": "data-structures",
+    "level": "hard",
+    "concept": "列欄分離與門檻後綴加總",
+    "goal": "在列欄增減後，不展開整張表就維護各格正值部分總和。",
+    "explanation": [
+      "固定列值 x，這列對答案的貢獻是 Σ欄 max(0,x+c)。只有 c>−x 的欄有效，因此等於有效欄值總和加 x 乘有效欄數。用兩組 Fenwick 樹分別維護列值、欄值的頻率與總和，即可 O(log q) 求此貢獻。",
+      "更新一列時先扣舊列對所有欄的貢獻，再加新列貢獻，並在列值結構中替換該值；更新欄完全對稱。離線先模擬操作蒐集所有可能列欄值作座標壓縮，實際更新仍按原順序。每個受影響格恰在那一列或一欄中，所以差量更新不會漏或重複。"
+    ],
+    "complexity": "時間 O((n+m+q) log(q+1))，空間 O(n+m+q)，含 Python 操作、座標與輸入緩衝。不建立 n×m 表；總和上界約1.6×10^17可用64位元。",
+    "pitfall": "負值格應貢獻0；門檻等於−x時格值為0，可直接排除。",
+    "sampleInput": "2 2 4\nR 1 3\nC 1 -1\nR 2 4\nC 2 -5",
+    "sampleOutput": "6\n5\n12\n5",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "初始表",
+        "description": "一列兩欄，全0。",
+        "cells": [
+          "0",
+          "0"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "正值總和",
+            "0"
+          ]
+        ]
+      },
+      {
+        "title": "列加3",
+        "description": "兩格變3與3。",
+        "cells": [
+          "3",
+          "3"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "正值總和",
+            "6"
+          ]
+        ]
+      },
+      {
+        "title": "第一欄減5",
+        "description": "兩格變−2與3，只加正值。",
+        "cells": [
+          "-2",
+          "3"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "正值總和",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, bisect\n\nt = sys.stdin.buffer.read().split()\nn, m, q = map(int, t[:3])\nops = [(t[i], int(t[i + 1]) - 1, int(t[i + 2])) for i in range(3, len(t), 3)]\nrows = [0] * n\ncols = [0] * m\nvalues = {0}\nfor typ, i, x in ops:\n    a = rows if typ == b\"R\" else cols\n    a[i] += x\n    values.add(a[i])\nxs = sorted(values)\nz = len(xs)\n\n\nclass Bag:\n    def __init__(self, count):\n        self.c = [0] * (z + 1)\n        self.s = [0] * (z + 1)\n        self.count = count\n        self.total = 0\n        self.add(0, count)\n\n    def add(self, x, d):\n        self.total += x * d\n        i = bisect.bisect_left(xs, x) + 1\n        while i <= z:\n            self.c[i] += d\n            self.s[i] += x * d\n            i += i & -i\n\n    def contribution(self, x):\n        i = bisect.bisect_right(xs, -x)\n        c = s = 0\n        while i:\n            c += self.c[i]\n            s += self.s[i]\n            i -= i & -i\n        return self.total - s + x * (self.count - c)\n\n\nbags = [Bag(n), Bag(m)]\na = [[0] * n, [0] * m]\nans = 0\nout = []\nfor typ, i, x in ops:\n    k = 0 if typ == b\"R\" else 1\n    old = a[k][i]\n    new = old + x\n    ans += bags[k ^ 1].contribution(new) - bags[k ^ 1].contribution(old)\n    bags[k].add(old, -1)\n    bags[k].add(new, 1)\n    a[k][i] = new\n    out.append(str(ans))\nprint(\"\\n\".join(out))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nstruct Bag {\n    vector<ll> c, s;\n    vector<ll> *x;\n    ll cnt, total = 0;\n    Bag(vector<ll> &v, ll n) : c(v.size() + 1), s(v.size() + 1), x(&v), cnt(n) {\n        add(0, n);\n    }\n    void add(ll v, ll d) {\n        total += v * d;\n        for (int i = lower_bound(x->begin(), x->end(), v) - x->begin() + 1;\n             i < (int)c.size(); i += i & -i) {\n            c[i] += d;\n            s[i] += v * d;\n        }\n    }\n    ll get(ll v) {\n        int i = upper_bound(x->begin(), x->end(), -v) - x->begin();\n        ll C = 0, S = 0;\n        for (; i; i -= i & -i) {\n            C += c[i];\n            S += s[i];\n        }\n        return total - S + v * (cnt - C);\n    }\n};\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, m, q;\n    cin >> n >> m >> q;\n    vector<tuple<char, int, ll>> ops;\n    vector<ll> r(n), c(m), x{0};\n    while (q--) {\n        char t;\n        int i;\n        ll v;\n        cin >> t >> i >> v;\n        --i;\n        ops.push_back({t, i, v});\n        auto &a = t == 'R' ? r : c;\n        a[i] += v;\n        x.push_back(a[i]);\n    }\n    sort(x.begin(), x.end());\n    x.erase(unique(x.begin(), x.end()), x.end());\n    Bag R(x, n), C(x, m);\n    fill(r.begin(), r.end(), 0);\n    fill(c.begin(), c.end(), 0);\n    ll ans = 0;\n    for (auto [t, i, v] : ops) {\n        auto &a = t == 'R' ? r : c;\n        Bag &own = t == 'R' ? R : C, &other = t == 'R' ? C : R;\n        ll old = a[i], nw = old + v;\n        ans += other.get(nw) - other.get(old);\n        own.add(old, -1);\n        own.add(nw, 1);\n        a[i] = nw;\n        cout << ans << '\\n';\n    }\n}\n"
+  },
+  {
+    "code": "b690",
+    "title": "限幅交替的最長子序列",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "升降尾狀態與雙向 Fenwick 最大值",
+    "goal": "求每步差幅至少D且升降交替的最長非空子序列。",
+    "explanation": [
+      "up[i] 表示以 a[i] 結束、最後一步上升的最長長度，down[i] 表示最後下降；單點同時初始化為1。上升只能從值≤a[i]−D 的下降尾狀態接續，下降只能從值≥a[i]+D 的上升尾狀態接續。",
+      "壓縮數值，用普通 Fenwick 查較小值的 down 最大值、逆排名 Fenwick 查較大值的 up 最大值。兩個候選都算完後才更新當前值。每個合法長序列依最後一步唯一歸入升或降，且前一尾狀態必為相反方向，因此這兩種轉移足夠。"
+    ],
+    "complexity": "時間 O(n log n)，空間 O(n)，包含 Python 壓縮排序、兩棵 Fenwick 與輸入緩衝；D≥1，沒有零差合法轉移。",
+    "pitfall": "差值要求至少D而非至多D；不能僅套用無門檻的相鄰峰谷刪除法。",
+    "sampleInput": "5 2\n0 4 1 6 2",
+    "sampleOutput": "5",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "單點初始化",
+        "description": "數列0,3,1，D=2。",
+        "cells": [
+          "0"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最長",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "上升接續",
+        "description": "3−0=3≥2，up長度2。",
+        "cells": [
+          "0→3"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最長",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "下降接續",
+        "description": "3−1=2≥2，down由up延伸。",
+        "cells": [
+          "0→3→1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最長",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, bisect\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, D = t[:2]\na = t[2:]\nxs = sorted(set(a))\nz = len(xs)\nsmall = [0] * (z + 1)\nlarge = [0] * (z + 1)\n\n\ndef get(b, i):\n    v = 0\n    while i:\n        v = max(v, b[i])\n        i -= i & -i\n    return v\n\n\ndef put(b, i, v):\n    while i <= z:\n        b[i] = max(b[i], v)\n        i += i & -i\n\n\nans = 1\nfor x in a:\n    up = 1 + get(small, bisect.bisect_right(xs, x - D))\n    down = 1 + get(large, z - bisect.bisect_left(xs, x + D))\n    r = bisect.bisect_left(xs, x) + 1\n    put(small, r, down)\n    put(large, z - r + 1, up)\n    ans = max(ans, up, down)\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    ll D;\n    cin >> n >> D;\n    vector<ll> a(n), x;\n    for (ll &v : a)\n        cin >> v;\n    x = a;\n    sort(x.begin(), x.end());\n    x.erase(unique(x.begin(), x.end()), x.end());\n    int z = x.size();\n    vector<int> b(z + 1), c(z + 1);\n    auto get = [](vector<int> &t, int i) {\n        int v = 0;\n        for (; i; i -= i & -i)\n            v = max(v, t[i]);\n        return v;\n    };\n    auto put = [&](vector<int> &t, int i, int v) {\n        for (; i <= z; i += i & -i)\n            t[i] = max(t[i], v);\n    };\n    int ans = 1;\n    for (ll v : a) {\n        int up = 1 + get(b, upper_bound(x.begin(), x.end(), v - D) - x.begin()),\n            dn = 1 + get(c, z - (lower_bound(x.begin(), x.end(), v + D) - x.begin())),\n            r = lower_bound(x.begin(), x.end(), v) - x.begin() + 1;\n        put(b, r, dn);\n        put(c, z - r + 1, up);\n        ans = max({ans, up, dn});\n    }\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b691",
+    "title": "雙色的禁整除子集合",
+    "topic": "dp",
+    "level": "hard",
+    "concept": "互補餘數分組與兩色覆蓋位元 DP",
+    "goal": "在任兩數和禁整除條件下，選到兩色且最大化位置數。",
+    "explanation": [
+      "數值只需看模 M 的餘數。非自補的一組 {r,M−r} 中不能同時選兩側，但同側任意兩數都相容。固定選某側且需要其具有的顏色時，多選該側所有位置不會破壞條件，故只考慮全選左、全選右、全不選。",
+      "自補餘數0及偶數M的M/2最多只能選一個位置，可依存在的顏色選一個。各互補組之間完全相容，用4個顏色覆蓋狀態（空、色0、色1、兩色）做最大選取數 DP，最後取兩色狀態。這比單純每組取較多側多了必要的全域兩色約束。"
+    ],
+    "complexity": "時間 O(n+M)，空間 O(M)，Python 輸入緩衝 O(n)；每組至多三種選擇與4個狀態。",
+    "pitfall": "不能選完無色限制最大集合後才檢查顏色，較小側有時是唯一補足缺色的方法。",
+    "sampleInput": "4 4\n1 0\n1 1\n3 0\n0 1",
+    "sampleOutput": "3",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "互補組",
+        "description": "M=4，餘數1有兩個色0，餘數3有一個色1。",
+        "cells": [
+          "1:2個色0",
+          "3:1個色1"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "可同選兩側",
+            "否"
+          ]
+        ]
+      },
+      {
+        "title": "自補組",
+        "description": "另有餘數0一個色1，可補齊第二色。",
+        "cells": [
+          "0:1個色1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "可選上限",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "合併覆蓋",
+        "description": "選兩個餘1加一個餘0，總數3且兩色俱有。",
+        "cells": [
+          "1",
+          "1",
+          "0"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "答案",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn, M = next(it), next(it)\ncounts = [[0, 0] for _ in range(M)]\nfor _ in range(n):\n    a, c = next(it), next(it)\n    counts[a % M][c] += 1\ndp = [0, -(10**9), -(10**9), -(10**9)]\nfor r in range(M // 2 + 1):\n    s = (-r) % M\n    choices = [(0, 0)]\n    if r == s:\n        choices += [(1 << c, 1) for c in range(2) if counts[r][c]]\n    else:\n        for k in (r, s):\n            a, b = counts[k]\n            choices.append(((1 if a else 0) | (2 if b else 0), a + b))\n    nd = [-(10**9)] * 4\n    for mask in range(4):\n        for c, v in choices:\n            nd[mask | c] = max(nd[mask | c], dp[mask] + v)\n    dp = nd\nprint(dp[3] if dp[3] >= 0 else -1)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, M;\n    cin >> n >> M;\n    vector<array<int, 2>> f(M);\n    while (n--) {\n        int a, c;\n        cin >> a >> c;\n        f[a % M][c]++;\n    }\n    array<int, 4> d{0, -1000000000, -1000000000, -1000000000};\n    for (int r = 0; r <= M / 2; r++) {\n        int s = (M - r) % M;\n        vector<pair<int, int>> v{{0, 0}};\n        if (r == s) {\n            for (int c = 0; c < 2; c++)\n                if (f[r][c])\n                    v.push_back({1 << c, 1});\n        } else\n            for (int k : {r, s})\n                v.push_back({(f[k][0] ? 1 : 0) | (f[k][1] ? 2 : 0), f[k][0] + f[k][1]});\n        array<int, 4> nd;\n        nd.fill(-1000000000);\n        for (int a = 0; a < 4; a++)\n            for (auto [b, c] : v)\n                nd[a | b] = max(nd[a | b], d[a] + c);\n        d = nd;\n    }\n    cout << (d[3] < 0 ? -1 : d[3]) << '\\n';\n}\n"
+  },
+  {
+    "code": "b692",
+    "title": "限長整除的完整切分",
+    "topic": "dp",
+    "level": "medium",
+    "concept": "同餘前綴的限期 DP 加總",
+    "goal": "計算完整覆蓋原序列、每塊限長且和可整除m的切分數。",
+    "explanation": [
+      "令 p[i] 為前 i 項和模 m。最後一塊 (j,i] 可整除 m，當且僅當 p[j]=p[i]，並需 i−K≤j<i。因此 dp[i] 等於上述合法 j 的 dp[j] 總和，dp[0]=1 表示空前綴的一種完整切法。",
+      "雜湊表按餘數保存目前窗口的 dp 加總。求 dp[i] 前移除 j=i−K−1 的過期項，查 p[i] 對應總和，之後加入 dp[i]。最後一塊起點唯一，故加總不會重複計算切分，並且恰好覆蓋整個前綴。"
+    ],
+    "complexity": "期望時間 O(n)，空間 O(n)，餘數種類最多 n+1，不建立 m 大小陣列；Python 輸入緩衝 O(n)。",
+    "pitfall": "有負數時模運算需正規化到[0,m)；查詢前不能加入當前dp，以免空區塊。",
+    "sampleInput": "4 3 3\n1 2 3 0",
+    "sampleOutput": "3",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "前綴0",
+        "description": "數列1,2,3，K=2,m=3，先放dp0=1。",
+        "cells": [
+          "餘0:1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "dp0",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "前兩項",
+        "description": "餘數依序1,0，dp1=0、dp2=1。",
+        "cells": [
+          "1",
+          "0"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "dp2",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "第三項",
+        "description": "前一個合法同餘是j=2，j=0因長3過期。",
+        "cells": [
+          "餘0:dp2"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "dp3",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nt = list(map(int, sys.stdin.buffer.read().split()))\nn, K, m = t[:3]\np = [0]\nfor x in t[3:]:\n    p.append((p[-1] + x) % m)\nM = 1000000007\ndp = [0] * (n + 1)\ndp[0] = 1\nsums = {0: 1}\nfor i in range(1, n + 1):\n    j = i - K - 1\n    if j >= 0:\n        sums[p[j]] = (sums.get(p[j], 0) - dp[j]) % M\n    dp[i] = sums.get(p[i], 0)\n    sums[p[i]] = (sums.get(p[i], 0) + dp[i]) % M\nprint(dp[n])\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, K;\n    ll m;\n    cin >> n >> K >> m;\n    vector<ll> p(n + 1), d(n + 1);\n    for (int i = 1; i <= n; i++) {\n        ll x;\n        cin >> x;\n        p[i] = (p[i - 1] + x) % m;\n        if (p[i] < 0)\n            p[i] += m;\n    }\n    unordered_map<ll, ll> s;\n    s[0] = d[0] = 1;\n    for (int i = 1; i <= n; i++) {\n        int j = i - K - 1;\n        if (j >= 0)\n            s[p[j]] = (s[p[j]] - d[j] + MOD) % MOD;\n        d[i] = s[p[i]];\n        s[p[i]] = (s[p[i]] + d[i]) % MOD;\n    }\n    cout << d[n] << '\\n';\n}\n"
+  },
+  {
+    "code": "b693",
+    "title": "可回退文字的重疊樣式數",
+    "topic": "strings",
+    "level": "hard",
+    "concept": "KMP 自動機與可回退前綴狀態堆疊",
+    "goal": "支援末端追加與刪除，隨時回答含重疊的固定樣式出現數。",
+    "explanation": [
+      "預先建立樣式的失敗函數與每個狀態、每個字母的轉移表。文字每個前綴只需保存目前 KMP 狀態及此前綴的完整出現數。附加一字元就查表前進，若完整匹配則計數加一，狀態退到最長真邊界以保留重疊匹配。",
+      "刪除末字元只要彈出前綴狀態與計數，空文字保留底層零狀態。這讓刪除後再次追加也正確。預建轉移表避免反覆追加失敗字元、刪除、重做造成 KMP 失敗鏈被反覆走訪而退化。查詢直接讀堆疊頂計數。"
+    ],
+    "complexity": "時間 O(26|P|+q)，空間 O(26|P|+q)；Python 轉移表用32位元 array，另操作 token 緩衝 O(q)。",
+    "pitfall": "匹配後不能清零狀態，否則漏掉aba在ababa中的重疊；回退必須同時回退計數。",
+    "sampleInput": "aba\n8\n+ a\n+ b\n+ a\n+ b\n+ a\n?\n-\n?",
+    "sampleOutput": "2\n1",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "追加至首次匹配",
+        "description": "P=aa，依序加入a,a。",
+        "cells": [
+          "aa"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "出現數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "追加第三字",
+        "description": "aaa有起點1、2兩次aa。",
+        "cells": [
+          "aaa"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "出現數",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "刪除末字",
+        "description": "回到aa的舊狀態與舊計數。",
+        "cells": [
+          "aa"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "出現數",
+            "1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\nfrom array import array\n\nit = iter(sys.stdin.buffer.read().split())\nP = next(it)\nq = int(next(it))\nm = len(P)\npi = [0] * m\nfor i in range(1, m):\n    j = pi[i - 1]\n    while j and P[i] != P[j]:\n        j = pi[j - 1]\n    if P[i] == P[j]:\n        j += 1\n    pi[i] = j\ntr = array(\"i\", [0]) * (26 * m)\nfor s in range(m):\n    for c in range(26):\n        tr[s * 26 + c] = s + 1 if P[s] == c + 97 else tr[pi[s - 1] * 26 + c] if s else 0\nstates = [0]\ncounts = [0]\nout = []\nfor _ in range(q):\n    op = next(it)\n    if op == b\"+\":\n        c = next(it)[0] - 97\n        s = tr[states[-1] * 26 + c]\n        counts.append(counts[-1] + (s == m))\n        states.append(pi[-1] if s == m else s)\n    elif op == b\"-\":\n        if len(states) > 1:\n            states.pop()\n            counts.pop()\n    else:\n        out.append(str(counts[-1]))\nprint(\"\\n\".join(out))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    string P;\n    int q;\n    cin >> P >> q;\n    int m = P.size();\n    vector<int> pi(m);\n    for (int i = 1; i < m; i++) {\n        int j = pi[i - 1];\n        while (j && P[i] != P[j])\n            j = pi[j - 1];\n        if (P[i] == P[j])\n            j++;\n        pi[i] = j;\n    }\n    vector<array<int, 26>> tr(m);\n    for (int s = 0; s < m; s++)\n        for (int c = 0; c < 26; c++)\n            tr[s][c] = P[s] == char('a' + c) ? s + 1 : s ? tr[pi[s - 1]][c] : 0;\n    vector<int> st{0}, cnt{0};\n    while (q--) {\n        char op;\n        cin >> op;\n        if (op == '+') {\n            char c;\n            cin >> c;\n            int s = tr[st.back()][c - 'a'];\n            cnt.push_back(cnt.back() + (s == m));\n            st.push_back(s == m ? pi.back() : s);\n        } else if (op == '-') {\n            if (st.size() > 1) {\n                st.pop_back();\n                cnt.pop_back();\n            }\n        } else\n            cout << cnt.back() << '\\n';\n    }\n}\n"
+  },
+  {
+    "code": "b694",
+    "title": "容許歧義的字首",
+    "topic": "strings",
+    "level": "medium",
+    "concept": "Trie 前綴通過次數與逐字查詢",
+    "goal": "按輸入位置計次，找出通過數不超個別K的最短非空前綴。",
+    "explanation": [
+      "將全部字串插入 Trie，每經過一個非根節點，其通過次數加一。此次數就是以該節點前綴開頭的輸入位置數，重複字串必須重複插入，因此自然包含本人及其他相同字串。",
+      "對每個輸入字串由第一個字母向下走，第一次通過次數≤K的位置就是最短合法前綴。沿路次數只會不增，所以一旦找到即可停止；若走完整串仍無符合節點，就輸出−1。空前綴不合法，因此從深度1才檢查。"
+    ],
+    "complexity": "時間 O(字串總長)，空間 O(字串總長+n)；Python 每節點字典較有常數成本，但總節點≤200001，讀取緩衝也是 O(總長+n)。",
+    "pitfall": "字串是另一串前綴時，其全長通過數可能仍大於K，不能預設整串一定能區分。",
+    "sampleInput": "5\ncat 1\ncar 1\nca 1\ndog 1\ncat 2",
+    "sampleOutput": "-1\n3\n-1\n1\n3",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "插入字串",
+        "description": "ab、ac、ab，a的通過數3，ab為2。",
+        "cells": [
+          "a:3",
+          "ab:2",
+          "ac:1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "字串數",
+            "3"
+          ]
+        ]
+      },
+      {
+        "title": "查詢ab且K=1",
+        "description": "a和ab都超額，無合法非空前綴。",
+        "cells": [
+          "a→ab"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "答案",
+            "-1"
+          ]
+        ]
+      },
+      {
+        "title": "查詢ac且K=1",
+        "description": "深度1超額，深度2首次達標。",
+        "cells": [
+          "a→ac"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "答案",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nt = sys.stdin.buffer.read().split()\nn = int(t[0])\nitems = [(t[i], int(t[i + 1])) for i in range(1, len(t), 2)]\nch = [{}]\ncnt = [0]\nfor s, K in items:\n    u = 0\n    for c in s:\n        if c not in ch[u]:\n            ch[u][c] = len(ch)\n            ch.append({})\n            cnt.append(0)\n        u = ch[u][c]\n        cnt[u] += 1\nout = []\nfor s, K in items:\n    u = 0\n    ans = -1\n    for i, c in enumerate(s, 1):\n        u = ch[u][c]\n        if cnt[u] <= K:\n            ans = i\n            break\n    out.append(str(ans))\nprint(\"\\n\".join(out))\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    cin >> n;\n    vector<string> s(n);\n    vector<int> K(n), cnt(1);\n    vector<array<int, 26>> tr(1);\n    for (int i = 0; i < n; i++) {\n        cin >> s[i] >> K[i];\n        int u = 0;\n        for (char c : s[i]) {\n            int k = c - 'a';\n            if (!tr[u][k]) {\n                int v = tr.size();\n                tr[u][k] = v;\n                tr.push_back({});\n                cnt.push_back(0);\n            }\n            u = tr[u][k];\n            cnt[u]++;\n        }\n    }\n    for (int i = 0; i < n; i++) {\n        int u = 0, ans = -1;\n        for (int j = 0; j < (int)s[i].size(); j++) {\n            u = tr[u][s[i][j] - 'a'];\n            if (cnt[u] <= K[i]) {\n                ans = j + 1;\n                break;\n            }\n        }\n        cout << ans << '\\n';\n    }\n}\n"
+  },
+  {
+    "code": "b695",
+    "title": "可刪點的包圍面積",
+    "topic": "geometry",
+    "level": "medium",
+    "concept": "刪除候選只需檢查四個極值位置",
+    "goal": "最多刪一個可刪點並保留非空，最小化軸平行包圍面積。",
+    "explanation": [
+      "不刪點先計算原包圍矩形。若刪除某點能縮小範圍，它必須是某一軸最小或最大座標的唯一持有者。因此各軸排序的首尾位置提供至多四個候選；其他可刪點即使刪除也不會改善答案。",
+      "每個候選刪掉後，從各軸排序的前兩名或後兩名取第一個仍在的點，常數時間得到新四界。座標重複時，第二個同值點會使該界維持不變，自然處理極值重複。只試旗標0且 n>1 的候選，並保留不刪的選項。"
+    ],
+    "complexity": "時間 O(n log n)，空間 O(n)，含 Python 兩個排序索引與輸入緩衝；面積最大4×10^18，64位元有號足夠。",
+    "pitfall": "n=1時不能刪唯一點，面積為0；極端點若必須保留，不得為了縮框刪除。",
+    "sampleInput": "3\n0 0 1\n1 1 1\n10 10 0",
+    "sampleOutput": "1",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "原框",
+        "description": "點(0,0)必留、(2,2)必留、(9,9)可刪。",
+        "cells": [
+          "0,0",
+          "2,2",
+          "9,9"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "面積",
+            "81"
+          ]
+        ]
+      },
+      {
+        "title": "檢查候選",
+        "description": "可刪點同時是x與y最大值。",
+        "cells": [
+          "9,9"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "可刪候選數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "刪除重算",
+        "description": "剩兩點範圍各為2。",
+        "cells": [
+          "0,0",
+          "2,2"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "最小面積",
+            "4"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn = next(it)\np = [(next(it), next(it), next(it)) for _ in range(n)]\nsx = sorted(range(n), key=lambda i: p[i][0])\nsy = sorted(range(n), key=lambda i: p[i][1])\n\n\ndef area(skip):\n    bounds = []\n    for ids, k in ((sx, 0), (sy, 1)):\n        lo = ids[1] if ids[0] == skip else ids[0]\n        hi = ids[-2] if ids[-1] == skip else ids[-1]\n        bounds.append(p[hi][k] - p[lo][k])\n    return bounds[0] * bounds[1]\n\n\nans = area(-1)\nif n > 1:\n    for i in {sx[0], sx[-1], sy[0], sy[-1]}:\n        if p[i][2] == 0:\n            ans = min(ans, area(i))\nprint(ans)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    cin >> n;\n    vector<array<ll, 3>> p(n);\n    for (auto &a : p)\n        cin >> a[0] >> a[1] >> a[2];\n    vector<int> x(n), y(n);\n    iota(x.begin(), x.end(), 0);\n    y = x;\n    sort(x.begin(), x.end(), [&](int i, int j) { return p[i][0] < p[j][0]; });\n    sort(y.begin(), y.end(), [&](int i, int j) { return p[i][1] < p[j][1]; });\n    auto area = [&](int s) {\n        ll w = p[x.back() == s ? x[n - 2] : x.back()][0] -\n               p[x[0] == s ? x[1] : x[0]][0],\n           h = p[y.back() == s ? y[n - 2] : y.back()][1] -\n               p[y[0] == s ? y[1] : y[0]][1];\n        return w * h;\n    };\n    ll ans = area(-1);\n    if (n > 1)\n        for (int i : set<int>{x[0], x.back(), y[0], y.back()})\n            if (!p[i][2])\n                ans = min(ans, area(i));\n    cout << ans << '\\n';\n}\n"
+  },
+  {
+    "code": "b696",
+    "title": "不相交字元交換的轉換",
+    "topic": "strings",
+    "level": "easy",
+    "concept": "字母交換的自反映射一致性",
+    "goal": "判斷至多K對不相交字母交換能否同時把S轉成T。",
+    "explanation": [
+      "互不相交交換形成一個映射 f，必須滿足 f(f(c))=c，且每個字母只映到一個固定字母。逐位置要求 f(S[i])=T[i]，同時要求 f(T[i])=S[i]；若任一既存要求矛盾就無解。",
+      "包括 S[i]=T[i] 的位置也必須記成自映射，因為這表示該字母不能被其他交換牽動。所有要求相容後，非自映射字母兩兩成對，每對只計較小字母一次；其數量≤K即能直接採用這些交換。未出現字母維持不變，不必額外交換。"
+    ],
+    "complexity": "時間 O(|S|+26)，映射額外 O(26)；Python 讀取字串及緩衝 O(|S|)。",
+    "pitfall": "三字母循環不是兩兩不相交交換；同字母在某位置不變而其他位置要交換也是矛盾。",
+    "sampleInput": "1\nabcd\nbadc",
+    "sampleOutput": "NO",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "第一項要求",
+        "description": "S=abca、T=bacb，要求a↔b。",
+        "cells": [
+          "a↔b"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "交換數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "中間一致",
+        "description": "b→a與c→c皆相容。",
+        "cells": [
+          "a↔b",
+          "c↔c"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "交換數",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "最後一項仍一致",
+        "description": "末位a要求變b，仍一致；若末位改a會衝突。",
+        "cells": [
+          "abca→bacb"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "K=1判定",
+            "YES"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nt = sys.stdin.buffer.read().split()\nK = int(t[0])\nS, T = t[1:]\nf = [-1] * 26\nok = True\nfor x, y in zip(S, T):\n    x -= 97\n    y -= 97\n    if (f[x] != -1 and f[x] != y) or (f[y] != -1 and f[y] != x):\n        ok = False\n        break\n    f[x] = y\n    f[y] = x\npairs = sum(y > x for x, y in enumerate(f))\nprint(\"YES\" if ok and pairs <= K else \"NO\")\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int K;\n    string S, T;\n    cin >> K >> S >> T;\n    vector<int> f(26, -1);\n    bool ok = true;\n    for (int i = 0; i < (int)S.size(); i++) {\n        int x = S[i] - 'a', y = T[i] - 'a';\n        if ((f[x] != -1 && f[x] != y) || (f[y] != -1 && f[y] != x)) {\n            ok = false;\n            break;\n        }\n        f[x] = y;\n        f[y] = x;\n    }\n    int cnt = 0;\n    for (int x = 0; x < 26; x++)\n        cnt += f[x] > x;\n    cout << (ok && cnt <= K ? \"YES\" : \"NO\") << '\\n';\n}\n"
+  },
+  {
+    "code": "b697",
+    "title": "刪段接合的雙重統計",
+    "topic": "strings",
+    "level": "hard",
+    "concept": "KMP 邊界集合位元交集計算跨接縫匹配",
+    "goal": "獨立刪段後包含新接縫匹配，精確計算出現數總和與序號加權和。",
+    "explanation": [
+      "刪除 [l,r] 後，匹配分三類：完全在左前綴、完全在右後綴、跨新接縫。前兩類用原串及反串的 KMP 前綴匹配累計即可 O(1) 查詢。跨接縫則需某個1≤k<m，使左前綴末 k 字等於 P 的前 k 字，右後綴前 m−k 字等於 P 的後 m−k 字。",
+      "KMP 狀態的所有失敗鏈長度正好是匹配的前綴長度集合。為每個狀態預存邊界位元集合；反樣式的集合把長度 j 放在位 m−j。將左右集合做 AND 再數1，恰得到跨縫匹配數，每個 k 對應唯一開始位置。排除 k=0,m，避免與兩側內部匹配重複。最後按查詢序號累加精確兩種總和。"
+    ],
+    "complexity": "設機器字位數 w，時間 O(n+m²/w+q·m/w)，空間 O(n+m²/w)；C++ bitset 固定2001位，Python 大整數位集合按多字運算，輸入緩衝 O(n+m+q)。m≤2000，遠優於每次重新掃描長文字。",
+    "pitfall": "查詢從原文獨立開始；不能只計原有匹配被刪除多少，接縫會產生新匹配。m=1時沒有跨縫匹配。",
+    "sampleInput": "5 3 4\nababa\naba\n3 3\n2 2\n1 5\n3 4",
+    "sampleOutput": "2 6",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "原文匹配",
+        "description": "S=abxxaba，P=aba，原文有末尾一次。",
+        "cells": [
+          "ab",
+          "xx",
+          "aba"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "原有數量",
+            "1"
+          ]
+        ]
+      },
+      {
+        "title": "刪除xx",
+        "description": "接合成ababa，左末ab與右首a形成新匹配。",
+        "cells": [
+          "ab",
+          "aba"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "新數量",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "另一查詢刪全部",
+        "description": "第二筆從原文刪全串，數量0。",
+        "cells": [
+          "空串"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "兩查詢加權總和",
+            "2"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys\n\nit = iter(sys.stdin.buffer.read().split())\nn, m, q = (int(next(it)) for _ in range(3))\nS = next(it)\nP = next(it)\n\n\ndef scan(s, p, reverse_mask=False):\n    m = len(p)\n    pi = [0] * m\n    for i in range(1, m):\n        j = pi[i - 1]\n        while j and p[i] != p[j]:\n            j = pi[j - 1]\n        if p[i] == p[j]:\n            j += 1\n        pi[i] = j\n    masks = [0] * (m + 1)\n    for k in range(1, m + 1):\n        masks[k] = masks[pi[k - 1]] | (1 << (m - k if reverse_mask else k))\n    states = [0]\n    counts = [0]\n    state = 0\n    for c in s:\n        if state == m:\n            state = pi[-1]\n        while state and p[state] != c:\n            state = pi[state - 1]\n        if p[state] == c:\n            state += 1\n        states.append(state)\n        counts.append(counts[-1] + (state == m))\n    return states, counts, masks\n\n\nleft, lc, lm = scan(S, P)\nright, rc, rm = scan(S[::-1], P[::-1], True)\nvalid = (1 << m) - 2\ntotal = weighted = 0\nfor i in range(1, q + 1):\n    l, r = int(next(it)), int(next(it))\n    z = lc[l - 1] + rc[n - r] + (lm[left[l - 1]] & rm[right[n - r]] & valid).bit_count()\n    total += z\n    weighted += i * z\nprint(total, weighted)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nstruct Data {\n    vector<int> st, cnt;\n    vector<bitset<2001>> mask;\n};\nData scan(string s, string p, bool rev) {\n    int m = p.size();\n    vector<int> pi(m);\n    for (int i = 1; i < m; i++) {\n        int j = pi[i - 1];\n        while (j && p[i] != p[j])\n            j = pi[j - 1];\n        if (p[i] == p[j])\n            j++;\n        pi[i] = j;\n    }\n    Data d;\n    d.mask.resize(m + 1);\n    for (int k = 1; k <= m; k++) {\n        d.mask[k] = d.mask[pi[k - 1]];\n        d.mask[k].set(rev ? m - k : k);\n    }\n    d.st.push_back(0);\n    d.cnt.push_back(0);\n    int z = 0;\n    for (char c : s) {\n        if (z == m)\n            z = pi.back();\n        while (z && p[z] != c)\n            z = pi[z - 1];\n        if (p[z] == c)\n            z++;\n        d.st.push_back(z);\n        d.cnt.push_back(d.cnt.back() + (z == m));\n    }\n    return d;\n}\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, m, q;\n    string s, p;\n    cin >> n >> m >> q >> s >> p;\n    auto a = scan(s, p, false);\n    reverse(s.begin(), s.end());\n    reverse(p.begin(), p.end());\n    auto b = scan(s, p, true);\n    bitset<2001> valid;\n    for (int k = 1; k < m; k++)\n        valid.set(k);\n    ll total = 0, weighted = 0;\n    for (int i = 1, l, r; i <= q; i++) {\n        cin >> l >> r;\n        ll z = a.cnt[l - 1] + b.cnt[n - r] +\n               (a.mask[a.st[l - 1]] & b.mask[b.st[n - r]] & valid).count();\n        total += z;\n        weighted += (ll)i * z;\n    }\n    cout << total << ' ' << weighted << '\\n';\n}\n"
+  },
+  {
+    "code": "b698",
+    "title": "異色質數和配對",
+    "topic": "number-theory",
+    "level": "hard",
+    "concept": "兩色頻率卷積與精確係數抽取",
+    "goal": "計算異色位置對的質數和數量，使用精確卷積避免平方枚舉。",
+    "explanation": [
+      "以兩色頻率建立多項式 A(x),B(x)。乘積 x^s 係數就是色0值與色1值相加等於 s 的位置對數。顏色固定在兩側，每個無序異色對只被計一次；將質數 s 的係數加總即為答案，包括質數2的偶和特例。",
+      "C++ 用模998244353的 NTT 卷積，最大係數≤n0×n1≤225000000，小於模數，所以無需中國剩餘定理即可得到精確係數。Python 用基底2^32把頻率編碼成大整數相乘，係數小於基底，不會進位污染相鄰係數，再以每4位元組抽取。兩者都配合篩法列出2至兩倍最大值的質數。"
+    ],
+    "complexity": "C++ 時間 O(V log V)，空間 O(V)，V≤200000、NTT長度≤524288。Python 編碼位數 O(32V)，時間為一次此位數的大整數乘法加 O(V log log V) 篩與解碼，非 O(n²)；記憶體 O(V+n)，含輸入緩衝。",
+    "pitfall": "0與2、1與1都可能湊質數2，不能只統計一奇一偶；同色不計。Python 編碼需明確小端序。",
+    "sampleInput": "4\n1 0\n1 1\n3 1\n4 0",
+    "sampleOutput": "3",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "兩色頻率",
+        "description": "色0為0,1；色1為1,2。",
+        "cells": [
+          "A:1+x",
+          "B:x+x²"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "異色對總數",
+            "4"
+          ]
+        ]
+      },
+      {
+        "title": "卷積係數",
+        "description": "乘積為x+2x²+x³。",
+        "cells": [
+          "和1:1",
+          "和2:2",
+          "和3:1"
+        ],
+        "active": [
+          0,
+          1,
+          2
+        ],
+        "variables": [
+          [
+            "質數和種類",
+            "2"
+          ]
+        ]
+      },
+      {
+        "title": "加總質數係數",
+        "description": "和2的兩對，加和3的一對。",
+        "cells": [
+          "2+1"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "答案",
+            "3"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, math\n\nit = iter(map(int, sys.stdin.buffer.read().split()))\nn = next(it)\ndata = [(next(it), next(it)) for _ in range(n)]\nV = max(a for a, c in data)\nf = [[0] * (V + 1) for _ in range(2)]\nfor a, c in data:\n    f[c][a] += 1\n\n\ndef encode(a):\n    return int.from_bytes(b\"\".join(x.to_bytes(4, \"little\") for x in a), \"little\")\n\n\nproduct = encode(f[0]) * encode(f[1])\nraw = product.to_bytes(4 * (2 * V + 1), \"little\")\nprime = bytearray(b\"\\x01\") * (2 * V + 1)\nprime[0] = 0\nif V:\n    prime[1] = 0\nfor p in range(2, math.isqrt(2 * V) + 1):\n    if prime[p]:\n        prime[p * p :: p] = b\"\\x00\" * ((2 * V - p * p) // p + 1)\nprint(\n    sum(\n        int.from_bytes(raw[4 * s : 4 * s + 4], \"little\")\n        for s in range(2, 2 * V + 1)\n        if prime[s]\n    )\n)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nconst int P = 998244353;\nint power(int a, int b) {\n    int z = 1;\n    for (; b; b /= 2, a = (ll)a * a % P)\n        if (b & 1)\n            z = (ll)z * a % P;\n    return z;\n}\nvoid ntt(vector<int> &a, bool inv) {\n    int n = a.size();\n    for (int i = 1, j = 0; i < n; i++) {\n        int b = n >> 1;\n        for (; j & b; b >>= 1)\n            j ^= b;\n        j ^= b;\n        if (i < j)\n            swap(a[i], a[j]);\n    }\n    for (int len = 2; len <= n; len *= 2) {\n        int root = power(3, (P - 1) / len);\n        if (inv)\n            root = power(root, P - 2);\n        for (int i = 0; i < n; i += len) {\n            ll w = 1;\n            for (int j = 0; j < len / 2; j++) {\n                int u = a[i + j], v = w * a[i + j + len / 2] % P;\n                a[i + j] = u + v < P ? u + v : u + v - P;\n                a[i + j + len / 2] = u - v >= 0 ? u - v : u - v + P;\n                w = w * root % P;\n            }\n        }\n    }\n    if (inv) {\n        ll z = power(n, P - 2);\n        for (int &x : a)\n            x = x * z % P;\n    }\n}\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n, V = 0;\n    cin >> n;\n    vector<pair<int, int>> d(n);\n    for (auto &[a, c] : d) {\n        cin >> a >> c;\n        V = max(V, a);\n    }\n    int N = 1;\n    while (N < 2 * V + 1)\n        N *= 2;\n    vector<int> a(N), b(N);\n    for (auto [x, c] : d)\n        (c ? b : a)[x]++;\n    ntt(a, false);\n    ntt(b, false);\n    for (int i = 0; i < N; i++)\n        a[i] = (ll)a[i] * b[i] % P;\n    ntt(a, true);\n    vector<int> prime(2 * V + 1, 1);\n    prime[0] = 0;\n    if (V)\n        prime[1] = 0;\n    for (int p = 2; p * p <= 2 * V; p++)\n        if (prime[p])\n            for (int j = p * p; j <= 2 * V; j += p)\n                prime[j] = 0;\n    ll ans = 0;\n    for (int s = 2; s <= 2 * V; s++)\n        if (prime[s])\n            ans += a[s];\n    cout << ans << '\\n';\n}\n",
+    "performanceNote": "提供的來源未含評測時限。Python 雖使用符合值域的演算法，大界常數成本仍須視平台；最嚴格時限建議採用 C++17。實測與案例記錄見 results-654-699.json，不能由通過範例推論所有評測時間皆有保證。"
+  },
+  {
+    "code": "b699",
+    "title": "行走翻燈的外框紀錄",
+    "topic": "data-structures",
+    "level": "medium",
+    "concept": "亮點集合與可延遲刪除的四個極值堆",
+    "goal": "逐步翻燈後維護真正亮點外框，輸出最大周長、首次及所有並列時刻數。",
+    "explanation": [
+      "集合保存目前亮點，初始含原點。每次移動後若抵達亮點就刪掉，否則加入；新亮點同時加入最小x、最大x、最小y、最大y四個堆。查極值前，不斷移除堆頂中已不在亮點集合的座標。",
+      "過期堆項只有成為堆頂才移除，不影響真正極值；同點重新亮起時舊項也代表同一有效座標，重複不會改極值。每時刻按公式算周長，較大時重設首次與次數，相等時只累加次數。先以時刻0周長0初始化，空集合周長亦為0。",
+      "C++17 版本以兩個 multiset 直接維護亮點的 x 與 y 多重集合，刪除時各刪一份座標；其最小值與最大值等價於 Python 四堆清除過期項後的極值。兩版維護同一個亮點不變量。"
+    ],
+    "complexity": "時間 O(n log n)，空間 O(n)，每次新增至多四個堆項且各項最多彈出一次；Python 指令與堆緩衝 O(n)，n≤40000。",
+    "pitfall": "所有亮燈才決定外框，不是所有走過的位置；時刻0也要計入並列次數。",
+    "sampleInput": "5\nEWEWE",
+    "sampleOutput": "2 1 2",
+    "traceLabel": "逐步教學推演：依各步描述的例子觀察狀態、轉移與答案。",
+    "trace": [
+      {
+        "title": "時刻零",
+        "description": "只有原點亮。",
+        "cells": [
+          "(0,0)"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最大／首次／次數",
+            "0／0／1"
+          ]
+        ]
+      },
+      {
+        "title": "向東一步",
+        "description": "原點與(1,0)皆亮，周長2。",
+        "cells": [
+          "(0,0)",
+          "(1,0)"
+        ],
+        "active": [
+          0,
+          1
+        ],
+        "variables": [
+          [
+            "最大／首次／次數",
+            "2／1／1"
+          ]
+        ]
+      },
+      {
+        "title": "再向西一步",
+        "description": "原點翻暗，只剩(1,0)，周長0。",
+        "cells": [
+          "(1,0)"
+        ],
+        "active": [
+          0
+        ],
+        "variables": [
+          [
+            "最大／首次／次數",
+            "2／1／1"
+          ]
+        ]
+      }
+    ],
+    "python": "import sys, heapq\n\nt = sys.stdin.buffer.read().split()\ns = t[1].decode()\non = {(0, 0)}\nheaps = [[(0, 0, 0)] for _ in range(4)]\nx = y = 0\nbest = first = 0\ncount = 1\ndelta = {\"N\": (0, 1), \"S\": (0, -1), \"E\": (1, 0), \"W\": (-1, 0)}\nfor i, c in enumerate(s, 1):\n    dx, dy = delta[c]\n    x += dx\n    y += dy\n    p = (x, y)\n    if p in on:\n        on.remove(p)\n    else:\n        on.add(p)\n        for h, v in zip(heaps, (x, -x, y, -y)):\n            heapq.heappush(h, (v, x, y))\n    if on:\n        for h in heaps:\n            while (h[0][1], h[0][2]) not in on:\n                heapq.heappop(h)\n        per = -2 * sum(h[0][0] for h in heaps)\n    else:\n        per = 0\n    if per > best:\n        best = per\n        first = i\n        count = 1\n    elif per == best:\n        count += 1\nprint(best, first, count)\n",
+    "cpp": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nconst ll MOD = 1000000007;\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    int n;\n    string s;\n    cin >> n >> s;\n    set<pair<int, int>> on{{0, 0}};\n    multiset<int> X{0}, Y{0};\n    int x = 0, y = 0, best = 0, first = 0, cnt = 1;\n    for (int i = 1; i <= n; i++) {\n        char c = s[i - 1];\n        x += (c == 'E') - (c == 'W');\n        y += (c == 'N') - (c == 'S');\n        pair<int, int> p{x, y};\n        if (on.count(p)) {\n            on.erase(p);\n            X.erase(X.find(x));\n            Y.erase(Y.find(y));\n        } else {\n            on.insert(p);\n            X.insert(x);\n            Y.insert(y);\n        }\n        int per =\n            on.empty() ? 0 : 2 * (*X.rbegin() - *X.begin() + *Y.rbegin() - *Y.begin());\n        if (per > best) {\n            best = per;\n            first = i;\n            cnt = 1;\n        } else if (per == best)\n            cnt++;\n    }\n    cout << best << ' ' << first << ' ' << cnt << '\\n';\n}\n"
+  }
+]

@@ -1,0 +1,241 @@
+<img src="public/brand/itouOJ.png" alt="itouOJ 標誌" width="80" height="80" />
+
+# itouOJ
+
+一套可自行架設的 Online Judge，提供程式題、識讀練習、CTF、比賽、課程與離線收件。網站採用 Next.js；正式程式提交由自建的 Linux 沙箱判題。
+
+![itouOJ 首頁](public/brand/Hero.png)
+
+[網站](https://oj.itousouta.me) · [下載版本（Android App／Windows 收件程式）](https://github.com/itousouta15/itouOJ/releases) · [貢獻指南](CONTRIBUTING.md)
+
+## 能做什麼
+
+| 功能 | 說明 |
+| --- | --- |
+| 程式題 | Markdown／數學式題敘、範例測資、標籤、子題配分、提交紀錄與排行榜；支援 C++、C、Python、JavaScript、喵++。 |
+| 寫程式 | CodeMirror 編輯器、每題每語言的帳號草稿（網站與 Android App 同步，離線時保留本機草稿）與範例測試；手機可先備妥 stdin 再測試。桌機可左右拖曳調整題目與程式欄寬。 |
+| Terminal | 桌機版可直接在終端機中逐行輸入、即時看輸出；支援 C++、C、Python、JavaScript|
+| 識讀練習 | 選擇題即時對答案、詳解、題組進度與複習紀錄；不列入一般程式提交紀錄。 |
+| CTF 練習 | 共用帳號的個人題庫、固定 Flag、Markdown 題敘、附件下載、提交紀錄與計分板；管理員可新增、編輯、隱藏及刪除題目。 |
+| 比賽與課程 | ICPC／IOI 計分、封榜與揭榜、參賽代碼、語言限制、PDF 題本；課程可整理題目與追蹤解題進度。 |
+| 社群與管理 | 討論、題解、公告、站內訊息、個人檔案；管理後台可審核題目提案並管理題目、比賽、課程與使用者。 |
+| 離線與行動裝置 | Windows 收件程式可在斷網比賽中保存提交、復網後補傳；Android App 使用 Capacitor，提供手機編輯器及原生通知。 |
+
+可使用帳密註冊／登入；Google、Discord 登入及密碼重設信件可另外設定。識讀題庫中的 C／Python 125 題經 Bangye Wu 教授同意，供非營利教育用途使用，題目頁會標示來源。
+
+課程管理可用上下按鈕調整整門課程的顯示順序，按「儲存排序」後套用到課程列表；新增課程排在最後。編輯課程時，已選題目也可上下排序，新增選題會加到最後，按「儲存課程」後生效。一般課程題目列表、歷屆題庫列表與教學頁上一題／下一題依儲存順序顯示；既有主題與難度學習區塊仍保留分組。部署需先套用 `20261020010000_course_sort_order` migration，舊課程會保留原本 APCS 入門課優先、其餘依 ID 的排列。
+
+新增題目的逐題教學可由 `/courses/practice` 依主題、難度、題號或題名搜尋，也可從題目頁的「教學」按鈕開啟。此學習路徑直接對照現有公開題目，不需匯入課程。部署另含 a853 原卷編號規則的保護式題面更正；內容、適用範圍與驗證方式見[競賽與專題教學說明](docs/guides/new-problem-tutorials.md)。
+
+### 錯誤回報
+
+- 題目頁、課程教學頁與頁尾提供「回報錯誤／回報問題」入口；教學動畫和程式區可直接帶入目前步驟或 C++／Python 語言。支援教學、題目／測資、提交／評測、網站功能與其他類別。
+- 登入後填寫標題、重現步驟與預期結果，可在 `/reports` 查看自己的回報和處理回覆；管理員由帳號選單進入 `/admin/reports`，依類別、狀態或題號／標題搜尋，並更新待處理、處理中、已修正、已結案狀態。
+- 回報只對本人與管理員開放，刪除帳號會一併移除本人回報。網址只保存站內路徑，不記錄 query／hash，也不自動蒐集瀏覽器資訊或程式草稿；輸入與回覆以純文字顯示，不開放附件。請勿填入登入憑證、私人測資或其他敏感資訊。
+- 每個帳號每 10 分鐘最多提交 5 次，API 另有限制實際請求大小。管理員回覆會顯示在回報詳情，不會寄信或自動建立 GitHub issue。此功能需先套用 `20261020200000_add_bug_reports` migration，再執行 generate／build。
+
+### CTF 使用方式
+
+- 練習入口為 `/ctf`；訪客可以瀏覽公開題目及下載附件，登入後提交 Flag。
+- 管理入口為 `/admin/ctf`。新題預設隱藏，儲存題目後進入編輯頁逐檔上傳附件，每檔最多 **4 MiB**，API 請求最多 **5 MiB**。全站 Nginx 的 50 MiB 限制不會放寬此限制。
+- Flag 忽略前後空白、保留內部空白並區分大小寫。編輯時留空保留原值；原 Flag 不回填，也不保存提交的 Flag 原文。
+- 每人每題只計分一次。修改配分會更新所有已解出者的分數；隱藏題目保留紀錄，暫時排除於 CTF 排行、進度、近期解題及歷史；再公開恢復採計。永久刪除會移除附件與關聯紀錄。
+- CTF 計分板以分數由高至低、最後解出時間由早至晚、使用者名稱排序。提交限流為帳號每分鐘 10 次、IP 每分鐘 30 次。
+
+全站排行採 `實作解題數 × 0.42 ＋ 識讀答對數 × 0.28 ＋ CTF 原始分數 × 0.003`，完整精度排序、顯示至小數第三位。實作解題與程式提交數明確限定 `PROGRAMMING`，排除舊的識讀 `Submission`；首頁實作排行與個人統計採相同題型口徑。CTF 不進入程式判題佇列，使用 SQLite 和 Node crypto 即可運作。
+
+CTF 題庫點擊卡片會開啟 CTFd 風格的 modal，保留分類、難度、解題狀態、分頁與捲動位置。視窗提供題目、本人提交及解題者分頁，支援 Esc、遮罩與關閉鈕；答對後同步更新卡片與進度。Modal 專用網址為 `/ctf/challenges/<id>`，直接開啟或重新整理時使用共用內容的獨立題目頁；原 `/ctf/<id>` 深連結仍有效。攔截僅限專用題目路徑，不影響計分板及提交歷史。紀錄每頁 20 筆，本人提交只由目前 session 查詢，且不保存／回傳提交的 Flag 原文。
+
+桌面主導覽為 **練習 ▾／課程／比賽／排行**；練習選單集中實作、識讀、CTF 與全站提交紀錄。頭像選單提供個人頁面、訊息、設定、本人程式／識讀與 CTF 紀錄、動態及管理員入口。手機選單及 App「更多」共用分組；窄螢幕的註冊入口放在手機選單。互動與實作說明見 [CTF modal 與導覽](docs/guides/ctf-modal-navigation.md)。
+
+首頁改回原站的簡潔版型：置中 Logo、短標語、實作／識讀／CTF 三個練習按鈕與方形內容區。列出公開題庫統計、每日一題、公告、最新實作與 CTF、全站排行及社群；登入後保留本人 CTF 進度與繼續學習。沒有挑戰預覽、軌道裝飾或大型介紹卡片，下載工具與評測環境收在精簡頁尾，App 不重複顯示下載宣傳。詳見 [首頁指南](docs/guides/homepage-ctf.md)。
+
+新增 CTF 模組的 migration 為 `20261006140000_add_ctf_module`。部署前備份資料庫，依現有流程執行 migration、generate、build；程式回退時可保留新增 CTF 表，排行會恢復舊版本的公式。部署檢查步驟見 [CTF 實作計畫](docs/superpowers/plans/2026-10-05-native-ctf-module-plan.md)。
+
+#### 入門題目
+
+提供六題可離線解題的入門教材，每題 100 分，附題敘、提示及一個附件：
+
+| 分類 | 題目 | 練習重點 |
+| --- | --- | --- |
+| Web | 看不見的留言 | HTML 原始碼與註解 |
+| Crypto | 只是換個外衣 | Base64 編碼 |
+| Reverse | 把驗證器倒過來 | XOR、索引偏移與反轉 |
+| Pwn | 堆疊上的小端序 | 緩衝區覆寫與 little-endian；可閱讀 C 原始碼手算，或在自己的 Linux 環境驗證 |
+| Forensics | 圖片結束之後 | PNG 檔尾附加資料 |
+| Misc | 把票據排回原位 | ZIP 解包與片段重組 |
+
+```sh
+node scripts/add-ctf-beginner-challenges.mjs --check
+node scripts/add-ctf-beginner-challenges.mjs
+```
+
+第二個命令使用 `DATABASE_URL` 指定的 SQLite，先建立一致性備份到系統暫存目錄，再匯入並公開題目。可用 `--db 資料庫路徑` 指定目標，或 `--hidden` 將新題設為隱藏；資料庫需先套用 CTF migration。
+
+每次建立新題時隨機產生 Flag，再將相應線索寫入附件、salt/hash 寫入題目資料表，終端機不輸出 Flag。同名題目會保留原有 metadata、Flag、附件和解題紀錄，因此可重複執行；若管理員改了題目標題，下次匯入會將原標題視為新題。
+
+#### 可操作的 Web 練習網站
+
+Web 題可以從題目頁的「前往練習網站」進入 `/ctf/labs/<題目 ID>`，直接在瀏覽器探索、登入或查看模擬票券，找到 Flag 後回到題目提交。後台可選擇原始碼小站、Cookie 會員站或票券收藏站三種模板。
+
+```sh
+node scripts/add-ctf-web-labs.mjs --check
+node scripts/add-ctf-web-labs.mjs
+```
+
+請先套用 `20261007090000_add_ctf_web_labs` migration。匯入腳本會保留「看不見的留言」的原 Flag、附件及解題紀錄並啟用小網站，再新增各 150 分的「Cookie 裡的管理員」與「票券編號的另一邊」。同名網站重跑會保留既有設定，匯入前會建立一致性備份。
+
+網站使用模擬資料；練習用 Cookie 的名稱與 Path 限定於該題，不能取得 OJ 管理權限。用於網站揭示答案的 Flag 另以 AES-256-GCM 加密儲存，公開題目頁及後台表單不傳出密文或原值。此加密使用 `AUTH_SECRET`；更換密鑰後需在後台重新設定 Web Lab 的 Flag。詳見 [Web Lab 操作與驗證](docs/guides/ctf-web-labs.md)。
+
+### CTF 驗證
+
+```sh
+npm run generate
+npm run test:ctf
+npm run test:ctf-beginner
+npm run test:ctf-web-labs
+```
+
+測試使用 Node 原生測試工具，自行建立拋棄式資料庫、套用 migration、啟動本機測試網站，並在結束後清理；不使用 `.env` 中的資料庫。涵蓋實際 HTTP 權限、附件、flag 判定、跨程序併發、計分、cascade 和敏感欄位輸出。CI 在 production build 後設定 `CTF_TEST_PRODUCTION=1`，以 production server 執行測試；本機未設定時使用 dev server。
+
+入門題測試會從附件獨立解出六題 Flag、實際執行逆向驗證器、檢查 PNG 與 ZIP，並驗證匯入重跑會保留既有修改及解題紀錄。
+
+瀏覽器驗證為選用項目：另外安裝 Playwright 與 Chromium，將 `CTF_BROWSER_MODULE` 設為 Playwright `index.mjs` 的絕對路徑後執行相同命令。可用 `CTF_SCREENSHOT_DIR` 指定已存在的截圖目錄；`CTF_BROWSER_CHANNEL` 可指定已安裝的瀏覽器 channel。驗證包含桌面／手機、深淺色偏好、App 樣式與「更多」入口、分頁、鍵盤提交、loading、斷線重試與管理附件操作。網站沿用既有固定深色樣式；此驗證不需要新增全域主題功能。
+
+## 系統怎麼運作
+
+```text
+瀏覽器／Android App
+         │
+         ▼
+    Next.js（頁面與 API）──── SQLite／Prisma
+         │
+         ├─ 提交與「測試執行」
+         │    └─ C／C++／Python／JavaScript → sandbox-server :8090
+         │
+         └─ 桌機 Terminal（持續執行、即時輸入輸出）
+              └─ C／C++／Python／JavaScript → sandbox-interactive :8091
+```
+
+技術組成：**Next.js 16（App Router）／React 19／TypeScript／Tailwind CSS 4**、**SQLite／Prisma 7**、**CodeMirror 6**、**Capacitor 8**。提交由判題 worker 領取；`npm run dev` 會在開發模式啟動本機 worker，正式環境則使用 `deploy/online-judge-worker.service`。`sandbox-runner` 透過 Linux namespace、cgroup v2 與 seccomp 隔離程式碼。舊的 Java 提交紀錄仍可查看，但已停止接受新的 Java 提交。
+
+另可使用 `npm run judge:remote`，讓不同主機的 worker 透過租約領取工作，交給各自的沙箱執行。支援心跳、逾期回收與冪等結果寫入；部署、故障驗證及新版沙箱報告相容性見 [分散式判題說明](docs/judge-reliability.md)。
+
+編輯器顯示的語言版本定義在 [`src/lib/languages.ts`](src/lib/languages.ts)。自建沙箱的 C／C++ 實際編譯器取決於部署主機，請讓主機版本與網站顯示相符。
+
+| 語言 | 編輯器標籤 | 判題 | 互動式 Terminal |
+| --- | --- | --- | --- |
+| C++ | GCC 10.2 | sandbox-runner | ✓ |
+| C | GCC 10.2 | sandbox-runner | ✓ |
+| Python | 3.12 | sandbox-runner | ✓ |
+| JavaScript | Node 20 | sandbox-runner | ✓ |
+| 喵++ | 0.3 | sandbox-runner（Node 20 + C++/Wasm） | — |
+
+喵++（語言代號 `itoulang`，原名 itouLang）0.3 使用中文、型別前置的 C++ 風格語法，以及 `喵in >>`／`喵out <<` 等串流。判題時由 [`src/lib/itoulang.ts`](src/lib/itoulang.ts) 把原始碼包成 Node 程式，動態載入 **C++ 核心的 WebAssembly 版**，直接呼叫 `request()`。它沿用 `javascript` 沙箱 runtime，保留精確的標準輸出／標準錯誤，不另開原生子程序。提交編輯器與遊樂場已使用中文範例、專屬高亮和喵串流補全；遊樂場可填整份標準輸入。
+
+喵++ 專案以 git submodule 放在 [`vendor/itoulang`](https://github.com/itousouta15/itouLang)。首次 clone 後執行 `git submodule update --init --recursive`；啟用 Emscripten 4.0.23、CMake 與 Ninja 後，可用 `npm run build:itoulang` 建置、`npm run test:itoulang` 驗證。部署腳本會依 **OJ 已提交的 gitlink（或 `-ItouLangRevision` 指定的語言快照）** 建置及打包來源和 `itou.js`／`itou.wasm`，安裝到 `/opt/piston-data/packages/node/20.11.1/itoulang/`，並在切換服務前用判題主機的 Node 20 驗證核心。
+
+沙箱內的入口是 `file:///opt/runtime/itoulang/src/wasm-transport.js`，可用 `ITOULANG_RUNTIME_URL` 覆寫；既有設定若指向 `src/index.js`，需改到 Wasm transport。輸入仍是一次讀完的 stdin。完整語法、測試與部署步驟見 [喵++ 整合說明](docs/guides/itoulang.md)。
+
+Terminal 的輸入游標與程式輸出在同一個畫面：**Enter** 送出一行、**Shift＋Enter** 換行、**Ctrl＋D／EOF** 結束標準輸入，**Ctrl＋C／停止** 可終止執行。讀取到檔尾的程式要送出 EOF 才會結束。Terminal 最多執行兩分鐘，CPU 時間另依題目限制。詳見 [沙箱與互動服務說明](sandbox-runner/README.md)。
+
+## 在本機啟動
+
+網站建置需要 **Node.js 22.12 以上** 與 npm；判題沙箱仍使用 Node 20.11.1。網站和資料庫可在 Windows、macOS 或 Linux 開發；要真正執行使用者程式，還需要可連線的沙箱服務。
+
+1. 安裝套件：
+
+   ```sh
+   npm ci
+   ```
+
+2. 在專案根目錄建立 `.env`。最精簡的本機設定如下；請換成自己產生的隨機密鑰：
+
+   ```dotenv
+   DATABASE_URL="file:./dev.db"
+   AUTH_SECRET="請替換成至少 32 位元組的隨機字串"
+   ```
+
+   可以用 `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` 產生密鑰。正式環境沒有 `AUTH_SECRET` 會拒絕啟動。`.env` 與資料庫檔不應提交到 Git。
+
+3. 產生 Prisma Client、建立資料表並啟動網站：
+
+   ```sh
+   npm run generate
+   npx prisma migrate dev
+   npm run dev
+   ```
+
+   開啟 <http://localhost:3000>。新資料庫一開始沒有題目；可以在後台建立題目，或用 `node scripts/import-recognition-questions.mjs` 匯入隨專案提供的識讀題。
+
+   HackMD 三題教學實作練習（營火晚會、最短包含字串、考拉茲數字反推）可先用 `node scripts/import-hackmd-three-problems.mjs --check` 核對，再以 `--db 明確的SQLite路徑` 匯入；包含來源範例及非官方自製測資，詳見[匯入與驗證說明](docs/guides/hackmd-three-problems.md)。
+
+4. 註冊帳號後，若需要第一位管理員，在受信任的機器上執行（將 `YOUR_USERNAME` 換成帳號）：
+
+   ```sh
+   node scripts/bootstrap-admin.mjs YOUR_USERNAME
+   ```
+
+   此指令只允許在尚無管理員時使用。
+
+網站可以先用來瀏覽題目、設計頁面；**提交、測試執行與 Terminal 都需要後端執行服務**。開發模式的帳密註冊／登入不要求 Cloudflare Turnstile，正式環境則會驗證。
+
+### 本機執行程式
+
+- **C／C++／Python／JavaScript 提交及測試**：安裝 Linux 的 [sandbox-runner](sandbox-runner/README.md)，預設連到 `127.0.0.1:8090`；也可用 `SANDBOX_URL` 指向可連線的沙箱。
+- **桌機 Terminal**：另需 `sandbox-interactive`（`127.0.0.1:8091`）；它與一般測試執行是不同服務。Windows 使用 WSL2 的建置與啟動指令在 [sandbox-runner/README.md](sandbox-runner/README.md) 的「Windows 本機開發」段落；Linux 可使用 `sandbox-runner/deploy/sandbox-interactive.service`。
+
+### 環境變數
+
+| 變數 | 用途 |
+| --- | --- |
+| `DATABASE_URL` | SQLite 路徑；本機可用已被 `.gitignore` 排除的 `file:./dev.db`，既有部署腳本則預期正式資料庫為 `file:./oj.db`。 |
+| `AUTH_SECRET` | 簽署登入 session；正式環境必填。 |
+| `APP_URL` | 對外網址，用於 OAuth 回呼與站點連結；正式環境設定成 HTTPS 網址。 |
+| `SANDBOX_URL` | 一般判題服務網址；預設為 `http://127.0.0.1:8090`。 |
+| `INTERACTIVE_SANDBOX_URL` | 互動式 Terminal 服務網址；預設 `http://127.0.0.1:8091`。 |
+| `JUDGE_WORKER_SECRET` | 正式環境判題 worker 呼叫內部 API 的密鑰。 |
+| `TURNSTILE_SECRET`／`TURNSTILE_HOSTNAMES` | 正式環境帳密登入與註冊的 Turnstile 驗證密鑰、允許的主機名稱。前端 site key 目前在 `src/components/AuthForm.tsx` 設定；自行換網域部署時需對應調整。 |
+| `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` | 選用的 Google 登入；需設定 `/api/auth/google/callback` 為回呼網址。 |
+| `DISCORD_CLIENT_ID`／`DISCORD_CLIENT_SECRET` | 選用的 Discord 登入；需設定 `/api/auth/discord/callback` 為回呼網址。 |
+| `RESEND_API_KEY`／`RESEND_FROM` | 選用的密碼重設信件。 |
+| `OFFLINE_MODE=1` | 斷網比賽模式，停用對外 OAuth 登入等依賴網路的功能。 |
+| `DEPLOY_SERVER` | `deploy/deploy.ps1` 使用的 SSH 伺服器位址（也可設同名環境變數）。 |
+
+正式環境可用 `TURNSTILE_HOSTNAMES="oj.example.com"` 指定站點主機名稱；自訂網域需配置相符的 Turnstile widget 和 server secret。勿將真實密鑰寫進 README 或原始碼。
+
+## 部署與更新
+
+此專案的既有部署流程以 **Linux + systemd + nginx + SQLite** 為基礎：
+
+1. 部署 [sandbox-runner](sandbox-runner/README.md) 到 `/opt/sandbox-runner`：`make` 建置 `jail` 和 `sandbox-server`，啟用 [`sandbox-server.service`](sandbox-runner/deploy/sandbox-server.service)。如需 Terminal，另外啟用 [`sandbox-interactive.service`](sandbox-runner/deploy/sandbox-interactive.service)。沙箱需 Linux namespace／cgroup v2，服務只應監聽本機位址。
+2. 在 `/opt/online-judge` 安裝網站：`npm ci`、`npm run generate`、`npx prisma migrate deploy`、`npm run build`；正式 `.env` 設定 `DATABASE_URL="file:./oj.db"`，再設定 [`online-judge.service`](deploy/online-judge.service) 與 [`online-judge-worker.service`](deploy/online-judge-worker.service)，由 [nginx 設定](deploy/nginx-oj.conf)代理到 `:3000`。
+3. 若從 Windows 更新既有伺服器，可設定 `DEPLOY_SERVER` 後執行 `./deploy/deploy.ps1`。腳本以 **已提交的 `HEAD`** 打包，在隔離目錄建置並驗證沙箱與網站；待判題中的提交結束，使用 SQLite `.backup` 建立一致性備份，依序更新沙箱、網站和 worker，健康檢查失敗時回復程式檔與服務。工作區未提交的修改不會被部署；需要更新 `jail` 時會一併重啟互動服務。備份保留在 `/opt/oj-deploy-backups/`。
+
+正式提交與編輯器測試共用單一沙箱執行名額：正式提交優先，最多兩筆測試等待 15 秒，額滿回傳 503；正式提交若排隊逾時會重新排入判題佇列，不會因此被判系統錯誤。此排隊器以正式站單一 Next.js 伺服器程序為前提，若改為多實例部署，需將名額協調移到跨程序服務。部署腳本需要伺服器上有 `rsync`、`sqlite3`、`make`、GCC 及沙箱編譯依賴；資料庫備份可供回復，但新站開始服務後不會自動回滾資料庫，以免丟失新提交。
+
+新部署請先確認服務設定檔中的 `/opt/...` 路徑與實際安裝位置一致，並提供 `JUDGE_WORKER_SECRET`、`AUTH_SECRET`、Turnstile 設定及正式站網址。更完整的沙箱建置、資源限制與驗證方式請看 [sandbox-runner 文件](sandbox-runner/README.md)。
+
+## Android App 與 Windows 收件程式
+
+**Android App**：由 Capacitor WebView 載入網站，行動版有分頁、全螢幕程式編輯器、鍵盤符號列與通知。原生專案在 `android/`；`capacitor.config.ts` 預設連到線上網站。安裝 Android SDK／JDK 後可用 `npx cap sync android`、`npx cap open android` 建置或測試；要切換開發網址可設 `CAP_SERVER_URL` 並重新同步。網站內容更新不需要重裝 App，原生資源或外掛變更則需要重建。
+
+登入同一帳號後，題目編輯器會自動同步各語言的草稿。離線輸入先留在裝置上，連線後重試；兩台裝置同時修改、或首次遇到舊版瀏覽器草稿時，會要求選擇保留「此裝置」或「帳號版本」，不會自動覆蓋。草稿與正式提交是不同紀錄。舊版草稿原本不分帳號，若使用共用電腦，請確認舊版草稿屬於自己再選擇上傳。
+
+**Windows 收件程式**：`client/` 下的獨立 .NET Framework 工具，供選手機在離線比賽寫程式、保存草稿與提交，復網後補傳；詳細設定、建置與使用流程請看 [client/README.md](client/README.md)。
+
+## 專案目錄
+
+```text
+src/app/              頁面、API 與全站樣式
+src/components/       編輯器、Terminal、題目／比賽 UI
+src/lib/              認證、語言設定、判題與執行服務介面
+prisma/               SQLite 資料模型、遷移與題庫資料
+sandbox-runner/       Linux 沙箱、互動服務、整合測試與 systemd 設定
+client/               Windows 離線收件程式
+android/              Capacitor Android 原生專案
+deploy/               網站部署腳本、nginx 與判題 worker 設定
+scripts/              題庫匯入、管理與維護指令
+```
+
+開發前可執行 `npm run lint` 與 `npm run build`。問題回報與 PR 說明見 [CONTRIBUTING.md](CONTRIBUTING.md)。程式碼以 [MIT License](LICENSE) 授權；第三方授權提供的識讀題庫另依其使用條件。

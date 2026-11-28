@@ -1,0 +1,59 @@
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import { prisma } from "@/lib/db";
+import { createSession, getSession } from "@/lib/auth";
+import { enforceRateLimit } from "@/lib/rateLimit";
+
+const schema = z.object({
+  // 只有「已經有密碼」才需要驗證目前密碼；Google/Discord 帳號第一次設定密碼沒有舊密碼可驗
+  currentPassword: z.string().optional(),
+  newPassword: z.string().min(6, "新密碼至少 6 個字元").max(72),
+});
+
+export async function POST(request: Request) {
+  const session = await getSession();
+  if (!session) {
+    return Response.json({ error: "請先登入" }, { status: 401 });
+  }
+
+  // 改密碼需要驗證目前密碼，也給一層限流避免被拿來暴力嘗試
+  const limited = enforceRateLimit(`password:${session.userId}`, 10, 5 * 60_000);
+  if (limited) return limited;
+
+  const body = await request.json().catch(() => null);
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues[0].message },
+      { status: 400 }
+    );
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+  });
+  if (!user) {
+    return Response.json({ error: "請先登入" }, { status: 401 });
+  }
+  if (user.passwordHash) {
+    // 已經有密碼：一定要驗證目前密碼才能改
+    if (!parsed.data.currentPassword) {
+      return Response.json({ error: "請輸入目前密碼" }, { status: 400 });
+    }
+    const ok = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
+    if (!ok) {
+      return Response.json({ error: "目前密碼不正確" }, { status: 400 });
+    }
+  }
+  // 沒有密碼（Google/Discord 帳號）：這是第一次設定，不需要驗證舊密碼
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash: await bcrypt.hash(parsed.data.newPassword, 10),
+      sessionVersion: { increment: 1 },
+    },
+  });
+  await createSession({ userId: user.id, username: user.username, role: user.role });
+  return Response.json({ ok: true });
+}

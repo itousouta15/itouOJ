@@ -1,0 +1,82 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { lockBodyScroll } from "@/lib/bodyScrollLock";
+
+// 同 itousouta.me 的 SiteLoader：window load 前用全頁模糊遮罩蓋住，
+// 載入完成後往上滑出，再讓 header 播放進場動畫（body.site-revealed）。
+const MAX_WAIT_MS = 1500;
+const SLIDE_MS = 250;
+
+export default function SiteLoader() {
+  const [hiding, setHiding] = useState(false);
+  const [gone, setGone] = useState(false);
+
+  useEffect(() => {
+    const unlock = lockBodyScroll();
+
+    let hideTimer: ReturnType<typeof setTimeout>;
+    let removeTimer: ReturnType<typeof setTimeout>;
+    let done = false;
+
+    const startHide = () => {
+      if (done) return;
+      done = true;
+      setHiding(true);
+      // 畫面往上滑出結束後才讓 header／主畫面開始進場，見 globals.css 的
+      // body.site-revealed 規則。
+      removeTimer = setTimeout(() => {
+        document.body.classList.add("site-revealed");
+        setGone(true);
+        unlock();
+      }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : SLIDE_MS);
+    };
+
+    // The page is server-rendered, so waiting for every font and image makes
+    // the loader hide useful content during slow or offline connections.
+    const revealAfterDom = () => {
+      hideTimer = setTimeout(startHide, 0);
+    };
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", revealAfterDom, { once: true });
+    } else {
+      revealAfterDom();
+    }
+    // Keep a safety net for unusual hydration stalls.
+    const maxWaitTimer = setTimeout(startHide, MAX_WAIT_MS);
+
+    return () => {
+      document.removeEventListener("DOMContentLoaded", revealAfterDom);
+      clearTimeout(hideTimer);
+      clearTimeout(removeTimer);
+      clearTimeout(maxWaitTimer);
+      unlock();
+    };
+  }, []);
+
+  if (gone) return null;
+
+  return (
+    <>
+      {/* 沒有 JS 就不會觸發滑出與 site-revealed，避免遮罩擋住整個網站、
+          header 也卡在進場動畫的起始幀 */}
+      <noscript>
+        <style>{`
+          .site-loader { display: none !important; }
+          .site-header {
+            animation: none !important;
+          }
+          .motion-progress {
+            animation: none !important;
+          }
+        `}</style>
+      </noscript>
+      <div
+        className={`site-loader${hiding ? " site-loader--hide" : ""}`}
+        role="status"
+        aria-live="polite"
+        aria-label="頁面載入中"
+      />
+    </>
+  );
+}

@@ -1,0 +1,2614 @@
+{
+  "problem": "a980",
+  "host": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+  "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+  "referenceSha256": {
+    "cpp": "232d5817c477b5bbfc03c6d64836f6dd524e26c72c78a099f08bb0073036a2ec",
+    "python": "6caf54a70360f667e06c6fd5bcf268796944c3e0c9f8135d84ec343f086b6269"
+  },
+  "benchmarks": [
+    {
+      "case": "dense-max-n2800-P37",
+      "implementation": "cpp",
+      "timeoutSeconds": 120,
+      "wallSeconds": 7.662055871000007,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 65536,
+      "cpuSeconds": 7.640239,
+      "stderr": ""
+    },
+    {
+      "case": "dense-max-n2800-P37",
+      "implementation": "candidate",
+      "timeoutSeconds": 180,
+      "wallSeconds": 77.88034584100001,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 75776,
+      "cpuSeconds": 77.81971,
+      "stderr": ""
+    },
+    {
+      "case": "dense-max-n2800-P37",
+      "implementation": "python",
+      "timeoutSeconds": 240,
+      "wallSeconds": 240.02458747499998,
+      "returncode": -9,
+      "outputVerified": false,
+      "peakRssKiB": 75512,
+      "cpuSeconds": 240.003782,
+      "stderr": ""
+    },
+    {
+      "case": "dense-max-n2800-P37",
+      "implementation": "python",
+      "timeoutSeconds": 600,
+      "wallSeconds": 188.22335178899993,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 76160,
+      "cpuSeconds": 188.21558000000002,
+      "stderr": ""
+    }
+  ],
+  "checks": [
+    {
+      "case": "sample",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.030921959000011157,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.001769,
+      "stderr": ""
+    },
+    {
+      "case": "sample",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06331032699995376,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.051448999999999995,
+      "stderr": ""
+    },
+    {
+      "case": "sample",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.060635168000089834,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.043872,
+      "stderr": ""
+    },
+    {
+      "case": "sample",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.025334832999988066,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.004824999999999999,
+      "stderr": ""
+    },
+    {
+      "case": "sample",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06230604000006679,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.042963999999999995,
+      "stderr": ""
+    },
+    {
+      "case": "sample",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.04675875400005225,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.040877000000000004,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n2-P37",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.02594605199999478,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.0017289999999999999,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n2-P37",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06769671400002153,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.043917,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n2-P37",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.04115642800002206,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.038579999999999996,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n2-P2801",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.02315975499993783,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.002294,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n2-P2801",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06333323000001201,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.050526,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n2-P2801",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06121727799995824,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.04415499999999999,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n2-P49999991",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.023826291999966998,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.0037619999999999997,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n2-P49999991",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06942764900009024,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.046626999999999995,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n2-P49999991",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06729799400000047,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.044355,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n3-P37",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.03288097899996956,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.0017469999999999999,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n3-P37",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06171507700003076,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.041734,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n3-P37",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.0453257259999873,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.038757,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n3-P2801",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.013275978999899962,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.002872,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n3-P2801",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06076925900003971,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.040332999999999994,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n3-P2801",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06798974100001942,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.054575,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n3-P49999991",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.02109297599997717,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.002425,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n3-P49999991",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06187090299999909,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.046674999999999994,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n3-P49999991",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.04229375399995661,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.041642,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n7-P37",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.022405520000006618,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.002057,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n7-P37",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.11046608599997398,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.09007299999999999,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n7-P37",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.08329301200001282,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.061805,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n7-P2801",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.037697851999951126,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.0017059999999999998,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n7-P2801",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.07208671900002628,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.055615,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n7-P2801",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.09611428999994587,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.06823,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n7-P49999991",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.04483845000004294,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.002287,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n7-P49999991",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.061437542000021494,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.042315,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n7-P49999991",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06258165799999915,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.042322,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n12-P37",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.024660681000000295,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.0017749999999999999,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n12-P37",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06260243100007301,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.04705,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n12-P37",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.061437339999997675,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.042502,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n12-P2801",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.024999674000014238,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.001728,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n12-P2801",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06904794800004765,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.056582,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n12-P2801",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.0607483039999579,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.037103,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n12-P49999991",
+      "implementation": "cpp",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.02372421100005795,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.001772,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n12-P49999991",
+      "implementation": "python",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.04113461300005383,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.040131999999999994,
+      "stderr": ""
+    },
+    {
+      "case": "dense-small-n12-P49999991",
+      "implementation": "candidate",
+      "timeoutSeconds": 15,
+      "wallSeconds": 0.06120800100006818,
+      "returncode": 0,
+      "outputVerified": true,
+      "peakRssKiB": 28424,
+      "cpuSeconds": 0.053052999999999996,
+      "stderr": ""
+    }
+  ],
+  "correctnessReview": {
+    "algorithm": "For each column interval use independent uniform F_P vectors; associativity gives A(Bv)=Cv. A nonzero row has a uniform projection by conditioning on all but one nonzero coefficient. Only unknown rows need further rounds. Exact leaf products prevent false-positive entries; failures can only omit entries.",
+    "adaptiveUnionBound": "Condition on previous recursion decisions. Fresh vectors at each node retain the 1/P per-trial miss probability. At most 2n(ceil(log2(n))+1)<=72800 true row/interval pairs exist. T=ceil(42/log(P)) gives total miss probability <=72800/P^T<=72800*exp(-42)<5e-14.",
+    "globalBound": 4.185652208405712e-14,
+    "P37T": 12,
+    "P37Bound": 1.1058868412744893e-14,
+    "randomnessCaveat": "The exact probability statement assumes ideal independent uniform samples. Python uses OS-backed SystemRandom.randrange (unbiased rejection sampling). C++ uses mt19937 seeded by random_device; its pseudorandom stream is conventional contest practice, but literal statistical independence/the numerical theorem is not established for that finite-state generator.",
+    "arithmeticComplexity": "O(T*n^2*log n) scalar multiply-add work; O(T*n^2) modulo operations because every B projection uses n modulo operations per interval, at most n-1 internal intervals exist, and A-row checks total O(T*n*log n). Leaves add O(n) modulo operations and O(n^2) multiply-add work. T<=12 for allowed P, so this meets the source's O(n^2) modulo-count premise.",
+    "overflow": {
+      "safeUpperBound": 6999999440000011200,
+      "signed64Maximum": 9223372036854775807,
+      "reason": "All exact dot products have <=n terms, each <=(P-1)^2. C++ casts with 1LL before multiplication. Max admissible P<50000000; no intermediate signed 64-bit overflow."
+    },
+    "pythonMemory": "Two array('I') matrices use 2*2800^2*4=62,720,000 payload bytes, plus row/array overhead, recursion vectors and candidate/output lists. Input is parsed by lines, so row-formatted input retains O(n) token objects rather than O(n^2); an adversarial one-line whitespace layout can raise tokenizer memory and is not covered by the measured peak. Candidate B slices are transient <=4n bytes. Integer-only sumprod is exact and has no float conversion.",
+    "finiteTesting": "Passing these algebraically certified cases is implementation evidence, not an exhaustive proof or an empirical validation of a 5e-14 failure probability.",
+    "editorial": "https://nhspc2020.twpca.org/editorial/editorial.html"
+  },
+  "environmentReview": {
+    "repoRuntime": "Python 3.12.0 in src/lib/languages.ts; sumprod was added in Python 3.12",
+    "pythonTimeMultiplier": 3,
+    "pythonMemoryMultiplier": 1,
+    "execution": "src/lib/judgeCore.ts evaluateJudgeJob multiplies timeLimitMs by language timeMultiplier and passes it as runTimeoutMs; memory is multiplied then converted from MiB to bytes",
+    "hostCpu": "Intel Core Ultra 7 258V; WSL kali-linux; GCC -O2 -std=c++17",
+    "limitations": "Sequential benchmarks on a shared Windows/WSL host, without fixed CPU affinity or control of background load/thermal state. Local Python is 3.13.12, not the configured judge 3.12.0. Compatibility is checked against repo and official Python 3.12 docs; deployed interpreter was not queried. Inputs maximize n and use P=37 (maximal T=12), but are not proved to maximize wall time over all valid inputs. Separate unseeded SystemRandom runs can follow different rejection/pruning paths. Timings do not establish a production TLE verdict.",
+    "measurement": "time.monotonic wall clock includes process startup and input parsing. Per-child os.wait4 ru_maxrss in KiB; fork-inherited parent memory may impose a baseline, especially for tiny tests.",
+    "compilerVersion": "g++ (Debian 16.2.0-1) 16.2.0",
+    "observedRunVariation": "The original Python first exceeded a 240s controlled cap, then completed in 188.22s under a 600s cap. Both records are retained. Shared heterogeneous host scheduling/thermal state and independent random paths were not controlled, so neither a deterministic speedup ratio nor a judge verdict follows.",
+    "liveNominalTimeMs": 6500,
+    "liveMemoryMiB": 1024,
+    "effectivePythonTimeMs": 19500,
+    "memoryNote": "User mentioned a 512 MB budget; the actual live page reports 1024 MB. Measured peaks are below either budget for this row-formatted dense input."
+  },
+  "liveMetadata": {
+    "url": "https://oj.itousouta.me/problems/a980",
+    "htmlBytes": 40485,
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "Time limit",
+        "value": "6500 ms"
+      },
+      {
+        "@type": "PropertyValue",
+        "name": "Memory limit",
+        "value": "1024 MB"
+      }
+    ]
+  },
+  "construction": {
+    "n": 2800,
+    "P": 37,
+    "q": 10,
+    "inputBytes": 39200010,
+    "proof": "A=I+J, B=I+S-2qJ, q=(n+1)^(-1) mod P. J^2=nJ and JS=J, so AB=I+S+[2-2q(n+1)]J=I+S. Both input matrices are dense; exactly 2n nonzeros, all 1.",
+    "expectedLines": 5600,
+    "expectedSha256": "d633455235554fad83427c8197a6685aa6e525c91d911ade38ca1abc54e73ee5"
+  },
+  "referenceStillCurrent": true,
+  "recommendation": "C++共享投影版本在本機四組n=2800測資最慢3.31秒；Python打包版最慢22.23秒，而本站Python有效時限為19.5秒。因此Python版不適合作為最大範圍可通過時限的提交建議，宜以C++為建議提交版本，Python保留作教學及較小規模參考。本機為共享Windows/WSL環境，父流程可能同時建置；Python實測3.13.12、C++實測GCC16.2，與設定的Python3.12/GCC10.2不同。這些紀錄不等於正式評測TLE或AC保證。",
+  "reviewedAtUtc": "2026-11-03T12:50:27.705594+00:00",
+  "candidateHistory": [
+    {
+      "code": "a980",
+      "python": "import sys, random, math\nfrom array import array\nfrom math import sumprod\n\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        for x in line.split():\n            yield int(x)\n\n\nit = numbers()\nsub, n, P = next(it), next(it), next(it)\nA = [array(\"I\", (next(it) for _ in range(n))) for _ in range(n)]\nB = [array(\"I\", (next(it) for _ in range(n))) for _ in range(n)]\nT = math.ceil(42 / math.log(P))\nrng = random.SystemRandom()\nout = []\n\n\ndef solve(l, r, rows):\n    if not rows:\n        return\n    if r - l == 1:\n        for i in rows:\n            z = sumprod(A[i], (row[l] for row in B)) % P\n            if z:\n                out.append((i + 1, l + 1, z))\n        return\n    keep = []\n    unknown = rows\n    for rep in range(T):\n        if not unknown:\n            break\n        v = [rng.randrange(P) for _ in range(r - l)]\n        w = [sumprod(row[l:r], v) % P for row in B]\n        remain = []\n        for i in unknown:\n            z = sumprod(A[i], w) % P\n            if z:\n                keep.append(i)\n            else:\n                remain.append(i)\n        unknown = remain\n    mid = (l + r) // 2\n    solve(l, mid, keep)\n    solve(mid, r, keep)\n\n\nsolve(0, n, list(range(n)))\nprint(\"\\n\".join(\" \".join(map(str, t)) for t in sorted(out)))\n",
+      "explanation": [
+        "對欄區間[L,R)產生隨機向量v，先算B區間乘v，再算A的候選列乘這個結果，利用結合律得到該區間的C列投影。全零列投影一定為0；非零列每次誤投成0的機率恰1/P。",
+        "同區間獨立試T=ceil(42/log(P))次，只要某次非零就保留該列。未保留列才需要繼續試，已偵測非零者無須重複。保留列分別遞迴進入左右欄區間；到單欄時直接計算精確內積並輸出非零值。",
+        "每層所有欄區間寬度總和是n，候選非零列總數受2n非零元素限制為O(n)，故每層O(Tn²)。這是Monte Carlo演算法，可能漏項但不會輸出錯值；聯合界約72800/P^T<5×10^−14。不是確定性正確保證。參考原理：https://nhspc2020.twpca.org/editorial/editorial.html 。",
+        "Python 3.12 以上用 math.sumprod 計算整數內積，將乘加迴圈交給原生程式，保留完全相同的抽樣、獨立試驗次數與遞迴；整數輸入不經浮點近似。"
+      ],
+      "complexity": "O(Tn² log n)時間、O(n²+Tn+n log n)空間；Python逐行整數產生器與array(I)存矩陣，避免read().split()的O(n²)大型詞物件。C++每次內積只在最後取模，64位元和上界2800(P−1)²<2^63。 Python 3.12+ 的 math.sumprod 僅改善常數；B列切片是暫時的array，最大額外O(n)空間，不減少T、不限制搜尋、不特判輸入。",
+      "proof": "Every replacement computes the same integer dot product before % P. All SystemRandom draws, T, early exits, recursion, exact leaves and output sorting are unchanged. Thus the same ideal-independent-randomness Monte Carlo bound applies.",
+      "compatibility": {
+        "repo": "src/lib/languages.ts: python 3.12.0; timeMultiplier 3; memoryMultiplier 1",
+        "docs": "https://docs.python.org/3.12/library/math.html#math.sumprod",
+        "tested": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]"
+      }
+    },
+    {
+      "code": "a980",
+      "status": "experimental-not-yet-recommended",
+      "python": "import sys, random, math\nfrom array import array\nfrom math import sumprod\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        yield from map(int, line.split())\n\nit = numbers()\nsub, n, P = next(it), next(it), next(it)\nA = [array(\"I\", (next(it) for _ in range(n))) for _ in range(n)]\nB = [array(\"I\", (next(it) for _ in range(n))) for _ in range(n)]\nT = math.ceil(42 / math.log(P))\n# Each lane contains sum_{k,j} A[i,k]*B[k,j]*v[j].\n# Its integer value is <=n*n*(P-1)^3; no lane can carry.\nlane_bytes = ( (n*n*(P-1)**3).bit_length() + 7) // 8\nlane_bits = 8*lane_bytes\nrng = random.SystemRandom()\nout = []\n\ndef solve(l, r, rows):\n    if not rows:\n        return\n    if r-l == 1:\n        column = array(\"I\", (row[l] for row in B))\n        for i in rows:\n            value = sumprod(A[i], column) % P\n            if value:\n                out.append((i+1, l+1, value))\n        return\n    vectors = [int.from_bytes(b\"\".join(rng.randrange(P).to_bytes(lane_bytes, \"little\")\n                                      for _ in range(T)), \"little\") for j in range(l, r)]\n    w = [sumprod(row[l:r], vectors) for row in B]\n    keep = []\n    for i in rows:\n        packed = sumprod(A[i], w)\n        data = packed.to_bytes(lane_bytes*T, \"little\")\n        if any(int.from_bytes(data[q:q+lane_bytes], \"little\") % P\n               for q in range(0, len(data), lane_bytes)):\n            keep.append(i)\n    mid = (l+r)//2\n    solve(l, mid, keep)\n    solve(mid, r, keep)\n\nsolve(0, n, list(range(n)))\nprint(\"\\n\".join(\" \".join(map(str, t)) for t in sorted(out)))\n",
+      "explanation": [
+        "將T個獨立隨機投影放進同一個整數的T個區塊。每區塊使用足夠位元，保證A(Bv)在未取模前也不會進位到其他區塊。",
+        "兩次整數內積後逐區塊取模，所得結果與分別計算T次投影完全相同；非零列保留並二分，單欄時精確計算輸出。"
+      ],
+      "proof": "Lane radix Q=256^lane_bytes > n^2(P-1)^3. With nonnegative A,B,v every lane of each Bv and A(Bv) stays below Q, so ordinary integer products/sums perform all T independent exact integer projections without inter-lane carry. Reduce only extracted final lanes mod P; associativity gives C v. Fresh SystemRandom components are sampled independently for every lane and node. Union bound <=72800 exp(-42), unchanged. Exact leaf dot products prevent incorrect emitted values.",
+      "complexity": "O(n^2 log n) Python-level scalar product terms, each on O(T log(n^2 P^3)) bit packed integers; this is not O(n^2) bit work or a unit-cost big-int complexity claim. O(n^2 + n*T*log(nP)*log n) bits of auxiliary storage plus matrix payload; transient slices are O(n).",
+      "compatibility": "Python >=3.12; standard library only; integer sumprod; no NumPy."
+    },
+    {
+      "code": "a980",
+      "status": "experimental-not-yet-recommended",
+      "python": "import sys, random, math\nfrom array import array\nfrom math import sumprod\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        yield from map(int, line.split())\n\nit = numbers()\nsub, n, P = next(it), next(it), next(it)\nA = [array(\"I\", (next(it) for _ in range(n))) for _ in range(n)]\nB = [array(\"I\", (next(it) for _ in range(n))) for _ in range(n)]\nT = math.ceil(42 / math.log(P))\nwidth = ((n*n*(P-1)**3).bit_length()+7)//8\nsize = width*T\nrng = random.SystemRandom()\nvectors = []\ninverses = []\nfor j in range(n):\n    values = [rng.randrange(P) for _ in range(T)]\n    vectors.append(int.from_bytes(b\"\".join(x.to_bytes(width,\"little\") for x in values),\"little\"))\n    inverses.append(next(((t*width, pow(x,-1,P)) for t,x in enumerate(values) if x), (0,0)))\nout = []\n\ndef nonzero(z):\n    data = z.to_bytes(size,\"little\")\n    return any(int.from_bytes(data[q:q+width],\"little\")%P for q in range(0,size,width))\n\ndef solve(l,r,w,rows):\n    if not rows:\n        return\n    if r-l == 1:\n        offset, inv = inverses[l]\n        for i,z in rows:\n            data = z.to_bytes(size,\"little\")\n            value = int.from_bytes(data[offset:offset+width],\"little\")%P*inv%P\n            if value:\n                out.append((i+1,l+1,value))\n        return\n    mid=(l+r)//2\n    v=vectors[l:mid]\n    leftw=[sumprod(row[l:mid],v) for row in B]\n    rightw=[x-y for x,y in zip(w,leftw)]\n    left=[]\n    right=[]\n    for i,z in rows:\n        a=sumprod(A[i],leftw)\n        b=z-a\n        if nonzero(a):\n            left.append((i,a))\n        if nonzero(b):\n            right.append((i,b))\n    solve(l,mid,leftw,left)\n    solve(mid,r,rightw,right)\n\nw=[sumprod(row,vectors) for row in B]\nrows=[]\nfor i,row in enumerate(A):\n    z=sumprod(row,w)\n    if nonzero(z):\n        rows.append((i,z))\nsolve(0,n,w,rows)\nprint(\"\\n\".join(\" \".join(map(str,t)) for t in sorted(out)))\n",
+      "explanation": [
+        "將T個獨立隨機投影放進同一個整數的T個區塊。每區塊使用足夠位元，保證A(Bv)在未取模前也不會進位到其他區塊。",
+        "兩次整數內積後逐區塊取模，所得結果與分別計算T次投影完全相同；非零列保留並二分，單欄時精確計算輸出。"
+      ],
+      "proof": "Q=256^width>n^2(P-1)^3 prevents all carries in integer A(Bv). Draw T independent vectors once globally and restrict them to each fixed dyadic interval. Every true row/interval pair has miss probability P^(-T); union over <=72800 fixed pairs requires no independence between intervals or adaptive conditioning. A row can be pruned incorrectly only if one such fixed event occurs. At a node, raw left and right projections add exactly to the stored parent projection, so compute left and obtain right by subtraction. At a singleton column, any nonzero component v gives exact C[i,j]=projection/v mod P. Thus emitted entries are always correct and total omission probability <=72800 exp(-42).",
+      "complexity": "O(n^2 log n) scalar-by-packed-integer multiply-adds, with O(T log(n^2 P^3)) bits per packed operand. Both B and A projection work are approximately halved by additive child recovery; singleton values need no dense dot product. This is not O(n^2) bit work. Memory: two 32-bit n*n matrices plus O(n*T*log(nP)*log n) packed recursion bits and O(n log n) row records.",
+      "compatibility": "Python >=3.12; standard library only; integer sumprod; no NumPy."
+    },
+    {
+      "code": "a980",
+      "status": "experimental-not-yet-recommended",
+      "python": "import sys\nfrom array import array\nfrom math import sumprod\nfrom struct import iter_unpack\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        yield from map(int,line.split())\n\nit=numbers()\nsub,n,P=next(it),next(it),next(it)\nA=[array(\"I\",(next(it) for _ in range(n))) for _ in range(n)]\nwidth=((n*(P-1)**2).bit_length()+7)//8\nB=[int.from_bytes(b\"\".join(next(it).to_bytes(width,\"little\") for _ in range(n)),\"little\") for _ in range(n)]\nout=[]\nfor i,row in enumerate(A):\n    data=sumprod(row,B).to_bytes(n*width,\"little\")\n    if width==8:\n        values=(v[0] for v in iter_unpack(\"<Q\",data))\n    else:\n        values=(int.from_bytes(data[j:j+width],\"little\") for j in range(0,len(data),width))\n    for j,x in enumerate(values):\n        x%=P\n        if x:\n            out.append(f\"{i+1} {j+1} {x}\")\nprint(\"\\n\".join(out))\n",
+      "explanation": [
+        "將T個獨立隨機投影放進同一個整數的T個區塊。每區塊使用足夠位元，保證A(Bv)在未取模前也不會進位到其他區塊。",
+        "兩次整數內積後逐區塊取模，所得結果與分別計算T次投影完全相同；非零列保留並二分，單欄時精確計算輸出。"
+      ],
+      "proof": "Q=256^width>n(P-1)^2. Encode row k of B as b[k]=sum_j B[k,j] Q^j. For row i, z=sum_k A[i,k] b[k]=sum_j D[i,j]Q^j with D[i,j]=sum_k A[i,k]B[k,j]<Q, so there are no inter-slot carries. Decode every slot and reduce mod P to obtain all C entries exactly; no probability or sparsity assumption is used in recovery.",
+      "complexity": "n^2 Python/native scalar-by-big-int terms and n^2 modulo operations. Each encoded row has O(n log(nP)) bits, so bit/limb work is O(n^3 log(nP)), not quadratic runtime. Store A as n^2 32-bit entries and B as n packed rows (n^2*width payload bytes); row result O(n*width).",
+      "compatibility": "Python >=3.12; standard library only; integer sumprod; no NumPy."
+    },
+    {
+      "code": "a980",
+      "status": "experimental-not-yet-recommended",
+      "python": "import sys, random, math\nfrom array import array\nfrom itertools import islice\nfrom math import sumprod\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        yield from map(int, line.split())\n\nit = numbers()\nsub, n, P = next(it), next(it), next(it)\nA = [array(\"I\", islice(it, n)) for _ in range(n)]\nB = [array(\"I\", islice(it, n)) for _ in range(n)]\nT = math.ceil(42 / math.log(P))\nrow_sums = [sum(row) for row in B]\nbits = (max(sumprod(row, row_sums) for row in A)*(P-1)).bit_length()\nmask = (1 << bits)-1\nrng = random.SystemRandom()\nvectors = []\ninverses = []\nfor j in range(n):\n    values = [rng.randrange(P) for _ in range(T)]\n    vectors.append(sum(x << (t*bits) for t,x in enumerate(values)))\n    inverses.append(next(((t*bits, pow(x,-1,P)) for t,x in enumerate(values) if x), (0,0)))\nout = []\n\ndef nonzero(z):\n    for _ in range(T):\n        if (z & mask) % P:\n            return True\n        z >>= bits\n    return False\n\ndef solve(l,r,w,rows):\n    if not rows:\n        return\n    if r-l == 1:\n        offset, inv = inverses[l]\n        for i,z in rows:\n            value = ((z >> offset) & mask)%P*inv%P\n            if value:\n                out.append((i+1,l+1,value))\n        return\n    mid=(l+r)//2\n    v=vectors[l:mid]\n    leftw=[sumprod(row[l:mid],v) for row in B]\n    rightw=[x-y for x,y in zip(w,leftw)]\n    left=[]\n    right=[]\n    for i,z in rows:\n        a=sumprod(A[i],leftw)\n        b=z-a\n        if nonzero(a):\n            left.append((i,a))\n        if nonzero(b):\n            right.append((i,b))\n    solve(l,mid,leftw,left)\n    solve(mid,r,rightw,right)\n\nw=[sumprod(row,vectors) for row in B]\nrows=[]\nfor i,row in enumerate(A):\n    z=sumprod(row,w)\n    if nonzero(z):\n        rows.append((i,z))\nsolve(0,n,w,rows)\nprint(\"\\n\".join(\" \".join(map(str,t)) for t in sorted(out)))\n",
+      "explanation": [
+        "全域產生T個獨立隨機向量，限制到每個二分欄區間；將T個投影打包成大整數，區塊位元數以非負原始乘加總和的嚴格上界決定。",
+        "只計算左半區間投影，右半由父投影減左投影取得。單欄時用非零隨機係數的反元素還原元素，所得值精確；僅可能因投影全部為零而漏項。",
+        "各區間共用向量不影響聯合界：對所有固定的真實非零列與區間作聯集，總漏判機率仍小於72800 exp(-42)<5e-14；不是確定性演算法。"
+      ],
+      "proof": "Q=256^width>n^2(P-1)^3 prevents all carries in integer A(Bv). Draw T independent vectors once globally and restrict them to each fixed dyadic interval. Every true row/interval pair has miss probability P^(-T); union over <=72800 fixed pairs requires no independence between intervals or adaptive conditioning. A row can be pruned incorrectly only if one such fixed event occurs. At a node, raw left and right projections add exactly to the stored parent projection, so compute left and obtain right by subtraction. At a singleton column, any nonzero component v gives exact C[i,j]=projection/v mod P. Thus emitted entries are always correct and total omission probability <=72800 exp(-42). The tighter data-dependent lane bound is H=(P-1)*max_i sum_k A[i,k]*sum_j B[k,j]. Every nonnegative restricted weighted raw row projection is <=H. bits=H.bit_length() gives Q=2^bits>H with no byte padding. H>0 follows from the promised nonzero product. Computing H costs one additional ordinary n*n matrix-vector multiplication, without modulo. No input-family detection is used.",
+      "complexity": "O(n^2 log n) scalar-by-packed-integer multiply-adds, with O(T log(n^2 P^3)) bits per packed operand. Both B and A projection work are approximately halved by additive child recovery; singleton values need no dense dot product. This is not O(n^2) bit work. Memory: two 32-bit n*n matrices plus O(n*T*log(nP)*log n) packed recursion bits and O(n log n) row records.",
+      "compatibility": "Python >=3.12; standard library only; integer sumprod; no NumPy."
+    },
+    {
+      "code": "a980",
+      "status": "experimental-not-yet-recommended",
+      "python": "import sys, random, math\nfrom array import array\nfrom itertools import islice\nfrom math import sumprod\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        yield from map(int, line.split())\n\nit = numbers()\nsub, n, P = next(it), next(it), next(it)\nA = [array(\"I\", islice(it, n)) for _ in range(n)]\nB = [array(\"I\", islice(it, n)) for _ in range(n)]\nT = math.ceil(42 / math.log(P))\nrow_sums = [sum(row) for row in B]\nH = (P-1)*max(max(row_sums), max(sumprod(row, row_sums) for row in A))\nbits = H.bit_length()\nmask = (1 << bits)-1\nrng = random.SystemRandom()\nvectors = []\ninverses = []\nfor j in range(n):\n    values = [rng.randrange(P) for _ in range(T)]\n    vectors.append(sum(x << (t*bits) for t,x in enumerate(values)))\n    inverses.append(next(((t*bits, pow(x,-1,P)) for t,x in enumerate(values) if x), (0,0)))\nout = []\n\ndef nonzero(z):\n    for _ in range(T):\n        if (z & mask) % P:\n            return True\n        z >>= bits\n    return False\n\ndef solve(l,r,w,rows):\n    if not rows:\n        return\n    if r-l == 1:\n        offset, inv = inverses[l]\n        for i,z in rows:\n            value = ((z >> offset) & mask)%P*inv%P\n            if value:\n                out.append((i+1,l+1,value))\n        return\n    mid=(l+r)//2\n    v=vectors[l:mid]\n    leftw=[sumprod(row[l:mid],v) for row in B]\n    rightw=[x-y for x,y in zip(w,leftw)]\n    left=[]\n    right=[]\n    for i,z in rows:\n        a=sumprod(A[i],leftw)\n        b=z-a\n        if nonzero(a):\n            left.append((i,a))\n        if nonzero(b):\n            right.append((i,b))\n    solve(l,mid,leftw,left)\n    solve(mid,r,rightw,right)\n\nw=[sumprod(row,vectors) for row in B]\nrows=[]\nfor i,row in enumerate(A):\n    z=sumprod(row,w)\n    if nonzero(z):\n        rows.append((i,z))\nsolve(0,n,w,rows)\nprint(\"\\n\".join(\" \".join(map(str,t)) for t in sorted(out)))\n",
+      "explanation": [
+        "全域產生T個獨立隨機向量，限制到每個二分欄區間；將T個投影打包成大整數，區塊位元數以非負原始乘加總和的嚴格上界決定。",
+        "只計算左半區間投影，右半由父投影減左投影取得。單欄時用非零隨機係數的反元素還原元素，所得值精確；僅可能因投影全部為零而漏項。",
+        "各區間共用向量不影響聯合界：對所有固定的真實非零列與區間作聯集，總漏判機率仍小於72800 exp(-42)<5e-14；不是確定性演算法。"
+      ],
+      "proof": "Let s[k]=sum_j B[k,j] and H=(P-1)*max(max_k s[k], max_i sum_k A[i,k]*s[k]). Every raw Bv coefficient is <=(P-1)*s[k]<=H, including rows with A[:,k]=0. Every raw A(Bv) coefficient is <=(P-1)*sum_k A[i,k]*s[k]<=H. Q=2^H.bit_length()>H therefore prevents all inter-lane carries. Packed integer linearity and nonnegative coefficients give w(parent)=w(left)+w(right) and z(parent)=z(left)+z(right), so subtraction yields the exact nonnegative right projection. T=ceil(42/log(P)) independent SystemRandom vectors are sampled globally once; restrict them to fixed dyadic intervals. Each true row/interval pair is missed with probability P^(-T). Union over at most 72800 fixed true pairs gives <=72800 exp(-42)<5e-14 without requiring interval independence or adaptive conditioning. Singleton division by a nonzero vector component recovers an exact C entry. H>0 follows from the promised nonzero product. Computing H costs an extra ordinary n*n matrix-vector multiplication, without modulo. No input-family detection or weakened error bound is used.",
+      "complexity": "O(n^2 log n) scalar-by-packed-integer multiply-adds, with O(T log(n^2 P^3)) bits per packed operand. Both B and A projection work are approximately halved by additive child recovery; singleton values need no dense dot product. This is not O(n^2) bit work. Memory: two 32-bit n*n matrices plus O(n*T*log(nP)*log n) packed recursion bits and O(n log n) row records.",
+      "compatibility": "Python >=3.12; standard library only; integer sumprod; no NumPy."
+    }
+  ],
+  "research": [
+    {
+      "name": "packed-independent-trials",
+      "pythonSha256": "92ecbb479f78a706c56f11ca1ffb34120b5c12ba28daa58bf5a345ee9f794e5a",
+      "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+      "benchmarks": [
+        {
+          "case": "dense-cycle-n2800-P37",
+          "wallSeconds": 26.768087569000002,
+          "cpuSeconds": 26.749834,
+          "peakRssKiB": 79588,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-cycle-n2800-P49999991",
+          "wallSeconds": 22.386141128,
+          "cpuSeconds": 22.374867,
+          "peakRssKiB": 78336,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        {
+          "case": "sample",
+          "wallSeconds": 0.03723138799999859,
+          "cpuSeconds": 0.0289,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "sample",
+          "wallSeconds": 0.041039295999999226,
+          "cpuSeconds": 0.025609,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P37",
+          "wallSeconds": 0.04100020499999957,
+          "cpuSeconds": 0.021814999999999998,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P2801",
+          "wallSeconds": 0.041032704999999225,
+          "cpuSeconds": 0.026413,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P49999991",
+          "wallSeconds": 0.0410396999999989,
+          "cpuSeconds": 0.024041999999999997,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P37",
+          "wallSeconds": 0.04089597499999975,
+          "cpuSeconds": 0.023082,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P2801",
+          "wallSeconds": 0.020709722999999514,
+          "cpuSeconds": 0.019868,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P49999991",
+          "wallSeconds": 0.040918543000000085,
+          "cpuSeconds": 0.023743999999999998,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P37",
+          "wallSeconds": 0.040857215000000835,
+          "cpuSeconds": 0.021532,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P2801",
+          "wallSeconds": 0.04116869500000142,
+          "cpuSeconds": 0.021228,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P49999991",
+          "wallSeconds": 0.040932387999999875,
+          "cpuSeconds": 0.024128,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P37",
+          "wallSeconds": 0.040882962999999606,
+          "cpuSeconds": 0.02245,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P2801",
+          "wallSeconds": 0.04089054599999997,
+          "cpuSeconds": 0.022157,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P49999991",
+          "wallSeconds": 0.04096182900000045,
+          "cpuSeconds": 0.024093999999999997,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P37",
+          "wallSeconds": 0.04093579399999925,
+          "cpuSeconds": 0.031564,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P2801",
+          "wallSeconds": 0.04099182699999915,
+          "cpuSeconds": 0.026366999999999998,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P49999991",
+          "wallSeconds": 0.04134501699999937,
+          "cpuSeconds": 0.024617999999999998,
+          "peakRssKiB": 28056,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "contention": "Parent production build may run concurrently. Shared heterogeneous Windows/WSL host; CPU contention, scheduling and thermals are not controlled. Do not infer a production TLE or a stable speedup from these timings.",
+      "proof": "Lane radix Q=256^lane_bytes > n^2(P-1)^3. With nonnegative A,B,v every lane of each Bv and A(Bv) stays below Q, so ordinary integer products/sums perform all T independent exact integer projections without inter-lane carry. Reduce only extracted final lanes mod P; associativity gives C v. Fresh SystemRandom components are sampled independently for every lane and node. Union bound <=72800 exp(-42), unchanged. Exact leaf dot products prevent incorrect emitted values.",
+      "complexity": "O(n^2 log n) Python-level scalar product terms, each on O(T log(n^2 P^3)) bit packed integers; this is not O(n^2) bit work or a unit-cost big-int complexity claim. O(n^2 + n*T*log(nP)*log n) bits of auxiliary storage plus matrix payload; transient slices are O(n)."
+    },
+    {
+      "name": "packed-shared-subtraction",
+      "pythonSha256": "676b1d16a2a06287545232306ca48d8d812c7b0c6a2163c008b9926d1744fafc",
+      "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+      "benchmarks": [
+        {
+          "case": "dense-cycle-n2800-P37",
+          "wallSeconds": 18.908692352999992,
+          "cpuSeconds": 18.891132,
+          "peakRssKiB": 85104,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-cycle-n2800-P49999991",
+          "wallSeconds": 15.82376711400002,
+          "cpuSeconds": 15.785457,
+          "peakRssKiB": 82164,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        {
+          "case": "sample",
+          "wallSeconds": 0.028145588999990423,
+          "cpuSeconds": 0.022638,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "sample",
+          "wallSeconds": 0.04118752600001585,
+          "cpuSeconds": 0.025228,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P37",
+          "wallSeconds": 0.04119660999998587,
+          "cpuSeconds": 0.023649,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P2801",
+          "wallSeconds": 0.04137253599998303,
+          "cpuSeconds": 0.030647999999999998,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P49999991",
+          "wallSeconds": 0.04138242600001263,
+          "cpuSeconds": 0.03637599999999999,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P37",
+          "wallSeconds": 0.04093202499998938,
+          "cpuSeconds": 0.031167999999999998,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P2801",
+          "wallSeconds": 0.04133412499999167,
+          "cpuSeconds": 0.034304,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P49999991",
+          "wallSeconds": 0.041035055000008924,
+          "cpuSeconds": 0.02615,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P37",
+          "wallSeconds": 0.03229742799999258,
+          "cpuSeconds": 0.024713,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P2801",
+          "wallSeconds": 0.04104174599999055,
+          "cpuSeconds": 0.023334,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P49999991",
+          "wallSeconds": 0.04085332600001834,
+          "cpuSeconds": 0.023658999999999996,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P37",
+          "wallSeconds": 0.04118806900001459,
+          "cpuSeconds": 0.02382,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P2801",
+          "wallSeconds": 0.04127601199996889,
+          "cpuSeconds": 0.024517999999999998,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P49999991",
+          "wallSeconds": 0.041799935000028654,
+          "cpuSeconds": 0.023941999999999998,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P37",
+          "wallSeconds": 0.041143755999996756,
+          "cpuSeconds": 0.030903999999999997,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P2801",
+          "wallSeconds": 0.04093287699998882,
+          "cpuSeconds": 0.027472999999999997,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P49999991",
+          "wallSeconds": 0.0409762580000006,
+          "cpuSeconds": 0.028184,
+          "peakRssKiB": 28672,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "contention": "Parent production build may run concurrently. Shared heterogeneous Windows/WSL host; CPU contention, scheduling and thermals are not controlled. Do not infer a production TLE or a stable speedup from these timings.",
+      "proof": "Q=256^width>n^2(P-1)^3 prevents all carries in integer A(Bv). Draw T independent vectors once globally and restrict them to each fixed dyadic interval. Every true row/interval pair has miss probability P^(-T); union over <=72800 fixed pairs requires no independence between intervals or adaptive conditioning. A row can be pruned incorrectly only if one such fixed event occurs. At a node, raw left and right projections add exactly to the stored parent projection, so compute left and obtain right by subtraction. At a singleton column, any nonzero component v gives exact C[i,j]=projection/v mod P. Thus emitted entries are always correct and total omission probability <=72800 exp(-42).",
+      "complexity": "O(n^2 log n) scalar-by-packed-integer multiply-adds, with O(T log(n^2 P^3)) bits per packed operand. Both B and A projection work are approximately halved by additive child recovery; singleton values need no dense dot product. This is not O(n^2) bit work. Memory: two 32-bit n*n matrices plus O(n*T*log(nP)*log n) packed recursion bits and O(n log n) row records."
+    },
+    {
+      "name": "packed-deterministic-rows",
+      "pythonSha256": "626b5d0eeabadc315b82074d59e439c85dc5858ac12a487a1cf007a7810f8469",
+      "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+      "benchmarks": [
+        {
+          "case": "dense-cycle-n1000-P37",
+          "wallSeconds": 2.845920465000006,
+          "cpuSeconds": 2.83017,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-cycle-n1000-P49999991",
+          "wallSeconds": 6.01380956600002,
+          "cpuSeconds": 5.994169,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-cycle-n2800-P37",
+          "wallSeconds": 48.330946539000024,
+          "cpuSeconds": 48.32505,
+          "peakRssKiB": 67428,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-cycle-n2800-P49999991",
+          "wallSeconds": 90.01953421499996,
+          "cpuSeconds": 90.014766,
+          "peakRssKiB": 108288,
+          "timeoutSeconds": 90,
+          "returncode": -9,
+          "outputVerified": false,
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        {
+          "case": "sample",
+          "wallSeconds": 0.03064862799999446,
+          "cpuSeconds": 0.021668,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "sample",
+          "wallSeconds": 0.04100344800002631,
+          "cpuSeconds": 0.021206999999999997,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P37",
+          "wallSeconds": 0.041121967999970366,
+          "cpuSeconds": 0.024269,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P2801",
+          "wallSeconds": 0.04124156399996082,
+          "cpuSeconds": 0.022092,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P49999991",
+          "wallSeconds": 0.041069705999973394,
+          "cpuSeconds": 0.027623,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P37",
+          "wallSeconds": 0.040978205999977035,
+          "cpuSeconds": 0.025265,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P2801",
+          "wallSeconds": 0.04100123500001018,
+          "cpuSeconds": 0.028447999999999998,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P49999991",
+          "wallSeconds": 0.0410256719999893,
+          "cpuSeconds": 0.021158,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P37",
+          "wallSeconds": 0.04124875999997357,
+          "cpuSeconds": 0.024558999999999997,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P2801",
+          "wallSeconds": 0.04090727600004129,
+          "cpuSeconds": 0.022855999999999998,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P49999991",
+          "wallSeconds": 0.040937010999982704,
+          "cpuSeconds": 0.022588,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P37",
+          "wallSeconds": 0.04095006500000409,
+          "cpuSeconds": 0.021889,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P2801",
+          "wallSeconds": 0.041043100999957005,
+          "cpuSeconds": 0.022233,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P49999991",
+          "wallSeconds": 0.041009272999986024,
+          "cpuSeconds": 0.02157,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P37",
+          "wallSeconds": 0.04136272800002416,
+          "cpuSeconds": 0.025535999999999996,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P2801",
+          "wallSeconds": 0.04101880500002153,
+          "cpuSeconds": 0.024866,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P49999991",
+          "wallSeconds": 0.04196160499998314,
+          "cpuSeconds": 0.027759,
+          "peakRssKiB": 28732,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "contention": "Parent production build may run concurrently. Shared heterogeneous Windows/WSL host; CPU contention, scheduling and thermals are not controlled. Do not infer a production TLE or a stable speedup from these timings.",
+      "proof": "Q=256^width>n(P-1)^2. Encode row k of B as b[k]=sum_j B[k,j] Q^j. For row i, z=sum_k A[i,k] b[k]=sum_j D[i,j]Q^j with D[i,j]=sum_k A[i,k]B[k,j]<Q, so there are no inter-slot carries. Decode every slot and reduce mod P to obtain all C entries exactly; no probability or sparsity assumption is used in recovery.",
+      "complexity": "n^2 Python/native scalar-by-big-int terms and n^2 modulo operations. Each encoded row has O(n log(nP)) bits, so bit/limb work is O(n^3 log(nP)), not quadratic runtime. Store A as n^2 32-bit entries and B as n packed rows (n^2*width payload bytes); row result O(n*width)."
+    },
+    {
+      "name": "packed-shared-bit-tight",
+      "pythonSha256": "400957f18b56db3589043217eac0a227d66bcdf15b1784f6301f7c9531fba315",
+      "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+      "benchmarks": [
+        {
+          "case": "dense-cycle-n2800-P37",
+          "wallSeconds": 15.211560220000024,
+          "cpuSeconds": 15.195801,
+          "peakRssKiB": 84124,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-cycle-n2800-P49999991",
+          "wallSeconds": 14.091979374000061,
+          "cpuSeconds": 14.085101,
+          "peakRssKiB": 82492,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        {
+          "case": "sample",
+          "wallSeconds": 0.030257689999984905,
+          "cpuSeconds": 0.028455,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "sample",
+          "wallSeconds": 0.04099876700001914,
+          "cpuSeconds": 0.020752,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P37",
+          "wallSeconds": 0.04155496399994263,
+          "cpuSeconds": 0.025042,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P2801",
+          "wallSeconds": 0.04091803199992228,
+          "cpuSeconds": 0.020912999999999998,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P49999991",
+          "wallSeconds": 0.040859501999989334,
+          "cpuSeconds": 0.024278,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P37",
+          "wallSeconds": 0.04096748100005243,
+          "cpuSeconds": 0.024439,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P2801",
+          "wallSeconds": 0.040903252000020984,
+          "cpuSeconds": 0.026587,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P49999991",
+          "wallSeconds": 0.04100013900006161,
+          "cpuSeconds": 0.021078,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P37",
+          "wallSeconds": 0.04091000699997949,
+          "cpuSeconds": 0.023818,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P2801",
+          "wallSeconds": 0.04099806700003228,
+          "cpuSeconds": 0.027972999999999998,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P49999991",
+          "wallSeconds": 0.0611278430000084,
+          "cpuSeconds": 0.040931999999999996,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P37",
+          "wallSeconds": 0.061129910000090604,
+          "cpuSeconds": 0.052307,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P2801",
+          "wallSeconds": 0.04094754799996281,
+          "cpuSeconds": 0.02888,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P49999991",
+          "wallSeconds": 0.0409583239999165,
+          "cpuSeconds": 0.039206,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P37",
+          "wallSeconds": 0.04095395500007726,
+          "cpuSeconds": 0.036809999999999996,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P2801",
+          "wallSeconds": 0.04128137899999729,
+          "cpuSeconds": 0.028322,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P49999991",
+          "wallSeconds": 0.04092384599994148,
+          "cpuSeconds": 0.026986999999999997,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "contention": "Parent production build may run concurrently. Shared heterogeneous Windows/WSL host; CPU contention, scheduling and thermals are not controlled. Do not infer a production TLE or a stable speedup from these timings.",
+      "proof": "Q=256^width>n^2(P-1)^3 prevents all carries in integer A(Bv). Draw T independent vectors once globally and restrict them to each fixed dyadic interval. Every true row/interval pair has miss probability P^(-T); union over <=72800 fixed pairs requires no independence between intervals or adaptive conditioning. A row can be pruned incorrectly only if one such fixed event occurs. At a node, raw left and right projections add exactly to the stored parent projection, so compute left and obtain right by subtraction. At a singleton column, any nonzero component v gives exact C[i,j]=projection/v mod P. Thus emitted entries are always correct and total omission probability <=72800 exp(-42). The tighter data-dependent lane bound is H=(P-1)*max_i sum_k A[i,k]*sum_j B[k,j]. Every nonnegative restricted weighted raw row projection is <=H. bits=H.bit_length() gives Q=2^bits>H with no byte padding. H>0 follows from the promised nonzero product. Computing H costs one additional ordinary n*n matrix-vector multiplication, without modulo. No input-family detection is used.",
+      "complexity": "O(n^2 log n) scalar-by-packed-integer multiply-adds, with O(T log(n^2 P^3)) bits per packed operand. Both B and A projection work are approximately halved by additive child recovery; singleton values need no dense dot product. This is not O(n^2) bit work. Memory: two 32-bit n*n matrices plus O(n*T*log(nP)*log n) packed recursion bits and O(n log n) row records."
+    },
+    {
+      "name": "cpp-shared-subtraction",
+      "pythonSha256": "92ecbb479f78a706c56f11ca1ffb34120b5c12ba28daa58bf5a345ee9f794e5a",
+      "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+      "benchmarks": [
+        {
+          "case": "dense-cycle-n2800-P37",
+          "wallSeconds": 4.230797905999992,
+          "cpuSeconds": 4.229464,
+          "peakRssKiB": 69052,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-cycle-n2800-P49999991",
+          "wallSeconds": 1.7991505310000093,
+          "cpuSeconds": 1.790912,
+          "peakRssKiB": 66688,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-scaled-wide-n2800-P37",
+          "wallSeconds": 4.448065505000017,
+          "cpuSeconds": 4.4342179999999995,
+          "peakRssKiB": 69620,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-scaled-wide-n2800-P49999991",
+          "wallSeconds": 3.4054635500000074,
+          "cpuSeconds": 3.385396,
+          "peakRssKiB": 66412,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        {
+          "case": "sample",
+          "wallSeconds": 0.05645495099997788,
+          "cpuSeconds": 0.0032779999999999997,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "sample",
+          "wallSeconds": 0.020982215000003634,
+          "cpuSeconds": 0.001944,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P37",
+          "wallSeconds": 0.021347555000005514,
+          "cpuSeconds": 0.001924,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P2801",
+          "wallSeconds": 0.020829622999997355,
+          "cpuSeconds": 0.0017859999999999998,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P49999991",
+          "wallSeconds": 0.020800468000004457,
+          "cpuSeconds": 0.001927,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P37",
+          "wallSeconds": 0.02078585299997826,
+          "cpuSeconds": 0.0017909999999999998,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P2801",
+          "wallSeconds": 0.020816118999988475,
+          "cpuSeconds": 0.0017289999999999999,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P49999991",
+          "wallSeconds": 0.020842442000002848,
+          "cpuSeconds": 0.002708,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P37",
+          "wallSeconds": 0.020822367000022268,
+          "cpuSeconds": 0.001936,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P2801",
+          "wallSeconds": 0.020852949000015997,
+          "cpuSeconds": 0.0020109999999999998,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P49999991",
+          "wallSeconds": 0.02090210399998682,
+          "cpuSeconds": 0.001883,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P37",
+          "wallSeconds": 0.02082176399997593,
+          "cpuSeconds": 0.002111,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P2801",
+          "wallSeconds": 0.021203410999987682,
+          "cpuSeconds": 0.002054,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P49999991",
+          "wallSeconds": 0.02085596000000578,
+          "cpuSeconds": 0.001937,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P37",
+          "wallSeconds": 0.020838697999977285,
+          "cpuSeconds": 0.003421,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P2801",
+          "wallSeconds": 0.020928553000004513,
+          "cpuSeconds": 0.002545,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P49999991",
+          "wallSeconds": 0.0209651899999983,
+          "cpuSeconds": 0.002313,
+          "peakRssKiB": 28624,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "contention": "Parent production build may run concurrently. Shared heterogeneous Windows/WSL host; CPU contention, scheduling and thermals are not controlled. Do not infer a production TLE or a stable speedup from these timings.",
+      "proof": "All T vectors are drawn once with uniform_int_distribution driven directly by random_device. Restricted interval projections are linear over F_P. Compute only left Bv and left A(Bv); subtract from parent residues to get right projections exactly. At singleton divide projection by a nonzero vector component. The same fixed-interval union bound <=72800 exp(-42) applies under the ideal independent uniform random-source assumption. Every emitted entry is exact. Each inner sum contains <=n products of residues <=P-1, so n(P-1)^2<2^63 prevents overflow. random_device quality is implementation-dependent; Linux libstdc++ uses the OS random source.",
+      "complexity": "O(T*n^2*log n) 64-bit scalar work, O(T*n^2) modulo operations, O(n^2+T*n*log n) words. T=ceil(42/log(P)) is 3..12 for allowed P; template specialization changes constants, not T.",
+      "pythonCode": "import sys, random, math\nfrom array import array\nfrom math import sumprod\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        yield from map(int, line.split())\n\nit = numbers()\nsub, n, P = next(it), next(it), next(it)\nA = [array(\"I\", (next(it) for _ in range(n))) for _ in range(n)]\nB = [array(\"I\", (next(it) for _ in range(n))) for _ in range(n)]\nT = math.ceil(42 / math.log(P))\n# Each lane contains sum_{k,j} A[i,k]*B[k,j]*v[j].\n# Its integer value is <=n*n*(P-1)^3; no lane can carry.\nlane_bytes = ( (n*n*(P-1)**3).bit_length() + 7) // 8\nlane_bits = 8*lane_bytes\nrng = random.SystemRandom()\nout = []\n\ndef solve(l, r, rows):\n    if not rows:\n        return\n    if r-l == 1:\n        column = array(\"I\", (row[l] for row in B))\n        for i in rows:\n            value = sumprod(A[i], column) % P\n            if value:\n                out.append((i+1, l+1, value))\n        return\n    vectors = [int.from_bytes(b\"\".join(rng.randrange(P).to_bytes(lane_bytes, \"little\")\n                                      for _ in range(T)), \"little\") for j in range(l, r)]\n    w = [sumprod(row[l:r], vectors) for row in B]\n    keep = []\n    for i in rows:\n        packed = sumprod(A[i], w)\n        data = packed.to_bytes(lane_bytes*T, \"little\")\n        if any(int.from_bytes(data[q:q+lane_bytes], \"little\") % P\n               for q in range(0, len(data), lane_bytes)):\n            keep.append(i)\n    mid = (l+r)//2\n    solve(l, mid, keep)\n    solve(mid, r, keep)\n\nsolve(0, n, list(range(n)))\nprint(\"\\n\".join(\" \".join(map(str, t)) for t in sorted(out)))\n",
+      "cppCode": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nint n, P;\nvector<vector<int>> A, B;\nvector<array<int,3>> answer;\nint power(int a, int b) {\n    ll r=1;\n    for (;b;b>>=1,a=ll(a)*a%P) if(b&1) r=r*a%P;\n    return int(r);\n}\ntemplate<int T> void run() {\n    using Vec=array<int,T>;\n    struct Row { int i; Vec z; };\n    vector<Vec> v(n);\n    vector<pair<int,int>> inv(n,{-1,0});\n    random_device rng;\n    uniform_int_distribution<int> dist(0,P-1);\n    for(int j=0;j<n;j++) for(int t=0;t<T;t++) {\n        v[j][t]=dist(rng);\n        if(inv[j].first<0 && v[j][t]) inv[j]={t,power(v[j][t],P-2)};\n    }\n    auto nonzero=[](const Vec &z) { for(int x:z) if(x) return true; return false; };\n    auto projectB=[&](int l,int r) {\n        vector<Vec> w(n);\n        for(int k=0;k<n;k++) {\n            array<ll,T> z{};\n            for(int j=l;j<r;j++) for(int t=0;t<T;t++) z[t]+=ll(B[k][j])*v[j][t];\n            for(int t=0;t<T;t++) w[k][t]=z[t]%P;\n        }\n        return w;\n    };\n    auto projectA=[&](int i,const vector<Vec> &w) {\n        array<ll,T> z{};\n        for(int k=0;k<n;k++) for(int t=0;t<T;t++) z[t]+=ll(A[i][k])*w[k][t];\n        Vec result;\n        for(int t=0;t<T;t++) result[t]=z[t]%P;\n        return result;\n    };\n    function<void(int,int,const vector<Vec>&,const vector<Row>&)> solve;\n    solve=[&](int l,int r,const vector<Vec> &w,const vector<Row> &rows) {\n        if(rows.empty()) return;\n        if(r-l==1) {\n            auto [t,u]=inv[l];\n            for(auto &row:rows) {\n                int value=ll(row.z[t])*u%P;\n                if(value) answer.push_back({row.i+1,l+1,value});\n            }\n            return;\n        }\n        int mid=(l+r)/2;\n        auto lw=projectB(l,mid), rw=w;\n        for(int k=0;k<n;k++) for(int t=0;t<T;t++) {\n            rw[k][t]-=lw[k][t];\n            if(rw[k][t]<0) rw[k][t]+=P;\n        }\n        vector<Row> left,right;\n        for(auto &row:rows) {\n            Vec a=projectA(row.i,lw), b;\n            for(int t=0;t<T;t++) { b[t]=row.z[t]-a[t]; if(b[t]<0) b[t]+=P; }\n            if(nonzero(a)) left.push_back({row.i,a});\n            if(nonzero(b)) right.push_back({row.i,b});\n        }\n        solve(l,mid,lw,left);\n        solve(mid,r,rw,right);\n    };\n    auto w=projectB(0,n);\n    vector<Row> rows;\n    for(int i=0;i<n;i++) { auto z=projectA(i,w); if(nonzero(z)) rows.push_back({i,z}); }\n    solve(0,n,w,rows);\n}\nint main() {\n    ios::sync_with_stdio(false); cin.tie(nullptr);\n    int sub; cin>>sub>>n>>P;\n    A.assign(n,vector<int>(n)); B=A;\n    for(auto &row:A) for(int &x:row) cin>>x;\n    for(auto &row:B) for(int &x:row) cin>>x;\n    int T=ceil(42/log(double(P)));\n    switch(T) {\n        case 3:run<3>();break; case 4:run<4>();break;\n        case 5:run<5>();break; case 6:run<6>();break;\n        case 7:run<7>();break; case 8:run<8>();break;\n        case 9:run<9>();break; case 10:run<10>();break;\n        case 11:run<11>();break; case 12:run<12>();break;\n    }\n    sort(answer.begin(),answer.end());\n    for(auto [i,j,x]:answer) cout<<i<<' '<<j<<' '<<x<<'\\n';\n}\n",
+      "cppSha256": "e4adb3e10eeeddb1f4d864aabf08f7c2c678e285ef2c15591395603801957ef9",
+      "compiler": "g++ (Debian 16.2.0-1) 16.2.0"
+    },
+    {
+      "name": "packed-shared-bit-tight",
+      "pythonSha256": "400957f18b56db3589043217eac0a227d66bcdf15b1784f6301f7c9531fba315",
+      "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+      "benchmarks": [
+        {
+          "case": "dense-scaled-wide-n2800-P37",
+          "wallSeconds": 22.422884597999996,
+          "cpuSeconds": 22.40425,
+          "peakRssKiB": 85536,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-scaled-wide-n2800-P49999991",
+          "wallSeconds": 20.774279886999977,
+          "cpuSeconds": 20.756839,
+          "peakRssKiB": 88524,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        {
+          "case": "sample",
+          "wallSeconds": 0.027415986999983488,
+          "cpuSeconds": 0.023655,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "sample",
+          "wallSeconds": 0.04089708399999381,
+          "cpuSeconds": 0.024121999999999998,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P37",
+          "wallSeconds": 0.040829068999983065,
+          "cpuSeconds": 0.023538,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P2801",
+          "wallSeconds": 0.04100879200001373,
+          "cpuSeconds": 0.020635,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P49999991",
+          "wallSeconds": 0.02063296200003606,
+          "cpuSeconds": 0.020302,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P37",
+          "wallSeconds": 0.04095115900003066,
+          "cpuSeconds": 0.021178,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P2801",
+          "wallSeconds": 0.04087484699999777,
+          "cpuSeconds": 0.020739999999999998,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P49999991",
+          "wallSeconds": 0.04120103399998243,
+          "cpuSeconds": 0.02112,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P37",
+          "wallSeconds": 0.04107124099999737,
+          "cpuSeconds": 0.022577,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P2801",
+          "wallSeconds": 0.04085528799998883,
+          "cpuSeconds": 0.020846999999999997,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P49999991",
+          "wallSeconds": 0.040818540000032044,
+          "cpuSeconds": 0.020646,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P37",
+          "wallSeconds": 0.04087108200002376,
+          "cpuSeconds": 0.021892,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P2801",
+          "wallSeconds": 0.040837723999970876,
+          "cpuSeconds": 0.021269,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P49999991",
+          "wallSeconds": 0.040854959999990115,
+          "cpuSeconds": 0.022647,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P37",
+          "wallSeconds": 0.040929688000005626,
+          "cpuSeconds": 0.02597,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P2801",
+          "wallSeconds": 0.040897975000007136,
+          "cpuSeconds": 0.023778999999999998,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P49999991",
+          "wallSeconds": 0.040927795000015976,
+          "cpuSeconds": 0.023536,
+          "peakRssKiB": 28584,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "contention": "Parent production build may run concurrently. Shared heterogeneous Windows/WSL host; CPU contention, scheduling and thermals are not controlled. Do not infer a production TLE or a stable speedup from these timings.",
+      "proof": "Q=256^width>n^2(P-1)^3 prevents all carries in integer A(Bv). Draw T independent vectors once globally and restrict them to each fixed dyadic interval. Every true row/interval pair has miss probability P^(-T); union over <=72800 fixed pairs requires no independence between intervals or adaptive conditioning. A row can be pruned incorrectly only if one such fixed event occurs. At a node, raw left and right projections add exactly to the stored parent projection, so compute left and obtain right by subtraction. At a singleton column, any nonzero component v gives exact C[i,j]=projection/v mod P. Thus emitted entries are always correct and total omission probability <=72800 exp(-42). The tighter data-dependent lane bound is H=(P-1)*max_i sum_k A[i,k]*sum_j B[k,j]. Every nonnegative restricted weighted raw row projection is <=H. bits=H.bit_length() gives Q=2^bits>H with no byte padding. H>0 follows from the promised nonzero product. Computing H costs one additional ordinary n*n matrix-vector multiplication, without modulo. No input-family detection is used.",
+      "complexity": "O(n^2 log n) scalar-by-packed-integer multiply-adds, with O(T log(n^2 P^3)) bits per packed operand. Both B and A projection work are approximately halved by additive child recovery; singleton values need no dense dot product. This is not O(n^2) bit work. Memory: two 32-bit n*n matrices plus O(n*T*log(nP)*log n) packed recursion bits and O(n log n) row records.",
+      "pythonCode": "import sys, random, math\nfrom array import array\nfrom itertools import islice\nfrom math import sumprod\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        yield from map(int, line.split())\n\nit = numbers()\nsub, n, P = next(it), next(it), next(it)\nA = [array(\"I\", islice(it, n)) for _ in range(n)]\nB = [array(\"I\", islice(it, n)) for _ in range(n)]\nT = math.ceil(42 / math.log(P))\nrow_sums = [sum(row) for row in B]\nbits = (max(sumprod(row, row_sums) for row in A)*(P-1)).bit_length()\nmask = (1 << bits)-1\nrng = random.SystemRandom()\nvectors = []\ninverses = []\nfor j in range(n):\n    values = [rng.randrange(P) for _ in range(T)]\n    vectors.append(sum(x << (t*bits) for t,x in enumerate(values)))\n    inverses.append(next(((t*bits, pow(x,-1,P)) for t,x in enumerate(values) if x), (0,0)))\nout = []\n\ndef nonzero(z):\n    for _ in range(T):\n        if (z & mask) % P:\n            return True\n        z >>= bits\n    return False\n\ndef solve(l,r,w,rows):\n    if not rows:\n        return\n    if r-l == 1:\n        offset, inv = inverses[l]\n        for i,z in rows:\n            value = ((z >> offset) & mask)%P*inv%P\n            if value:\n                out.append((i+1,l+1,value))\n        return\n    mid=(l+r)//2\n    v=vectors[l:mid]\n    leftw=[sumprod(row[l:mid],v) for row in B]\n    rightw=[x-y for x,y in zip(w,leftw)]\n    left=[]\n    right=[]\n    for i,z in rows:\n        a=sumprod(A[i],leftw)\n        b=z-a\n        if nonzero(a):\n            left.append((i,a))\n        if nonzero(b):\n            right.append((i,b))\n    solve(l,mid,leftw,left)\n    solve(mid,r,rightw,right)\n\nw=[sumprod(row,vectors) for row in B]\nrows=[]\nfor i,row in enumerate(A):\n    z=sumprod(row,w)\n    if nonzero(z):\n        rows.append((i,z))\nsolve(0,n,w,rows)\nprint(\"\\n\".join(\" \".join(map(str,t)) for t in sorted(out)))\n"
+    },
+    {
+      "name": "packed-shared-bit-tight",
+      "pythonSha256": "4f5baceb92efba38b8f88ebc837a0cc4562061b9f8484909b7a7df8ba3d7ca0b",
+      "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+      "benchmarks": [
+        {
+          "case": "dense-cycle-n2800-P37",
+          "wallSeconds": 15.347402038000041,
+          "cpuSeconds": 15.326416,
+          "peakRssKiB": 84268,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-cycle-n2800-P49999991",
+          "wallSeconds": 13.626184330000001,
+          "cpuSeconds": 13.615575,
+          "peakRssKiB": 93328,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-scaled-wide-n2800-P37",
+          "wallSeconds": 22.23377877100006,
+          "cpuSeconds": 22.213898999999998,
+          "peakRssKiB": 86264,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-scaled-wide-n2800-P49999991",
+          "wallSeconds": 20.018243675999997,
+          "cpuSeconds": 20.006327,
+          "peakRssKiB": 90436,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        {
+          "case": "sample",
+          "wallSeconds": 0.03830355699994925,
+          "cpuSeconds": 0.024288999999999998,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "sample",
+          "wallSeconds": 0.040896971999984544,
+          "cpuSeconds": 0.02179,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P37",
+          "wallSeconds": 0.04090221899997459,
+          "cpuSeconds": 0.021831999999999997,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P2801",
+          "wallSeconds": 0.04114335399998481,
+          "cpuSeconds": 0.021623,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P49999991",
+          "wallSeconds": 0.04098420000002534,
+          "cpuSeconds": 0.022758,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P37",
+          "wallSeconds": 0.04089693700001362,
+          "cpuSeconds": 0.023756999999999997,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P2801",
+          "wallSeconds": 0.04114807299998802,
+          "cpuSeconds": 0.023473,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P49999991",
+          "wallSeconds": 0.020659905000002254,
+          "cpuSeconds": 0.019941,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P37",
+          "wallSeconds": 0.041091074000007666,
+          "cpuSeconds": 0.021887999999999998,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P2801",
+          "wallSeconds": 0.040859226999998555,
+          "cpuSeconds": 0.024072,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P49999991",
+          "wallSeconds": 0.040819797000040126,
+          "cpuSeconds": 0.021156,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P37",
+          "wallSeconds": 0.04084569400004057,
+          "cpuSeconds": 0.022192,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P2801",
+          "wallSeconds": 0.020841568000037114,
+          "cpuSeconds": 0.020062999999999998,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P49999991",
+          "wallSeconds": 0.040955380999946556,
+          "cpuSeconds": 0.024378999999999998,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P37",
+          "wallSeconds": 0.04091343099997857,
+          "cpuSeconds": 0.024928,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P2801",
+          "wallSeconds": 0.04091458799996417,
+          "cpuSeconds": 0.023157999999999998,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P49999991",
+          "wallSeconds": 0.04100493400000005,
+          "cpuSeconds": 0.023101,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "unused-large-B-rows-n38-P37",
+          "wallSeconds": 0.04181645600004913,
+          "cpuSeconds": 0.023233,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "unused-large-B-rows-n38-P49999991",
+          "wallSeconds": 0.04085714000001417,
+          "cpuSeconds": 0.022323,
+          "peakRssKiB": 28372,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "contention": "Parent production build may run concurrently. Shared heterogeneous Windows/WSL host; CPU contention, scheduling and thermals are not controlled. Do not infer a production TLE or a stable speedup from these timings.",
+      "proof": "Let s[k]=sum_j B[k,j] and H=(P-1)*max(max_k s[k], max_i sum_k A[i,k]*s[k]). Every raw Bv coefficient is <=(P-1)*s[k]<=H, including rows with A[:,k]=0. Every raw A(Bv) coefficient is <=(P-1)*sum_k A[i,k]*s[k]<=H. Q=2^H.bit_length()>H therefore prevents all inter-lane carries. Packed integer linearity and nonnegative coefficients give w(parent)=w(left)+w(right) and z(parent)=z(left)+z(right), so subtraction yields the exact nonnegative right projection. T=ceil(42/log(P)) independent SystemRandom vectors are sampled globally once; restrict them to fixed dyadic intervals. Each true row/interval pair is missed with probability P^(-T). Union over at most 72800 fixed true pairs gives <=72800 exp(-42)<5e-14 without requiring interval independence or adaptive conditioning. Singleton division by a nonzero vector component recovers an exact C entry. H>0 follows from the promised nonzero product. Computing H costs an extra ordinary n*n matrix-vector multiplication, without modulo. No input-family detection or weakened error bound is used.",
+      "complexity": "O(n^2 log n) scalar-by-packed-integer multiply-adds, with O(T log(n^2 P^3)) bits per packed operand. Both B and A projection work are approximately halved by additive child recovery; singleton values need no dense dot product. This is not O(n^2) bit work. Memory: two 32-bit n*n matrices plus O(n*T*log(nP)*log n) packed recursion bits and O(n log n) row records.",
+      "pythonCode": "import sys, random, math\nfrom array import array\nfrom itertools import islice\nfrom math import sumprod\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        yield from map(int, line.split())\n\nit = numbers()\nsub, n, P = next(it), next(it), next(it)\nA = [array(\"I\", islice(it, n)) for _ in range(n)]\nB = [array(\"I\", islice(it, n)) for _ in range(n)]\nT = math.ceil(42 / math.log(P))\nrow_sums = [sum(row) for row in B]\nH = (P-1)*max(max(row_sums), max(sumprod(row, row_sums) for row in A))\nbits = H.bit_length()\nmask = (1 << bits)-1\nrng = random.SystemRandom()\nvectors = []\ninverses = []\nfor j in range(n):\n    values = [rng.randrange(P) for _ in range(T)]\n    vectors.append(sum(x << (t*bits) for t,x in enumerate(values)))\n    inverses.append(next(((t*bits, pow(x,-1,P)) for t,x in enumerate(values) if x), (0,0)))\nout = []\n\ndef nonzero(z):\n    for _ in range(T):\n        if (z & mask) % P:\n            return True\n        z >>= bits\n    return False\n\ndef solve(l,r,w,rows):\n    if not rows:\n        return\n    if r-l == 1:\n        offset, inv = inverses[l]\n        for i,z in rows:\n            value = ((z >> offset) & mask)%P*inv%P\n            if value:\n                out.append((i+1,l+1,value))\n        return\n    mid=(l+r)//2\n    v=vectors[l:mid]\n    leftw=[sumprod(row[l:mid],v) for row in B]\n    rightw=[x-y for x,y in zip(w,leftw)]\n    left=[]\n    right=[]\n    for i,z in rows:\n        a=sumprod(A[i],leftw)\n        b=z-a\n        if nonzero(a):\n            left.append((i,a))\n        if nonzero(b):\n            right.append((i,b))\n    solve(l,mid,leftw,left)\n    solve(mid,r,rightw,right)\n\nw=[sumprod(row,vectors) for row in B]\nrows=[]\nfor i,row in enumerate(A):\n    z=sumprod(row,w)\n    if nonzero(z):\n        rows.append((i,z))\nsolve(0,n,w,rows)\nprint(\"\\n\".join(\" \".join(map(str,t)) for t in sorted(out)))\n"
+    },
+    {
+      "name": "cpp-shared-subtraction",
+      "pythonSha256": "92ecbb479f78a706c56f11ca1ffb34120b5c12ba28daa58bf5a345ee9f794e5a",
+      "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+      "benchmarks": [
+        {
+          "case": "dense-cycle-n2800-P37",
+          "wallSeconds": 2.8487510580000617,
+          "cpuSeconds": 2.838673,
+          "peakRssKiB": 69052,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-cycle-n2800-P49999991",
+          "wallSeconds": 1.4968577079999932,
+          "cpuSeconds": 1.488634,
+          "peakRssKiB": 66560,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-scaled-wide-n2800-P37",
+          "wallSeconds": 3.3110459600000013,
+          "cpuSeconds": 3.302058,
+          "peakRssKiB": 69492,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "dense-scaled-wide-n2800-P49999991",
+          "wallSeconds": 1.8781558470000164,
+          "cpuSeconds": 1.872781,
+          "peakRssKiB": 66408,
+          "timeoutSeconds": 90,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "checks": [
+        {
+          "case": "sample",
+          "wallSeconds": 0.032364501999950335,
+          "cpuSeconds": 0.0028699999999999997,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "sample",
+          "wallSeconds": 0.021146700999906898,
+          "cpuSeconds": 0.0022689999999999997,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P37",
+          "wallSeconds": 0.02069337800003268,
+          "cpuSeconds": 0.001676,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P2801",
+          "wallSeconds": 0.020731988000079582,
+          "cpuSeconds": 0.0016539999999999999,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n2-P49999991",
+          "wallSeconds": 0.020772845999999845,
+          "cpuSeconds": 0.001815,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P37",
+          "wallSeconds": 0.02072840100004214,
+          "cpuSeconds": 0.00172,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P2801",
+          "wallSeconds": 0.02074714299999414,
+          "cpuSeconds": 0.001661,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n3-P49999991",
+          "wallSeconds": 0.020752008000044952,
+          "cpuSeconds": 0.001772,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P37",
+          "wallSeconds": 0.020829892000051586,
+          "cpuSeconds": 0.002265,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P2801",
+          "wallSeconds": 0.02070974599996589,
+          "cpuSeconds": 0.001762,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n7-P49999991",
+          "wallSeconds": 0.020869779000008748,
+          "cpuSeconds": 0.00181,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P37",
+          "wallSeconds": 0.020889112000077148,
+          "cpuSeconds": 0.002159,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P2801",
+          "wallSeconds": 0.020726839999952062,
+          "cpuSeconds": 0.001977,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n12-P49999991",
+          "wallSeconds": 0.02068869499998982,
+          "cpuSeconds": 0.0017,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P37",
+          "wallSeconds": 0.020859919999907106,
+          "cpuSeconds": 0.003078,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P2801",
+          "wallSeconds": 0.020777729999963412,
+          "cpuSeconds": 0.0025429999999999997,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "signed-dense-n38-P49999991",
+          "wallSeconds": 0.02094154000008075,
+          "cpuSeconds": 0.002297,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "unused-large-B-rows-n38-P37",
+          "wallSeconds": 0.02071002699995006,
+          "cpuSeconds": 0.002956,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        },
+        {
+          "case": "unused-large-B-rows-n38-P49999991",
+          "wallSeconds": 0.02084420299991052,
+          "cpuSeconds": 0.002097,
+          "peakRssKiB": 29388,
+          "timeoutSeconds": 15,
+          "returncode": 0,
+          "outputVerified": true,
+          "stderr": ""
+        }
+      ],
+      "contention": "Parent production build may run concurrently. Shared heterogeneous Windows/WSL host; CPU contention, scheduling and thermals are not controlled. Do not infer a production TLE or a stable speedup from these timings.",
+      "proof": "All T vectors are drawn once with uniform_int_distribution driven directly by random_device. Restricted interval projections are linear over F_P. Compute only left Bv and left A(Bv); subtract from parent residues to get right projections exactly. At singleton divide projection by a nonzero vector component. The same fixed-interval union bound <=72800 exp(-42) applies under the ideal independent uniform random-source assumption. Every emitted entry is exact. Each inner sum contains <=n products of residues <=P-1, so n(P-1)^2<2^63 prevents overflow. random_device quality is implementation-dependent; Linux libstdc++ uses the OS random source.",
+      "complexity": "O(T*n^2*log n) 64-bit scalar work, O(T*n^2) modulo operations, O(n^2+T*n*log n) words. T=ceil(42/log(P)) is 3..12 for allowed P; template specialization changes constants, not T.",
+      "pythonCode": "import sys, random, math\nfrom array import array\nfrom math import sumprod\n\ndef numbers():\n    for line in sys.stdin.buffer:\n        yield from map(int, line.split())\n\nit = numbers()\nsub, n, P = next(it), next(it), next(it)\nA = [array(\"I\", (next(it) for _ in range(n))) for _ in range(n)]\nB = [array(\"I\", (next(it) for _ in range(n))) for _ in range(n)]\nT = math.ceil(42 / math.log(P))\n# Each lane contains sum_{k,j} A[i,k]*B[k,j]*v[j].\n# Its integer value is <=n*n*(P-1)^3; no lane can carry.\nlane_bytes = ( (n*n*(P-1)**3).bit_length() + 7) // 8\nlane_bits = 8*lane_bytes\nrng = random.SystemRandom()\nout = []\n\ndef solve(l, r, rows):\n    if not rows:\n        return\n    if r-l == 1:\n        column = array(\"I\", (row[l] for row in B))\n        for i in rows:\n            value = sumprod(A[i], column) % P\n            if value:\n                out.append((i+1, l+1, value))\n        return\n    vectors = [int.from_bytes(b\"\".join(rng.randrange(P).to_bytes(lane_bytes, \"little\")\n                                      for _ in range(T)), \"little\") for j in range(l, r)]\n    w = [sumprod(row[l:r], vectors) for row in B]\n    keep = []\n    for i in rows:\n        packed = sumprod(A[i], w)\n        data = packed.to_bytes(lane_bytes*T, \"little\")\n        if any(int.from_bytes(data[q:q+lane_bytes], \"little\") % P\n               for q in range(0, len(data), lane_bytes)):\n            keep.append(i)\n    mid = (l+r)//2\n    solve(l, mid, keep)\n    solve(mid, r, keep)\n\nsolve(0, n, list(range(n)))\nprint(\"\\n\".join(\" \".join(map(str, t)) for t in sorted(out)))\n",
+      "cppCode": "#include <bits/stdc++.h>\nusing namespace std;\nusing ll = long long;\nint n, P;\nvector<vector<int>> A, B;\nvector<array<int,3>> answer;\nint power(int a, int b) {\n    ll r=1;\n    for (;b;b>>=1,a=ll(a)*a%P) if(b&1) r=r*a%P;\n    return int(r);\n}\ntemplate<int T> void run() {\n    using Vec=array<int,T>;\n    struct Row { int i; Vec z; };\n    vector<Vec> v(n);\n    vector<pair<int,int>> inv(n,{-1,0});\n    random_device rng;\n    uniform_int_distribution<int> dist(0,P-1);\n    for(int j=0;j<n;j++) for(int t=0;t<T;t++) {\n        v[j][t]=dist(rng);\n        if(inv[j].first<0 && v[j][t]) inv[j]={t,power(v[j][t],P-2)};\n    }\n    auto nonzero=[](const Vec &z) { for(int x:z) if(x) return true; return false; };\n    auto projectB=[&](int l,int r) {\n        vector<Vec> w(n);\n        for(int k=0;k<n;k++) {\n            array<ll,T> z{};\n            for(int j=l;j<r;j++) for(int t=0;t<T;t++) z[t]+=ll(B[k][j])*v[j][t];\n            for(int t=0;t<T;t++) w[k][t]=z[t]%P;\n        }\n        return w;\n    };\n    auto projectA=[&](int i,const vector<Vec> &w) {\n        array<ll,T> z{};\n        for(int k=0;k<n;k++) for(int t=0;t<T;t++) z[t]+=ll(A[i][k])*w[k][t];\n        Vec result;\n        for(int t=0;t<T;t++) result[t]=z[t]%P;\n        return result;\n    };\n    function<void(int,int,const vector<Vec>&,const vector<Row>&)> solve;\n    solve=[&](int l,int r,const vector<Vec> &w,const vector<Row> &rows) {\n        if(rows.empty()) return;\n        if(r-l==1) {\n            auto [t,u]=inv[l];\n            if(t<0) return;\n            for(auto &row:rows) {\n                int value=ll(row.z[t])*u%P;\n                if(value) answer.push_back({row.i+1,l+1,value});\n            }\n            return;\n        }\n        int mid=(l+r)/2;\n        auto lw=projectB(l,mid), rw=w;\n        for(int k=0;k<n;k++) for(int t=0;t<T;t++) {\n            rw[k][t]-=lw[k][t];\n            if(rw[k][t]<0) rw[k][t]+=P;\n        }\n        vector<Row> left,right;\n        for(auto &row:rows) {\n            Vec a=projectA(row.i,lw), b;\n            for(int t=0;t<T;t++) { b[t]=row.z[t]-a[t]; if(b[t]<0) b[t]+=P; }\n            if(nonzero(a)) left.push_back({row.i,a});\n            if(nonzero(b)) right.push_back({row.i,b});\n        }\n        solve(l,mid,lw,left);\n        solve(mid,r,rw,right);\n    };\n    auto w=projectB(0,n);\n    vector<Row> rows;\n    for(int i=0;i<n;i++) { auto z=projectA(i,w); if(nonzero(z)) rows.push_back({i,z}); }\n    solve(0,n,w,rows);\n}\nint main() {\n    ios::sync_with_stdio(false); cin.tie(nullptr);\n    int sub; cin>>sub>>n>>P;\n    A.assign(n,vector<int>(n)); B=A;\n    for(auto &row:A) for(int &x:row) cin>>x;\n    for(auto &row:B) for(int &x:row) cin>>x;\n    int T=ceil(42/log(double(P)));\n    switch(T) {\n        case 3:run<3>();break; case 4:run<4>();break;\n        case 5:run<5>();break; case 6:run<6>();break;\n        case 7:run<7>();break; case 8:run<8>();break;\n        case 9:run<9>();break; case 10:run<10>();break;\n        case 11:run<11>();break; case 12:run<12>();break;\n    }\n    sort(answer.begin(),answer.end());\n    for(auto [i,j,x]:answer) cout<<i<<' '<<j<<' '<<x<<'\\n';\n}\n",
+      "cppSha256": "a48423b0dc26322379f315d71cd4685e053386c8cdd20b0992801f6cd2db012e",
+      "compiler": "g++ (Debian 16.2.0-1) 16.2.0"
+    }
+  ],
+  "releaseReviewAtUtc": "2026-11-03T13:26:01.804678+00:00",
+  "releaseSummary": {
+    "status": "cpp-ready-python-unsuitable-for-max-limit-recommendation",
+    "pythonSha256": "4f5baceb92efba38b8f88ebc837a0cc4562061b9f8484909b7a7df8ba3d7ca0b",
+    "cppSha256": "a48423b0dc26322379f315d71cd4685e053386c8cdd20b0992801f6cd2db012e",
+    "pythonChecks": 19,
+    "cppChecks": 19,
+    "pythonMax": [
+      {
+        "case": "dense-cycle-n2800-P37",
+        "wallSeconds": 15.347402038000041,
+        "cpuSeconds": 15.326416,
+        "peakRssKiB": 84268,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-cycle-n2800-P49999991",
+        "wallSeconds": 13.626184330000001,
+        "cpuSeconds": 13.615575,
+        "peakRssKiB": 93328,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-scaled-wide-n2800-P37",
+        "wallSeconds": 22.23377877100006,
+        "cpuSeconds": 22.213898999999998,
+        "peakRssKiB": 86264,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-scaled-wide-n2800-P49999991",
+        "wallSeconds": 20.018243675999997,
+        "cpuSeconds": 20.006327,
+        "peakRssKiB": 90436,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      }
+    ],
+    "cppMax": [
+      {
+        "case": "dense-cycle-n2800-P37",
+        "wallSeconds": 2.8487510580000617,
+        "cpuSeconds": 2.838673,
+        "peakRssKiB": 69052,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-cycle-n2800-P49999991",
+        "wallSeconds": 1.4968577079999932,
+        "cpuSeconds": 1.488634,
+        "peakRssKiB": 66560,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-scaled-wide-n2800-P37",
+        "wallSeconds": 3.3110459600000013,
+        "cpuSeconds": 3.302058,
+        "peakRssKiB": 69492,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      },
+      {
+        "case": "dense-scaled-wide-n2800-P49999991",
+        "wallSeconds": 1.8781558470000164,
+        "cpuSeconds": 1.872781,
+        "peakRssKiB": 66408,
+        "timeoutSeconds": 90,
+        "returncode": 0,
+        "outputVerified": true,
+        "stderr": ""
+      }
+    ],
+    "proofCorrection": "Final H includes both max B-row sum and A*(B-row sums); pathological unused B rows are explicitly tested.",
+    "maxStressProof": "A=D(I+J), q=(n+1)^(-1), C=I+S_shift, B=(I-qJ)D^(-1)C. Hence AB=C exactly. D nonzero diagonal; cycle shift1 and scaled half-width shift1400 both produce exactly2n nonzeros. Small cases additionally use independent cubic multiplication, and unused-B cases have only A[0,0]=1,A[1,0]=2 with arbitrary large other B rows.",
+    "maxPeakRssMiB": {
+      "python": 91.140625,
+      "cpp": 67.86328125
+    },
+    "limits": {
+      "nominalCppSeconds": 6.5,
+      "effectivePythonSeconds": 19.5,
+      "liveMemoryMiB": 1024,
+      "alsoBelowRequested512MiBOnMeasuredInputs": true
+    },
+    "idealRandomnessGlobalErrorBound": 4.185652208405712e-14,
+    "integrationChecks": 15
+  },
+  "learnerPerformanceNote": "建議使用C++。Python版在本機部分最大測資超過本站19.5秒額度，尚不適合作為最大範圍可通過時限的提交建議，宜作教學與較小規模參考；本機計時不代表正式評測結果。",
+  "releaseIntegrationVerification": {
+    "pythonSha256": "4f5baceb92efba38b8f88ebc837a0cc4562061b9f8484909b7a7df8ba3d7ca0b",
+    "cppSha256": "a48423b0dc26322379f315d71cd4685e053386c8cdd20b0992801f6cd2db012e",
+    "cases": [
+      {
+        "index": 1,
+        "reason": "公開範例1；預期輸出另以獨立三層迴圈乘法核對。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 2,
+        "reason": "公開範例2；預期輸出另以獨立三層迴圈乘法核對。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 3,
+        "reason": "最小模數、零元素與輸出排序。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 4,
+        "reason": "投影可能抵銷；乘積只有第二欄非零。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 5,
+        "reason": "中間模數P=47，獨立乘法核對跨區間非零與縮放矩陣。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 6,
+        "reason": "中間模數P=73，獨立乘法核對跨區間非零與縮放矩陣。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 7,
+        "reason": "中間模數P=113，獨立乘法核對跨區間非零與縮放矩陣。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 8,
+        "reason": "中間模數P=211，獨立乘法核對跨區間非零與縮放矩陣。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 9,
+        "reason": "中間模數P=997，獨立乘法核對跨區間非零與縮放矩陣。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 10,
+        "reason": "中間模數P=10007，獨立乘法核對跨區間非零與縮放矩陣。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 11,
+        "reason": "A僅一個有效欄，B未使用的列很大；打包上界必須涵蓋Bv。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 12,
+        "reason": "A僅一個有效欄，B未使用的列很大；打包上界必須涵蓋Bv。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 13,
+        "reason": "乘積只有1個非零元素，測試空區間剪枝。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 14,
+        "reason": "恰2n個非零元素集中於兩列。",
+        "pythonPassed": true,
+        "cppPassed": true
+      },
+      {
+        "index": 15,
+        "reason": "恰2n個非零元素集中於兩個相距很遠的欄。",
+        "pythonPassed": true,
+        "cppPassed": true
+      }
+    ],
+    "oracle": "Independent cubic integer matrix multiplication; expected data regenerated and compared before executing either candidate.",
+    "python": "3.13.12 (main, Feb  4 2026, 15:06:39) [GCC 15.2.0]",
+    "compiler": "g++ (Debian 16.2.0-1) 16.2.0"
+  }
+}
